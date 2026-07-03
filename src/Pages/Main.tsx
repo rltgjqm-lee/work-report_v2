@@ -1,61 +1,146 @@
+import { useState } from "react";
+
 import ConfirmModal from "../components/molecule/ConfirmModal";
 import LabeledInput from "../components/molecule/LabeledInput";
 import PdfTemplate from "../components/organism/PdfTemplate";
+import Button from "../components/atoms/Button";
+
+import type { ActivityLogFormData } from "../types/form";
+import { PAGE1_RULES } from "../types/validationRules";
+import { LOCAL_STORAGE_KEYS } from "../constants/storage";
+
+import { validateForm } from "../utils/validateFormData";
+
+const initialFormData: ActivityLogFormData = {
+  orgName: "",
+  projectName: "",
+  demandName: "",
+  userName: "",
+  actDate: "",
+  startTime: { ampm: "AM", hour: "09", minute: "00" },
+  endTime: { ampm: "PM", hour: "01", minute: "00" },
+  actTotalTime: "- 시간",
+  actContent: "",
+  actPlace: "",
+  hasAccident: false,
+  accidentDetail: "",
+  accidentAction: "업무수행",
+  userSignature: "",
+  demandSignature: "",
+  saveSignatureConsent: true,
+};
 
 const Main = () => {
-  // 기존 이벤트 함수들 유지
-  const saveConfigOnly = () => {};
-  const nextFromPage1 = () => {};
-  const startNewLog = () => {};
-  const exportReports = () => {};
+  const [page, setPage] = useState<number>(1);
+
+  const goNextStep = () => setPage((prev) => Math.min(prev + 1, 6));
+  // const prevStep = () => setPage((prev) => Math.max(prev - 1, 1));
+  const goHome = () => setPage(1);
+
+  // 모달 상태
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessages, setModalMessages] = useState<string[]>([]);
+
+  const [formData, setFormData] =
+    useState<ActivityLogFormData>(initialFormData);
+
+  const handleInputChange = <T extends keyof ActivityLogFormData>(
+    field: T,
+    value: ActivityLogFormData[T],
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      // value가 문자열일 때만 trim()을 하고, 아니면 그대로 넣어서 에러를 방지합니다.
+      [field]: typeof value === "string" ? value.trim() : value,
+    }));
+  };
+
+  // 기존 비즈니스 로직 함수들 (저장 등)
+  // --> save page 1 완료
+  // const saveConfigOnly = () => {
+  //   /* 저장 로직 */
+  // };
+
+  const savePage3 = () => {
+    /* 저장 로직 */
+  };
+  const savePage4 = () => {
+    /* 저장 로직 */
+  };
+  const savePage5 = () => {
+    /* 저장 로직 */
+  };
+  const saveLog = () => {
+    /* 저장 로직 */
+  };
+
   const updateHiddenTime = (type: string) => type;
-  const savePage3 = () => {};
-  const nextFromPage3 = () => {};
-  const savePage4 = () => {};
-  const nextFromPage4 = () => {};
   const toggleAccidentInput = (bool: boolean) => bool;
-  const savePage5 = () => {};
-  const nextFromPage5 = () => {};
-  const saveLog = () => {};
+  const exportReports = () => {};
   const exportReportsFromPage6 = () => {};
-  const goHomeFromPage6 = () => {};
+
+  // 모달 공용 헬퍼 함수
+  const openAlertModal = (messages: string[]) => {
+    setModalMessages(messages);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+  };
 
   return (
     <div className="w-full h-dvh flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
-      {/* Container */}
       <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
         {/* 1. 초기 설정 페이지 */}
-        <Page1OnConfig onSave={saveConfigOnly} onNext={nextFromPage1} />
+        {page === 1 && (
+          <Page1OnConfig
+            formData={formData}
+            onChange={handleInputChange}
+            onNext={goNextStep}
+            onAlert={openAlertModal}
+          />
+        )}
 
         {/* 2. 대시보드 페이지 */}
-        <Page2Dashboard
-          onStartNewLog={startNewLog}
-          onExportReports={exportReports}
-        />
+        {page === 2 && (
+          <Page2Dashboard
+            onStartNewLog={() => setPage(3)}
+            onExportReports={exportReports}
+          />
+        )}
 
         {/* 3. 활동 일시 페이지 */}
-        <Page3DateTime
-          onSave={savePage3}
-          onNext={nextFromPage3}
-          onUpdateTime={updateHiddenTime}
-        />
+        {page === 3 && (
+          <Page3DateTime
+            onSave={savePage3}
+            onNext={goNextStep}
+            onUpdateTime={updateHiddenTime}
+          />
+        )}
 
         {/* 4. 활동 내용/장소 페이지 */}
-        <Page4ContentPlace onSave={savePage4} onNext={nextFromPage4} />
+        {page === 4 && (
+          <Page4ContentPlace onSave={savePage4} onNext={goNextStep} />
+        )}
 
         {/* 5. 안전사고 유무 페이지 */}
-        <Page5Accident
-          onSave={savePage5}
-          onNext={nextFromPage5}
-          onToggleAccident={toggleAccidentInput}
-        />
+        {page === 5 && (
+          <Page5Accident
+            onSave={savePage5}
+            onNext={goNextStep}
+            onToggleAccident={toggleAccidentInput}
+          />
+        )}
 
         {/* 6. 서명하기 페이지 */}
-        <Page6Signature
-          onSave={saveLog}
-          onExport={exportReportsFromPage6}
-          onHome={goHomeFromPage6}
-        />
+        {page === 6 && (
+          <Page6Signature
+            onSave={saveLog}
+            onExport={exportReportsFromPage6}
+            onHome={goHome}
+          />
+        )}
       </div>
 
       {/* PDF 렌더링용 숨김 템플릿 */}
@@ -76,8 +161,13 @@ const Main = () => {
         }
       />
 
-      {/* 커스텀 알림 모달 */}
-      <ConfirmModal />
+      {/* 알림 모달 */}
+      <ConfirmModal
+        isOpen={modalOpen}
+        messages={modalMessages}
+        onConfirm={closeModal} // 확인 누르면 닫히게 설정
+        onClose={closeModal}
+      />
     </div>
   );
 };
@@ -85,74 +175,141 @@ const Main = () => {
 export default Main;
 
 // ==========================================
-// 하위 페이지 컴포넌트들 (Main 파일 내부에 생성)
+// 하위 페이지 컴포넌트들
 // ==========================================
 
 /* Page 1: 초기 설정 */
 const Page1OnConfig = ({
-  onSave,
+  formData,
+  onChange,
   onNext,
+  onAlert,
 }: {
-  onSave: () => void;
+  formData: ActivityLogFormData;
+  onChange: <T extends keyof ActivityLogFormData>(
+    key: T,
+    value: ActivityLogFormData[T],
+  ) => void;
   onNext: () => void;
-}) => (
-  <div
-    className="p-[30px_20px] flex-1 flex flex-col max-[600px]:p-[20px_15px]"
-    id="page1"
-    style={{ display: "flex" }}
-  >
-    <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left whitespace-nowrap tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-      노인공익활동사업 활동일지
+  onAlert: (messages: string[]) => void;
+}) => {
+  const saveToLocalStorage = () => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_ORG, formData.orgName);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_PROJ, formData.projectName);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_DEMAND, formData.demandName);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_USER, formData.userName);
+  };
+
+  const handleClickSaveButton = () => {
+    const errors = validateForm(formData, PAGE1_RULES);
+
+    if (errors.length > 0) {
+      onAlert(errors);
+      return;
+    }
+    saveToLocalStorage();
+
+    onAlert(["기관 정보가 안전하게 저장되었습니다."]);
+  };
+
+  const handleClickNextButton = () => {
+    const errors = validateForm(formData, PAGE1_RULES);
+
+    const successConfirmMessage = [
+      "✅ 기관 정보가 안전하게 저장되었습니다.",
+      "--------------------------------------",
+      `• 기관명: [${formData.orgName}]`,
+      `• 참여사업명: [${formData.projectName}]`,
+      `• 참여자 성명: [${formData.userName}]`,
+      `• 수요처명: [${formData.demandName}]`,
+      "--------------------------------------",
+      "다음 페이지로  이동합니다.",
+    ];
+
+    if (errors.length > 0) {
+      onAlert(errors);
+
+      return;
+    }
+
+    saveToLocalStorage();
+
+    // 윈도우 기본 confirm 창 사용 (나중에 만든 ConfirmModal 연동 가능)
+    onAlert(successConfirmMessage);
+    onNext();
+  };
+
+  return (
+    <div
+      className="p-[30px_20px] flex-1 flex flex-col max-[600px]:p-[20px_15px]"
+      id="page1"
+      style={{ display: "flex" }}
+    >
+      <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left whitespace-nowrap tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
+        노인공익활동사업 활동일지
+      </div>
+
+      {/* 기관명 입력 */}
+      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
+        <LabeledInput
+          labelTitle={"기관명"}
+          id={"orgName"}
+          placeholder={"예) 한국노인인력개발원"}
+          value={formData.orgName}
+          onChange={(e) => onChange("orgName", e.target.value)}
+        />
+      </div>
+
+      {/* 참여사업명 입력*/}
+      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
+        <LabeledInput
+          labelTitle="참여사업명"
+          id="projectName"
+          placeholder="예) 안전한 길거리 조성"
+          value={formData.projectName}
+          onChange={(e) => onChange("projectName", e.target.value)}
+        />
+      </div>
+
+      {/* 수요처명 입력*/}
+      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
+        <LabeledInput
+          labelTitle={
+            <>
+              수요처명 <br />
+              <span className="text-[14px] font-normal">(서비스대상자명)</span>
+            </>
+          }
+          id="demandName"
+          placeholder="예) 00주민센터"
+          value={formData.demandName}
+          onChange={(e) => onChange("demandName", e.target.value)}
+        />
+      </div>
+
+      {/* 참여자명 입력*/}
+      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
+        <LabeledInput
+          labelTitle="참여자 성명"
+          id="userName"
+          placeholder="성함 입력"
+          value={formData.userName}
+          onChange={(e) => onChange("userName", e.target.value)}
+        />
+      </div>
+
+      {/* 액션 버튼 */}
+      <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
+        <Button variant="blue" onClick={handleClickSaveButton}>
+          저장하기
+        </Button>
+        <Button variant="white" onClick={handleClickNextButton}>
+          다음
+        </Button>
+      </div>
     </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <LabeledInput
-        labelTitle="기관명"
-        id="orgName"
-        placeholder="예) 한국노인인력개발원"
-      />
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <LabeledInput
-        labelTitle="참여사업명"
-        id="projectName"
-        placeholder="예) 안전한 길거리 조성"
-      />
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <LabeledInput
-        labelTitle={
-          <>
-            수요처명 <br />
-            <span className="text-[14px] font-normal">(서비스대상자명)</span>
-          </>
-        }
-        id="demandName"
-        placeholder="예) 00주민센터"
-      />
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <LabeledInput
-        labelTitle="참여자 성명"
-        id="userName"
-        placeholder="성함 입력"
-      />
-    </div>
-    <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onSave}
-      >
-        저장하기
-      </button>
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onNext}
-      >
-        다음
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 /* Page 2: 대시보드 */
 const Page2Dashboard = ({
@@ -176,6 +333,7 @@ const Page2Dashboard = ({
         노인일자리 및 사회활동 지원사업
       </span>
     </div>
+
     <div className="flex justify-between items-center mb-[15px] bg-white p-[10px_15px] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
       <button className="flex-none p-[5px_20px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222]">
         ◀
@@ -194,19 +352,22 @@ const Page2Dashboard = ({
       className="flex-1 max-h-[50vh] overflow-y-auto mb-5 p-2.5 bg-[#f0f3f5] rounded-xl grid grid-cols-3 gap-2.5 content-start max-[600px]:gap-[6px] max-[600px]:p-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       id="activityList"
     ></div>
+
     <div className="flex flex-col gap-2.5 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <button
-        className="w-full p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white max-[600px]:p-[12px] max-[600px]:text-[15px]"
+      <Button
+        variant="blue"
         onClick={onStartNewLog}
+        className="w-full flex-none"
       >
         새로운 일지 작성하기
-      </button>
-      <button
-        className="w-full p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
+      </Button>
+      <Button
+        variant="white"
         onClick={onExportReports}
+        className="w-full flex-none"
       >
         보고서 출력 (PDF / 엑셀)
-      </button>
+      </Button>
     </div>
   </div>
 );
@@ -319,19 +480,14 @@ const Page3DateTime = ({
         </div>
       </div>
     </div>
+
     <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onSave}
-      >
+      <Button variant="blue" onClick={onSave}>
         저장하기
-      </button>
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onNext}
-      >
+      </Button>
+      <Button variant="white" onClick={onNext}>
         다음
-      </button>
+      </Button>
     </div>
   </div>
 );
@@ -374,19 +530,14 @@ const Page4ContentPlace = ({
         placeholder="활동하신 장소를 적어주세요."
       ></textarea>
     </div>
+
     <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onSave}
-      >
+      <Button variant="blue" onClick={onSave}>
         저장하기
-      </button>
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onNext}
-      >
+      </Button>
+      <Button variant="white" onClick={onNext}>
         다음
-      </button>
+      </Button>
     </div>
   </div>
 );
@@ -480,19 +631,14 @@ const Page5Accident = ({
         </label>
       </div>
     </div>
+
     <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onSave}
-      >
+      <Button variant="blue" onClick={onSave}>
         저장하기
-      </button>
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onNext}
-      >
+      </Button>
+      <Button variant="white" onClick={onNext}>
         다음
-      </button>
+      </Button>
     </div>
   </div>
 );
@@ -561,25 +707,17 @@ const Page6Signature = ({
         </span>
       </div>
     </label>
+
     <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onSave}
-      >
+      <Button variant="blue" onClick={onSave}>
         저장하기
-      </button>
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onExport}
-      >
+      </Button>
+      <Button variant="white" onClick={onExport}>
         보고서
-      </button>
-      <button
-        className="flex-1 p-[14px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222] max-[600px]:p-[12px] max-[600px]:text-[15px]"
-        onClick={onHome}
-      >
+      </Button>
+      <Button variant="white" onClick={onHome}>
         처음으로
-      </button>
+      </Button>
     </div>
   </div>
 );
