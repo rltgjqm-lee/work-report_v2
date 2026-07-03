@@ -1,277 +1,0 @@
-﻿<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ìëì´ ê³µìµíë ì¼ì§</title>
-    <link rel="manifest" href="./manifest.json">
-    <link rel="icon" href="./WorkRe.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="./WorkRe.png">
-    <meta name="theme-color" content="#2c3e50">
-    <link rel="stylesheet" href="style.css?v=1.2">
-    <script src="html2pdf.bundle.min.js"></script>
-    <script src="exceljs.min.js"></script>
-    <script src="app.js?v=1.2" defer></script>
-</head>
-<body>
-
-<div class="container">
-    <div class="top-bar">
-        <div style="font-size: 20px; letter-spacing: -0.5px; white-space: nowrap;">ë¸ì¸ê³µìµíëì¬ì íëì¼ì§</div>
-        <div style="font-size: 15px; font-weight: normal; margin-top: 6px; color: #d0e1ff;"><span id="topProjName">ì°¸ì¬ì¬ì</span> ì¬ììëë¤.</div>
-    </div>
-
-    <!-- Page 1: ì´ê¸° ì¤ì  -->
-    <div class="content" id="page1" style="display: flex;">
-        <div class="main-title">ë¸ì¸ê³µìµíëì¬ì íëì¼ì§</div>
-        <div class="input-row">
-            <div class="label">ê¸°ê´ëª</div>
-            <input type="text" id="orgName" class="input-field" placeholder="ì) íêµ­ë¸ì¸ì¸ë ¥ê°ë°ì">
-        </div>
-        <div class="input-row">
-            <div class="label">ì°¸ì¬ì¬ìëª</div>
-            <input type="text" id="projectName" class="input-field" placeholder="ì) ìì í ê¸¸ê±°ë¦¬ ì¡°ì±">
-        </div>
-        <div class="input-row">
-            <div class="label">ììì²ëª<br><span style="font-size:14px; font-weight:normal;">(ìë¹ì¤ëììëª)</span></div>
-            <input type="text" id="demandName" class="input-field" placeholder="ì) 00ì£¼ë¯¼ì¼í°">
-        </div>
-        <div class="input-row">
-            <div class="label">ì°¸ì¬ì ì±ëª</div>
-            <input type="text" id="userName" class="input-field" placeholder="ì±í¨ ìë ¥">
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-blue" onclick="saveConfigOnly()">ì ì¥íê¸°</button>
-            <button class="btn btn-blue" onclick="nextFromPage1()">ë¤ì</button>
-        </div>
-    </div>
-
-    <!-- Page 2: ëìë³´ë (ë¦¬ì¤í¸) -->
-    <div class="content" id="page2">
-        <div class="main-title">
-            <span id="dUser" style="color: #4364F7;">íê¸¸ë</span>ë íìí©ëë¤<br>
-            <span style="font-size: 16px; color: #7f8c8d;" id="dOrg">ë¸ì¸ì¼ìë¦¬ ë° ì¬ííë ì§ìì¬ì</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #fff; padding: 10px 15px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <button class="btn btn-white" style="flex: none; padding: 5px 20px; font-size: 18px;" onclick="changeMonth(-1)">â</button>
-            <div id="currentMonthDisplay" style="font-size: 18px; font-weight: bold; color: #2c3e50;">2026ë 5ì</div>
-            <button class="btn btn-white" style="flex: none; padding: 5px 20px; font-size: 18px;" onclick="changeMonth(1)">â¶</button>
-        </div>
-
-        <div class="activity-list" id="activityList">
-            <!-- ë¦¬ì¤í¸ ìì´í ë ëë§ -->
-        </div>
-        <div class="btn-group" style="flex-direction: column; gap: 10px;">
-            <button class="btn btn-blue" onclick="startNewLog()">ìë¡ì´ ì¼ì§ ìì±íê¸°</button>
-            <button class="btn btn-white" onclick="exportReports()">ë³´ê³ ì ì¶ë ¥ (PDF / ìì)</button>
-        </div>
-    </div>
-
-    <!-- Page 3: íë ì¼ì -->
-    <div class="content" id="page3">
-        <div class="main-title">íë ì¼ìë¥¼ ìë ¥í´ì£¼ì¸ì</div>
-        <div class="input-col">
-            <div class="label" style="width: 100%;">íëì¼ <span style="font-size:12px; font-weight:normal; color:#e74c3c;">(*íëì¼ì ì ííì¬ ì£¼ì¸ì)</span></div>
-            <input type="date" id="actDate" class="input-field">
-        </div>
-        <div class="input-col">
-            <div class="label" style="width: 100%;">íëìê°ì ì ííì¬ ì£¼ì¸ì <br><span style="font-size:12px; font-weight:normal; color:#e74c3c;">(*íë ì¢ë£ í ìê°ì ì ííì¬ ì£¼ì¸ì)</span></div>
-            <div style="display:flex; flex-direction:column; gap:12px; width: 100%;">
-                <div style="width:100%;">
-                    <div style="margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px;">ìì</div>
-                    <div style="display:flex; gap:8px; width:100%;">
-                        <select id="startAmpm" class="input-field time-select" onchange="updateHiddenTime('start')">
-                            <option value="AM" selected>ì¤ì </option>
-                            <option value="PM">ì¤í</option>
-                        </select>
-                        <select id="startHour" class="input-field time-select" onchange="updateHiddenTime('start')"></select>
-                        <span style="font-size: 16px; font-weight: bold; align-self: center;">:</span>
-                        <select id="startMin" class="input-field time-select" onchange="updateHiddenTime('start')"></select>
-                    </div>
-                    <input type="hidden" id="actStart">
-                </div>
-                <div style="width:100%;">
-                    <div style="margin-bottom: 5px; font-weight: bold; color: #34495e; font-size: 14px;">ì¢ë£</div>
-                    <div style="display:flex; gap:8px; width:100%;">
-                        <select id="endAmpm" class="input-field time-select" onchange="updateHiddenTime('end')">
-                            <option value="AM">ì¤ì </option>
-                            <option value="PM" selected>ì¤í</option>
-                        </select>
-                        <select id="endHour" class="input-field time-select" onchange="updateHiddenTime('end')"></select>
-                        <span style="font-size: 16px; font-weight: bold; align-self: center;">:</span>
-                        <select id="endMin" class="input-field time-select" onchange="updateHiddenTime('end')"></select>
-                    </div>
-                    <input type="hidden" id="actEnd">
-                </div>
-            </div>
-        </div>
-        <div class="input-col">
-            <div style="font-weight: bold; color: #34495e; margin-bottom: 5px;">ì´</div>
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                <div id="actTotalTime" class="input-field" style="background:#f9f9f9; text-align:center; color:#00a0e9; font-weight:bold;">- ìê°</div>
-            </div>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-blue" onclick="savePage3()">ì ì¥íê¸°</button>
-            <button class="btn btn-white" onclick="nextFromPage3()">ë¤ì</button>
-        </div>
-    </div>
-
-    <!-- Page 4: íë ë´ì©/ì¥ì -->
-    <div class="content" id="page4">
-        <div class="main-title">íë ë´ì© ë° ì¥ì</div>
-        <div class="input-col">
-            <div class="label" style="width: 100%; flex: none;">íëë´ì©</div>
-            <textarea id="actContent" class="input-field" rows="2" placeholder="ì¤ë ìííì  íë ë´ì©ì ì ì´ì£¼ì¸ì."></textarea>
-        </div>
-        <div class="input-col">
-            <div class="label" style="width: 100%; flex: none;">íëì¥ì</div>
-            <textarea id="actPlace" class="input-field" rows="2" placeholder="íëíì  ì¥ìë¥¼ ì ì´ì£¼ì¸ì."></textarea>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-blue" onclick="savePage4()">ì ì¥íê¸°</button>
-            <button class="btn btn-white" onclick="nextFromPage4()">ë¤ì</button>
-        </div>
-    </div>
-
-    <!-- Page 5: ìì ì¬ê³  -->
-    <div class="content" id="page5">
-        <div class="main-title">ìì ì¬ê³  ì ë¬´ íì¸</div>
-        <div class="input-col">
-            <div class="label" style="width: 100%; flex: none;">ìì ì¬ê³  ë°ìì ë¬´</div>
-            <div class="radio-group" style="width: 100%; flex: none; gap: 30px;">
-                <label class="radio-label"><input type="radio" name="accident" value="ì " onclick="toggleAccidentInput(true)"> ì </label>
-                <label class="radio-label"><input type="radio" name="accident" value="ë¬´" checked onclick="toggleAccidentInput(false)"> ë¬´</label>
-            </div>
-        </div>
-        <div class="input-col" id="accidentDetailRow" style="display:none;">
-            <div class="label" style="width: 100%; flex: none;">ì¬ê³ ë´ì© ë° ì¡°ì¹ë´ì©</div>
-            <input type="text" id="accidentDetail" class="input-field" placeholder="ì) ëì´ì§, ìê¸ì¡°ì¹ í ì§ì">
-        </div>
-        <div class="input-col" id="accidentActionRow" style="display:none;">
-            <div class="label" style="width: 100%; flex: none;">ìì ì¬ê³  ë°ì í ìë¬´ ìí</div>
-            <div class="radio-group" style="width: 100%; flex: none; gap: 30px;">
-                <label class="radio-label"><input type="radio" name="accidentAction" value="ê·ê°"> ê·ê°</label>
-                <label class="radio-label"><input type="radio" name="accidentAction" value="ìë¬´ìí" checked> ìë¬´ìí</label>
-            </div>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-blue" onclick="savePage5()">ì ì¥íê¸°</button>
-            <button class="btn btn-white" onclick="nextFromPage5()">ë¤ì</button>
-        </div>
-    </div>
-
-    <!-- Page 6: ìëªíê¸° -->
-    <div class="content" id="page6">
-        <div class="main-title">ìëªì ì§íí´ì£¼ì¸ì</div>
-        
-        <div class="input-col" style="margin-bottom: 5px;">
-            <div class="label" style="width: 100%; flex: none;">ì°¸ì¬ì ìëª</div>
-            <div class="canvas-container" style="margin-bottom:0; width: 100%; flex: none;">
-                <canvas id="userCanvas"></canvas>
-                <button class="clear-btn" onclick="clearCanvas(userCtx, userCanvas)">ì§ì°ê¸°</button>
-            </div>
-        </div>
-        <div style="font-size:13px; color:#7f8c8d; text-align:right; margin-bottom:25px;">* ìµì´ ìëª ì ì´í ê³ì ì¬ì©ë©ëë¤.</div>
-        
-        <div class="input-col" style="margin-bottom: 5px;">
-            <div class="label" style="width: 100%; flex: none;">íì¸ì (ììì²) ìëª <span style="font-size:14px; font-weight:normal;">(ì í)</span></div>
-            <div class="canvas-container" style="margin-bottom:0; width: 100%; flex: none;">
-                <canvas id="demandCanvas"></canvas>
-                <button class="clear-btn" onclick="clearCanvas(demandCtx, demandCanvas)">ì§ì°ê¸°</button>
-            </div>
-        </div>
-        <label style="display:flex; align-items:flex-start; gap:8px; margin-bottom:25px; cursor:pointer;">
-            <input type="checkbox" id="demandConsentCheck" checked style="width: 18px; height: 18px; margin-top: 2px;">
-            <div style="font-size: 14px; color: #2c3e50;">
-                <strong>ì´ ìëªì¼ë¡ ê³ì ì¬ì©í¨ì ëìí©ëë¤.</strong><br>
-                <span style="font-size: 12px; color: #7f8c8d;">(ì²´í¬ í´ì  ì ë¤ì ìì± ì ìëªì´ ì§ìì§ ì±ë¡ ììí©ëë¤)</span>
-            </div>
-        </label>
-
-        <div class="btn-group">
-            <button class="btn btn-blue" onclick="saveLog()">ì ì¥íê¸°</button>
-            <button class="btn btn-white" onclick="exportReportsFromPage6()">ë³´ê³ ì</button>
-            <button class="btn btn-white" onclick="goHomeFromPage6()">ì²ìì¼ë¡</button>
-        </div>
-    </div>
-</div>
-
-<!-- PDF ë ëë§ì© ì¨ê¹ ííë¦¿ -->
-<div id="pdfContainer">
-    <div id="pdfContentWrapper">
-        <div id="pdfContent" style="font-family: 'Malgun Gothic', sans-serif;">
-            <h2 style="text-align:center; text-decoration:underline; font-size: 26px; margin-bottom: 25px;">ë¸ì¸ì¼ìë¦¬ ë° ì¬ííë ì§ìì¬ì ê³µìµíë íëì¼ì§(ìì)</h2>
-            <table class="pdf-table">
-                <tr>
-                    <th style="width: 15%;">ê¸°ê´ëª</th>
-                    <td style="width: 35%;" id="pOrg"></td>
-                    <th style="width: 15%;">ì°¸ì¬ì¬ìëª</th>
-                    <td style="width: 35%;" id="pProject"></td>
-                </tr>
-                <tr>
-                    <th>ì°¸ì¬ì ì±ëª</th>
-                    <td id="pUser"></td>
-                    <th>ììì²ëª(ìë¹ì¤ëììëª)</th>
-                    <td id="pDemand"></td>
-                </tr>
-            </table>
-            <div style="height: 15px;"></div>
-            <table class="pdf-table">
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="width: 5%;">ì°ë²</th>
-                        <th rowspan="2" style="width: 10%;">íëì¼</th>
-                        <th colspan="3" style="width: 22%;">íëìê°</th>
-                        <th rowspan="2" style="width: 21%;">íëë´ì©</th>
-                        <th rowspan="2" style="width: 12%;">íëì¥ì</th>
-                        <th rowspan="2" style="width: 16%;">ìì ì¬ê³  ë°ìì ë¬´<br>(ì¬ê³ ë´ì©, ì¡°ì¹ë´ì©)</th>
-                        <th rowspan="2" style="width: 7%;">ì°¸ì¬ì<br>ìëª</th>
-                        <th rowspan="2" style="width: 7%;">íì¸ì<br>(ììì²(ì))<br>ìëª</th>
-                    </tr>
-                    <tr>
-                        <th>ìì<br>(00:00)</th>
-                        <th>ì¢ë£<br>(00:00)</th>
-                        <th>ì´ìê°</th>
-                    </tr>
-                </thead>
-                <tbody id="pRows">
-                    <!-- Data goes here -->
-                </tbody>
-            </table>
-            <div style="margin-top: 15px; font-size:14px; text-align:left;">
-                â» íë ë´ì­ì´ ì¬ì¤ê³¼ íë¦¼ììì íì¸íìì¼ë©°, ì¶í ë³´ì¡°ê¸ ë¶ì ìê¸ì¼ë¡ ì¸í ì ì¬ ë±ì ì¡°ì¹ì ëìí©ëë¤.
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ì»¤ì¤í ìë¦¼ ëª¨ë¬ -->
-<div id="customModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:#fff; padding:30px; border-radius:12px; max-width:400px; width:80%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-        <div id="modalMessage" style="font-size:18px; margin-bottom:25px; line-height:1.5; white-space:pre-wrap; text-align:left; color:#2c3e50;"></div>
-        <div id="modalButtons" style="display:flex; flex-direction:row; gap:10px; justify-content:center;">
-            <button id="modalBtnOk" class="btn btn-blue" style="flex:1; padding:14px; font-size:16px;">íì¸</button>
-            <button id="modalBtnCancel" class="btn btn-white" style="flex:1; padding:14px; font-size:16px; display:none;">ì·¨ì</button>
-        </div>
-    </div>
-</div>
-
-
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('SW registered: ', registration);
-                })
-                .catch(registrationError => {
-                    console.log('SW registration failed: ', registrationError);
-                });
-        });
-    }
-</script>
-</body>
-</html>
-
