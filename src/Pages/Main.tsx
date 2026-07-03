@@ -24,14 +24,6 @@ const Main = () => {
     <div className="w-full min-h-screen flex justify-center items-center bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
       {/* Container */}
       <div className="w-[95%] max-w-[600px] bg-white rounded-xl shadow-2xl overflow-hidden min-h-[550px] flex flex-col relative box-border self-stretch max-[600px]:w-[calc(100%-20px)] max-[600px]:max-w-full max-[600px]:shadow-md max-[600px]:min-h-[calc(100dvh-32px)] max-[600px]:m-[12px_10px_0_10px]">
-        {/* Top Bar */}
-        <div className="bg-[#2c3e50] text-white p-[15px_25px] font-bold max-[600px]:p-[18px_20px] max-[600px]:rounded-[12px_12px_16px_16px]">
-          <div className="text-[20px] tracking-[-0.5px] whitespace-nowrap">노인공익활동사업 활동일지</div>
-          <div className="text-[15px] font-normal mt-[6px] text-[#d0e1ff]">
-            <span id="topProjName">참여사업</span> 사업입니다.
-          </div>
-        </div>
-
         {/* Page 1: 초기 설정 */}
         <div className="p-[30px_20px] flex-1 flex flex-col max-[600px]:p-[20px_15px]" id="page1" style={{ display: "flex" }}>
           <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left whitespace-nowrap tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
