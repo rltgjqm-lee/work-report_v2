@@ -2,9 +2,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import TopBar from "./components/TopBar";
 import Main from "./pages/Main";
 
+import "./App.css";
+
 function App() {
   return (
-    <div className="App">
+    <div className="app">
       <TopBar />
       <BrowserRouter>
         {/* <Header /> */}
