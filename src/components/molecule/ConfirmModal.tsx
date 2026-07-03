@@ -3,12 +3,18 @@
 import { createPortal } from "react-dom";
 
 interface ConfirmModalProps {
+  messages: string[];
   isOpen?: boolean;
   onClose?: () => void;
   onConfirm?: () => void;
 }
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm }: ConfirmModalProps) => {
+const ConfirmModal = ({
+  messages,
+  isOpen,
+  onClose,
+  onConfirm,
+}: ConfirmModalProps) => {
   if (!isOpen) return null;
 
   // 완전히 독립된 최상단 레이어로 모달을 쏘아 올립니다.
@@ -21,7 +27,10 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm }: ConfirmModalProps) => {
         <div
           id="modalMessage"
           className="text-[18px] mb-[25px] leading-normal whitespace-pre-wrap text-left text-[#2c3e50]"
-        ></div>
+        >
+          {messages.map((message) => message)}
+        </div>
+
         <div id="modalButtons" className="flex flex-row gap-2.5 justify-center">
           <button
             id="modalBtnOk"
