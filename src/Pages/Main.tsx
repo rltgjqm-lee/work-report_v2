@@ -5,6 +5,7 @@ import ConfirmModal from "../components/molecule/ConfirmModal";
 
 import Page1OnConfig from "./main_pages/Page1OnConfig";
 import Page2Dashboard from "./main_pages/Page2Dashbord";
+import Page3DateTime from "./main_pages/Page3DateTime";
 
 import type { ActivityLogFormData } from "../types/form";
 
@@ -92,9 +93,6 @@ const Main = () => {
   }, []);
 
   // 기존 비즈니스 로직 함수들 (저장 등)
-  const savePage3 = () => {
-    /* 저장 로직 */
-  };
   const savePage4 = () => {
     /* 저장 로직 */
   };
@@ -105,7 +103,6 @@ const Main = () => {
     /* 저장 로직 */
   };
 
-  const updateHiddenTime = (type: string) => type;
   const toggleAccidentInput = (bool: boolean) => bool;
   const exportReportsFromPage6 = () => {};
 
@@ -146,9 +143,11 @@ const Main = () => {
         {/* 3. 활동 일시 페이지 */}
         {page === 3 && (
           <Page3DateTime
-            onSave={savePage3}
-            onNext={goNextStep}
-            onUpdateTime={updateHiddenTime}
+            formData={formData}
+            setFormData={setFormData}
+            // onSave,
+            onNext={() => setPage(4)}
+            onAlert={openAlertModal}
           />
         )}
 
@@ -192,125 +191,6 @@ export default Main;
 // ==========================================
 // 하위 페이지 컴포넌트들
 // ==========================================
-/* Page 3: 활동 일시 */
-const Page3DateTime = ({
-  onSave,
-  onNext,
-  onUpdateTime,
-}: {
-  onSave: () => void;
-  onNext: () => void;
-  onUpdateTime: (type: string) => void;
-}) => (
-  <div
-    className="p-[30px_20px] flex-1 flex-col max-[600px]:p-[20px_15px]"
-    id="page3"
-    style={{ display: "none" }}
-  >
-    <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-      활동 일시를 입력해주세요
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        활동일{" "}
-        <span className="text-[12px] font-normal text-[#e74c3c]">
-          (*활동일을 선택하여 주세요)
-        </span>
-      </div>
-      <input
-        type="date"
-        id="actDate"
-        className="w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]"
-      />
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        활동시간을 선택하여 주세요 <br />
-        <span className="text-[12px] font-normal text-[#e74c3c]">
-          (*활동 종료 후 시간을 선택하여 주세요)
-        </span>
-      </div>
-      <div className="flex flex-col gap-3 w-full">
-        <div className="w-full">
-          <div className="mb-1 font-bold text-[#34495e] text-[14px]">시작</div>
-          <div className="flex gap-2 w-full">
-            <select
-              id="startAmpm"
-              className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
-              onChange={() => onUpdateTime("start")}
-              defaultValue="AM"
-            >
-              <option value="AM">오전</option>
-              <option value="PM">오후</option>
-            </select>
-            <select
-              id="startHour"
-              className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
-              onChange={() => onUpdateTime("start")}
-            ></select>
-            <span className="text-[16px] font-bold align-self-center self-center">
-              :
-            </span>
-            <select
-              id="startMin"
-              className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
-              onChange={() => onUpdateTime("start")}
-            ></select>
-          </div>
-          <input type="hidden" id="actStart" />
-        </div>
-        <div className="w-full">
-          <div className="mb-1 font-bold text-[#34495e] text-[14px]">종료</div>
-          <div className="flex gap-2 w-full">
-            <select
-              id="endAmpm"
-              className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
-              onChange={() => onUpdateTime("end")}
-              defaultValue="PM"
-            >
-              <option value="AM">오전</option>
-              <option value="PM">오후</option>
-            </select>
-            <select
-              id="endHour"
-              className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
-              onChange={() => onUpdateTime("end")}
-            ></select>
-            <span className="text-[16px] font-bold align-self-center self-center">
-              :
-            </span>
-            <select
-              id="endMin"
-              className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
-              onChange={() => onUpdateTime("end")}
-            ></select>
-          </div>
-          <input type="hidden" id="actEnd" />
-        </div>
-      </div>
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="font-bold text-[#34495e] mb-1">총</div>
-      <div className="flex items-center gap-2.5 w-full">
-        <div
-          id="actTotalTime"
-          className="w-full p-[14px] text-[16px] border-[2.5px] border-[#2c3e50] rounded-xl outline-none bg-[#f9f9f9] text-center color-[#00a0e9] font-bold max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]"
-        >
-          - 시간
-        </div>
-      </div>
-    </div>
-
-    <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <Button variant="blue" onClick={onSave}>
-        저장하기
-      </Button>
-      <Button variant="white" onClick={onNext}>
-        다음
-      </Button>
-    </div>
-  </div>
-);
 
 /* Page 4: 활동 내용 및 장소 */
 const Page4ContentPlace = ({
