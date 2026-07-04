@@ -6,6 +6,9 @@ import { PAGE1_RULES } from "../../types/validationRules";
 import type { ActivityLogFormData } from "../../types/form";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 
+/**
+ * Page 1: 사용자 정보 입력
+ */
 const Page1OnConfig = ({
   formData,
   onChange,

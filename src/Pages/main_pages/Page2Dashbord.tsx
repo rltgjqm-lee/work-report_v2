@@ -1,4 +1,3 @@
-/* Page 2: 대시보드 */
 import { useState, useRef, useEffect } from "react";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../../types/form";
@@ -19,6 +18,9 @@ interface Page2Props {
   onAlert: (messages: string[]) => void;
 }
 
+/**
+ * Page 2: 활동 일지 대시보드
+ */
 const Page2Dashboard = ({
   formData,
   db,
