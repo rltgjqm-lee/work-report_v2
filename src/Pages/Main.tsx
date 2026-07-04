@@ -1,17 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-import ConfirmModal from "../components/molecule/ConfirmModal";
-// import LabeledInput from "../components/molecule/LabeledInput";
-import PdfTemplate from "../components/organism/PdfTemplate";
 import Button from "../components/atoms/Button";
-
-import type { ActivityLogFormData } from "../types/form";
-// import { PAGE1_RULES } from "../types/validationRules";
-// import { LOCAL_STORAGE_KEYS } from "../constants/storage";
-
-// import { validateForm } from "../utils/validateFormData";
+import ConfirmModal from "../components/molecule/ConfirmModal";
 
 import Page1OnConfig from "./main_pages/Page1OnConfig";
+import Page2Dashboard from "./main_pages/Page2Dashbord";
+
+import type { ActivityLogFormData } from "../types/form";
+
+import { INDEXED_DB_CONFIG } from "../constants/storage";
 
 const initialFormData: ActivityLogFormData = {
   orgName: "",
@@ -33,11 +30,8 @@ const initialFormData: ActivityLogFormData = {
 };
 
 const Main = () => {
+  const [db, setDb] = useState<IDBDatabase | null>(null);
   const [page, setPage] = useState<number>(1);
-
-  const goNextStep = () => setPage((prev) => Math.min(prev + 1, 6));
-  // const prevStep = () => setPage((prev) => Math.max(prev - 1, 1));
-  const goHome = () => setPage(1);
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
@@ -46,16 +40,56 @@ const Main = () => {
   const [formData, setFormData] =
     useState<ActivityLogFormData>(initialFormData);
 
+  const goNextStep = () => setPage((prev) => Math.min(prev + 1, 6));
+  // const prevStep = () => setPage((prev) => Math.max(prev - 1, 1));
+  const goHome = () => setPage(1);
+
   const handleInputChange = <T extends keyof ActivityLogFormData>(
     field: T,
     value: ActivityLogFormData[T],
   ) => {
     setFormData((prev) => ({
       ...prev,
-      // value가 문자열일 때만 trim()을 하고, 아니면 그대로 넣어서 에러를 방지합니다.
-      [field]: typeof value === "string" ? value.trim() : value,
+      [field]: typeof value === "string" ? value : value,
     }));
   };
+
+  // 💡 앱이 처음 구동될 때 IndexedDB를 최초 1회 연결하는 이펙트
+  useEffect(() => {
+    // 1. 상수에 정의된 이름("SeniorActivityDB")과 버전(1)으로 DB 오픈
+    const request = window.indexedDB.open(
+      INDEXED_DB_CONFIG.DB_NAME,
+      INDEXED_DB_CONFIG.DB_VERSION,
+    );
+
+    // 2. DB가 브라우저에 처음 생성되거나 버전이 바뀔 때 실행 (테이블 생성 단계)
+    // 💡 event 타입을 IDBVersionChangeEvent로 정확하게 매핑
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      const target = event.target as IDBOpenDBRequest;
+      const database: IDBDatabase = target.result;
+
+      // 일지를 저장할 테이블("activity_logs")이 없으면 새로 만듭니다.
+      if (!database.objectStoreNames.contains(INDEXED_DB_CONFIG.STORE_NAME)) {
+        database.createObjectStore(INDEXED_DB_CONFIG.STORE_NAME, {
+          keyPath: "id", // 고유 키값 이름
+          autoIncrement: true, // 일지를 쓸 때마다 1, 2, 3... 자동으로 ID 증가
+        });
+      }
+    };
+
+    // 3. DB 연결에 성공했을 때 실행
+    // 💡 event 타입을 표준 Event로 지정하고 OpenDBRequest로 안전하게 타겟팅
+    request.onsuccess = (event: Event) => {
+      console.log("🎯 IndexedDB 연결 성공!");
+      const target = event.target as IDBOpenDBRequest;
+      setDb(target.result); // 연결된 DB 객체를 상태에 보관
+    };
+
+    // 4. DB 연결에 실패했을 때 실행
+    request.onerror = () => {
+      console.error("❌ IndexedDB 연결 실패");
+    };
+  }, []);
 
   // 기존 비즈니스 로직 함수들 (저장 등)
   const savePage3 = () => {
@@ -73,7 +107,6 @@ const Main = () => {
 
   const updateHiddenTime = (type: string) => type;
   const toggleAccidentInput = (bool: boolean) => bool;
-  const exportReports = () => {};
   const exportReportsFromPage6 = () => {};
 
   // 모달 공용 헬퍼 함수
@@ -102,8 +135,11 @@ const Main = () => {
         {/* 2. 대시보드 페이지 */}
         {page === 2 && (
           <Page2Dashboard
-            onStartNewLog={() => setPage(3)}
-            onExportReports={exportReports}
+            formData={formData}
+            db={db}
+            onNavigateToPage3={() => setPage(3)}
+            onAlert={openAlertModal}
+            setFormData={setFormData}
           />
         )}
 
@@ -140,24 +176,6 @@ const Main = () => {
         )}
       </div>
 
-      {/* PDF 렌더링용 숨김 템플릿 */}
-      <PdfTemplate
-        activityRows={
-          <tr>
-            <td>1</td>
-            <td>2026-07-03</td>
-            <td>09:00</td>
-            <td>12:00</td>
-            <td>3시간</td>
-            <td>길거리 환경 미화 활동 진행</td>
-            <td>00동 일대</td>
-            <td>없음</td>
-            <td>(서명)</td>
-            <td>(서명)</td>
-          </tr>
-        }
-      />
-
       {/* 알림 모달 */}
       <ConfirmModal
         isOpen={modalOpen}
@@ -174,68 +192,6 @@ export default Main;
 // ==========================================
 // 하위 페이지 컴포넌트들
 // ==========================================
-
-/* Page 2: 대시보드 */
-const Page2Dashboard = ({
-  onStartNewLog,
-  onExportReports,
-}: {
-  onStartNewLog: () => void;
-  onExportReports: () => void;
-}) => (
-  <div
-    className="p-[30px_20px] flex-1 flex-col max-[600px]:p-[20px_15px]"
-    id="page2"
-    style={{ display: "none" }}
-  >
-    <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-      <span id="dUser" className="text-[#4364F7]">
-        홍길동
-      </span>
-      님 환영합니다 <br />
-      <span className="text-[16px] text-[#7f8c8d]" id="dOrg">
-        노인일자리 및 사회활동 지원사업
-      </span>
-    </div>
-
-    <div className="flex justify-between items-center mb-[15px] bg-white p-[10px_15px] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
-      <button className="flex-none p-[5px_20px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222]">
-        ◀
-      </button>
-      <div
-        id="currentMonthDisplay"
-        className="text-[18px] font-bold text-[#2c3e50]"
-      >
-        2026년 5월
-      </div>
-      <button className="flex-none p-[5px_20px] text-[18px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222]">
-        ▶
-      </button>
-    </div>
-    <div
-      className="flex-1 max-h-[50vh] overflow-y-auto mb-5 p-2.5 bg-[#f0f3f5] rounded-xl grid grid-cols-3 gap-2.5 content-start max-[600px]:gap-[6px] max-[600px]:p-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-      id="activityList"
-    ></div>
-
-    <div className="flex flex-col gap-2.5 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <Button
-        variant="blue"
-        onClick={onStartNewLog}
-        className="w-full flex-none"
-      >
-        새로운 일지 작성하기
-      </Button>
-      <Button
-        variant="white"
-        onClick={onExportReports}
-        className="w-full flex-none"
-      >
-        보고서 출력 (PDF / 엑셀)
-      </Button>
-    </div>
-  </div>
-);
-
 /* Page 3: 활동 일시 */
 const Page3DateTime = ({
   onSave,
