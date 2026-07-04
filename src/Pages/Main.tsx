@@ -12,7 +12,7 @@ import { PdfTemplate } from "../components/organism/PdfTemplate";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
-import { INDEXED_DB_CONFIG } from "../constants/storage";
+import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 
 // 💡 "AM 09:00" 같은 폼 표기를 "09:00" 24시간제 문자열로 변환
 const formatTimeField = (time: ActivityLogFormData["startTime"]): string => {
@@ -70,8 +70,13 @@ const Main = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessages, setModalMessages] = useState<string[]>([]);
 
-  const [formData, setFormData] =
-    useState<ActivityLogFormData>(initialFormData);
+  // 💡 이전에 저장해둔 서명이 있다면 불러와 그대로 재사용
+  const [formData, setFormData] = useState<ActivityLogFormData>(() => ({
+    ...initialFormData,
+    userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
+    demandSignature:
+      localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
+  }));
 
   // functions
   const openAlertModal = (messages: string[]) => {
@@ -107,6 +112,24 @@ const Main = () => {
 
     // 💡 데이터 포맷 조립 (Page2Dashboard가 읽는 ActivityLogItem 스키마와 동기화)
     const logItem = buildLogItemFromFormData(formData);
+
+    // 💡 서명 재사용을 위해 localStorage에도 보관 (참여자 서명은 항상, 확인자 서명은 동의 시에만)
+    if (formData.userSignature) {
+      localStorage.setItem(
+        LOCAL_STORAGE_KEYS.USER_SIGN,
+        formData.userSignature,
+      );
+    }
+    if (formData.demandSignature) {
+      if (formData.saveSignatureConsent) {
+        localStorage.setItem(
+          LOCAL_STORAGE_KEYS.DEMAND_SIGN,
+          formData.demandSignature,
+        );
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN);
+      }
+    }
 
     const request = store.put(logItem);
 
