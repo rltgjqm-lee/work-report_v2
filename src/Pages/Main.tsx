@@ -1,17 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-import Button from "../components/atoms/Button";
 import ConfirmModal from "../components/molecule/ConfirmModal";
 
 import Page1OnConfig from "./main_pages/Page1OnConfig";
-import Page2Dashboard from "./main_pages/Page2Dashbord";
+import Page2Dashboard from "./main_pages/Page2Dashboard";
 import Page3DateTime from "./main_pages/Page3DateTime";
+import Page4ContentPlace from "./main_pages/Page4ContentPlace";
+import Page5Accident from "./main_pages/Page5Accident";
+import Page6Signature from "./main_pages/Page6Signature";
 
 import type { ActivityLogFormData } from "../types/form";
 
 import { INDEXED_DB_CONFIG } from "../constants/storage";
 
+export interface SavedLogItem extends Partial<ActivityLogFormData> {
+  date?: string; // DB 저장 시 쓰인 날짜 키값 대응
+  timestamp?: number;
+}
+
 const initialFormData: ActivityLogFormData = {
+  id: undefined, // 💡 고유 키값 추적을 위해 id 필드를 추가합니다 (처음엔 없음)
   orgName: "",
   projectName: "",
   demandName: "",
@@ -25,13 +33,14 @@ const initialFormData: ActivityLogFormData = {
   hasAccident: false,
   accidentDetail: "",
   accidentAction: "업무수행",
-  userSignature: "",
+  userSignature: "", // ⚠️ 주의: 아래 저장 로직과 서명 필드명을 일치시켜야 합니다.
   demandSignature: "",
   saveSignatureConsent: true,
 };
 
 const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
+  const printAreaRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState<number>(1);
 
   // 모달 상태
@@ -41,9 +50,18 @@ const Main = () => {
   const [formData, setFormData] =
     useState<ActivityLogFormData>(initialFormData);
 
+  // functions
+  const openAlertModal = (messages: string[]) => {
+    setModalMessages(messages);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+  };
+
   const goNextStep = () => setPage((prev) => Math.min(prev + 1, 6));
   // const prevStep = () => setPage((prev) => Math.max(prev - 1, 1));
-  const goHome = () => setPage(1);
 
   const handleInputChange = <T extends keyof ActivityLogFormData>(
     field: T,
@@ -53,6 +71,66 @@ const Main = () => {
       ...prev,
       [field]: typeof value === "string" ? value : value,
     }));
+  };
+
+  const handleSaveStepData = () => {
+    if (!db) {
+      alert("데이터베이스가 연결되지 않았습니다.");
+      return;
+    }
+
+    const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
+    const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
+
+    // 💡 데이터 포맷 조립 (formData 구조와 100% 동기화)
+    const logItem: ActivityLogFormData = {
+      // 💡 id가 있을 때만 객체에 주입 (수정 모드 방어벽)
+      ...(formData.id !== undefined && { id: formData.id }),
+
+      orgName: formData.orgName,
+      projectName: formData.projectName,
+      demandName: formData.demandName,
+      userName: formData.userName,
+      actDate: formData.actDate,
+      startTime: { ...formData.startTime },
+      endTime: { ...formData.endTime },
+      actTotalTime: formData.actTotalTime,
+      actContent: formData.actContent,
+      actPlace: formData.actPlace,
+      hasAccident: formData.hasAccident,
+      accidentDetail: formData.accidentDetail,
+      accidentAction: formData.accidentAction,
+      userSignature: formData.userSignature || "",
+      demandSignature: formData.demandSignature || "",
+      saveSignatureConsent: formData.saveSignatureConsent,
+    };
+
+    // 🔥 핵심: 대시보드에서 기존 일지를 클릭해 수정하는 상황이거나,
+    // 3페이지에서 4페이지로 넘어가며 연달아 '저장하기'를 누를 때 id를 유지시켜 덮어쓰기 유도
+    if (formData.id !== undefined && formData.id !== null) {
+      logItem.id = formData.id;
+    }
+
+    const request = store.put(logItem);
+
+    request.onsuccess = (event: Event) => {
+      const target = event.target as IDBRequest;
+      const savedId = target.result; // IndexedDB가 발급하거나 유지해 준 고유 ID
+
+      // 💡 중요: 새로 생성된 글이라면 발급된 고유 id를 리액트 상태창고에도 업데이트해 줍니다.
+      // 이렇게 해야 4페이지에서 또 저장하기를 눌러도 새로운 글로 복사되지 않고 수정 처리됩니다!
+      setFormData((prev) => ({
+        ...prev,
+        id: savedId,
+      }));
+
+      alert("📝 현재까지 입력된 내용이 안전하게 저장되었습니다.");
+    };
+
+    request.onerror = (err) => {
+      console.error("임시 저장 실패:", err);
+      alert("저장 중 오류가 발생했습니다.");
+    };
   };
 
   // 💡 앱이 처음 구동될 때 IndexedDB를 최초 1회 연결하는 이펙트
@@ -92,30 +170,6 @@ const Main = () => {
     };
   }, []);
 
-  // 기존 비즈니스 로직 함수들 (저장 등)
-  const savePage4 = () => {
-    /* 저장 로직 */
-  };
-  const savePage5 = () => {
-    /* 저장 로직 */
-  };
-  const saveLog = () => {
-    /* 저장 로직 */
-  };
-
-  const toggleAccidentInput = (bool: boolean) => bool;
-  const exportReportsFromPage6 = () => {};
-
-  // 모달 공용 헬퍼 함수
-  const openAlertModal = (messages: string[]) => {
-    setModalMessages(messages);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-  };
-
   return (
     <div className="w-full h-dvh flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
       <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
@@ -145,7 +199,7 @@ const Main = () => {
           <Page3DateTime
             formData={formData}
             setFormData={setFormData}
-            // onSave,
+            onSave={handleSaveStepData}
             onNext={() => setPage(4)}
             onAlert={openAlertModal}
           />
@@ -153,24 +207,35 @@ const Main = () => {
 
         {/* 4. 활동 내용/장소 페이지 */}
         {page === 4 && (
-          <Page4ContentPlace onSave={savePage4} onNext={goNextStep} />
+          <Page4ContentPlace
+            formData={formData}
+            setFormData={setFormData}
+            onAlert={openAlertModal}
+            onSave={handleSaveStepData}
+            onNext={() => setPage(5)}
+          />
         )}
 
         {/* 5. 안전사고 유무 페이지 */}
         {page === 5 && (
           <Page5Accident
-            onSave={savePage5}
-            onNext={goNextStep}
-            onToggleAccident={toggleAccidentInput}
+            formData={formData}
+            setFormData={setFormData}
+            onAlert={openAlertModal}
+            onSave={handleSaveStepData}
+            onNext={() => setPage(6)}
           />
         )}
 
         {/* 6. 서명하기 페이지 */}
         {page === 6 && (
           <Page6Signature
-            onSave={saveLog}
-            onExport={exportReportsFromPage6}
-            onHome={goHome}
+            formData={formData}
+            setFormData={setFormData}
+            printRef={printAreaRef}
+            onAlert={openAlertModal}
+            onSave={handleSaveStepData}
+            onHome={() => setPage(2)}
           />
         )}
       </div>
@@ -179,7 +244,7 @@ const Main = () => {
       <ConfirmModal
         isOpen={modalOpen}
         messages={modalMessages}
-        onConfirm={closeModal} // 확인 누르면 닫히게 설정
+        onConfirm={closeModal}
         onClose={closeModal}
       />
     </div>
@@ -187,237 +252,3 @@ const Main = () => {
 };
 
 export default Main;
-
-// ==========================================
-// 하위 페이지 컴포넌트들
-// ==========================================
-
-/* Page 4: 활동 내용 및 장소 */
-const Page4ContentPlace = ({
-  onSave,
-  onNext,
-}: {
-  onSave: () => void;
-  onNext: () => void;
-}) => (
-  <div
-    className="p-[30px_20px] flex-1 flex-col max-[600px]:p-[20px_15px]"
-    id="page4"
-    style={{ display: "none" }}
-  >
-    <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-      활동 내용 및 장소
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        활동내용
-      </div>
-      <textarea
-        id="actContent"
-        className="w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]"
-        rows={2}
-        placeholder="오늘 수행하신 활동 내용을 적어주세요."
-      ></textarea>
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        활동장소
-      </div>
-      <textarea
-        id="actPlace"
-        className="w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]"
-        rows={2}
-        placeholder="활동하신 장소를 적어주세요."
-      ></textarea>
-    </div>
-
-    <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <Button variant="blue" onClick={onSave}>
-        저장하기
-      </Button>
-      <Button variant="white" onClick={onNext}>
-        다음
-      </Button>
-    </div>
-  </div>
-);
-
-/* Page 5: 안전사고 유무 */
-const Page5Accident = ({
-  onSave,
-  onNext,
-  onToggleAccident,
-}: {
-  onSave: () => void;
-  onNext: () => void;
-  onToggleAccident: (bool: boolean) => void;
-}) => (
-  <div
-    className="p-[30px_20px] flex-1 flex-col max-[600px]:p-[20px_15px]"
-    id="page5"
-    style={{ display: "none" }}
-  >
-    <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-      안전사고 유무 확인
-    </div>
-    <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        안전사고 발생유무
-      </div>
-      <div className="flex gap-[30px] mt-2.5 w-full flex-none max-[600px]:gap-5">
-        <label className="text-[14px] flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="accident"
-            className="w-5 h-5"
-            onClick={() => onToggleAccident(true)}
-          />{" "}
-          유
-        </label>
-        <label className="text-[14px] flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="accident"
-            className="w-5 h-5"
-            defaultChecked
-            onClick={() => onToggleAccident(false)}
-          />{" "}
-          무
-        </label>
-      </div>
-    </div>
-    <div
-      className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full"
-      id="accidentDetailRow"
-      style={{ display: "none" }}
-    >
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        사고내용 및 조치내용
-      </div>
-      <input
-        type="text"
-        id="accidentDetail"
-        className="w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]"
-        placeholder="예) 넘어짐, 응급조치 후 지속"
-      />
-    </div>
-    <div
-      className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full"
-      id="accidentActionRow"
-      style={{ display: "none" }}
-    >
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        안전사고 발생 후 업무 수행
-      </div>
-      <div className="flex gap-[30px] mt-2.5 w-full flex-none max-[600px]:gap-5">
-        <label className="text-[14px] flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="accidentAction"
-            className="w-5 h-5"
-            value="귀가"
-          />{" "}
-          귀가
-        </label>
-        <label className="text-[14px] flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="accidentAction"
-            className="w-5 h-5"
-            value="업무수행"
-            defaultChecked
-          />{" "}
-          업무수행
-        </label>
-      </div>
-    </div>
-
-    <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <Button variant="blue" onClick={onSave}>
-        저장하기
-      </Button>
-      <Button variant="white" onClick={onNext}>
-        다음
-      </Button>
-    </div>
-  </div>
-);
-
-/* Page 6: 서명하기 */
-const Page6Signature = ({
-  onSave,
-  onExport,
-  onHome,
-}: {
-  onSave: () => void;
-  onExport: () => void;
-  onHome: () => void;
-}) => (
-  <div
-    className="p-[30px_20px] flex-1 flex-col max-[600px]:p-[20px_15px]"
-    id="page6"
-    style={{ display: "none" }}
-  >
-    <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-      서명을 진행해주세요
-    </div>
-    <div className="flex flex-col items-start mb-1 gap-2.5 w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        참여자 서명
-      </div>
-      <div className="flex-1 border-2 border-dashed border-[#bdc3c7] rounded-xl bg-[#fafafa] relative w-full flex-none mb-0">
-        <canvas
-          id="userCanvas"
-          className="w-full h-[180px] rounded-xl touch-none max-[600px]:h-[120px]"
-        ></canvas>
-        <button className="absolute top-1.5 right-1.5 bg-[#ff4d4d] text-white border-none rounded p-1 text-[16px] z-20 cursor-pointer">
-          지우기
-        </button>
-      </div>
-    </div>
-    <div className="text-[13px] text-[#7f8c8d] text-right mb-[25px] w-full">
-      * 최초 서명 시 이후 계속 사용됩니다.
-    </div>
-    <div className="flex flex-col items-start mb-1 gap-2.5 w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        확인자 (수요처) 서명{" "}
-        <span className="text-[14px] font-normal">(선택)</span>
-      </div>
-      <div className="flex-1 border-2 border-dashed border-[#bdc3c7] rounded-xl bg-[#fafafa] relative w-full flex-none mb-0">
-        <canvas
-          id="demandCanvas"
-          className="w-full h-[180px] rounded-xl touch-none max-[600px]:h-[120px]"
-        ></canvas>
-        <button className="absolute top-1.5 right-1.5 bg-[#ff4d4d] text-white border-none rounded p-1 text-[16px] z-20 cursor-pointer">
-          지우기
-        </button>
-      </div>
-    </div>
-    <label className="flex items-start gap-2 mb-[25px] cursor-pointer mt-3 w-full">
-      <input
-        type="checkbox"
-        id="demandConsentCheck"
-        defaultChecked
-        className="w-[18px] h-[18px] mt-0.5"
-      />
-      <div className="text-[14px] text-[#2c3e50]">
-        <strong>이 서명으로 계속 사용함에 동의합니다.</strong> <br />
-        <span className="text-[12px] text-[#7f8c8d]">
-          (체크 해제 시 다음 작성 시 서명이 지워진 채로 시작합니다)
-        </span>
-      </div>
-    </label>
-
-    <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-      <Button variant="blue" onClick={onSave}>
-        저장하기
-      </Button>
-      <Button variant="white" onClick={onExport}>
-        보고서
-      </Button>
-      <Button variant="white" onClick={onHome}>
-        처음으로
-      </Button>
-    </div>
-  </div>
-);
