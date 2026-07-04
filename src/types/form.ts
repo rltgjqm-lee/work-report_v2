@@ -33,3 +33,19 @@ export interface ActivityLogFormData {
   demandSignature: string; // canvas에서 추출할 base64 이미지 스트링 등
   saveSignatureConsent: boolean;
 }
+
+export interface ActivityLogItem {
+  id?: number;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:MM
+  end: string; // HH:MM
+  totalTime: string;
+  content: string;
+  place: string;
+  accident: "유" | "무";
+  accidentDetail?: string;
+  accidentAction?: string;
+  uSign: string;
+  dSign: string;
+  timestamp: number; // 정렬용 타임스탬프
+}
