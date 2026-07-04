@@ -5,6 +5,8 @@ export const LOCAL_STORAGE_KEYS = {
   CONF_USER: "conf_user", // 참여자 성명
   USER_SIGN: "userSign", // 참여자 서명 (Base64)
   DEMAND_SIGN: "demandSign", // 확인자 서명 (Base64)
+  TARGET_LAT: "target_lat", // 위도
+  TARGET_LON: "target_lon", // 경도
 } as const;
 
 /**
