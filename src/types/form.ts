@@ -1,10 +1,10 @@
 export interface ActivityLogFormData {
   // Page 1: 초기 설정
+  id?: number;
   orgName: string;
   projectName: string;
   demandName: string;
   userName: string;
-
   // Page 3: 활동 일시
   actDate: string;
   startTime: {
