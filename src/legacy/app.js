@@ -184,19 +184,6 @@ function updateMonthDisplay() {
   if (el) el.innerText = `${currentDisplayYear}년 ${currentDisplayMonth}월`;
 }
 
-function changeMonth(delta) {
-  currentDisplayMonth += delta;
-  if (currentDisplayMonth > 12) {
-    currentDisplayMonth = 1;
-    currentDisplayYear++;
-  } else if (currentDisplayMonth < 1) {
-    currentDisplayMonth = 12;
-    currentDisplayYear--;
-  }
-  updateMonthDisplay();
-  loadList();
-}
-
 function toggleAccidentInput(show) {
   document.getElementById("accidentDetailRow").style.display = show
     ? "flex"
@@ -216,114 +203,6 @@ function calcTotalTime(start, end) {
   const diff = eMin - sMin;
   const hours = Math.floor(diff / 60);
   return `${hours}시간`;
-}
-
-// 총 시간 실시간 계산
-const updateTotalTime = () => {
-  const start = document.getElementById("actStart").value;
-  const end = document.getElementById("actEnd").value;
-  const total = calcTotalTime(start, end);
-  document.getElementById("actTotalTime").innerText = total ? total : "- 시간";
-};
-
-function updateHiddenTime(type) {
-  const ampm = document.getElementById(`${type}Ampm`).value;
-  const h = document.getElementById(`${type}Hour`).value;
-  const m = document.getElementById(`${type}Min`).value;
-  const hidden = document.getElementById(
-    type === "start" ? "actStart" : "actEnd",
-  );
-  if (ampm && h && m) {
-    let hour24 = parseInt(h);
-    if (ampm === "PM" && hour24 !== 12) hour24 += 12;
-    if (ampm === "AM" && hour24 === 12) hour24 = 0;
-    hidden.value = `${String(hour24).padStart(2, "0")}:${m}`;
-    updateTotalTime();
-  } else {
-    hidden.value = "";
-    updateTotalTime();
-  }
-}
-
-async function savePage3() {
-  const date = document.getElementById("actDate").value;
-  const start = document.getElementById("actStart").value;
-  const end = document.getElementById("actEnd").value;
-  const total = document.getElementById("actTotalTime").innerText;
-
-  if (!date || !start || !end) {
-    await customAlert("활동일과 시작, 종료 시간을 모두 입력해 주세요.");
-    return;
-  }
-
-  const startMin = parseInt(start.split(":")[1]);
-  const endMin = parseInt(end.split(":")[1]);
-  if (startMin % 10 !== 0 || endMin % 10 !== 0) {
-    await customAlert(
-      "시간은 10분 단위(00, 10, 20, 30, 40, 50분)로만 입력 가능합니다.",
-    );
-    return;
-  }
-
-  const todayStr = getLocalDateStr();
-  if (date > todayStr) {
-    await customAlert("미래의 날짜로는 일지를 작성할 수 없습니다.");
-    return;
-  } else if (date === todayStr && end) {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [h, m] = end.split(":");
-    const endMinutes = parseInt(h) * 60 + parseInt(m);
-    if (endMinutes > currentMinutes) {
-      await customAlert(
-        "현재 시간 이후(미래 시간)로 일지를 종료할 수 없습니다.",
-      );
-      return;
-    }
-  }
-
-  let msg = `활동일\n${date}\n\n활동시간\n시작 ${start} ~ 종료 ${end}\n${total} 입니다.`;
-  await customAlert(msg);
-}
-
-async function nextFromPage3() {
-  const date = document.getElementById("actDate").value;
-  const start = document.getElementById("actStart").value;
-  const end = document.getElementById("actEnd").value;
-  let errors = [];
-  if (!date) errors.push("활동일자를 입력해 주세요.");
-  if (!start) errors.push("시작 시간을 입력해 주세요.");
-  if (!end) errors.push("종료 시간을 입력해 주세요.");
-
-  if (start && end) {
-    const startMin = parseInt(start.split(":")[1]);
-    const endMin = parseInt(end.split(":")[1]);
-    if (startMin % 10 !== 0 || endMin % 10 !== 0) {
-      errors.push(
-        "시간은 10분 단위(00, 10, 20, 30, 40, 50분)로만 지정해 주세요.",
-      );
-    }
-  }
-
-  // 미래 시간 방지 로직
-  const todayStr = getLocalDateStr();
-  if (date > todayStr) {
-    errors.push("미래의 날짜로는 일지를 작성할 수 없습니다.");
-  } else if (date === todayStr && end) {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [h, m] = end.split(":");
-    const endMinutes = parseInt(h) * 60 + parseInt(m);
-    if (endMinutes > currentMinutes) {
-      errors.push("현재 시간 이후(미래 시간)로 일지를 종료할 수 없습니다.");
-    }
-  }
-
-  if (errors.length > 0) {
-    await customAlert(errors.join("\n"));
-    return;
-  }
-  showPage(4);
 }
 
 async function savePage4() {
@@ -487,57 +366,6 @@ async function goHomeFromPage6() {
   }
 }
 
-function loadList() {
-  if (!db) return;
-  const listEl = document.getElementById("activityList");
-  listEl.innerHTML = "";
-  updateMonthDisplay();
-
-  const tx = db.transaction(STORE_NAME, "readonly");
-  const store = tx.objectStore(STORE_NAME);
-  const req = store.getAll();
-
-  req.onsuccess = (e) => {
-    let logs = e.target.result || [];
-
-    // 선택된 연/월 데이터만 필터링
-    logs = logs.filter((log) => {
-      const [y, m, d] = log.date.split("-");
-      return (
-        parseInt(y) === currentDisplayYear &&
-        parseInt(m) === currentDisplayMonth
-      );
-    });
-
-    if (logs.length === 0) {
-      // 빈 상태일 때 그리드 속성 때문에 깨질 수 있으므로 임시 해제
-      listEl.style.display = "block";
-      listEl.innerHTML =
-        "<div style='text-align:center; padding: 20px; color:#7f8c8d;'>이 달에 작성된 일지가 없습니다.</div>";
-      return;
-    } else {
-      listEl.style.display = "grid";
-    }
-
-    // 최신 날짜가 위로 오게 정렬 (내림차순)
-    logs
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .forEach((log) => {
-        const div = document.createElement("div");
-        div.style.background = "#fff";
-        div.style.padding = "8px 6px";
-        div.style.borderRadius = "8px";
-        div.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-        div.innerHTML = `
-                <div style="font-weight:bold; color:#2c3e50; font-size:12px; margin-bottom: 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${log.date}</div>
-                <div style="color:#34495e; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${log.start}~${log.end}</div>
-                <div style="color:#7f8c8d; font-size:11px; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${log.content}</div>
-            `;
-        listEl.appendChild(div);
-      });
-  };
-}
-
 function renderTimeSelects() {
   const hours12 = Array.from({ length: 12 }, (_, i) =>
     String(i + 1).padStart(2, "0"),
@@ -556,27 +384,5 @@ function renderTimeSelects() {
   document.getElementById("endHour").innerHTML = hourOptions;
   document.getElementById("endMin").innerHTML = minOptions;
 }
-
-// 시작 로직
-window.onload = () => {
-  initDB();
-  renderTimeSelects();
-
-  const o = localStorage.getItem("conf_org");
-  if (o) {
-    const proj = localStorage.getItem("conf_proj") || "";
-    document.getElementById("orgName").value = o;
-    document.getElementById("projectName").value = proj;
-    document.getElementById("demandName").value =
-      localStorage.getItem("conf_demand") || "";
-    document.getElementById("userName").value =
-      localStorage.getItem("conf_user") || "";
-    document.getElementById("dUser").innerText =
-      localStorage.getItem("conf_user") || "";
-    document.getElementById("topProjName").innerText = proj || "참여사업";
-  }
-  // 페이지 1 고정 표시 (사업명 변경 대비)
-  showPage(1);
-};
 
 let isSavedOnPage6 = false;
