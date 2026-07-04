@@ -8,15 +8,38 @@ import Page3DateTime from "./main_pages/Page3DateTime";
 import Page4ContentPlace from "./main_pages/Page4ContentPlace";
 import Page5Accident from "./main_pages/Page5Accident";
 import Page6Signature from "./main_pages/Page6Signature";
+import { PdfTemplate } from "../components/organism/PdfTemplate";
 
-import type { ActivityLogFormData } from "../types/form";
+import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG } from "../constants/storage";
 
-export interface SavedLogItem extends Partial<ActivityLogFormData> {
-  date?: string; // DB 저장 시 쓰인 날짜 키값 대응
-  timestamp?: number;
-}
+// 💡 "AM 09:00" 같은 폼 표기를 "09:00" 24시간제 문자열로 변환
+const formatTimeField = (time: ActivityLogFormData["startTime"]): string => {
+  let hour24 = parseInt(time.hour, 10);
+  if (time.ampm === "PM" && hour24 !== 12) hour24 += 12;
+  if (time.ampm === "AM" && hour24 === 12) hour24 = 0;
+  return `${String(hour24).padStart(2, "0")}:${time.minute}`;
+};
+
+// 💡 폼 데이터를 Page2Dashboard/PdfTemplate이 쓰는 ActivityLogItem 한 건으로 변환
+const buildLogItemFromFormData = (
+  formData: ActivityLogFormData,
+): ActivityLogItem => ({
+  ...(formData.id !== undefined && { id: formData.id }),
+  date: formData.actDate,
+  start: formatTimeField(formData.startTime),
+  end: formatTimeField(formData.endTime),
+  totalTime: formData.actTotalTime,
+  content: formData.actContent,
+  place: formData.actPlace,
+  accident: formData.hasAccident ? "유" : "무",
+  accidentDetail: formData.accidentDetail,
+  accidentAction: formData.accidentAction,
+  uSign: formData.userSignature || "",
+  dSign: formData.demandSignature || "",
+  timestamp: Date.now(),
+});
 
 const initialFormData: ActivityLogFormData = {
   id: undefined, // 💡 고유 키값 추적을 위해 id 필드를 추가합니다 (처음엔 없음)
@@ -82,34 +105,8 @@ const Main = () => {
     const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
     const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
 
-    // 💡 데이터 포맷 조립 (formData 구조와 100% 동기화)
-    const logItem: ActivityLogFormData = {
-      // 💡 id가 있을 때만 객체에 주입 (수정 모드 방어벽)
-      ...(formData.id !== undefined && { id: formData.id }),
-
-      orgName: formData.orgName,
-      projectName: formData.projectName,
-      demandName: formData.demandName,
-      userName: formData.userName,
-      actDate: formData.actDate,
-      startTime: { ...formData.startTime },
-      endTime: { ...formData.endTime },
-      actTotalTime: formData.actTotalTime,
-      actContent: formData.actContent,
-      actPlace: formData.actPlace,
-      hasAccident: formData.hasAccident,
-      accidentDetail: formData.accidentDetail,
-      accidentAction: formData.accidentAction,
-      userSignature: formData.userSignature || "",
-      demandSignature: formData.demandSignature || "",
-      saveSignatureConsent: formData.saveSignatureConsent,
-    };
-
-    // 🔥 핵심: 대시보드에서 기존 일지를 클릭해 수정하는 상황이거나,
-    // 3페이지에서 4페이지로 넘어가며 연달아 '저장하기'를 누를 때 id를 유지시켜 덮어쓰기 유도
-    if (formData.id !== undefined && formData.id !== null) {
-      logItem.id = formData.id;
-    }
+    // 💡 데이터 포맷 조립 (Page2Dashboard가 읽는 ActivityLogItem 스키마와 동기화)
+    const logItem = buildLogItemFromFormData(formData);
 
     const request = store.put(logItem);
 
@@ -229,14 +226,22 @@ const Main = () => {
 
         {/* 6. 서명하기 페이지 */}
         {page === 6 && (
-          <Page6Signature
-            formData={formData}
-            setFormData={setFormData}
-            printRef={printAreaRef}
-            onAlert={openAlertModal}
-            onSave={handleSaveStepData}
-            onHome={() => setPage(2)}
-          />
+          <>
+            <Page6Signature
+              formData={formData}
+              setFormData={setFormData}
+              printRef={printAreaRef}
+              onAlert={openAlertModal}
+              onSave={handleSaveStepData}
+              onHome={() => setPage(1)}
+            />
+            {/* 💡 보고서 출력 버튼이 조준할 히든 인쇄용 템플릿 */}
+            <PdfTemplate
+              printRef={printAreaRef}
+              formData={formData}
+              filteredLogs={[buildLogItemFromFormData(formData)]}
+            />
+          </>
         )}
       </div>
 

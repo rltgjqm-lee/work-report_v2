@@ -80,6 +80,7 @@ const Page2Dashboard = ({
 
   // 6. 현재 대시보드 시점에 필터링된 데이터 조각 계산
   const filteredLogs = logs.filter((log) => {
+    if (!log.date) return false; // 💡 손상되었거나 구버전 스키마의 레코드 방어
     const [y, m] = log.date.split("-");
     return parseInt(y) === currentYear && parseInt(m) === currentMonth;
   });

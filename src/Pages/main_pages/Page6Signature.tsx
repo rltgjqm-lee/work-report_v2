@@ -23,14 +23,14 @@ const Page6Signature = ({
   const userCanvasRef = useRef<HTMLCanvasElement>(null);
   const demandCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 💡 [Canvas 그림판 초기화 이펙트]
+  // 💡 [Canvas 그림판 초기화 이펙트] 마운트 시 1회만 실행 (서명 저장으로 인한 재초기화 방지)
   useEffect(() => {
     const initCanvas = (
       canvas: HTMLCanvasElement,
       key: "userSignature" | "demandSignature",
     ) => {
       const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      if (!ctx) return () => {};
 
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width;
@@ -87,17 +87,31 @@ const Page6Signature = ({
       const savedSign = formData[key];
       if (savedSign && savedSign.startsWith("data:image")) {
         const img = new Image();
-        img.src = savedSign;
         img.onload = () =>
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        img.src = savedSign;
       }
+
+      return () => {
+        canvas.removeEventListener("mousedown", startDrawing);
+        canvas.removeEventListener("mousemove", draw);
+        canvas.removeEventListener("mouseup", stopDrawing);
+        canvas.removeEventListener("mouseleave", stopDrawing);
+        canvas.removeEventListener("touchstart", startDrawing);
+        canvas.removeEventListener("touchmove", draw);
+        canvas.removeEventListener("touchend", stopDrawing);
+      };
     };
 
+    const cleanups: Array<() => void> = [];
     if (userCanvasRef.current)
-      initCanvas(userCanvasRef.current, "userSignature");
+      cleanups.push(initCanvas(userCanvasRef.current, "userSignature"));
     if (demandCanvasRef.current)
-      initCanvas(demandCanvasRef.current, "demandSignature");
-  }, [formData.userSignature, formData.demandSignature, setFormData]);
+      cleanups.push(initCanvas(demandCanvasRef.current, "demandSignature"));
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 💡 [그림판 클리어 핸들러]
   const handleClearCanvas = (
