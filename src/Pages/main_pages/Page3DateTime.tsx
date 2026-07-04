@@ -21,6 +21,11 @@ const Page3DateTime = ({
   onNext,
   onAlert,
 }: Page3Props) => {
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }, []);
+
   // 💡 [시간 옵션 배열 생성] 기존 바닐라 JS의 for() 루프 구조를 useMemo 메모이제이션으로 선언적 치환
   const hourOptions = useMemo(
     () => Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0")),
@@ -97,12 +102,52 @@ const Page3DateTime = ({
     }));
   };
 
+  // 💡 미래 날짜/시간 방지 검증 - 위반 시 에러 메시지, 통과 시 null
+  const getFutureLogError = (): string | null => {
+    if (formData.actDate > todayStr) {
+      return "미래의 날짜로는 일지를 작성할 수 없습니다.";
+    }
+    if (formData.actDate === todayStr && endHour && endMin) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      let end24Hour = parseInt(endHour, 10);
+      if (endAmpm === "PM" && end24Hour !== 12) end24Hour += 12;
+      if (endAmpm === "AM" && end24Hour === 12) end24Hour = 0;
+      const endMinutes = end24Hour * 60 + parseInt(endMin, 10);
+
+      if (endMinutes > currentMinutes) {
+        return "현재 시간 이후(미래 시간)로 일지를 종료할 수 없습니다.";
+      }
+    }
+    return null;
+  };
+
+  // 💡 임시 저장 검증 핸들러
+  const handleSaveStep = () => {
+    if (formData.actDate) {
+      const futureError = getFutureLogError();
+      if (futureError) {
+        onAlert([futureError]);
+        return;
+      }
+    }
+    onSave?.();
+  };
+
   // 💡 다음 단계 검증 핸들러
   const handleNextStep = () => {
     if (!formData.actDate) {
       onAlert(["활동일을 선택하여 주세요."]);
       return;
     }
+
+    const futureError = getFutureLogError();
+    if (futureError) {
+      onAlert([futureError]);
+      return;
+    }
+
     if (
       formData.actTotalTime === "- 시간" ||
       formData.actTotalTime === "시간 오류"
@@ -134,6 +179,7 @@ const Page3DateTime = ({
           type="date"
           id="actDate"
           value={formData.actDate}
+          max={todayStr}
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, actDate: e.target.value }))
           }
@@ -276,7 +322,7 @@ const Page3DateTime = ({
 
       {/* 하단 액션 버튼 */}
       <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-        <Button variant="blue" onClick={onSave}>
+        <Button variant="blue" onClick={handleSaveStep}>
           저장하기
         </Button>
         <Button variant="white" onClick={handleNextStep}>
