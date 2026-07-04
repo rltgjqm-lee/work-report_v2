@@ -42,6 +42,37 @@ const Page1OnConfig = ({
     onAlert(["기관 정보가 안전하게 저장되었습니다."]);
   };
 
+  const handleClickTestFarLocationButton = () => {
+    if (!("geolocation" in navigator)) {
+      onAlert(["이 브라우저는 위치 서비스를 지원하지 않습니다."]);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // 위도 0.1도 ≈ 11.1km 이므로 실제 위치에서 10km 이상 떨어진 지점을 기준점으로 설정
+        const farLat = latitude + 0.1;
+
+        localStorage.setItem(LOCAL_STORAGE_KEYS.TARGET_LAT, farLat.toString());
+        localStorage.setItem(
+          LOCAL_STORAGE_KEYS.TARGET_LON,
+          longitude.toString(),
+        );
+
+        onAlert([
+          "[테스트] 기준 위치가 현재 위치에서 10km 이상 떨어진 지점으로 설정되었습니다.",
+          "앱을 새로고침하면 반경 이탈 알림이 즉시 발생합니다.",
+        ]);
+      },
+      (error) => {
+        console.error("현재 위치를 가져오지 못했습니다:", error);
+        onAlert(["현재 위치를 가져오지 못했습니다."]);
+      },
+      { enableHighAccuracy: true, timeout: 5000 },
+    );
+  };
+
   const handleClickNextButton = () => {
     const errors = validateForm(formData, PAGE1_RULES);
 
@@ -127,8 +158,19 @@ const Page1OnConfig = ({
         />
       </div>
 
+      {/* 지오펜싱 테스트 버튼 */}
+      <div className="flex justify-center mt-auto max-[600px]:mt-5">
+        <Button
+          variant="white"
+          onClick={handleClickTestFarLocationButton}
+          className="!flex-none w-full"
+        >
+          [테스트] 반경 10km 이탈 위치로 설정
+        </Button>
+      </div>
+
       {/* 액션 버튼 */}
-      <div className="flex justify-center gap-4 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
+      <div className="flex justify-center gap-4 pt-5 max-[600px]:pt-3">
         <Button variant="blue" onClick={handleClickSaveButton}>
           저장하기
         </Button>
