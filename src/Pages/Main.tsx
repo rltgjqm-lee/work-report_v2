@@ -74,8 +74,7 @@ const Main = () => {
   const [formData, setFormData] = useState<ActivityLogFormData>(() => ({
     ...initialFormData,
     userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
-    demandSignature:
-      localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
+    demandSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
   }));
 
   // functions
