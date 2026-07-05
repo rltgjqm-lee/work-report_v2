@@ -191,7 +191,7 @@ const Main = () => {
 
   return (
     <div className="w-full h-dvh flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
-      <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
+      <div className="w-full h-full bg-white rounded-xl overflow-y-auto overflow-x-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
         {/* 1. 초기 설정 페이지 */}
         {page === 1 && (
           <Page1OnConfig
