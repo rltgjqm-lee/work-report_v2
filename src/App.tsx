@@ -41,9 +41,8 @@ function App() {
 
   return (
     <div className="app">
-      <TopBar />
       <BrowserRouter>
-        {/* <Header /> */}
+        <TopBar />
         <Routes>
           <Route path="/*" element={<Main />}></Route>
           <Route path="/admin" element={<Admin />}></Route>
