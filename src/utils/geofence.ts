@@ -44,12 +44,6 @@ if (
   }
 }
 
-const TARGET_LAT = parseFloat(
-  localStorage.getItem(LOCAL_STORAGE_KEYS.TARGET_LAT) || "0",
-);
-const TARGET_LON = parseFloat(
-  localStorage.getItem(LOCAL_STORAGE_KEYS.TARGET_LON) || "0",
-);
 const MAX_DISTANCE_KM = 1.5;
 
 let watchId: number | null = null;
@@ -124,9 +118,18 @@ export const startGeofenceTracking = () => {
   watchId = navigator.geolocation.watchPosition(
     (position) => {
       if (isAlerted) return;
+
+      // 💡 위치 업데이트마다 최신 기준점을 읽어와야 Admin 페이지에서 바꾼 값이 즉시 반영됨
+      const targetLat = parseFloat(
+        localStorage.getItem(LOCAL_STORAGE_KEYS.TARGET_LAT) || "0",
+      );
+      const targetLon = parseFloat(
+        localStorage.getItem(LOCAL_STORAGE_KEYS.TARGET_LON) || "0",
+      );
+
       const distance = getDistanceKM(
-        TARGET_LAT,
-        TARGET_LON,
+        targetLat,
+        targetLon,
         position.coords.latitude,
         position.coords.longitude,
       );
