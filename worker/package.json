@@ -1,0 +1,23 @@
+{
+  "name": "work-report-api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply work-report-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply work-report-db --remote"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251008.0",
+    "drizzle-kit": "^0.31.6",
+    "typescript": "~6.0.2",
+    "wrangler": "^4.28.0"
+  }
+}

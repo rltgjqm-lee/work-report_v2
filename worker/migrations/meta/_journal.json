@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1783387193347,
+      "tag": "0000_bright_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1783389887627,
+      "tag": "0001_noisy_blonde_phantom",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783393086795,
+      "tag": "0002_moaning_loa",
+      "breakpoints": true
+    }
+  ]
+}

@@ -33,3 +33,8 @@ node_modules/.vite
 # OS
 .DS_Store
 Thumbs.db
+
+# Cloudflare Workers local state
+worker/.wrangler
+.wrangler
+worker/.dev.vars

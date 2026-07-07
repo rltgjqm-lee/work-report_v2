@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "work-report-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-03",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "work-report-db",
+      "database_id": "c7375437-44bf-411a-8fd6-78d03f30d117"
+    }
+  ]
+}
