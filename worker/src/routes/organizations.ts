@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 
-import { organizations } from "../db/schema";
+import { organizations, programs } from "../db/schema";
 import { canAccessOrg, getAuth } from "../lib/authz";
 import type { Env } from "../types";
 
@@ -46,7 +46,14 @@ app.post("/", async (c) => {
   }
 
   const db = drizzle(c.env.DB);
-  const body = await c.req.json<{ name?: string }>();
+  const body = await c.req.json<{
+    name?: string;
+    address?: string;
+    rep?: string;
+    phone?: string;
+    fax?: string;
+    bizNo?: string;
+  }>();
 
   if (!body.name) {
     return c.json({ error: "name is required" }, 400);
@@ -54,10 +61,70 @@ app.post("/", async (c) => {
 
   const result = await db
     .insert(organizations)
-    .values({ name: body.name })
+    .values({
+      name: body.name,
+      address: body.address,
+      rep: body.rep,
+      phone: body.phone,
+      fax: body.fax,
+      bizNo: body.bizNo,
+    })
     .returning();
 
   return c.json(result[0], 201);
+});
+
+app.put("/:id", async (c) => {
+  const auth = getAuth(c);
+  const id = Number(c.req.param("id"));
+
+  if (!canAccessOrg(auth, id)) return c.json({ error: "Forbidden" }, 403);
+
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{
+    name?: string;
+    address?: string;
+    rep?: string;
+    phone?: string;
+    fax?: string;
+    bizNo?: string;
+  }>();
+
+  const result = await db
+    .update(organizations)
+    .set(body)
+    .where(eq(organizations.id, id))
+    .returning();
+
+  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  return c.json(result[0]);
+});
+
+app.delete("/:id", async (c) => {
+  const auth = getAuth(c);
+  if (auth.role !== "super_admin") {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const id = Number(c.req.param("id"));
+  const db = drizzle(c.env.DB);
+
+  const dependentPrograms = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.organizationId, id));
+
+  if (dependentPrograms.length > 0) {
+    return c.json({ error: "소속 사업단이 있어 삭제할 수 없습니다" }, 400);
+  }
+
+  const result = await db
+    .delete(organizations)
+    .where(eq(organizations.id, id))
+    .returning();
+
+  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  return c.json({ success: true });
 });
 
 export default app;

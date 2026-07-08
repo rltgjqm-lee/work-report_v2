@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { jwt } from "hono/jwt";
 
 import auth from "./routes/auth";
@@ -7,6 +8,15 @@ import programs from "./routes/programs";
 import type { Env } from "./types";
 
 const app = new Hono<Env>();
+
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "DELETE"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 app.route("/login", auth);
 

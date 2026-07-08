@@ -22,6 +22,13 @@
       "when": 1783393086795,
       "tag": "0002_moaning_loa",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1783400263183,
+      "tag": "0003_smart_millenium_guard",
+      "breakpoints": true
     }
   ]
 }

@@ -32,7 +32,9 @@ if (role === "org_admin" && !organizationIdRaw) {
 const main = async () => {
   const hash = await hashPassword(password);
   const escapedHash = hash.replace(/'/g, "''");
-  const organizationIdValue = organizationIdRaw ? Number(organizationIdRaw) : "NULL";
+  const organizationIdValue = organizationIdRaw
+    ? Number(organizationIdRaw)
+    : "NULL";
 
   console.log(
     `INSERT INTO admins (username, password_hash, role, organization_id) VALUES ('${username}', '${escapedHash}', '${role}', ${organizationIdValue});`,

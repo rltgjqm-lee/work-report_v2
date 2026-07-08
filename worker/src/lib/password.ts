@@ -6,7 +6,11 @@ const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const fromBase64 = (b64: string) =>
   Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
-const derive = async (password: string, salt: Uint8Array, iterations: number) => {
+const derive = async (
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+) => {
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(password),

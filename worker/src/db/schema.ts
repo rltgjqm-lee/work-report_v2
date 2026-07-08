@@ -4,6 +4,11 @@ import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 export const organizations = sqliteTable("organizations", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
+  address: text("address"),
+  rep: text("rep"),
+  phone: text("phone"),
+  fax: text("fax"),
+  bizNo: text("biz_no"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
