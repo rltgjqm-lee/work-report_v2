@@ -208,7 +208,11 @@ const ProgramsPage = () => {
             </thead>
             <tbody>
               {pageItems.map((program) => (
-                <tr key={program.id} className="hover:bg-[#f8fafc]">
+                <tr
+                  key={program.id}
+                  className="hover:bg-[#f8fafc]"
+                  onClick={() => navigate(`/admin/programs/${program.id}`)}
+                >
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {program.name}
                   </td>
@@ -227,19 +231,19 @@ const ProgramsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => navigate(`/admin/programs/${program.id}`)}
-                    >
-                      상세
-                    </button>
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={() => openEdit(program)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openEdit(program);
+                      }}
                     >
                       수정
                     </button>
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => handleDelete(program)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDelete(program);
+                      }}
                     >
                       삭제
                     </button>
