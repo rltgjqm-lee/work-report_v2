@@ -7,6 +7,7 @@ export const LOCAL_STORAGE_KEYS = {
   DEMAND_SIGN: "demandSign", // 확인자 서명 (Base64)
   TARGET_LAT: "target_lat", // 위도
   TARGET_LON: "target_lon", // 경도
+  ADMIN_JWT: "admin_jwt", // 관리자 콘솔 JWT 토큰
 } as const;
 
 /**
