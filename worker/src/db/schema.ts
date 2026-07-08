@@ -36,6 +36,7 @@ export const participants = sqliteTable("participants", {
     .references(() => programs.id),
   name: text("name").notNull(),
   demandName: text("demand_name"),
+  phoneLast4: text("phone_last4").notNull(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

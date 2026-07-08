@@ -186,14 +186,27 @@ app.post("/:id/participants", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  const body = await c.req.json<{ name?: string; demandName?: string }>();
+  const body = await c.req.json<{
+    name?: string;
+    demandName?: string;
+    phoneLast4?: string;
+  }>();
+
   if (!body.name) {
     return c.json({ error: "name is required" }, 400);
+  }
+  if (!body.phoneLast4 || !/^\d{4}$/.test(body.phoneLast4)) {
+    return c.json({ error: "phoneLast4 must be 4 digits" }, 400);
   }
 
   const result = await db
     .insert(participants)
-    .values({ programId, name: body.name, demandName: body.demandName })
+    .values({
+      programId,
+      name: body.name,
+      demandName: body.demandName,
+      phoneLast4: body.phoneLast4,
+    })
     .returning();
 
   return c.json(result[0], 201);

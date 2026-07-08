@@ -106,7 +106,7 @@ export const deleteProgram = (id: number) =>
 
 export const addParticipant = (
   programId: number,
-  data: { name: string; demandName?: string },
+  data: { name: string; demandName?: string; phoneLast4: string },
 ) =>
   request<Participant>(`/api/programs/${programId}/participants`, {
     method: "POST",

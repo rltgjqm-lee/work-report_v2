@@ -31,7 +31,11 @@ const ProgramDetailPage = () => {
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", demandName: "" });
+  const [form, setForm] = useState({
+    name: "",
+    demandName: "",
+    phoneLast4: "",
+  });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,12 +62,16 @@ const ProgramDetailPage = () => {
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
   const openAdd = () => {
-    setForm({ name: "", demandName: "" });
+    setForm({ name: "", demandName: "", phoneLast4: "" });
     setError(null);
     setModalOpen(true);
   };
 
   const handleSave = async () => {
+    if (!/^\d{4}$/.test(form.phoneLast4)) {
+      setError("전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.");
+      return;
+    }
     try {
       await addParticipant(programId, form);
       setModalOpen(false);
@@ -166,7 +174,7 @@ const ProgramDetailPage = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] table-fixed border-collapse">
+          <table className="w-full min-w-[640px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -177,6 +185,9 @@ const ProgramDetailPage = () => {
                 </th>
                 <th className="w-[220px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   수요처명
+                </th>
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  전화번호 뒷자리
                 </th>
                 <th className="w-[100px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
@@ -192,6 +203,9 @@ const ProgramDetailPage = () => {
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {p.demandName}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {p.phoneLast4}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     <button
@@ -241,6 +255,21 @@ const ProgramDetailPage = () => {
             value={form.demandName}
             onChange={(e) =>
               setForm((f) => ({ ...f, demandName: e.target.value }))
+            }
+          />
+        </FormField>
+        <FormField label="전화번호 뒷 4자리">
+          <input
+            className={inputClass}
+            value={form.phoneLast4}
+            maxLength={4}
+            inputMode="numeric"
+            placeholder="0000"
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                phoneLast4: e.target.value.replace(/\D/g, "").slice(0, 4),
+              }))
             }
           />
         </FormField>

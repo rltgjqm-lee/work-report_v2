@@ -27,6 +27,7 @@ export type Participant = {
   programId: number;
   name: string;
   demandName: string | null;
+  phoneLast4: string;
   createdAt: string;
 };
 

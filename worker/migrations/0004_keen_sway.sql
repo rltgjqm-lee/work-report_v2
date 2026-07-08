@@ -1,0 +1,1 @@
+ALTER TABLE `participants` ADD `phone_last4` text NOT NULL;
