@@ -2,20 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
-  addParticipant,
   deleteParticipant,
   getOrganization,
   getProgram,
   listPrograms,
 } from "../api/client";
 import Pagination from "../components/Pagination";
-import SlideModal from "../components/SlideModal";
-import FormField from "../components/FormField";
+
 import { usePagination } from "../hooks/usePagination";
 import {
-  btnGhostClass,
   btnPrimaryClass,
-  inputClass,
   rowActionBtnClass,
   searchInputClass,
 } from "../uiClasses";
@@ -30,13 +26,6 @@ const ProgramDetailPage = () => {
   const [orgName, setOrgName] = useState("-");
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
   const [search, setSearch] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    demandName: "",
-    phoneLast4: "",
-  });
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     listPrograms().then(setAllPrograms);
@@ -60,26 +49,6 @@ const ProgramDetailPage = () => {
   );
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
-
-  const openAdd = () => {
-    setForm({ name: "", demandName: "", phoneLast4: "" });
-    setError(null);
-    setModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!/^\d{4}$/.test(form.phoneLast4)) {
-      setError("전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.");
-      return;
-    }
-    try {
-      await addParticipant(programId, form);
-      setModalOpen(false);
-      refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
-    }
-  };
 
   const handleDelete = async (participantId: number, name: string) => {
     if (!confirm(`'${name}' 님을 참여자 명단에서 삭제하시겠습니까?`)) return;
@@ -123,7 +92,10 @@ const ProgramDetailPage = () => {
               </option>
             ))}
           </select>
-          <button className={btnPrimaryClass} onClick={openAdd}>
+          <button
+            className={btnPrimaryClass}
+            // onClick={openAdd}
+          >
             + 참여자 추가
           </button>
         </div>
@@ -223,58 +195,6 @@ const ProgramDetailPage = () => {
 
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
-
-      <SlideModal
-        isOpen={modalOpen}
-        title="참여자 추가"
-        onClose={() => setModalOpen(false)}
-        footer={
-          <>
-            <button
-              className={btnGhostClass}
-              onClick={() => setModalOpen(false)}
-            >
-              취소
-            </button>
-            <button className={btnPrimaryClass} onClick={handleSave}>
-              저장
-            </button>
-          </>
-        }
-      >
-        <FormField label="이름">
-          <input
-            className={inputClass}
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          />
-        </FormField>
-        <FormField label="수요처명">
-          <input
-            className={inputClass}
-            value={form.demandName}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, demandName: e.target.value }))
-            }
-          />
-        </FormField>
-        <FormField label="전화번호 뒷 4자리">
-          <input
-            className={inputClass}
-            value={form.phoneLast4}
-            maxLength={4}
-            inputMode="numeric"
-            placeholder="0000"
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                phoneLast4: e.target.value.replace(/\D/g, "").slice(0, 4),
-              }))
-            }
-          />
-        </FormField>
-        {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
-      </SlideModal>
     </div>
   );
 };
