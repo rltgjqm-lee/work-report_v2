@@ -20,6 +20,7 @@ import {
 import type { Program, ProgramWithParticipants } from "../types";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
+import { downloadAddParticipantsTemplate } from "../../utils/downloadAddParticipantsTemplate";
 
 const emptyForm = {
   name: "",
@@ -236,13 +237,11 @@ const ProgramDetailPage = () => {
                 양식을 내려받아 작성한 뒤 업로드하세요
               </div>
             </div>
-            <button className={btnGhostClass}>
-              <a
-                href="/public/upload_participant_template.xlsx"
-                download="참여자_추가_양식.xlsx"
-              >
-                양식 다운로드
-              </a>
+            <button
+              className={btnGhostClass}
+              onClick={downloadAddParticipantsTemplate}
+            >
+              양식 다운로드
             </button>
           </div>
 
