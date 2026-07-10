@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import OrganizationsPage from "./pages/OrganizationsPage";
 import ProgramsPage from "./pages/ProgramsPage";
 import ProgramDetailPage from "./pages/ProgramDetailPage";
+import ParticipantsPage from "./pages/ParticipantsPage";
 
 const AdminApp = () => (
   <AuthProvider>
@@ -21,6 +22,7 @@ const AdminApp = () => (
           <Route path="organizations" element={<OrganizationsPage />} />
           <Route path="programs" element={<ProgramsPage />} />
           <Route path="programs/:id" element={<ProgramDetailPage />} />
+          <Route path="participants" element={<ParticipantsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />

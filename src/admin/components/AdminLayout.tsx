@@ -5,12 +5,14 @@ import { useAuth } from "../context/useAuth";
 const navItems = [
   { to: "/admin/organizations", label: "기관 관리", badge: "1" },
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
+  { to: "/admin/participants", label: "참여자 관리", badge: "3" },
 ];
 
 const getTopbarTitle = (pathname: string) => {
   if (/^\/admin\/programs\/\d+/.test(pathname)) return "사업단 상세";
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
+  if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   return "관리자 콘솔";
 };
 
