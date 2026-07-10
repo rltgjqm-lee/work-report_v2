@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
+  addParticipant,
+  bulkAddParticipants,
   deleteParticipant,
   getOrganization,
   getProgram,
@@ -21,6 +23,7 @@ import type { Program, ProgramWithParticipants } from "../types";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
 import { downloadAddParticipantsTemplate } from "../../utils/downloadAddParticipantsTemplate";
+import { parseParticipantsFile } from "../../utils/parseParticipantsFile";
 
 const emptyForm = {
   name: "",
@@ -39,6 +42,7 @@ const ProgramDetailPage = () => {
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     listPrograms().then(setAllPrograms);
@@ -74,7 +78,50 @@ const ProgramDetailPage = () => {
   };
 
   const handleClickAddButton = () => {
+    setForm(emptyForm);
+    setSelectedFile(null);
     setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setForm(emptyForm);
+    setSelectedFile(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(e.target.files?.[0] ?? null);
+  };
+
+  const handleSave = async () => {
+    try {
+      if (selectedFile) {
+        const rows = await parseParticipantsFile(selectedFile);
+        if (rows.length === 0) {
+          alert("파일에서 등록할 참여자를 찾지 못했습니다.");
+          return;
+        }
+        await bulkAddParticipants(programId, { participants: rows });
+      } else {
+        if (!form.name) {
+          alert("이름을 입력해주세요.");
+          return;
+        }
+        if (!/^\d{4}$/.test(form.lastPhoneNumber)) {
+          alert("전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.");
+          return;
+        }
+        await addParticipant(programId, {
+          name: form.name,
+          demandName: form.demandName || undefined,
+          phoneLast4: form.lastPhoneNumber,
+        });
+      }
+      closeModal();
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    }
   };
 
   if (!program) return null;
@@ -210,19 +257,13 @@ const ProgramDetailPage = () => {
         <SlideModal
           isOpen={isModalOpen}
           title={"참여자 추가"}
-          onClose={() => setIsModalOpen(false)}
+          onClose={closeModal}
           footer={
             <>
-              <button
-                className={btnGhostClass}
-                onClick={() => setIsModalOpen(false)}
-              >
+              <button className={btnGhostClass} onClick={closeModal}>
                 취소
               </button>
-              <button
-                className={btnPrimaryClass}
-                // onClick={handleSave}
-              >
+              <button className={btnPrimaryClass} onClick={handleSave}>
                 저장
               </button>
             </>
@@ -247,20 +288,27 @@ const ProgramDetailPage = () => {
 
           <label
             htmlFor="part-file-input"
-            className="flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed border-[#c7cdd6] rounded-[2px] py-6 px-4 cursor-pointer text-center hover:bg-[#f7f8fa] hover:border-[#9aa5b3]"
+            className={`flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-[2px] py-6 px-4 cursor-pointer text-center hover:bg-[#f7f8fa] ${
+              selectedFile
+                ? "border-[#1e3a5f] bg-[#f5f8fb]"
+                : "border-[#c7cdd6] hover:border-[#9aa5b3]"
+            }`}
           >
             <input
               id="part-file-input"
               type="file"
               accept=".xlsx,.xls,.csv"
               className="hidden"
+              onChange={handleFileChange}
             />
             <span className="text-lg text-[#6b7280]">⬆</span>
             <span className="text-[13px] font-semibold text-[#374151]">
-              파일이 선택되지 않았습니다
+              {selectedFile ? selectedFile.name : "파일이 선택되지 않았습니다"}
             </span>
             <span className="text-[11.5px] text-[#9aa1ab]">
-              클릭하여 파일 선택 (xlsx)
+              {selectedFile
+                ? "다른 파일을 선택하려면 다시 클릭하세요"
+                : "클릭하여 파일 선택 (xlsx)"}
             </span>
           </label>
 
@@ -282,7 +330,7 @@ const ProgramDetailPage = () => {
               className={inputClass}
               value={form.demandName}
               onChange={(e) =>
-                setForm((f) => ({ ...f, address: e.target.value }))
+                setForm((f) => ({ ...f, demandName: e.target.value }))
               }
             />
           </FormField>
@@ -290,8 +338,16 @@ const ProgramDetailPage = () => {
             <input
               className={inputClass}
               value={form.lastPhoneNumber}
+              maxLength={4}
+              inputMode="numeric"
+              placeholder="0000"
               onChange={(e) =>
-                setForm((f) => ({ ...f, address: e.target.value }))
+                setForm((f) => ({
+                  ...f,
+                  lastPhoneNumber: e.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 4),
+                }))
               }
             />
           </FormField>

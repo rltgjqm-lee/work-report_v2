@@ -212,6 +212,62 @@ app.post("/:id/participants", async (c) => {
   return c.json(result[0], 201);
 });
 
+app.post("/:id/participants/bulk", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessOrg(auth, program.organizationId)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const body = await c.req.json<{
+    participants?: {
+      name?: string;
+      demandName?: string;
+      phoneLast4?: string;
+    }[];
+  }>();
+
+  const rows = body.participants ?? [];
+  if (rows.length === 0) {
+    return c.json({ error: "participants must be a non-empty array" }, 400);
+  }
+
+  const errors: { index: number; error: string }[] = [];
+  rows.forEach((row, index) => {
+    if (!row.name) {
+      errors.push({ index, error: "name is required" });
+    } else if (!row.phoneLast4 || !/^\d{4}$/.test(row.phoneLast4)) {
+      errors.push({ index, error: "phoneLast4 must be 4 digits" });
+    }
+  });
+
+  if (errors.length > 0) {
+    return c.json({ error: "validation failed", details: errors }, 400);
+  }
+
+  const result = await db
+    .insert(participants)
+    .values(
+      rows.map((row) => ({
+        programId,
+        name: row.name!,
+        demandName: row.demandName,
+        phoneLast4: row.phoneLast4!,
+      })),
+    )
+    .returning();
+
+  return c.json(result, 201);
+});
+
 app.delete("/:id/participants/:participantId", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);

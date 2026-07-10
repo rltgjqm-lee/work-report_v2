@@ -118,3 +118,14 @@ export const deleteParticipant = (programId: number, participantId: number) =>
     `/api/programs/${programId}/participants/${participantId}`,
     { method: "DELETE" },
   );
+
+export const bulkAddParticipants = (
+  programId: number,
+  data: {
+    participants: { name: string; demandName?: string; phoneLast4: string }[];
+  },
+) =>
+  request<Participant[]>(`/api/programs/${programId}/participants/bulk`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
