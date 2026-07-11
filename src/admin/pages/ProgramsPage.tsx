@@ -22,6 +22,7 @@ import {
   searchInputClass,
   selectClass,
 } from "../uiClasses";
+import { KOREAN_REGIONS, SIDO_LIST } from "../data/koreanRegions";
 import type { Organization, Program } from "../types";
 
 const emptyForm = {
@@ -31,6 +32,8 @@ const emptyForm = {
   endDate: "",
   startTime: "",
   endTime: "",
+  regionSido: "",
+  regionSigungu: "",
 };
 
 const ProgramsPage = () => {
@@ -101,6 +104,8 @@ const ProgramsPage = () => {
       endDate: program.endDate,
       startTime: program.startTime,
       endTime: program.endTime,
+      regionSido: program.regionSido ?? "",
+      regionSigungu: program.regionSigungu ?? "",
     });
     setError(null);
     setModalOpen(true);
@@ -114,6 +119,8 @@ const ProgramsPage = () => {
         endDate: form.endDate,
         startTime: form.startTime,
         endTime: form.endTime,
+        regionSido: form.regionSido || undefined,
+        regionSigungu: form.regionSigungu || undefined,
         ...(role === "super_admin" && !editingId
           ? { organizationId: Number(form.organizationId) }
           : {}),
@@ -323,6 +330,49 @@ const ProgramsPage = () => {
                   setForm((f) => ({ ...f, endDate: e.target.value }))
                 }
               />
+            </FormField>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <FormField label="시/도 (재난문자 지역 매칭용)">
+              <select
+                className={inputClass}
+                value={form.regionSido}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    regionSido: e.target.value,
+                    regionSigungu: "",
+                  }))
+                }
+              >
+                <option value="">선택하세요</option>
+                {SIDO_LIST.map((sido) => (
+                  <option key={sido} value={sido}>
+                    {sido}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="시/군/구">
+              <select
+                className={inputClass}
+                value={form.regionSigungu}
+                disabled={!form.regionSido}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, regionSigungu: e.target.value }))
+                }
+              >
+                <option value="">선택하세요</option>
+                {(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => (
+                  <option key={sigungu} value={sigungu}>
+                    {sigungu}
+                  </option>
+                ))}
+              </select>
             </FormField>
           </div>
         </div>

@@ -19,6 +19,8 @@ export type Program = {
   endDate: string;
   startTime: string;
   endTime: string;
+  regionSido: string | null;
+  regionSigungu: string | null;
   createdAt: string;
 };
 
