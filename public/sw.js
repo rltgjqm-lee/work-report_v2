@@ -60,7 +60,27 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// 4. 반경 이탈 알림 클릭 처리 이벤트
+// 4. 재난문자 Web Push 수신 처리
+self.addEventListener("push", (event) => {
+  const data = (() => {
+    try {
+      return event.data ? event.data.json() : {};
+    } catch {
+      return {};
+    }
+  })();
+
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "🚨 재난문자", {
+      body: data.body ?? "",
+      icon: "/logo.png",
+      tag: "disaster-alert",
+      renotify: true,
+    }),
+  );
+});
+
+// 5. 반경 이탈 알림 클릭 처리 이벤트
 self.addEventListener("notificationclick", (event) => {
   event.notification.close(); // 사용자가 클릭하면 상단 바에서 알림 창을 닫음
 

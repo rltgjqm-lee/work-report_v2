@@ -8,6 +8,7 @@ export const LOCAL_STORAGE_KEYS = {
   TARGET_LAT: "target_lat", // 위도
   TARGET_LON: "target_lon", // 경도
   ADMIN_JWT: "admin_jwt", // 관리자 콘솔 JWT 토큰
+  SELECTED_PROGRAM_ID: "selected_program_id", // 선택한 사업단 ID (재난문자 푸시 매칭용)
 } as const;
 
 /**

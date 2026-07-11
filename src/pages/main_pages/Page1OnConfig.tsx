@@ -1,10 +1,22 @@
+import { useEffect, useState } from "react";
+
 import Button from "../../components/atoms/Button";
 import LabeledInput from "../../components/molecule/LabeledInput";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
+import { subscribeToPush } from "../../utils/pushSubscription";
+import {
+  listPublicOrganizations,
+  listPublicPrograms,
+  type PublicOrganization,
+  type PublicProgram,
+} from "../../utils/publicApi";
 
 import type { ActivityLogFormData } from "../../types/form";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
+
+const selectClassName =
+  "w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border bg-white max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]";
 
 /**
  * Page 1: 사용자 정보 입력
@@ -23,11 +35,62 @@ const Page1OnConfig = ({
   onNext: () => void;
   onAlert: (messages: string[]) => void;
 }) => {
+  const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
+  const [programs, setPrograms] = useState<PublicProgram[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+
+  useEffect(() => {
+    listPublicOrganizations()
+      .then(setOrganizations)
+      .catch(() => {
+        onAlert([
+          "기관 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요.",
+        ]);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!selectedOrgId) return;
+    listPublicPrograms(Number(selectedOrgId))
+      .then(setPrograms)
+      .catch(() => onAlert(["사업단 목록을 불러오지 못했습니다."]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOrgId]);
+
+  const handleSelectOrg = (orgId: string) => {
+    setSelectedOrgId(orgId);
+    setSelectedProgramId("");
+    setPrograms([]);
+    onChange(
+      "orgName",
+      organizations.find((o) => String(o.id) === orgId)?.name ?? "",
+    );
+    onChange("projectName", "");
+  };
+
+  const handleSelectProgram = (programId: string) => {
+    setSelectedProgramId(programId);
+    onChange(
+      "projectName",
+      programs.find((p) => String(p.id) === programId)?.name ?? "",
+    );
+  };
+
   const saveToLocalStorage = () => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_ORG, formData.orgName);
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_PROJ, formData.projectName);
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_DEMAND, formData.demandName);
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_USER, formData.userName);
+
+    if (selectedProgramId) {
+      localStorage.setItem(
+        LOCAL_STORAGE_KEYS.SELECTED_PROGRAM_ID,
+        selectedProgramId,
+      );
+      subscribeToPush(Number(selectedProgramId));
+    }
   };
 
   const handleClickSaveButton = () => {
@@ -78,26 +141,43 @@ const Page1OnConfig = ({
         노인공익활동사업 활동일지
       </div>
 
-      {/* 기관명 입력 */}
+      {/* 기관명 선택 */}
       <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <LabeledInput
-          labelTitle={"기관명"}
-          id={"orgName"}
-          placeholder={"예) 한국노인인력개발원"}
-          value={formData.orgName}
-          onChange={(e) => onChange("orgName", e.target.value)}
-        />
+        <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
+          기관명
+        </div>
+        <select
+          className={selectClassName}
+          value={selectedOrgId}
+          onChange={(e) => handleSelectOrg(e.target.value)}
+        >
+          <option value="">선택하세요</option>
+          {organizations.map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* 참여사업명 입력*/}
+      {/* 참여사업명 선택*/}
       <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <LabeledInput
-          labelTitle="참여사업명"
-          id="projectName"
-          placeholder="예) 안전한 길거리 조성"
-          value={formData.projectName}
-          onChange={(e) => onChange("projectName", e.target.value)}
-        />
+        <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
+          참여사업명
+        </div>
+        <select
+          className={selectClassName}
+          value={selectedProgramId}
+          disabled={!selectedOrgId}
+          onChange={(e) => handleSelectProgram(e.target.value)}
+        >
+          <option value="">선택하세요</option>
+          {programs.map((program) => (
+            <option key={program.id} value={program.id}>
+              {program.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* 수요처명 입력*/}
