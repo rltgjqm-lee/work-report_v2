@@ -9,5 +9,8 @@
       "database_name": "work-report-db",
       "database_id": "c7375437-44bf-411a-8fd6-78d03f30d117"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["*/2 * * * *"]
+  }
 }

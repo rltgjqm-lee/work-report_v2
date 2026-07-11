@@ -11,6 +11,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply work-report-db --remote"
   },
   "dependencies": {
+    "@pushforge/builder": "^2.0.5",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.6.7"
   },

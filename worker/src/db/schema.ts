@@ -24,6 +24,8 @@ export const programs = sqliteTable("programs", {
   endDate: text("end_date").notNull(),
   startTime: text("start_time").notNull(),
   endTime: text("end_time").notNull(),
+  regionSido: text("region_sido"),
+  regionSigungu: text("region_sigungu"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
@@ -55,6 +57,30 @@ export const admins = sqliteTable("admins", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+export const pushSubscriptions = sqliteTable("push_subscriptions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 재난문자 중복 발송 방지용 처리 이력 (외부 API 메시지 고유 id 기록)
+export const processedDisasterMessages = sqliteTable(
+  "processed_disaster_messages",
+  {
+    id: text("id").primaryKey(),
+    processedAt: text("processed_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+);
 
 // 향후 어드민/일지 제출 연동 시 사용 (이번 단계에서는 API 미제공)
 export const activityLogs = sqliteTable("activity_logs", {

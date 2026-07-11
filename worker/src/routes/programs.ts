@@ -63,13 +63,23 @@ app.post("/", async (c) => {
     endDate?: string;
     startTime?: string;
     endTime?: string;
+    regionSido?: string;
+    regionSigungu?: string;
   }>();
 
   const organizationId =
     auth.role === "super_admin"
       ? body.organizationId
       : (auth.organizationId as number);
-  const { name, startDate, endDate, startTime, endTime } = body;
+  const {
+    name,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    regionSido,
+    regionSigungu,
+  } = body;
   if (
     !organizationId ||
     !name ||
@@ -89,7 +99,16 @@ app.post("/", async (c) => {
 
   const result = await db
     .insert(programs)
-    .values({ organizationId, name, startDate, endDate, startTime, endTime })
+    .values({
+      organizationId,
+      name,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      regionSido,
+      regionSigungu,
+    })
     .returning();
 
   return c.json(result[0], 201);
@@ -116,6 +135,8 @@ app.put("/:id", async (c) => {
     endDate?: string;
     startTime?: string;
     endTime?: string;
+    regionSido?: string;
+    regionSigungu?: string;
   }>();
 
   const result = await db
