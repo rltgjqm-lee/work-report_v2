@@ -5,6 +5,7 @@ import {
   programs,
   pushSubscriptions,
   processedDisasterMessages,
+  disasterPushLogs,
 } from "../db/schema";
 import { fetchRecentDisasterMessages } from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
@@ -64,6 +65,13 @@ export const checkDisasterAlerts = async (
           { title: "🚨 재난문자", body: message.message },
           { privateJWK: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT },
         );
+
+        await db.insert(disasterPushLogs).values({
+          programId: sub.programId,
+          messageId: message.id,
+          endpoint: sub.endpoint,
+          success: result.ok,
+        });
 
         if (!result.ok && result.expired) {
           await db

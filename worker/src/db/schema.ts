@@ -82,6 +82,20 @@ export const processedDisasterMessages = sqliteTable(
   },
 );
 
+// 재난문자 발송 로그 (구독/기기 단위 — 구독이 나중에 삭제돼도 조회 가능하도록 programId를 그대로 저장)
+export const disasterPushLogs = sqliteTable("disaster_push_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id),
+  messageId: text("message_id").notNull(),
+  endpoint: text("endpoint").notNull(),
+  success: integer("success", { mode: "boolean" }).notNull(),
+  sentAt: text("sent_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
 // 향후 어드민/일지 제출 연동 시 사용 (이번 단계에서는 API 미제공)
 export const activityLogs = sqliteTable("activity_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),

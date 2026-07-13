@@ -43,6 +43,13 @@
       "when": 1783764596367,
       "tag": "0005_early_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1783925779614,
+      "tag": "0006_faithful_kulan_gath",
+      "breakpoints": true
     }
   ]
 }
