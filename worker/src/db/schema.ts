@@ -71,6 +71,24 @@ export const pushSubscriptions = sqliteTable("push_subscriptions", {
     .default(sql`(current_timestamp)`),
 });
 
+// 매칭은 됐지만 아직 실제 발송(외부 fetch) 전인 푸시 대기열.
+// Workers 무료 플랜의 "실행당 외부 요청 50개" 한도 때문에, 매칭 즉시 보내지 않고
+// 여기 쌓아뒀다가 실행마다 정해진 개수만큼만 꺼내서 보낸다 (checkDisasterAlerts.ts 참고).
+export const pendingPushes = sqliteTable("pending_pushes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id),
+  messageId: text("message_id").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  body: text("body").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
 // 재난문자 중복 발송 방지용 처리 이력 (외부 API 메시지 고유 id 기록)
 export const processedDisasterMessages = sqliteTable(
   "processed_disaster_messages",
