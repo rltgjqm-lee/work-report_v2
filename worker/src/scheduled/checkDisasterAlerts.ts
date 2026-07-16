@@ -3,25 +3,21 @@ import { eq, inArray } from "drizzle-orm";
 
 import {
   programs,
+  organizations,
   pushSubscriptions,
-  processedDisasterMessages,
+  safetyAlerts,
   disasterPushLogs,
   pendingPushes,
 } from "../db/schema";
 import { fetchRecentDisasterMessages } from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
+import { getKstNow } from "../lib/kst";
 import type { Env } from "../types";
 
 // Workers 무료 플랜은 실행(invocation) 1번당 외부 fetch(subrequest)가 50개로 제한된다.
 // 재난문자 API 조회에 1개를 쓰므로, 실제 푸시 발송은 실행당 이 개수만큼만 처리하고
 // 나머지는 pending_pushes에 남겨뒀다가 다음 실행(1분 뒤)에 이어서 보낸다.
 const MAX_PUSHES_PER_RUN = 40;
-
-const getKstNow = () => {
-  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const iso = kst.toISOString();
-  return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
-};
 
 type DB = ReturnType<typeof drizzle>;
 
@@ -34,31 +30,36 @@ const enqueueNewMatches = async (
   if (messages.length === 0) return;
 
   const processedRows = await db
-    .select({ id: processedDisasterMessages.id })
-    .from(processedDisasterMessages);
-  const processedIds = new Set(processedRows.map((r) => r.id));
+    .select({ alertId: safetyAlerts.alertId })
+    .from(safetyAlerts);
+  const processedIds = new Set(processedRows.map((r) => r.alertId));
   const newMessages = messages.filter((m) => !processedIds.has(m.id));
   if (newMessages.length === 0) return;
 
   const { date, time } = getKstNow();
-  const allPrograms = await db.select().from(programs);
+
+  // 지역은 4장 결정에 따라 organizations(기관)에 있음 — 사업단은 소속 기관의 지역을 그대로 상속
+  const programsWithOrg = await db
+    .select({ program: programs, org: organizations })
+    .from(programs)
+    .innerJoin(organizations, eq(programs.organizationId, organizations.id));
 
   for (const message of newMessages) {
-    const matchingPrograms = allPrograms.filter((p) => {
-      if (!p.regionSido || !p.regionSigungu) return false;
+    const matchingPrograms = programsWithOrg.filter(({ program, org }) => {
+      if (!org.regionSido || !org.regionSigungu) return false;
       if (
-        !message.region.includes(p.regionSido) ||
-        !message.region.includes(p.regionSigungu)
+        !message.region.includes(org.regionSido) ||
+        !message.region.includes(org.regionSigungu)
       ) {
         return false;
       }
-      if (date < p.startDate || date > p.endDate) return false;
-      if (time < p.startTime || time > p.endTime) return false;
+      if (date < program.startDate || date > program.endDate) return false;
+      if (time < program.startTime || time > program.endTime) return false;
       return true;
     });
 
     if (matchingPrograms.length > 0) {
-      const programIds = matchingPrograms.map((p) => p.id);
+      const programIds = matchingPrograms.map(({ program }) => program.id);
       const subscriptions = await db
         .select()
         .from(pushSubscriptions)
@@ -79,8 +80,13 @@ const enqueueNewMatches = async (
     }
 
     await db
-      .insert(processedDisasterMessages)
-      .values({ id: message.id })
+      .insert(safetyAlerts)
+      .values({
+        alertId: message.id,
+        message: message.message,
+        region: message.region,
+        sentAt: message.sentAt,
+      })
       .onConflictDoNothing();
   }
 };
