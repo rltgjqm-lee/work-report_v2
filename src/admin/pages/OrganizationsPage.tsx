@@ -18,6 +18,7 @@ import {
   rowActionBtnClass,
   searchInputClass,
 } from "../uiClasses";
+import { KOREAN_REGIONS, SIDO_LIST } from "../data/koreanRegions";
 import type { Organization } from "../types";
 
 const emptyForm = {
@@ -27,10 +28,15 @@ const emptyForm = {
   phone: "",
   fax: "",
   bizNo: "",
+  regionSido: "",
+  regionSigungu: "",
+  agencyType: "",
+  prjYear: "",
 };
 
 const OrganizationsPage = () => {
-  const { role } = useAuth();
+  const { admin } = useAuth();
+  const role = admin?.role;
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -70,6 +76,10 @@ const OrganizationsPage = () => {
       phone: org.phone ?? "",
       fax: org.fax ?? "",
       bizNo: org.bizNo ?? "",
+      regionSido: org.regionSido ?? "",
+      regionSigungu: org.regionSigungu ?? "",
+      agencyType: org.agencyType ?? "",
+      prjYear: org.prjYear ?? "",
     });
     setError(null);
     setModalOpen(true);
@@ -108,7 +118,7 @@ const OrganizationsPage = () => {
             사업단이 소속되는 기관 정보를 등록하고 관리합니다.
           </p>
         </div>
-        {role === "super_admin" && (
+        {role === "SUPER_ADMIN" && (
           <button className={btnPrimaryClass} onClick={openAdd}>
             + 기관 추가
           </button>
@@ -181,7 +191,7 @@ const OrganizationsPage = () => {
                     >
                       수정
                     </button>
-                    {role === "super_admin" && (
+                    {role === "SUPER_ADMIN" && (
                       <button
                         className={rowActionBtnClass}
                         onClick={() => handleDelete(org)}
@@ -271,6 +281,75 @@ const OrganizationsPage = () => {
             onChange={(e) => setForm((f) => ({ ...f, bizNo: e.target.value }))}
           />
         </FormField>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <FormField label="시/도 (재난문자 지역 매칭용)">
+              <select
+                className={inputClass}
+                value={form.regionSido}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    regionSido: e.target.value,
+                    regionSigungu: "",
+                  }))
+                }
+              >
+                <option value="">선택하세요</option>
+                {SIDO_LIST.map((sido) => (
+                  <option key={sido} value={sido}>
+                    {sido}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="시/군/구">
+              <select
+                className={inputClass}
+                value={form.regionSigungu}
+                disabled={!form.regionSido}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, regionSigungu: e.target.value }))
+                }
+              >
+                <option value="">선택하세요</option>
+                {(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => (
+                  <option key={sigungu} value={sigungu}>
+                    {sigungu}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <FormField label="기관유형">
+              <input
+                className={inputClass}
+                placeholder="예: 시니어클럽, 노인복지관"
+                value={form.agencyType}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, agencyType: e.target.value }))
+                }
+              />
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="사업연도">
+              <input
+                className={inputClass}
+                placeholder="예: 2026"
+                value={form.prjYear}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, prjYear: e.target.value }))
+                }
+              />
+            </FormField>
+          </div>
+        </div>
         {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
       </SlideModal>
     </div>

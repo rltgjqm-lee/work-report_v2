@@ -4,10 +4,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   addParticipant,
   bulkAddParticipants,
+  createGroup,
+  deleteGroup,
   deleteParticipant,
+  downloadActivityLogExcel,
+  downloadAttendanceExcel,
+  downloadPaymentExcel,
+  dropParticipant,
+  endParticipantLeave,
   getOrganization,
   getProgram,
+  listGroups,
   listPrograms,
+  moveParticipantToGroup,
+  registerParticipantLeave,
 } from "../api/client";
 import Pagination from "../components/Pagination";
 
@@ -18,8 +28,9 @@ import {
   searchInputClass,
   btnGhostClass,
   inputClass,
+  selectClass,
 } from "../uiClasses";
-import type { Program, ProgramWithParticipants } from "../types";
+import type { Group, Program, ProgramWithParticipants } from "../types";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
 import { downloadAddParticipantsTemplate } from "../../utils/downloadAddParticipantsTemplate";
@@ -31,6 +42,14 @@ const emptyForm = {
   demandName: "",
 };
 
+const emptyGroupForm = { name: "", description: "", shiftStart: "", shiftEnd: "" };
+
+const statusLabel: Record<string, string> = {
+  ACTIVE: "활동중",
+  ON_LEAVE: "휴무중",
+  DROPPED: "탈락",
+};
+
 const ProgramDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,10 +58,16 @@ const ProgramDetailPage = () => {
   const [program, setProgram] = useState<ProgramWithParticipants | null>(null);
   const [orgName, setOrgName] = useState("-");
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupForm, setGroupForm] = useState(emptyGroupForm);
+  const [exportMonth, setExportMonth] = useState(
+    new Date().toISOString().slice(0, 7),
+  );
 
   useEffect(() => {
     listPrograms().then(setAllPrograms);
@@ -53,6 +78,7 @@ const ProgramDetailPage = () => {
       setProgram(full);
       getOrganization(full.organizationId).then((org) => setOrgName(org.name));
     });
+    listGroups(programId).then(setGroups);
   };
 
   useEffect(refresh, [programId]);
@@ -121,6 +147,73 @@ const ProgramDetailPage = () => {
       refresh();
     } catch (e) {
       alert(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupForm.name || !groupForm.shiftStart || !groupForm.shiftEnd) {
+      alert("조 이름과 근무시간을 입력해주세요.");
+      return;
+    }
+    try {
+      await createGroup(programId, groupForm);
+      setGroupModalOpen(false);
+      setGroupForm(emptyGroupForm);
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "조 등록에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteGroup = async (group: Group) => {
+    if (!confirm(`'${group.name}' 조를 삭제하시겠습니까?`)) return;
+    try {
+      await deleteGroup(group.id);
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    }
+  };
+
+  const handleAssignGroup = async (participantId: number, groupId: string) => {
+    try {
+      if (groupId) await moveParticipantToGroup(participantId, Number(groupId));
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "조 배정에 실패했습니다.");
+    }
+  };
+
+  const handleDrop = async (participantId: number, name: string) => {
+    const reason = prompt(`'${name}' 님의 탈락 사유를 입력해주세요.`);
+    if (reason === null) return;
+    try {
+      await dropParticipant(participantId, reason || undefined);
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const handleLeave = async (participantId: number, name: string) => {
+    const leaveStart = prompt(`'${name}' 님의 휴무 시작일 (YYYY-MM-DD)`);
+    if (!leaveStart) return;
+    const leaveEnd = prompt(`'${name}' 님의 휴무 종료일 (YYYY-MM-DD)`);
+    if (!leaveEnd) return;
+    try {
+      await registerParticipantLeave(participantId, { leaveStart, leaveEnd });
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const handleEndLeave = async (participantId: number) => {
+    try {
+      await endParticipantLeave(participantId);
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "처리에 실패했습니다.");
     }
   };
 
@@ -193,6 +286,77 @@ const ProgramDetailPage = () => {
         </div>
       </div>
 
+      <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
+          <span className="text-sm font-bold">조 관리</span>
+          <button
+            className={btnGhostClass}
+            onClick={() => {
+              setGroupForm(emptyGroupForm);
+              setGroupModalOpen(true);
+            }}
+          >
+            + 조 추가
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2.5 px-5 py-4">
+          {groups.length === 0 && (
+            <span className="text-[13px] text-[#9aa1ab]">
+              등록된 조가 없습니다.
+            </span>
+          )}
+          {groups.map((g) => (
+            <div
+              key={g.id}
+              className="flex items-center gap-2.5 border border-[#e2e5eb] rounded-[2px] px-3 py-2 text-[13px]"
+            >
+              <span className="font-semibold">{g.name}</span>
+              <span className="text-[#6b7280]">
+                {g.shiftStart}~{g.shiftEnd}
+              </span>
+              <button
+                className={rowActionBtnClass}
+                onClick={() => handleDeleteGroup(g)}
+              >
+                삭제
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+          <span className="text-sm font-bold">엑셀 출력</span>
+          <div className="flex items-center gap-2.5">
+            <input
+              type="month"
+              className={inputClass}
+              value={exportMonth}
+              onChange={(e) => setExportMonth(e.target.value)}
+            />
+            <button
+              className={btnGhostClass}
+              onClick={() => downloadActivityLogExcel(programId, exportMonth)}
+            >
+              활동일지
+            </button>
+            <button
+              className={btnGhostClass}
+              onClick={() => downloadAttendanceExcel(programId, exportMonth)}
+            >
+              출근부
+            </button>
+            <button
+              className={btnGhostClass}
+              onClick={() => downloadPaymentExcel(programId, exportMonth)}
+            >
+              급여대장
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <input
@@ -207,22 +371,28 @@ const ProgramDetailPage = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] table-fixed border-collapse">
+          <table className="w-full min-w-[900px] table-fixed border-collapse">
             <thead>
               <tr>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   번호
                 </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   이름
                 </th>
-                <th className="w-[220px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   수요처명
                 </th>
-                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  전화번호 뒷자리
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  전화번호
                 </th>
-                <th className="w-[100px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  조
+                </th>
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  상태
+                </th>
+                <th className="w-[180px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
             </thead>
             <tbody>
@@ -241,6 +411,47 @@ const ProgramDetailPage = () => {
                     {p.phoneLast4}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <select
+                      className={selectClass}
+                      value={p.groupId ?? ""}
+                      onChange={(e) => handleAssignGroup(p.id, e.target.value)}
+                    >
+                      <option value="">미배정</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {statusLabel[p.status]}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    {p.status === "ACTIVE" && (
+                      <>
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleLeave(p.id, p.name)}
+                        >
+                          휴무등록
+                        </button>
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleDrop(p.id, p.name)}
+                        >
+                          탈락처리
+                        </button>
+                      </>
+                    )}
+                    {p.status === "ON_LEAVE" && (
+                      <button
+                        className={rowActionBtnClass}
+                        onClick={() => handleEndLeave(p.id)}
+                      >
+                        복귀처리
+                      </button>
+                    )}
                     <button
                       className={rowActionBtnClass}
                       onClick={() => handleDelete(p.id, p.name)}
@@ -351,6 +562,70 @@ const ProgramDetailPage = () => {
               }
             />
           </FormField>
+        </SlideModal>
+
+        <SlideModal
+          isOpen={groupModalOpen}
+          title="조 추가"
+          onClose={() => setGroupModalOpen(false)}
+          footer={
+            <>
+              <button
+                className={btnGhostClass}
+                onClick={() => setGroupModalOpen(false)}
+              >
+                취소
+              </button>
+              <button className={btnPrimaryClass} onClick={handleCreateGroup}>
+                저장
+              </button>
+            </>
+          }
+        >
+          <FormField label="조 이름">
+            <input
+              className={inputClass}
+              value={groupForm.name}
+              onChange={(e) =>
+                setGroupForm((f) => ({ ...f, name: e.target.value }))
+              }
+            />
+          </FormField>
+          <FormField label="설명">
+            <input
+              className={inputClass}
+              value={groupForm.description}
+              onChange={(e) =>
+                setGroupForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </FormField>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <FormField label="근무 시작시간">
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={groupForm.shiftStart}
+                  onChange={(e) =>
+                    setGroupForm((f) => ({ ...f, shiftStart: e.target.value }))
+                  }
+                />
+              </FormField>
+            </div>
+            <div className="flex-1">
+              <FormField label="근무 종료시간">
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={groupForm.shiftEnd}
+                  onChange={(e) =>
+                    setGroupForm((f) => ({ ...f, shiftEnd: e.target.value }))
+                  }
+                />
+              </FormField>
+            </div>
+          </div>
         </SlideModal>
 
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />

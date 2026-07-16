@@ -1,12 +1,32 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 
-import { programs, participants } from "../db/schema";
-import { canAccessOrg, getAuth } from "../lib/authz";
+import { programs, participants, groups, attendanceLogs } from "../db/schema";
+import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
 import type { Env } from "../types";
 
 const app = new Hono<Env>();
+
+type ProgramBody = {
+  organizationId?: number;
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  projectType?: string;
+  hourlyWage?: number;
+  educationAmount?: number;
+  educationType?: "add" | "deduct";
+  dementiaAmount?: number;
+  dementiaType?: "add" | "deduct";
+  healthInsuranceRate?: number;
+  longtermCareRate?: number;
+  employmentInsuranceRate?: number;
+  industrialAccidentRate?: number;
+  annualLeaveDailyWage?: number;
+};
 
 app.get("/", async (c) => {
   const auth = getAuth(c);
@@ -14,7 +34,7 @@ app.get("/", async (c) => {
   const queryOrgId = c.req.query("organizationId");
 
   const organizationId =
-    auth.role === "super_admin"
+    auth.role === "SUPER_ADMIN"
       ? queryOrgId
         ? Number(queryOrgId)
         : undefined
@@ -27,7 +47,12 @@ app.get("/", async (c) => {
         .where(eq(programs.organizationId, organizationId))
     : await db.select().from(programs);
 
-  return c.json(rows);
+  const visible =
+    auth.role === "MANAGER"
+      ? rows.filter((p) => auth.projectIds.includes(p.id))
+      : rows;
+
+  return c.json(visible);
 });
 
 app.get("/:id", async (c) => {
@@ -41,7 +66,7 @@ app.get("/:id", async (c) => {
     .where(eq(programs.id, id));
   const program = programRows[0];
   if (!program) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, program.organizationId)) {
+  if (!canAccessProgram(auth, program)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -56,30 +81,17 @@ app.get("/:id", async (c) => {
 app.post("/", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
-  const body = await c.req.json<{
-    organizationId?: number;
-    name?: string;
-    startDate?: string;
-    endDate?: string;
-    startTime?: string;
-    endTime?: string;
-    regionSido?: string;
-    regionSigungu?: string;
-  }>();
+  const body = await c.req.json<ProgramBody>();
+
+  if (!hasMinRole(auth, "AGENCY_ADMIN")) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
 
   const organizationId =
-    auth.role === "super_admin"
+    auth.role === "SUPER_ADMIN"
       ? body.organizationId
       : (auth.organizationId as number);
-  const {
-    name,
-    startDate,
-    endDate,
-    startTime,
-    endTime,
-    regionSido,
-    regionSigungu,
-  } = body;
+  const { name, startDate, endDate, startTime, endTime } = body;
   if (
     !organizationId ||
     !name ||
@@ -106,8 +118,17 @@ app.post("/", async (c) => {
       endDate,
       startTime,
       endTime,
-      regionSido,
-      regionSigungu,
+      projectType: body.projectType,
+      hourlyWage: body.hourlyWage,
+      educationAmount: body.educationAmount,
+      educationType: body.educationType,
+      dementiaAmount: body.dementiaAmount,
+      dementiaType: body.dementiaType,
+      healthInsuranceRate: body.healthInsuranceRate,
+      longtermCareRate: body.longtermCareRate,
+      employmentInsuranceRate: body.employmentInsuranceRate,
+      industrialAccidentRate: body.industrialAccidentRate,
+      annualLeaveDailyWage: body.annualLeaveDailyWage,
     })
     .returning();
 
@@ -125,19 +146,12 @@ app.put("/:id", async (c) => {
     .where(eq(programs.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, existing.organizationId)) {
+  // 사업단 수정은 SUB_ADMIN까지 허용 (등록/삭제는 AGENCY_ADMIN 이상)
+  if (!hasMinRole(auth, "SUB_ADMIN") || !canAccessProgram(auth, existing)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  const body = await c.req.json<{
-    name?: string;
-    startDate?: string;
-    endDate?: string;
-    startTime?: string;
-    endTime?: string;
-    regionSido?: string;
-    regionSigungu?: string;
-  }>();
+  const body = await c.req.json<ProgramBody>();
 
   const result = await db
     .update(programs)
@@ -159,7 +173,7 @@ app.delete("/:id", async (c) => {
     .where(eq(programs.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, existing.organizationId)) {
+  if (!hasMinRole(auth, "AGENCY_ADMIN") || !canAccessProgram(auth, existing)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -167,6 +181,68 @@ app.delete("/:id", async (c) => {
   await db.delete(programs).where(eq(programs.id, id));
 
   return c.json({ success: true });
+});
+
+app.get("/:id/groups", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const rows = await db.select().from(groups).where(eq(groups.programId, programId));
+  return c.json(rows);
+});
+
+app.post("/:id/groups", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const body = await c.req.json<{
+    name?: string;
+    description?: string;
+    shiftStart?: string;
+    shiftEnd?: string;
+  }>();
+
+  if (!body.name || !body.shiftStart || !body.shiftEnd) {
+    return c.json(
+      { error: "name, shiftStart, shiftEnd are required" },
+      400,
+    );
+  }
+
+  const result = await db
+    .insert(groups)
+    .values({
+      programId,
+      name: body.name,
+      description: body.description,
+      shiftStart: body.shiftStart,
+      shiftEnd: body.shiftEnd,
+    })
+    .returning();
+
+  return c.json(result[0], 201);
 });
 
 app.get("/:id/participants", async (c) => {
@@ -180,7 +256,7 @@ app.get("/:id/participants", async (c) => {
     .where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, program.organizationId)) {
+  if (!canAccessProgram(auth, program)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -203,7 +279,7 @@ app.post("/:id/participants", async (c) => {
     .where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, program.organizationId)) {
+  if (!canAccessProgram(auth, program)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -211,6 +287,8 @@ app.post("/:id/participants", async (c) => {
     name?: string;
     demandName?: string;
     phoneLast4?: string;
+    groupId?: number;
+    birthYear?: number;
   }>();
 
   if (!body.name) {
@@ -227,6 +305,8 @@ app.post("/:id/participants", async (c) => {
       name: body.name,
       demandName: body.demandName,
       phoneLast4: body.phoneLast4,
+      groupId: body.groupId,
+      birthYear: body.birthYear,
     })
     .returning();
 
@@ -244,7 +324,7 @@ app.post("/:id/participants/bulk", async (c) => {
     .where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, program.organizationId)) {
+  if (!canAccessProgram(auth, program)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -253,6 +333,8 @@ app.post("/:id/participants/bulk", async (c) => {
       name?: string;
       demandName?: string;
       phoneLast4?: string;
+      groupId?: number;
+      birthYear?: number;
     }[];
   }>();
 
@@ -282,6 +364,8 @@ app.post("/:id/participants/bulk", async (c) => {
         name: row.name!,
         demandName: row.demandName,
         phoneLast4: row.phoneLast4!,
+        groupId: row.groupId,
+        birthYear: row.birthYear,
       })),
     )
     .returning();
@@ -301,7 +385,7 @@ app.delete("/:id/participants/:participantId", async (c) => {
     .where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "Not found" }, 404);
-  if (!canAccessOrg(auth, program.organizationId)) {
+  if (!canAccessProgram(auth, program)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -317,6 +401,45 @@ app.delete("/:id/participants/:participantId", async (c) => {
 
   if (!result[0]) return c.json({ error: "Not found" }, 404);
   return c.json({ success: true });
+});
+
+app.get("/:id/attendance", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const month = c.req.query("month"); // "YYYY-MM"
+
+  if (!month) return c.json({ error: "month is required" }, 400);
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const rows = await db
+    .select({
+      log: attendanceLogs,
+      participantName: participants.name,
+      groupName: groups.name,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
+    })
+    .from(attendanceLogs)
+    .innerJoin(participants, eq(attendanceLogs.participantId, participants.id))
+    .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
+    .where(
+      and(
+        eq(attendanceLogs.programId, programId),
+        like(attendanceLogs.workDate, `${month}%`),
+      ),
+    );
+
+  return c.json(rows);
 });
 
 export default app;

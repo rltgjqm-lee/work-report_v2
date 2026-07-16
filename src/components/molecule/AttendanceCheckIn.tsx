@@ -1,0 +1,130 @@
+import { useState } from "react";
+
+import Button from "../atoms/Button";
+import LabeledInput from "./LabeledInput";
+import { clockIn, clockOut, identifyParticipant } from "../../utils/attendanceApi";
+import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
+
+type CachedParticipant = { participantId: number; name: string };
+
+const readCachedParticipant = (): CachedParticipant | null => {
+  const raw = localStorage.getItem(
+    LOCAL_STORAGE_KEYS.ATTENDANCE_PARTICIPANT_ID,
+  );
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * 사업단 선택 후 노출되는 셀프 출퇴근 체크. GPS 검증 없이, 최초 1회
+ * 이름+전화번호 뒤4자리로 본인을 확인하면 이후에는 기기에 저장해두고 재사용한다.
+ */
+const AttendanceCheckIn = ({ programId }: { programId: number | null }) => {
+  const [participant, setParticipant] = useState<CachedParticipant | null>(
+    readCachedParticipant,
+  );
+  const [name, setName] = useState("");
+  const [phoneLast4, setPhoneLast4] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+
+  if (!programId) return null;
+
+  const handleIdentify = async () => {
+    if (!name || !/^\d{4}$/.test(phoneLast4)) {
+      setStatus("이름과 전화번호 뒷 4자리(숫자)를 입력해주세요.");
+      return;
+    }
+    try {
+      const result = await identifyParticipant(programId, name, phoneLast4);
+      const cached: CachedParticipant = {
+        participantId: result.participantId,
+        name: result.name,
+      };
+      localStorage.setItem(
+        LOCAL_STORAGE_KEYS.ATTENDANCE_PARTICIPANT_ID,
+        JSON.stringify(cached),
+      );
+      setParticipant(cached);
+      setStatus(null);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "본인 확인에 실패했습니다.");
+    }
+  };
+
+  const handleClockIn = async () => {
+    if (!participant) return;
+    try {
+      await clockIn(participant.participantId);
+      setStatus("출근 처리되었습니다.");
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "출근 처리에 실패했습니다.");
+    }
+  };
+
+  const handleClockOut = async () => {
+    if (!participant) return;
+    try {
+      const result = await clockOut(participant.participantId);
+      setStatus(`퇴근 처리되었습니다. (근무 ${result.totalMinutes}분)`);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "퇴근 처리에 실패했습니다.");
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
+      <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
+        근태 체크
+      </div>
+
+      {participant ? (
+        <div className="flex flex-col gap-2.5 w-full">
+          <div className="text-[15px] text-[#2c3e50]">
+            <span className="font-bold text-[#4364F7]">{participant.name}</span>
+            님, 출퇴근을 체크해주세요.
+          </div>
+          <div className="flex gap-2.5">
+            <Button variant="blue" onClick={handleClockIn}>
+              출근
+            </Button>
+            <Button variant="white" onClick={handleClockOut}>
+              퇴근
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5 w-full">
+          <LabeledInput
+            labelTitle="이름"
+            id="attendance-name"
+            placeholder="성함 입력"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <LabeledInput
+            labelTitle="전화번호 뒷자리(4자리)"
+            id="attendance-phone"
+            placeholder="0000"
+            value={phoneLast4}
+            onChange={(e) =>
+              setPhoneLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
+            }
+          />
+          <Button variant="blue" onClick={handleIdentify}>
+            본인 확인
+          </Button>
+        </div>
+      )}
+
+      {status && (
+        <div className="text-[13px] text-[#7f8c8d] mt-1">{status}</div>
+      )}
+    </div>
+  );
+};
+
+export default AttendanceCheckIn;

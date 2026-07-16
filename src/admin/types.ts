@@ -1,4 +1,13 @@
-export type Role = "super_admin" | "org_admin";
+export type Role = "SUPER_ADMIN" | "AGENCY_ADMIN" | "SUB_ADMIN" | "MANAGER";
+
+export type AdminSession = {
+  id: number;
+  email: string;
+  role: Role;
+  organizationId: number | null;
+  projectIds: number[];
+  groupIds: number[];
+};
 
 export type Organization = {
   id: number;
@@ -8,6 +17,10 @@ export type Organization = {
   phone: string | null;
   fax: string | null;
   bizNo: string | null;
+  regionSido: string | null;
+  regionSigungu: string | null;
+  agencyType: string | null;
+  prjYear: string | null;
   createdAt: string;
 };
 
@@ -19,18 +32,57 @@ export type Program = {
   endDate: string;
   startTime: string;
   endTime: string;
-  regionSido: string | null;
-  regionSigungu: string | null;
+  projectType: string | null;
+  hourlyWage: number;
+  educationAmount: number;
+  educationType: "add" | "deduct";
+  dementiaAmount: number;
+  dementiaType: "add" | "deduct";
+  healthInsuranceRate: number;
+  longtermCareRate: number;
+  employmentInsuranceRate: number;
+  industrialAccidentRate: number;
+  annualLeaveDailyWage: number;
   createdAt: string;
 };
+
+export type ParticipantStatus = "ACTIVE" | "DROPPED" | "ON_LEAVE";
 
 export type Participant = {
   id: number;
   programId: number;
+  groupId: number | null;
   name: string;
   demandName: string | null;
   phoneLast4: string;
+  birthYear: number | null;
+  status: ParticipantStatus;
+  droppedAt: string | null;
+  dropReason: string | null;
+  leaveStart: string | null;
+  leaveEnd: string | null;
   createdAt: string;
+};
+
+export type Group = {
+  id: number;
+  programId: number;
+  name: string;
+  description: string | null;
+  shiftStart: string;
+  shiftEnd: string;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type SafetyAlert = {
+  alertId: string;
+  message: string;
+  region: string | null;
+  sentAt: string;
+  targetCount: number;
+  successCount: number;
+  failCount: number;
 };
 
 export type ProgramWithParticipants = Program & { participants: Participant[] };

@@ -22,7 +22,6 @@ import {
   searchInputClass,
   selectClass,
 } from "../uiClasses";
-import { KOREAN_REGIONS, SIDO_LIST } from "../data/koreanRegions";
 import type { Organization, Program } from "../types";
 
 const emptyForm = {
@@ -32,12 +31,17 @@ const emptyForm = {
   endDate: "",
   startTime: "",
   endTime: "",
-  regionSido: "",
-  regionSigungu: "",
+  projectType: "",
+  hourlyWage: "3000",
+  educationAmount: "0",
+  educationType: "add" as "add" | "deduct",
+  dementiaAmount: "0",
+  dementiaType: "deduct" as "add" | "deduct",
 };
 
 const ProgramsPage = () => {
-  const { role } = useAuth();
+  const { admin } = useAuth();
+  const role = admin?.role;
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -58,7 +62,7 @@ const ProgramsPage = () => {
 
   const refreshPrograms = () => {
     const organizationId =
-      role === "super_admin"
+      role === "SUPER_ADMIN"
         ? instFilter === "all"
           ? undefined
           : Number(instFilter)
@@ -104,8 +108,12 @@ const ProgramsPage = () => {
       endDate: program.endDate,
       startTime: program.startTime,
       endTime: program.endTime,
-      regionSido: program.regionSido ?? "",
-      regionSigungu: program.regionSigungu ?? "",
+      projectType: program.projectType ?? "",
+      hourlyWage: String(program.hourlyWage),
+      educationAmount: String(program.educationAmount),
+      educationType: program.educationType,
+      dementiaAmount: String(program.dementiaAmount),
+      dementiaType: program.dementiaType,
     });
     setError(null);
     setModalOpen(true);
@@ -119,9 +127,13 @@ const ProgramsPage = () => {
         endDate: form.endDate,
         startTime: form.startTime,
         endTime: form.endTime,
-        regionSido: form.regionSido || undefined,
-        regionSigungu: form.regionSigungu || undefined,
-        ...(role === "super_admin" && !editingId
+        projectType: form.projectType || undefined,
+        hourlyWage: Number(form.hourlyWage),
+        educationAmount: Number(form.educationAmount),
+        educationType: form.educationType,
+        dementiaAmount: Number(form.dementiaAmount),
+        dementiaType: form.dementiaType,
+        ...(role === "SUPER_ADMIN" && !editingId
           ? { organizationId: Number(form.organizationId) }
           : {}),
       };
@@ -165,7 +177,7 @@ const ProgramsPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <div className="flex items-center gap-2.5">
-            {role === "super_admin" && (
+            {role === "SUPER_ADMIN" && (
               <select
                 className={selectClass}
                 value={instFilter}
@@ -282,7 +294,7 @@ const ProgramsPage = () => {
           </>
         }
       >
-        {role === "super_admin" && !editingId && (
+        {role === "SUPER_ADMIN" && !editingId && (
           <FormField label="기관 선택">
             <select
               className={inputClass}
@@ -335,49 +347,6 @@ const ProgramsPage = () => {
         </div>
         <div className="flex gap-3">
           <div className="flex-1">
-            <FormField label="시/도 (재난문자 지역 매칭용)">
-              <select
-                className={inputClass}
-                value={form.regionSido}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    regionSido: e.target.value,
-                    regionSigungu: "",
-                  }))
-                }
-              >
-                <option value="">선택하세요</option>
-                {SIDO_LIST.map((sido) => (
-                  <option key={sido} value={sido}>
-                    {sido}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-          <div className="flex-1">
-            <FormField label="시/군/구">
-              <select
-                className={inputClass}
-                value={form.regionSigungu}
-                disabled={!form.regionSido}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, regionSigungu: e.target.value }))
-                }
-              >
-                <option value="">선택하세요</option>
-                {(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => (
-                  <option key={sigungu} value={sigungu}>
-                    {sigungu}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
             <FormField label="시작시간">
               <input
                 type="time"
@@ -399,6 +368,91 @@ const ProgramsPage = () => {
                   setForm((f) => ({ ...f, endTime: e.target.value }))
                 }
               />
+            </FormField>
+          </div>
+        </div>
+        <FormField label="사업유형">
+          <select
+            className={inputClass}
+            value={form.projectType}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, projectType: e.target.value }))
+            }
+          >
+            <option value="">선택하세요</option>
+            <option value="공익활동">공익활동</option>
+            <option value="역량활동">역량활동</option>
+          </select>
+        </FormField>
+        <FormField label="시급(원)">
+          <input
+            type="number"
+            className={inputClass}
+            value={form.hourlyWage}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, hourlyWage: e.target.value }))
+            }
+          />
+        </FormField>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <FormField label="교육비(원)">
+              <input
+                type="number"
+                className={inputClass}
+                value={form.educationAmount}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, educationAmount: e.target.value }))
+                }
+              />
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="교육비 처리">
+              <select
+                className={inputClass}
+                value={form.educationType}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    educationType: e.target.value as "add" | "deduct",
+                  }))
+                }
+              >
+                <option value="add">가산</option>
+                <option value="deduct">차감</option>
+              </select>
+            </FormField>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <FormField label="치매검진비(원)">
+              <input
+                type="number"
+                className={inputClass}
+                value={form.dementiaAmount}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, dementiaAmount: e.target.value }))
+                }
+              />
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="치매검진비 처리">
+              <select
+                className={inputClass}
+                value={form.dementiaType}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    dementiaType: e.target.value as "add" | "deduct",
+                  }))
+                }
+              >
+                <option value="add">가산</option>
+                <option value="deduct">차감</option>
+              </select>
             </FormField>
           </div>
         </div>

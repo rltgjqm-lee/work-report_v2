@@ -8,11 +8,24 @@ import type { Env } from "../types";
 
 const app = new Hono<Env>();
 
+type OrganizationBody = {
+  name?: string;
+  address?: string;
+  rep?: string;
+  phone?: string;
+  fax?: string;
+  bizNo?: string;
+  regionSido?: string;
+  regionSigungu?: string;
+  agencyType?: string;
+  prjYear?: string;
+};
+
 app.get("/", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
 
-  if (auth.role === "super_admin") {
+  if (auth.role === "SUPER_ADMIN") {
     return c.json(await db.select().from(organizations));
   }
 
@@ -41,19 +54,12 @@ app.get("/:id", async (c) => {
 
 app.post("/", async (c) => {
   const auth = getAuth(c);
-  if (auth.role !== "super_admin") {
+  if (auth.role !== "SUPER_ADMIN") {
     return c.json({ error: "Forbidden" }, 403);
   }
 
   const db = drizzle(c.env.DB);
-  const body = await c.req.json<{
-    name?: string;
-    address?: string;
-    rep?: string;
-    phone?: string;
-    fax?: string;
-    bizNo?: string;
-  }>();
+  const body = await c.req.json<OrganizationBody>();
 
   if (!body.name) {
     return c.json({ error: "name is required" }, 400);
@@ -68,6 +74,10 @@ app.post("/", async (c) => {
       phone: body.phone,
       fax: body.fax,
       bizNo: body.bizNo,
+      regionSido: body.regionSido,
+      regionSigungu: body.regionSigungu,
+      agencyType: body.agencyType,
+      prjYear: body.prjYear,
     })
     .returning();
 
@@ -81,14 +91,7 @@ app.put("/:id", async (c) => {
   if (!canAccessOrg(auth, id)) return c.json({ error: "Forbidden" }, 403);
 
   const db = drizzle(c.env.DB);
-  const body = await c.req.json<{
-    name?: string;
-    address?: string;
-    rep?: string;
-    phone?: string;
-    fax?: string;
-    bizNo?: string;
-  }>();
+  const body = await c.req.json<OrganizationBody>();
 
   const result = await db
     .update(organizations)
@@ -102,7 +105,7 @@ app.put("/:id", async (c) => {
 
 app.delete("/:id", async (c) => {
   const auth = getAuth(c);
-  if (auth.role !== "super_admin") {
+  if (auth.role !== "SUPER_ADMIN") {
     return c.json({ error: "Forbidden" }, 403);
   }
 

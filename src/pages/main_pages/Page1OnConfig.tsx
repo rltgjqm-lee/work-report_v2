@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import Button from "../../components/atoms/Button";
 import LabeledInput from "../../components/molecule/LabeledInput";
+import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
@@ -179,6 +180,10 @@ const Page1OnConfig = ({
           ))}
         </select>
       </div>
+
+      <AttendanceCheckIn
+        programId={selectedProgramId ? Number(selectedProgramId) : null}
+      />
 
       {/* 수요처명 입력*/}
       <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
