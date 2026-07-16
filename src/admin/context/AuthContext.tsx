@@ -1,62 +1,37 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
-import { login as loginRequest, setOnUnauthorized } from "../api/client";
-import { decodeJwtPayload } from "../lib/jwt";
+import { getMe, setOnUnauthorized } from "../api/client";
 import {
   AuthContext,
   type AuthContextValue,
   type AuthState,
 } from "./authContextInstance";
 
-const emptyState: AuthState = {
-  token: null,
-  username: null,
-  role: null,
-  organizationId: null,
-};
-
-const buildStateFromToken = (token: string | null): AuthState => {
-  if (!token) return emptyState;
-  const payload = decodeJwtPayload(token);
-  if (!payload) return emptyState;
-  return {
-    token,
-    username: payload.username,
-    role: payload.role,
-    organizationId: payload.organizationId,
-  };
-};
+const initialState: AuthState = { admin: null, loading: true };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [state, setState] = useState<AuthState>(() =>
-    buildStateFromToken(localStorage.getItem(LOCAL_STORAGE_KEYS.ADMIN_JWT)),
-  );
+  const [state, setState] = useState<AuthState>(initialState);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.ADMIN_JWT);
-    setState(emptyState);
+  // 로그인 자체는 Cloudflare Access(이메일 OTP)가 이 앱 앞단에서 처리한다.
+  // 여기서는 그 인증이 끝난 뒤 /api/me로 "이 이메일이 admins에 등록돼 있는지"만 확인한다.
+  const refresh = useCallback(async () => {
+    setState((s) => ({ ...s, loading: true }));
+    try {
+      const admin = await getMe();
+      setState({ admin, loading: false });
+    } catch {
+      setState({ admin: null, loading: false });
+    }
   }, []);
 
   useEffect(() => {
-    setOnUnauthorized(logout);
-  }, [logout]);
-
-  const login = useCallback(async (username: string, password: string) => {
-    const { token } = await loginRequest(username, password);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.ADMIN_JWT, token);
-    setState(buildStateFromToken(token));
-  }, []);
+    setOnUnauthorized(() => setState({ admin: null, loading: false }));
+    refresh();
+  }, [refresh]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, isAuthenticated: !!state.token, login, logout }),
-    [state, login, logout],
+    () => ({ ...state, isAuthenticated: !!state.admin, refresh }),
+    [state, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../context/useAuth";
 
@@ -6,6 +6,7 @@ const navItems = [
   { to: "/admin/organizations", label: "기관 관리", badge: "1" },
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
+  { to: "/admin/safety-alerts", label: "재난문자 발송이력", badge: "4" },
 ];
 
 const getTopbarTitle = (pathname: string) => {
@@ -13,17 +14,18 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
+  if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 발송이력";
   return "관리자 콘솔";
 };
 
 const AdminLayout = () => {
-  const { username, logout } = useAuth();
-  const navigate = useNavigate();
+  const { admin } = useAuth();
   const location = useLocation();
 
+  // 로그인/세션은 Cloudflare Access가 관리하므로, 앱에서 할 수 있는 건
+  // Access 자체의 로그아웃 엔드포인트로 보내는 것뿐이다 (로컬 토큰을 지우는 게 아님).
   const handleLogout = () => {
-    logout();
-    navigate("/admin/login", { replace: true });
+    window.location.href = "/cdn-cgi/access/logout";
   };
 
   const todayLabel = new Date().toLocaleDateString("ko-KR", {
@@ -78,7 +80,7 @@ const AdminLayout = () => {
           </div>
           <div className="flex items-center gap-4 text-xs text-[#6b7280]">
             <span>
-              {todayLabel} · {username}
+              {todayLabel} · {admin?.email}
             </span>
             <button
               onClick={handleLogout}

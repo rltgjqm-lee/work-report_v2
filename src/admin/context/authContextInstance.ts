@@ -1,18 +1,15 @@
 import { createContext } from "react";
 
-import type { Role } from "../types";
+import type { AdminSession } from "../types";
 
 export type AuthState = {
-  token: string | null;
-  username: string | null;
-  role: Role | null;
-  organizationId: number | null;
+  admin: AdminSession | null;
+  loading: boolean;
 };
 
 export type AuthContextValue = AuthState & {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  refresh: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
