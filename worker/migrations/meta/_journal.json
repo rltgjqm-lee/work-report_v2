@@ -57,6 +57,13 @@
       "when": 1783926544854,
       "tag": "0007_strange_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1784260800000,
+      "tag": "0008_add_groups_attendance_safety_alerts",
+      "breakpoints": true
     }
   ]
 }
