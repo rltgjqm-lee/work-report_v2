@@ -280,7 +280,7 @@ const Main = () => {
           />
         )}
 
-        {/* 목록 */}
+        {/* 활동 일지 목록 */}
         {view === VIEW_TYPE.LOGS && (
           <ActivityLogPage
             formData={formData}
