@@ -11,7 +11,7 @@ import AccidentCheckPage from "./main_pages/AccidentCheckPage";
 import SignaturePage from "./main_pages/SignaturePage";
 
 import { PdfTemplate } from "../components/organism/PdfTemplate";
-import type { TabKey } from "../components/appshell/TabBar";
+import type { TabKey } from "../components/molecule/TabBar";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 

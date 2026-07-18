@@ -1,9 +1,9 @@
 import type { ActivityLogFormData } from "../../types/form";
 
-import AppBar from "../../components/appshell/AppBar";
-import ProgressBar from "../../components/appshell/ProgressBar";
-import Card from "../../components/appshell/Card";
-import BottomBar, { BottomBarRow } from "../../components/appshell/BottomBar";
+import AppBar from "../../components/molecule/AppBar";
+import ProgressBar from "../../components/atoms/ProgressBar";
+import Card from "../../components/atoms/Card";
+import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import {
   pageClass,
   bodyClass,
@@ -12,7 +12,7 @@ import {
   textareaClass,
   btnPrimaryClass,
   btnOutlineClass,
-} from "../../components/appshell/classes";
+} from "../../components/atoms/classes";
 
 interface Page4Props {
   formData: ActivityLogFormData;

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
-import AppBar from "../../components/appshell/AppBar";
-import ProgressBar from "../../components/appshell/ProgressBar";
-import Card from "../../components/appshell/Card";
-import BottomBar from "../../components/appshell/BottomBar";
+import AppBar from "../../components/molecule/AppBar";
+import ProgressBar from "../../components/atoms/ProgressBar";
+import Card from "../../components/atoms/Card";
+import BottomBar from "../../components/atoms/BottomBar";
 import {
   pageClass,
   bodyClass,
@@ -14,7 +14,7 @@ import {
   selectClass,
   btnPrimaryClass,
   btnTextClass,
-} from "../../components/appshell/classes";
+} from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";

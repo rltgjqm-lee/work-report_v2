@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../../types/form";
 import { PdfTemplate } from "../../components/organism/PdfTemplate";
-import AppBar from "../../components/appshell/AppBar";
-import BottomBar, { BottomBarRow } from "../../components/appshell/BottomBar";
-import TabBar, { type TabKey } from "../../components/appshell/TabBar";
-import { pageClass, btnOutlineClass } from "../../components/appshell/classes";
+import AppBar from "../../components/molecule/AppBar";
+import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
+import TabBar, { type TabKey } from "../../components/molecule/TabBar";
+import { pageClass, btnOutlineClass } from "../../components/atoms/classes";
 
 import { downloadActivityLogExcel } from "../../utils/downloadActivityLogExcel";
 import { downloadActivityLogPdf } from "../../utils/downloadActivityLogPdf";

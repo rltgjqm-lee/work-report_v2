@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 import { downloadActivityLogPdf } from "../../utils/downloadActivityLogPdf";
-import AppBar from "../../components/appshell/AppBar";
-import ProgressBar from "../../components/appshell/ProgressBar";
-import Card from "../../components/appshell/Card";
-import BottomBar, { BottomBarRow } from "../../components/appshell/BottomBar";
+import AppBar from "../../components/molecule/AppBar";
+import ProgressBar from "../../components/atoms/ProgressBar";
+import Card from "../../components/atoms/Card";
+import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import {
   pageClass,
   bodyClass,
@@ -16,7 +16,7 @@ import {
   checkRowClass,
   btnPrimaryClass,
   btnOutlineClass,
-} from "../../components/appshell/classes";
+} from "../../components/atoms/classes";
 
 interface Page6Props {
   formData: ActivityLogFormData;

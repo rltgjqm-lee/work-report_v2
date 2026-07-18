@@ -3,9 +3,9 @@ import { Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import type { ActivityLogFormData } from "../../types/form";
-import AppBar from "../../components/appshell/AppBar";
-import TabBar, { type TabKey } from "../../components/appshell/TabBar";
-import { pageClass, btnPrimaryClass } from "../../components/appshell/classes";
+import AppBar from "../../components/molecule/AppBar";
+import TabBar, { type TabKey } from "../../components/molecule/TabBar";
+import { pageClass, btnPrimaryClass } from "../../components/atoms/classes";
 
 interface PageHomeProps {
   formData: ActivityLogFormData;
