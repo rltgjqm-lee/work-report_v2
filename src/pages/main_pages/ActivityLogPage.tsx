@@ -10,6 +10,39 @@ import { pageClass, btnOutlineClass } from "../../components/appshell/classes";
 import { downloadActivityLogExcel } from "../../utils/downloadActivityLogExcel";
 import { downloadActivityLogPdf } from "../../utils/downloadActivityLogPdf";
 import { INDEXED_DB_CONFIG } from "../../constants/storage";
+import {
+  listActivityLogs,
+  type ServerActivityLog,
+} from "../../utils/activityLogApi";
+
+// "09:00"~"13:00" 같은 24시간제 문자열 사이의 길이를 "4시간" 형태로
+const computeTotalTimeLabel = (start: string, end: string): string => {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const diff = eh * 60 + em - (sh * 60 + sm);
+  if (Number.isNaN(diff) || diff < 0) return "- 시간";
+  const hours = Math.floor(diff / 60);
+  const minutes = diff % 60;
+  return minutes > 0 ? `${hours}시간 ${minutes}분` : `${hours}시간`;
+};
+
+const mapServerLogToItem = (log: ServerActivityLog): ActivityLogItem => ({
+  serverId: log.id,
+  synced: true,
+  participantId: log.participantId,
+  date: log.actDate,
+  start: log.startTime,
+  end: log.endTime,
+  totalTime: computeTotalTimeLabel(log.startTime, log.endTime),
+  content: log.content ?? "",
+  place: log.place ?? "",
+  accident: log.hasAccident ? "유" : "무",
+  accidentDetail: log.accidentDetail ?? undefined,
+  accidentAction: log.accidentAction ?? undefined,
+  uSign: log.userSignature ?? "",
+  dSign: log.demandSignature ?? "",
+  timestamp: new Date(log.createdAt).getTime(),
+});
 
 interface PageListProps {
   formData: ActivityLogFormData;
@@ -31,6 +64,7 @@ const ActivityLogPage = ({
     () => new Date().getMonth() + 1,
   );
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
+  const [serverLogs, setServerLogs] = useState<ActivityLogItem[]>([]);
 
   const printAreaRef = useRef<HTMLDivElement>(null);
 
@@ -59,10 +93,19 @@ const ActivityLogPage = ({
     return parseInt(y) === currentYear && parseInt(m) === currentMonth;
   });
 
+  // 이 기기에 없는(다른 기기에서 동기화된) 서버 기록만 로컬 목록에 더해서 보여준다
+  const knownServerIds = new Set(
+    filteredLogs.map((log) => log.serverId).filter(Boolean),
+  );
+  const displayLogs = [
+    ...filteredLogs,
+    ...serverLogs.filter((log) => !knownServerIds.has(log.serverId)),
+  ].sort((a, b) => b.timestamp - a.timestamp);
+
   const handleClickExportReportsButton = async () => {
     if (!db) return;
 
-    if (filteredLogs.length === 0) {
+    if (displayLogs.length === 0) {
       onAlert(["해당 월에 출력할 일지 내역이 없습니다."]);
       return;
     }
@@ -73,7 +116,7 @@ const ActivityLogPage = ({
     ]);
 
     await downloadActivityLogExcel({
-      filteredLogs,
+      filteredLogs: displayLogs,
       formData,
       fileName: getFileName("xlsx"),
     });
@@ -107,6 +150,32 @@ const ActivityLogPage = ({
     }
   }, [db, currentYear, currentMonth]);
 
+  // 다른 기기에서 동기화된 기록을 복구용으로 조회 (온라인 + 참여자 식별된 경우만)
+  useEffect(() => {
+    let cancelled = false;
+    const participantId = formData.participantId;
+    const month = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+
+    const fetchPromise =
+      participantId && navigator.onLine
+        ? listActivityLogs(participantId, month).then((rows) =>
+            rows.map(mapServerLogToItem),
+          )
+        : Promise.resolve([]);
+
+    fetchPromise
+      .then((items) => {
+        if (!cancelled) setServerLogs(items);
+      })
+      .catch(() => {
+        if (!cancelled) setServerLogs([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.participantId, currentYear, currentMonth]);
+
   return (
     <div className={pageClass}>
       <AppBar title="활동 일지 목록" />
@@ -129,12 +198,12 @@ const ActivityLogPage = ({
           </button>
         </div>
 
-        {filteredLogs.length === 0 ? (
+        {displayLogs.length === 0 ? (
           <div className="text-center p-8 text-[#9ca3af] text-[14px]">
             이 달에 작성된 일지가 없습니다.
           </div>
         ) : (
-          filteredLogs.map((log, index) => (
+          displayLogs.map((log, index) => (
             <div
               key={log.id || index}
               className="flex items-center justify-between bg-white rounded-2xl px-[18px] py-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)]"
@@ -170,7 +239,7 @@ const ActivityLogPage = ({
       <PdfTemplate
         printRef={printAreaRef}
         formData={formData}
-        filteredLogs={filteredLogs}
+        filteredLogs={displayLogs}
       />
     </div>
   );
