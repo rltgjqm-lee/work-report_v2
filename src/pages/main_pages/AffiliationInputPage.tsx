@@ -50,7 +50,7 @@ const AffiliationInputPage = ({
 
   const [organizationType, setOrganizationType] = useState("");
   const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState("");
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
 
   const [programType, setProgramType] = useState("");
   const [programs, setPrograms] = useState<PublicProgram[]>([]);
@@ -68,12 +68,13 @@ const AffiliationInputPage = ({
   }, []);
 
   useEffect(() => {
-    if (!selectedOrgId) return;
-    listPublicPrograms(Number(selectedOrgId))
+    if (!selectedOrganizationId) return;
+
+    listPublicPrograms(Number(selectedOrganizationId))
       .then(setPrograms)
       .catch(() => onAlert(["사업단 목록을 불러오지 못했습니다."]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedOrgId]);
+  }, [selectedOrganizationId]);
 
   const sidoList = useMemo(
     () =>
@@ -117,7 +118,7 @@ const AffiliationInputPage = ({
     [organizations, sido, sigungu],
   );
 
-  const orgCandidates = useMemo(
+  const organizationCandidates = useMemo(
     () =>
       organizations.filter(
         (organization) =>
@@ -145,7 +146,7 @@ const AffiliationInputPage = ({
     setSido(value);
     setSigungu("");
     setOrganizationType("");
-    setSelectedOrgId("");
+    setSelectedOrganizationId("");
     setPrograms([]);
     setProgramType("");
     setSelectedProgramId("");
@@ -154,7 +155,7 @@ const AffiliationInputPage = ({
   const handleSelectSigungu = (value: string) => {
     setSigungu(value);
     setOrganizationType("");
-    setSelectedOrgId("");
+    setSelectedOrganizationId("");
     setPrograms([]);
     setProgramType("");
     setSelectedProgramId("");
@@ -162,14 +163,14 @@ const AffiliationInputPage = ({
 
   const handleSelectOrganizationType = (value: string) => {
     setOrganizationType(value);
-    setSelectedOrgId("");
+    setSelectedOrganizationId("");
     setPrograms([]);
     setProgramType("");
     setSelectedProgramId("");
   };
 
   const handleSelectOrg = (orgId: string) => {
-    setSelectedOrgId(orgId);
+    setSelectedOrganizationId(orgId);
     setProgramType("");
     setSelectedProgramId("");
     onChange(
@@ -242,12 +243,12 @@ const AffiliationInputPage = ({
               <select
                 className={selectClass + " w-full"}
                 value={sido}
-                onChange={(e) => handleSelectSido(e.target.value)}
+                onChange={(event) => handleSelectSido(event.target.value)}
               >
                 <option value="">선택하세요</option>
-                {sidoList.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+                {sidoList.map((sido) => (
+                  <option key={sido} value={sido}>
+                    {sido}
                   </option>
                 ))}
               </select>
@@ -258,12 +259,12 @@ const AffiliationInputPage = ({
                 className={selectClass + " w-full"}
                 value={sigungu}
                 disabled={!sido}
-                onChange={(e) => handleSelectSigungu(e.target.value)}
+                onChange={(event) => handleSelectSigungu(event.target.value)}
               >
                 <option value="">선택하세요</option>
-                {sigunguList.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+                {sigunguList.map((sigungu) => (
+                  <option key={sigungu} value={sigungu}>
+                    {sigungu}
                   </option>
                 ))}
               </select>
@@ -277,12 +278,14 @@ const AffiliationInputPage = ({
                 className={selectClass + " w-full"}
                 value={organizationType}
                 disabled={!sigungu}
-                onChange={(e) => handleSelectOrganizationType(e.target.value)}
+                onChange={(event) =>
+                  handleSelectOrganizationType(event.target.value)
+                }
               >
                 <option value="">선택하세요</option>
-                {organizationTypeList.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
+                {organizationTypeList.map((organizationType) => (
+                  <option key={organizationType} value={organizationType}>
+                    {organizationType}
                   </option>
                 ))}
               </select>
@@ -291,14 +294,14 @@ const AffiliationInputPage = ({
               <label className={labelClass}>소속 기관명</label>
               <select
                 className={selectClass + " w-full"}
-                value={selectedOrgId}
+                value={selectedOrganizationId}
                 disabled={!organizationType}
-                onChange={(e) => handleSelectOrg(e.target.value)}
+                onChange={(event) => handleSelectOrg(event.target.value)}
               >
                 <option value="">선택하세요</option>
-                {orgCandidates.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
+                {organizationCandidates.map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
                   </option>
                 ))}
               </select>
@@ -310,13 +313,13 @@ const AffiliationInputPage = ({
             <select
               className={selectClass + " w-full"}
               value={programType}
-              disabled={!selectedOrgId}
-              onChange={(e) => handleSelectProgramType(e.target.value)}
+              disabled={!selectedOrganizationId}
+              onChange={(event) => handleSelectProgramType(event.target.value)}
             >
               <option value="">선택하세요</option>
-              {programTypeList.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+              {programTypeList.map((programType) => (
+                <option key={programType} value={programType}>
+                  {programType}
                 </option>
               ))}
             </select>
@@ -328,7 +331,7 @@ const AffiliationInputPage = ({
               className={selectClass + " w-full"}
               value={selectedProgramId}
               disabled={!programType}
-              onChange={(e) => handleSelectProgram(e.target.value)}
+              onChange={(event) => handleSelectProgram(event.target.value)}
             >
               <option value="">선택하세요</option>
               {programCandidates.map((program) => (
@@ -348,7 +351,7 @@ const AffiliationInputPage = ({
               className={inputClass}
               placeholder="예) 00주민센터"
               value={formData.demandName}
-              onChange={(e) => onChange("demandName", e.target.value)}
+              onChange={(event) => onChange("demandName", event.target.value)}
             />
           </div>
 
@@ -358,10 +361,10 @@ const AffiliationInputPage = ({
               <select
                 className={selectClass + " w-full"}
                 value={formData.gender}
-                onChange={(e) =>
+                onChange={(event) =>
                   onChange(
                     "gender",
-                    e.target.value as ActivityLogFormData["gender"],
+                    event.target.value as ActivityLogFormData["gender"],
                   )
                 }
               >
@@ -370,13 +373,14 @@ const AffiliationInputPage = ({
                 <option value="여성">여성</option>
               </select>
             </div>
+
             <div className="flex-1">
               <label className={labelClass}>참여자 성함</label>
               <input
                 className={inputClass}
                 placeholder="성함 입력"
                 value={formData.userName}
-                onChange={(e) => onChange("userName", e.target.value)}
+                onChange={(event) => onChange("userName", event.target.value)}
               />
             </div>
           </div>
@@ -386,7 +390,9 @@ const AffiliationInputPage = ({
           <Card>
             <AttendanceCheckIn
               programId={Number(selectedProgramId)}
-              onIdentified={(p) => onChange("participantId", p.participantId)}
+              onIdentified={(program) =>
+                onChange("participantId", program.participantId)
+              }
             />
           </Card>
         )}
