@@ -19,10 +19,9 @@ import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
 import {
-  listPublicOrganizations,
-  listPublicPrograms,
-  type PublicOrganization,
-  type PublicProgram,
+  getAffiliations,
+  type Organization,
+  type Program,
 } from "../../utils/publicApi";
 
 import type { ActivityLogFormData } from "../../types/form";
@@ -49,32 +48,59 @@ const AffiliationInputPage = ({
   const [sigungu, setSigungu] = useState("");
 
   const [organizationType, setOrganizationType] = useState("");
-  const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
 
   const [programType, setProgramType] = useState("");
-  const [programs, setPrograms] = useState<PublicProgram[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
+  // 💡 사업단 수가 많지 않아 조직 선택을 기다리지 않고 전체 목록을 한 번의 API
+  // 호출로 불러온 뒤 organizationId로 클라이언트에서 필터링한다
   useEffect(() => {
-    listPublicOrganizations()
-      .then(setOrganizations)
+    getAffiliations()
+      .then(
+        ({
+          organizations: fetchedOrganizations,
+          programs: fetchedPrograms,
+        }) => {
+          setOrganizations(fetchedOrganizations);
+          setPrograms(fetchedPrograms);
+
+          // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로
+          // 매칭해 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다
+          if (!formData.orgName) return;
+
+          const matchedOrganization = fetchedOrganizations.find(
+            (organization) => organization.name === formData.orgName,
+          );
+          if (!matchedOrganization) return;
+
+          setSido(matchedOrganization.regionSido ?? "");
+          setSigungu(matchedOrganization.regionSigungu ?? "");
+          setOrganizationType(matchedOrganization.organizationType ?? "");
+          setSelectedOrganizationId(String(matchedOrganization.id));
+
+          if (!formData.programName) return;
+
+          const matchedProgram = fetchedPrograms.find(
+            (program) =>
+              program.organizationId === matchedOrganization.id &&
+              program.name === formData.programName,
+          );
+          if (!matchedProgram) return;
+
+          setProgramType(matchedProgram.programType ?? "");
+          setSelectedProgramId(String(matchedProgram.id));
+        },
+      )
       .catch(() => {
         onAlert([
-          "기관 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요.",
+          "기관/사업단 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요.",
         ]);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!selectedOrganizationId) return;
-
-    listPublicPrograms(Number(selectedOrganizationId))
-      .then(setPrograms)
-      .catch(() => onAlert(["사업단 목록을 불러오지 못했습니다."]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedOrganizationId]);
 
   const sidoList = useMemo(
     () =>
@@ -129,17 +155,32 @@ const AffiliationInputPage = ({
     [organizations, sido, sigungu, organizationType],
   );
 
+  const organizationPrograms = useMemo(
+    () =>
+      programs.filter(
+        (program) => program.organizationId === Number(selectedOrganizationId),
+      ),
+    [programs, selectedOrganizationId],
+  );
+
   const programTypeList = useMemo(
     () =>
       Array.from(
-        new Set(programs.map((program) => program.programType).filter(Boolean)),
+        new Set(
+          organizationPrograms
+            .map((program) => program.programType)
+            .filter(Boolean),
+        ),
       ) as string[],
-    [programs],
+    [organizationPrograms],
   );
 
   const programCandidates = useMemo(
-    () => programs.filter((program) => program.programType === programType),
-    [programs, programType],
+    () =>
+      organizationPrograms.filter(
+        (program) => program.programType === programType,
+      ),
+    [organizationPrograms, programType],
   );
 
   const handleSelectSido = (value: string) => {
@@ -147,7 +188,6 @@ const AffiliationInputPage = ({
     setSigungu("");
     setOrganizationType("");
     setSelectedOrganizationId("");
-    setPrograms([]);
     setProgramType("");
     setSelectedProgramId("");
   };
@@ -156,7 +196,6 @@ const AffiliationInputPage = ({
     setSigungu(value);
     setOrganizationType("");
     setSelectedOrganizationId("");
-    setPrograms([]);
     setProgramType("");
     setSelectedProgramId("");
   };
@@ -164,7 +203,6 @@ const AffiliationInputPage = ({
   const handleSelectOrganizationType = (value: string) => {
     setOrganizationType(value);
     setSelectedOrganizationId("");
-    setPrograms([]);
     setProgramType("");
     setSelectedProgramId("");
   };
@@ -196,10 +234,10 @@ const AffiliationInputPage = ({
   };
 
   const saveToLocalStorage = () => {
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_ORG, formData.orgName);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_PROGRAM, formData.programName);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_DEMAND, formData.demandName);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_USER, formData.userName);
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.FORM_DRAFT,
+      JSON.stringify(formData),
+    );
 
     if (selectedProgramId) {
       localStorage.setItem(

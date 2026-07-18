@@ -15,43 +15,36 @@ import type { Env } from "../types";
 
 const app = new Hono<Env>();
 
-app.get("/organizations", async (c) => {
+// 기관/사업단 목록을 한 번에 반환 — 기본 정보 입력 페이지의 지역/기관/사업단
+// 캐스케이딩 드롭다운이 라운드트립 없이 한 번의 호출로 채워지도록 묶어서 내려준다.
+app.get("/affiliations", async (c) => {
   const db = drizzle(c.env.DB);
-  const rows = await db
-    .select({
-      id: organizations.id,
-      name: organizations.name,
-      regionSido: organizations.regionSido,
-      regionSigungu: organizations.regionSigungu,
-      organizationType: organizations.organizationType,
-    })
-    .from(organizations);
 
-  return c.json(rows);
-});
+  const [organizationRows, programRows] = await Promise.all([
+    db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        regionSido: organizations.regionSido,
+        regionSigungu: organizations.regionSigungu,
+        organizationType: organizations.organizationType,
+      })
+      .from(organizations),
+    db
+      .select({
+        id: programs.id,
+        name: programs.name,
+        organizationId: programs.organizationId,
+        startDate: programs.startDate,
+        endDate: programs.endDate,
+        startTime: programs.startTime,
+        endTime: programs.endTime,
+        programType: programs.programType,
+      })
+      .from(programs),
+  ]);
 
-app.get("/programs", async (c) => {
-  const db = drizzle(c.env.DB);
-  const organizationId = c.req.query("organizationId");
-
-  const query = db
-    .select({
-      id: programs.id,
-      name: programs.name,
-      organizationId: programs.organizationId,
-      startDate: programs.startDate,
-      endDate: programs.endDate,
-      startTime: programs.startTime,
-      endTime: programs.endTime,
-      programType: programs.programType,
-    })
-    .from(programs);
-
-  const rows = organizationId
-    ? await query.where(eq(programs.organizationId, Number(organizationId)))
-    : await query;
-
-  return c.json(rows);
+  return c.json({ organizations: organizationRows, programs: programRows });
 });
 
 app.post("/push-subscriptions", async (c) => {

@@ -1,4 +1,4 @@
-export type PublicOrganization = {
+export type Organization = {
   id: number;
   name: string;
   regionSido: string | null;
@@ -6,7 +6,7 @@ export type PublicOrganization = {
   organizationType: string | null;
 };
 
-export type PublicProgram = {
+export type Program = {
   id: number;
   name: string;
   organizationId: number;
@@ -17,22 +17,17 @@ export type PublicProgram = {
   programType: string | null;
 };
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-export const listPublicOrganizations = async (): Promise<
-  PublicOrganization[]
-> => {
-  const res = await fetch(`${BASE_URL}/public/organizations`);
-  if (!res.ok) throw new Error("기관 목록을 불러오지 못했습니다.");
-  return res.json();
+export type Affiliations = {
+  organizations: Organization[];
+  programs: Program[];
 };
 
-export const listPublicPrograms = async (
-  organizationId: number,
-): Promise<PublicProgram[]> => {
-  const res = await fetch(
-    `${BASE_URL}/public/programs?organizationId=${organizationId}`,
-  );
-  if (!res.ok) throw new Error("사업단 목록을 불러오지 못했습니다.");
-  return res.json();
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export const getAffiliations = async (): Promise<Affiliations> => {
+  const response = await fetch(`${BASE_URL}/public/affiliations`);
+
+  if (!response.ok) throw new Error("기관/사업단 목록을 불러오지 못했습니다.");
+
+  return response.json();
 };

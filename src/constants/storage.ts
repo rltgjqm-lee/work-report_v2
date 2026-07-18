@@ -1,8 +1,5 @@
 export const LOCAL_STORAGE_KEYS = {
-  CONF_ORG: "conf_org", // 기관명
-  CONF_PROGRAM: "conf_program", // 참여사업명
-  CONF_DEMAND: "conf_demand", // 수요처명
-  CONF_USER: "conf_user", // 참여자 성명
+  FORM_DRAFT: "form_draft", // 기본 정보 입력 폼 임시 저장 (formData 전체 필드)
   USER_SIGN: "userSign", // 참여자 서명 (Base64)
   DEMAND_SIGN: "demandSign", // 확인자 서명 (Base64)
   TARGET_LAT: "target_lat", // 위도

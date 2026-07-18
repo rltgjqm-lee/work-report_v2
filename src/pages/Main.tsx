@@ -94,12 +94,25 @@ const Main = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessages, setModalMessages] = useState<string[]>([]);
 
-  // 💡 이전에 저장해둔 서명이 있다면 불러와 그대로 재사용
-  const [formData, setFormData] = useState<ActivityLogFormData>(() => ({
-    ...initialFormData,
-    userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
-    demandSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
-  }));
+  // 💡 이전에 "나중에 이어서 작성하기"로 저장해둔 폼 초안이 있다면 불러와 채운다
+  const [formData, setFormData] = useState<ActivityLogFormData>(() => {
+    let draft: Partial<ActivityLogFormData> = {};
+    try {
+      const draftRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.FORM_DRAFT);
+      if (draftRaw) draft = JSON.parse(draftRaw);
+    } catch {
+      draft = {};
+    }
+
+    return {
+      ...initialFormData,
+      ...draft,
+      // 💡 서명은 별도 키로 관리되므로 초안보다 우선한다
+      userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
+      demandSignature:
+        localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
+    };
+  });
 
   // functions
   const openAlertModal = (messages: string[]) => {
