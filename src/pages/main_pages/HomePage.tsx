@@ -7,13 +7,13 @@ import AppBar from "../../components/molecule/AppBar";
 import TabBar, { type TabKey } from "../../components/molecule/TabBar";
 import { pageClass, btnPrimaryClass } from "../../components/atoms/classes";
 
-interface PageHomeProps {
+interface HomePageProps {
   formData: ActivityLogFormData;
   onStartNewLog: () => void;
   onChangeTab: (tab: TabKey) => void;
 }
 
-const HomePage = ({ formData, onStartNewLog, onChangeTab }: PageHomeProps) => {
+const HomePage = ({ formData, onStartNewLog, onChangeTab }: HomePageProps) => {
   const navigate = useNavigate();
 
   const todayLabel = useMemo(
