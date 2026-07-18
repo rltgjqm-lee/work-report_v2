@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Button from "../atoms/Button";
 import LabeledInput from "./LabeledInput";
@@ -27,13 +27,25 @@ const readCachedParticipant = (): CachedParticipant | null => {
  * 사업단 선택 후 노출되는 셀프 출퇴근 체크. GPS 검증 없이, 최초 1회
  * 이름+전화번호 뒤4자리로 본인을 확인하면 이후에는 기기에 저장해두고 재사용한다.
  */
-const AttendanceCheckIn = ({ programId }: { programId: number | null }) => {
+const AttendanceCheckIn = ({
+  programId,
+  onIdentified,
+}: {
+  programId: number | null;
+  onIdentified?: (participant: CachedParticipant) => void;
+}) => {
   const [participant, setParticipant] = useState<CachedParticipant | null>(
     readCachedParticipant,
   );
   const [name, setName] = useState("");
   const [phoneLast4, setPhoneLast4] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+
+  // 이미 캐시된 식별 결과가 있으면 마운트 시점에 상위로도 알려준다 (activityLogs 연결용)
+  useEffect(() => {
+    if (participant) onIdentified?.(participant);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!programId) return null;
 
@@ -54,6 +66,7 @@ const AttendanceCheckIn = ({ programId }: { programId: number | null }) => {
       );
       setParticipant(cached);
       setStatus(null);
+      onIdentified?.(cached);
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "본인 확인에 실패했습니다.");
     }

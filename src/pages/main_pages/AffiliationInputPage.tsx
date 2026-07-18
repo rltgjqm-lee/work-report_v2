@@ -207,6 +207,13 @@ const AffiliationInputPage = ({
       return;
     }
 
+    if (!formData.participantId) {
+      onAlert([
+        "근태 체크 카드에서 이름과 전화번호 뒷 4자리로 본인 확인을 먼저 완료해주세요.",
+      ]);
+      return;
+    }
+
     saveToLocalStorage();
     onNext();
   };
@@ -365,7 +372,10 @@ const AffiliationInputPage = ({
 
         {selectedProgramId && (
           <Card>
-            <AttendanceCheckIn programId={Number(selectedProgramId)} />
+            <AttendanceCheckIn
+              programId={Number(selectedProgramId)}
+              onIdentified={(p) => onChange("participantId", p.participantId)}
+            />
           </Card>
         )}
       </div>
