@@ -31,7 +31,7 @@ const emptyForm = {
   endDate: "",
   startTime: "",
   endTime: "",
-  projectType: "",
+  programType: "",
   hourlyWage: "3000",
   educationAmount: "0",
   educationType: "add" as "add" | "deduct",
@@ -108,7 +108,7 @@ const ProgramsPage = () => {
       endDate: program.endDate,
       startTime: program.startTime,
       endTime: program.endTime,
-      projectType: program.projectType ?? "",
+      programType: program.programType ?? "",
       hourlyWage: String(program.hourlyWage),
       educationAmount: String(program.educationAmount),
       educationType: program.educationType,
@@ -127,7 +127,7 @@ const ProgramsPage = () => {
         endDate: form.endDate,
         startTime: form.startTime,
         endTime: form.endTime,
-        projectType: form.projectType || undefined,
+        programType: form.programType || undefined,
         hourlyWage: Number(form.hourlyWage),
         educationAmount: Number(form.educationAmount),
         educationType: form.educationType,
@@ -374,9 +374,9 @@ const ProgramsPage = () => {
         <FormField label="사업유형">
           <select
             className={inputClass}
-            value={form.projectType}
+            value={form.programType}
             onChange={(e) =>
-              setForm((f) => ({ ...f, projectType: e.target.value }))
+              setForm((f) => ({ ...f, programType: e.target.value }))
             }
           >
             <option value="">선택하세요</option>

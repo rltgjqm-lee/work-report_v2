@@ -46,7 +46,7 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
     email,
     role: admin.role,
     organizationId: admin.organizationId,
-    projectIds: parseIdArray(admin.projectIds),
+    programIds: parseIdArray(admin.programIds),
     groupIds: parseIdArray(admin.groupIds),
   };
   c.set("admin", session);
@@ -69,13 +69,13 @@ export const hasMinRole = (admin: AdminSession, required: AdminRole): boolean =>
 export const canAccessOrg = (admin: AdminSession, organizationId: number): boolean =>
   admin.role === "SUPER_ADMIN" || admin.organizationId === organizationId;
 
-// 사업단 단위 접근: 기관 소속이면 통과, MANAGER는 담당 사업단(projectIds)만
+// 사업단 단위 접근: 기관 소속이면 통과, MANAGER는 담당 사업단(programIds)만
 export const canAccessProgram = (
   admin: AdminSession,
   program: { organizationId: number; id: number },
 ): boolean => {
   if (admin.role === "SUPER_ADMIN") return true;
-  if (admin.role === "MANAGER") return admin.projectIds.includes(program.id);
+  if (admin.role === "MANAGER") return admin.programIds.includes(program.id);
   return admin.organizationId === program.organizationId;
 };
 

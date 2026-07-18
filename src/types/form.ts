@@ -3,7 +3,7 @@ export interface ActivityLogFormData {
   id?: number;
   participantId?: number; // 이름+전화번호로 식별된 실제 participants 행 id (서버 동기화용)
   orgName: string;
-  projectName: string;
+  programName: string;
   demandName: string;
   gender: "남성" | "여성" | "";
   userName: string;

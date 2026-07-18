@@ -5,7 +5,7 @@ export type AdminSession = {
   email: string;
   role: AdminRole;
   organizationId: number | null;
-  projectIds: number[];
+  programIds: number[];
   groupIds: number[];
 };
 

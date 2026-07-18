@@ -72,7 +72,7 @@ export const PdfTemplate = ({
                 <th style={{ width: "15%" }}>기관명</th>
                 <td style={{ width: "35%" }}>{formData.orgName}</td>
                 <th style={{ width: "15%" }}>참여사업명</th>
-                <td style={{ width: "35%" }}>{formData.projectName}</td>
+                <td style={{ width: "35%" }}>{formData.programName}</td>
               </tr>
               <tr>
                 <th>참여자 성명</th>

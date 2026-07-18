@@ -84,7 +84,7 @@ const ActivityLogPage = ({
 
   const getFileName = (ext: string) => {
     const monthStr = String(currentMonth).padStart(2, "0");
-    return `${currentYear}년${monthStr}월 ${formData.orgName}_${formData.projectName}_${formData.userName}.${ext}`;
+    return `${currentYear}년${monthStr}월 ${formData.orgName}_${formData.programName}_${formData.userName}.${ext}`;
   };
 
   const filteredLogs = logs.filter((log) => {

@@ -14,7 +14,7 @@ export type PublicProgram = {
   endDate: string;
   startTime: string;
   endTime: string;
-  projectType: string | null;
+  programType: string | null;
 };
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;

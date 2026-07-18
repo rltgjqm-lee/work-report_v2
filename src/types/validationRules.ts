@@ -9,7 +9,7 @@ export interface ValidationRule {
 // 💡 Page 1: 초기 설정 검증 규칙 상수
 export const PAGE1_RULES: ValidationRule[] = [
   { field: "orgName", message: "(1) 기관명을 넣어주세요" },
-  { field: "projectName", message: "(2) 참여사업명을 넣어주세요" },
+  { field: "programName", message: "(2) 참여사업명을 넣어주세요" },
   { field: "userName", message: "(3) 참여자성명을 넣어주세요" },
   { field: "demandName", message: "(4) 수요처명을 넣어주세요" },
 ];

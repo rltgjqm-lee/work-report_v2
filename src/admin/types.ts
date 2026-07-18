@@ -5,7 +5,7 @@ export type AdminSession = {
   email: string;
   role: Role;
   organizationId: number | null;
-  projectIds: number[];
+  programIds: number[];
   groupIds: number[];
 };
 
@@ -32,7 +32,7 @@ export type Program = {
   endDate: string;
   startTime: string;
   endTime: string;
-  projectType: string | null;
+  programType: string | null;
   hourlyWage: number;
   educationAmount: number;
   educationType: "add" | "deduct";

@@ -15,7 +15,7 @@ type ProgramBody = {
   endDate?: string;
   startTime?: string;
   endTime?: string;
-  projectType?: string;
+  programType?: string;
   hourlyWage?: number;
   educationAmount?: number;
   educationType?: "add" | "deduct";
@@ -49,7 +49,7 @@ app.get("/", async (c) => {
 
   const visible =
     auth.role === "MANAGER"
-      ? rows.filter((p) => auth.projectIds.includes(p.id))
+      ? rows.filter((p) => auth.programIds.includes(p.id))
       : rows;
 
   return c.json(visible);
@@ -118,7 +118,7 @@ app.post("/", async (c) => {
       endDate,
       startTime,
       endTime,
-      projectType: body.projectType,
+      programType: body.programType,
       hourlyWage: body.hourlyWage,
       educationAmount: body.educationAmount,
       educationType: body.educationType,

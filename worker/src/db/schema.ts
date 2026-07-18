@@ -28,7 +28,7 @@ export const programs = sqliteTable("programs", {
   endDate: text("end_date").notNull(),
   startTime: text("start_time").notNull(),
   endTime: text("end_time").notNull(),
-  projectType: text("project_type"),
+  programType: text("program_type"),
   hourlyWage: integer("hourly_wage").notNull().default(3000),
   educationAmount: integer("education_amount").notNull().default(0),
   educationType: text("education_type")
@@ -121,7 +121,7 @@ export const admins = sqliteTable("admins", {
     .default("MANAGER"),
   organizationId: integer("organization_id").references(() => organizations.id),
   // MANAGER: 담당 사업단(복수) id 배열을 JSON 문자열로 저장 (예: "[1,2,3]")
-  projectIds: text("project_ids"),
+  programIds: text("program_ids"),
   // SUB_ADMIN: 담당 조(복수) id 배열을 JSON 문자열로 저장
   groupIds: text("group_ids"),
   createdAt: text("created_at")

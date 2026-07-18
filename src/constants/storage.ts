@@ -1,6 +1,6 @@
 export const LOCAL_STORAGE_KEYS = {
   CONF_ORG: "conf_org", // 기관명
-  CONF_PROJ: "conf_proj", // 참여사업명
+  CONF_PROGRAM: "conf_program", // 참여사업명
   CONF_DEMAND: "conf_demand", // 수요처명
   CONF_USER: "conf_user", // 참여자 성명
   USER_SIGN: "userSign", // 참여자 서명 (Base64)

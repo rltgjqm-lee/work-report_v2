@@ -35,7 +35,7 @@ export const downloadActivityLogExcel = async ({
   sheet.getCell("A2").value = "기관명";
   sheet.getCell("B2").value = formData.orgName;
   sheet.getCell("F2").value = "참여사업명";
-  sheet.getCell("G2").value = formData.projectName;
+  sheet.getCell("G2").value = formData.programName;
 
   sheet.getCell("A3").value = "참여자 성명";
   sheet.getCell("B3").value = formData.userName;

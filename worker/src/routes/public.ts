@@ -43,7 +43,7 @@ app.get("/programs", async (c) => {
       endDate: programs.endDate,
       startTime: programs.startTime,
       endTime: programs.endTime,
-      projectType: programs.projectType,
+      programType: programs.programType,
     })
     .from(programs);
 

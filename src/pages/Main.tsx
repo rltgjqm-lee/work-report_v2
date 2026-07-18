@@ -67,7 +67,7 @@ const buildLogItemFromFormData = (
 const initialFormData: ActivityLogFormData = {
   id: undefined, // 💡 고유 키값 추적을 위해 id 필드를 추가합니다 (처음엔 없음)
   orgName: "",
-  projectName: "",
+  programName: "",
   demandName: "",
   gender: "",
   userName: "",

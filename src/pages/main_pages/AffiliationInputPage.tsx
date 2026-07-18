@@ -52,7 +52,7 @@ const AffiliationInputPage = ({
   const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState("");
 
-  const [projectType, setProjectType] = useState("");
+  const [programType, setProgramType] = useState("");
   const [programs, setPrograms] = useState<PublicProgram[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
@@ -128,17 +128,17 @@ const AffiliationInputPage = ({
     [organizations, sido, sigungu, organizationType],
   );
 
-  const projectTypeList = useMemo(
+  const programTypeList = useMemo(
     () =>
       Array.from(
-        new Set(programs.map((program) => program.projectType).filter(Boolean)),
+        new Set(programs.map((program) => program.programType).filter(Boolean)),
       ) as string[],
     [programs],
   );
 
   const programCandidates = useMemo(
-    () => programs.filter((program) => program.projectType === projectType),
-    [programs, projectType],
+    () => programs.filter((program) => program.programType === programType),
+    [programs, programType],
   );
 
   const handleSelectSido = (value: string) => {
@@ -147,7 +147,7 @@ const AffiliationInputPage = ({
     setOrganizationType("");
     setSelectedOrgId("");
     setPrograms([]);
-    setProjectType("");
+    setProgramType("");
     setSelectedProgramId("");
   };
 
@@ -156,7 +156,7 @@ const AffiliationInputPage = ({
     setOrganizationType("");
     setSelectedOrgId("");
     setPrograms([]);
-    setProjectType("");
+    setProgramType("");
     setSelectedProgramId("");
   };
 
@@ -164,39 +164,39 @@ const AffiliationInputPage = ({
     setOrganizationType(value);
     setSelectedOrgId("");
     setPrograms([]);
-    setProjectType("");
+    setProgramType("");
     setSelectedProgramId("");
   };
 
   const handleSelectOrg = (orgId: string) => {
     setSelectedOrgId(orgId);
-    setProjectType("");
+    setProgramType("");
     setSelectedProgramId("");
     onChange(
       "orgName",
       organizations.find((organization) => String(organization.id) === orgId)
         ?.name ?? "",
     );
-    onChange("projectName", "");
+    onChange("programName", "");
   };
 
-  const handleSelectProjectType = (value: string) => {
-    setProjectType(value);
+  const handleSelectProgramType = (value: string) => {
+    setProgramType(value);
     setSelectedProgramId("");
-    onChange("projectName", "");
+    onChange("programName", "");
   };
 
   const handleSelectProgram = (programId: string) => {
     setSelectedProgramId(programId);
     onChange(
-      "projectName",
+      "programName",
       programs.find((program) => String(program.id) === programId)?.name ?? "",
     );
   };
 
   const saveToLocalStorage = () => {
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_ORG, formData.orgName);
-    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_PROJ, formData.projectName);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_PROGRAM, formData.programName);
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_DEMAND, formData.demandName);
     localStorage.setItem(LOCAL_STORAGE_KEYS.CONF_USER, formData.userName);
 
@@ -309,12 +309,12 @@ const AffiliationInputPage = ({
             <label className={labelClass}>사업 유형</label>
             <select
               className={selectClass + " w-full"}
-              value={projectType}
+              value={programType}
               disabled={!selectedOrgId}
-              onChange={(e) => handleSelectProjectType(e.target.value)}
+              onChange={(e) => handleSelectProgramType(e.target.value)}
             >
               <option value="">선택하세요</option>
-              {projectTypeList.map((p) => (
+              {programTypeList.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>
@@ -327,7 +327,7 @@ const AffiliationInputPage = ({
             <select
               className={selectClass + " w-full"}
               value={selectedProgramId}
-              disabled={!projectType}
+              disabled={!programType}
               onChange={(e) => handleSelectProgram(e.target.value)}
             >
               <option value="">선택하세요</option>
