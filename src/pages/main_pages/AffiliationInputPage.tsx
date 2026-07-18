@@ -77,7 +77,11 @@ const AffiliationInputPage = ({
   const sidoList = useMemo(
     () =>
       Array.from(
-        new Set(organizations.map((o) => o.regionSido).filter(Boolean)),
+        new Set(
+          organizations
+            .map((organization) => organization.regionSido)
+            .filter(Boolean),
+        ),
       ) as string[],
     [organizations],
   );
@@ -87,8 +91,8 @@ const AffiliationInputPage = ({
       Array.from(
         new Set(
           organizations
-            .filter((o) => o.regionSido === sido)
-            .map((o) => o.regionSigungu)
+            .filter((organization) => organization.regionSido === sido)
+            .map((organization) => organization.regionSigungu)
             .filter(Boolean),
         ),
       ) as string[],
@@ -100,8 +104,12 @@ const AffiliationInputPage = ({
       Array.from(
         new Set(
           organizations
-            .filter((o) => o.regionSido === sido && o.regionSigungu === sigungu)
-            .map((o) => o.agencyType)
+            .filter(
+              (organization) =>
+                organization.regionSido === sido &&
+                organization.regionSigungu === sigungu,
+            )
+            .map((organization) => organization.agencyType)
             .filter(Boolean),
         ),
       ) as string[],
@@ -111,10 +119,10 @@ const AffiliationInputPage = ({
   const orgCandidates = useMemo(
     () =>
       organizations.filter(
-        (o) =>
-          o.regionSido === sido &&
-          o.regionSigungu === sigungu &&
-          o.agencyType === agencyType,
+        (organization) =>
+          organization.regionSido === sido &&
+          organization.regionSigungu === sigungu &&
+          organization.agencyType === agencyType,
       ),
     [organizations, sido, sigungu, agencyType],
   );
@@ -122,13 +130,13 @@ const AffiliationInputPage = ({
   const projectTypeList = useMemo(
     () =>
       Array.from(
-        new Set(programs.map((p) => p.projectType).filter(Boolean)),
+        new Set(programs.map((program) => program.projectType).filter(Boolean)),
       ) as string[],
     [programs],
   );
 
   const programCandidates = useMemo(
-    () => programs.filter((p) => p.projectType === projectType),
+    () => programs.filter((program) => program.projectType === projectType),
     [programs, projectType],
   );
 
@@ -165,7 +173,8 @@ const AffiliationInputPage = ({
     setSelectedProgramId("");
     onChange(
       "orgName",
-      organizations.find((o) => String(o.id) === orgId)?.name ?? "",
+      organizations.find((organization) => String(organization.id) === orgId)
+        ?.name ?? "",
     );
     onChange("projectName", "");
   };
@@ -180,7 +189,7 @@ const AffiliationInputPage = ({
     setSelectedProgramId(programId);
     onChange(
       "projectName",
-      programs.find((p) => String(p.id) === programId)?.name ?? "",
+      programs.find((program) => String(program.id) === programId)?.name ?? "",
     );
   };
 
