@@ -2,7 +2,11 @@ import { useState } from "react";
 
 import Button from "../atoms/Button";
 import LabeledInput from "./LabeledInput";
-import { clockIn, clockOut, identifyParticipant } from "../../utils/attendanceApi";
+import {
+  clockIn,
+  clockOut,
+  identifyParticipant,
+} from "../../utils/attendanceApi";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 
 type CachedParticipant = { participantId: number; name: string };

@@ -137,7 +137,12 @@ export const bulkAddParticipants = (
 
 export const updateParticipant = (
   id: number,
-  data: Partial<Pick<Participant, "name" | "demandName" | "phoneLast4" | "birthYear" | "groupId">>,
+  data: Partial<
+    Pick<
+      Participant,
+      "name" | "demandName" | "phoneLast4" | "birthYear" | "groupId"
+    >
+  >,
 ) =>
   request<Participant>(`/api/participants/${id}`, {
     method: "PUT",
@@ -175,7 +180,12 @@ export const listGroups = (programId: number) =>
 
 export const createGroup = (
   programId: number,
-  data: { name: string; description?: string; shiftStart: string; shiftEnd: string },
+  data: {
+    name: string;
+    description?: string;
+    shiftStart: string;
+    shiftEnd: string;
+  },
 ) =>
   request<Group>(`/api/programs/${programId}/groups`, {
     method: "POST",
@@ -184,7 +194,9 @@ export const createGroup = (
 
 export const updateGroup = (
   id: number,
-  data: Partial<Pick<Group, "name" | "description" | "shiftStart" | "shiftEnd" | "isActive">>,
+  data: Partial<
+    Pick<Group, "name" | "description" | "shiftStart" | "shiftEnd" | "isActive">
+  >,
 ) =>
   request<Group>(`/api/groups/${id}`, {
     method: "PUT",

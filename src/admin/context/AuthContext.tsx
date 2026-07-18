@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { getMe, setOnUnauthorized } from "../api/client";
 import {
@@ -26,8 +32,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     setOnUnauthorized(() => setState({ admin: null, loading: false }));
-    refresh();
-  }, [refresh]);
+
+    let cancelled = false;
+    getMe()
+      .then((admin) => {
+        if (!cancelled) setState({ admin, loading: false });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ admin: null, loading: false });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({ ...state, isAuthenticated: !!state.admin, refresh }),

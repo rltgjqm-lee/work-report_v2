@@ -42,7 +42,12 @@ const emptyForm = {
   demandName: "",
 };
 
-const emptyGroupForm = { name: "", description: "", shiftStart: "", shiftEnd: "" };
+const emptyGroupForm = {
+  name: "",
+  description: "",
+  shiftStart: "",
+  shiftEnd: "",
+};
 
 const statusLabel: Record<string, string> = {
   ACTIVE: "활동중",
