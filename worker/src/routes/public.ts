@@ -17,7 +17,13 @@ const app = new Hono<Env>();
 app.get("/organizations", async (c) => {
   const db = drizzle(c.env.DB);
   const rows = await db
-    .select({ id: organizations.id, name: organizations.name })
+    .select({
+      id: organizations.id,
+      name: organizations.name,
+      regionSido: organizations.regionSido,
+      regionSigungu: organizations.regionSigungu,
+      agencyType: organizations.agencyType,
+    })
     .from(organizations);
 
   return c.json(rows);
@@ -36,6 +42,7 @@ app.get("/programs", async (c) => {
       endDate: programs.endDate,
       startTime: programs.startTime,
       endTime: programs.endTime,
+      projectType: programs.projectType,
     })
     .from(programs);
 

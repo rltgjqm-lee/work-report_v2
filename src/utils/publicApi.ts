@@ -1,4 +1,10 @@
-export type PublicOrganization = { id: number; name: string };
+export type PublicOrganization = {
+  id: number;
+  name: string;
+  regionSido: string | null;
+  regionSigungu: string | null;
+  agencyType: string | null;
+};
 
 export type PublicProgram = {
   id: number;
@@ -8,6 +14,7 @@ export type PublicProgram = {
   endDate: string;
   startTime: string;
   endTime: string;
+  projectType: string | null;
 };
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
