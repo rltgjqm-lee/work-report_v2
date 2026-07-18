@@ -3,16 +3,20 @@ import { useState, useEffect, useRef } from "react";
 import ConfirmModal from "../components/molecule/ConfirmModal";
 
 import Page1OnConfig from "./main_pages/Page1OnConfig";
-import Page2Dashboard from "./main_pages/Page2Dashboard";
+import PageHome from "./main_pages/PageHome";
+import PageList from "./main_pages/PageList";
 import Page3DateTime from "./main_pages/Page3DateTime";
 import Page4ContentPlace from "./main_pages/Page4ContentPlace";
 import Page5Accident from "./main_pages/Page5Accident";
 import Page6Signature from "./main_pages/Page6Signature";
 import { PdfTemplate } from "../components/organism/PdfTemplate";
+import type { TabKey } from "../components/appshell/TabBar";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
+
+type View = "config" | "home" | "list" | 3 | 4 | 5 | 6;
 
 // 💡 "AM 09:00" 같은 폼 표기를 "09:00" 24시간제 문자열로 변환
 const formatTimeField = (time: ActivityLogFormData["startTime"]): string => {
@@ -46,6 +50,7 @@ const initialFormData: ActivityLogFormData = {
   orgName: "",
   projectName: "",
   demandName: "",
+  gender: "",
   userName: "",
   actDate: "",
   startTime: { ampm: "AM", hour: "09", minute: "00" },
@@ -64,7 +69,7 @@ const initialFormData: ActivityLogFormData = {
 const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
-  const [page, setPage] = useState<number>(1);
+  const [view, setView] = useState<View>("config");
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
@@ -87,9 +92,6 @@ const Main = () => {
     setModalOpen(false);
   };
 
-  const goNextStep = () => setPage((prev) => Math.min(prev + 1, 6));
-  // const prevStep = () => setPage((prev) => Math.max(prev - 1, 1));
-
   const handleInputChange = <T extends keyof ActivityLogFormData>(
     field: T,
     value: ActivityLogFormData[T],
@@ -99,6 +101,25 @@ const Main = () => {
       [field]: typeof value === "string" ? value : value,
     }));
   };
+
+  // 💡 홈에서 "+ 오늘 활동 기록하기" 클릭 시 활동 관련 필드만 초기화하고 3단계로 진입
+  const handleStartNewLog = () => {
+    setFormData((prev) => ({
+      ...prev,
+      actDate: "",
+      startTime: { ampm: "AM", hour: "", minute: "" },
+      endTime: { ampm: "PM", hour: "", minute: "" },
+      actTotalTime: "- 시간",
+      actContent: "",
+      actPlace: "",
+      hasAccident: false,
+      accidentDetail: "",
+      accidentAction: "업무수행",
+    }));
+    setView(3);
+  };
+
+  const handleChangeTab = (tab: TabKey) => setView(tab);
 
   const handleSaveStepData = () => {
     if (!db) {
@@ -193,69 +214,81 @@ const Main = () => {
     <div className="w-full min-h-dvh flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
       <div className="w-full min-h-dvh bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
         {/* 1. 초기 설정 페이지 */}
-        {page === 1 && (
+        {view === "config" && (
           <Page1OnConfig
             formData={formData}
             onChange={handleInputChange}
-            onNext={goNextStep}
+            onNext={() => setView("home")}
             onAlert={openAlertModal}
           />
         )}
 
-        {/* 2. 대시보드 페이지 */}
-        {page === 2 && (
-          <Page2Dashboard
+        {/* 홈 */}
+        {view === "home" && (
+          <PageHome
+            formData={formData}
+            onStartNewLog={handleStartNewLog}
+            onChangeTab={handleChangeTab}
+          />
+        )}
+
+        {/* 목록 */}
+        {view === "list" && (
+          <PageList
             formData={formData}
             db={db}
-            onNavigateToPage3={() => setPage(3)}
+            onChangeTab={handleChangeTab}
             onAlert={openAlertModal}
-            setFormData={setFormData}
           />
         )}
 
         {/* 3. 활동 일시 페이지 */}
-        {page === 3 && (
+        {view === 3 && (
           <Page3DateTime
             formData={formData}
             setFormData={setFormData}
+            onBack={() => setView("home")}
             onSave={handleSaveStepData}
-            onNext={() => setPage(4)}
+            onNext={() => setView(4)}
             onAlert={openAlertModal}
           />
         )}
 
         {/* 4. 활동 내용/장소 페이지 */}
-        {page === 4 && (
+        {view === 4 && (
           <Page4ContentPlace
             formData={formData}
             setFormData={setFormData}
+            onBack={() => setView(3)}
             onAlert={openAlertModal}
             onSave={handleSaveStepData}
-            onNext={() => setPage(5)}
+            onNext={() => setView(5)}
           />
         )}
 
         {/* 5. 안전사고 유무 페이지 */}
-        {page === 5 && (
+        {view === 5 && (
           <Page5Accident
             formData={formData}
             setFormData={setFormData}
+            onBack={() => setView(4)}
             onAlert={openAlertModal}
             onSave={handleSaveStepData}
-            onNext={() => setPage(6)}
+            onNext={() => setView(6)}
           />
         )}
 
         {/* 6. 서명하기 페이지 */}
-        {page === 6 && (
+        {view === 6 && (
           <>
             <Page6Signature
               formData={formData}
               setFormData={setFormData}
               printRef={printAreaRef}
+              onBack={() => setView(5)}
               onAlert={openAlertModal}
               onSave={handleSaveStepData}
-              onHome={() => setPage(1)}
+              onHome={() => setView("home")}
             />
             {/* 💡 보고서 출력 버튼이 조준할 히든 인쇄용 템플릿 */}
             <PdfTemplate

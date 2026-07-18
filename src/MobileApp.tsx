@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 
-import TopBar from "./components/TopBar";
 import Main from "./pages/Main";
 
 import { startGeofenceTracking, stopGeofenceTracking } from "./utils/geofence";
@@ -39,7 +38,6 @@ function MobileApp() {
 
   return (
     <div className="app">
-      <TopBar />
       <Main />
     </div>
   );

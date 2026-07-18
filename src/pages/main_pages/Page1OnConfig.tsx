@@ -1,8 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import Button from "../../components/atoms/Button";
-import LabeledInput from "../../components/molecule/LabeledInput";
 import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
+import AppBar from "../../components/appshell/AppBar";
+import ProgressBar from "../../components/appshell/ProgressBar";
+import Card from "../../components/appshell/Card";
+import BottomBar from "../../components/appshell/BottomBar";
+import {
+  pageClass,
+  bodyClass,
+  labelClass,
+  labelSmallClass,
+  inputClass,
+  selectClass,
+  btnPrimaryClass,
+  btnTextClass,
+} from "../../components/appshell/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
@@ -16,11 +28,8 @@ import {
 import type { ActivityLogFormData } from "../../types/form";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 
-const selectClassName =
-  "w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border bg-white max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]";
-
 /**
- * Page 1: 사용자 정보 입력
+ * Page 1: 사용자 정보 입력 — 지역/기관유형/사업유형 캐스케이딩 선택
  */
 const Page1OnConfig = ({
   formData,
@@ -38,7 +47,12 @@ const Page1OnConfig = ({
 }) => {
   const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
   const [programs, setPrograms] = useState<PublicProgram[]>([]);
+
+  const [sido, setSido] = useState("");
+  const [sigungu, setSigungu] = useState("");
+  const [agencyType, setAgencyType] = useState("");
   const [selectedOrgId, setSelectedOrgId] = useState("");
+  const [projectType, setProjectType] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
   useEffect(() => {
@@ -60,14 +74,105 @@ const Page1OnConfig = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrgId]);
 
+  const sidoList = useMemo(
+    () =>
+      Array.from(
+        new Set(organizations.map((o) => o.regionSido).filter(Boolean)),
+      ) as string[],
+    [organizations],
+  );
+
+  const sigunguList = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          organizations
+            .filter((o) => o.regionSido === sido)
+            .map((o) => o.regionSigungu)
+            .filter(Boolean),
+        ),
+      ) as string[],
+    [organizations, sido],
+  );
+
+  const agencyTypeList = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          organizations
+            .filter((o) => o.regionSido === sido && o.regionSigungu === sigungu)
+            .map((o) => o.agencyType)
+            .filter(Boolean),
+        ),
+      ) as string[],
+    [organizations, sido, sigungu],
+  );
+
+  const orgCandidates = useMemo(
+    () =>
+      organizations.filter(
+        (o) =>
+          o.regionSido === sido &&
+          o.regionSigungu === sigungu &&
+          o.agencyType === agencyType,
+      ),
+    [organizations, sido, sigungu, agencyType],
+  );
+
+  const projectTypeList = useMemo(
+    () =>
+      Array.from(
+        new Set(programs.map((p) => p.projectType).filter(Boolean)),
+      ) as string[],
+    [programs],
+  );
+
+  const programCandidates = useMemo(
+    () => programs.filter((p) => p.projectType === projectType),
+    [programs, projectType],
+  );
+
+  const handleSelectSido = (value: string) => {
+    setSido(value);
+    setSigungu("");
+    setAgencyType("");
+    setSelectedOrgId("");
+    setPrograms([]);
+    setProjectType("");
+    setSelectedProgramId("");
+  };
+
+  const handleSelectSigungu = (value: string) => {
+    setSigungu(value);
+    setAgencyType("");
+    setSelectedOrgId("");
+    setPrograms([]);
+    setProjectType("");
+    setSelectedProgramId("");
+  };
+
+  const handleSelectAgencyType = (value: string) => {
+    setAgencyType(value);
+    setSelectedOrgId("");
+    setPrograms([]);
+    setProjectType("");
+    setSelectedProgramId("");
+  };
+
   const handleSelectOrg = (orgId: string) => {
     setSelectedOrgId(orgId);
+    setProjectType("");
     setSelectedProgramId("");
-    setPrograms([]);
     onChange(
       "orgName",
       organizations.find((o) => String(o.id) === orgId)?.name ?? "",
     );
+    onChange("projectName", "");
+  };
+
+  const handleSelectProjectType = (value: string) => {
+    setProjectType(value);
+    setSelectedProgramId("");
     onChange("projectName", "");
   };
 
@@ -94,133 +199,188 @@ const Page1OnConfig = ({
     }
   };
 
-  const handleClickSaveButton = () => {
-    const errors = validateForm(formData, PAGE1_RULES);
-
-    if (errors.length > 0) {
-      onAlert(errors);
-      return;
-    }
-    saveToLocalStorage();
-
-    onAlert(["기관 정보가 안전하게 저장되었습니다."]);
-  };
-
   const handleClickNextButton = () => {
     const errors = validateForm(formData, PAGE1_RULES);
 
-    const successConfirmMessage = [
-      "✅ 기관 정보가 안전하게 저장되었습니다.",
-      "--------------------------------------",
-      `• 기관명: [${formData.orgName}]`,
-      `• 참여사업명: [${formData.projectName}]`,
-      `• 참여자 성명: [${formData.userName}]`,
-      `• 수요처명: [${formData.demandName}]`,
-      "--------------------------------------",
-      "다음 페이지로  이동합니다.",
-    ];
-
     if (errors.length > 0) {
       onAlert(errors);
-
       return;
     }
 
     saveToLocalStorage();
-
-    // 윈도우 기본 confirm 창 사용 (나중에 만든 ConfirmModal 연동 가능)
-    onAlert(successConfirmMessage);
     onNext();
   };
 
   return (
-    <div
-      className="p-[30px_20px] flex-1 flex flex-col max-[600px]:p-[20px_15px]"
-      id="page1"
-    >
-      <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left whitespace-nowrap tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-        노인공익활동사업 활동일지
+    <div className={pageClass}>
+      <AppBar title="기본정보" />
+      <ProgressBar step={1} />
+      <div className={bodyClass}>
+        <Card>
+          <div className="flex gap-3.5">
+            <div className="flex-1">
+              <label className={labelClass}>시·도</label>
+              <select
+                className={selectClass + " w-full"}
+                value={sido}
+                onChange={(e) => handleSelectSido(e.target.value)}
+              >
+                <option value="">선택하세요</option>
+                {sidoList.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className={labelClass}>시·군·구</label>
+              <select
+                className={selectClass + " w-full"}
+                value={sigungu}
+                disabled={!sido}
+                onChange={(e) => handleSelectSigungu(e.target.value)}
+              >
+                <option value="">선택하세요</option>
+                {sigunguList.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3.5">
+            <div className="flex-1">
+              <label className={labelClass}>기관 유형</label>
+              <select
+                className={selectClass + " w-full"}
+                value={agencyType}
+                disabled={!sigungu}
+                onChange={(e) => handleSelectAgencyType(e.target.value)}
+              >
+                <option value="">선택하세요</option>
+                {agencyTypeList.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className={labelClass}>소속 기관명</label>
+              <select
+                className={selectClass + " w-full"}
+                value={selectedOrgId}
+                disabled={!agencyType}
+                onChange={(e) => handleSelectOrg(e.target.value)}
+              >
+                <option value="">선택하세요</option>
+                {orgCandidates.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>사업 유형</label>
+            <select
+              className={selectClass + " w-full"}
+              value={projectType}
+              disabled={!selectedOrgId}
+              onChange={(e) => handleSelectProjectType(e.target.value)}
+            >
+              <option value="">선택하세요</option>
+              {projectTypeList.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={labelClass}>사업단명</label>
+            <select
+              className={selectClass + " w-full"}
+              value={selectedProgramId}
+              disabled={!projectType}
+              onChange={(e) => handleSelectProgram(e.target.value)}
+            >
+              <option value="">선택하세요</option>
+              {programCandidates.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              수요처명
+              <small className={labelSmallClass}>서비스대상자명</small>
+            </label>
+            <input
+              className={inputClass}
+              placeholder="예) 00주민센터"
+              value={formData.demandName}
+              onChange={(e) => onChange("demandName", e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-3.5">
+            <div className="flex-1">
+              <label className={labelClass}>성별</label>
+              <select
+                className={selectClass + " w-full"}
+                value={formData.gender}
+                onChange={(e) =>
+                  onChange(
+                    "gender",
+                    e.target.value as ActivityLogFormData["gender"],
+                  )
+                }
+              >
+                <option value="">선택하세요</option>
+                <option value="남성">남성</option>
+                <option value="여성">여성</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className={labelClass}>참여자 성함</label>
+              <input
+                className={inputClass}
+                placeholder="성함 입력"
+                value={formData.userName}
+                onChange={(e) => onChange("userName", e.target.value)}
+              />
+            </div>
+          </div>
+        </Card>
+
+        {selectedProgramId && (
+          <Card>
+            <AttendanceCheckIn programId={Number(selectedProgramId)} />
+          </Card>
+        )}
       </div>
 
-      {/* 기관명 선택 */}
-      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-          기관명
-        </div>
-        <select
-          className={selectClassName}
-          value={selectedOrgId}
-          onChange={(e) => handleSelectOrg(e.target.value)}
-        >
-          <option value="">선택하세요</option>
-          {organizations.map((org) => (
-            <option key={org.id} value={org.id}>
-              {org.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* 참여사업명 선택*/}
-      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-          참여사업명
-        </div>
-        <select
-          className={selectClassName}
-          value={selectedProgramId}
-          disabled={!selectedOrgId}
-          onChange={(e) => handleSelectProgram(e.target.value)}
-        >
-          <option value="">선택하세요</option>
-          {programs.map((program) => (
-            <option key={program.id} value={program.id}>
-              {program.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <AttendanceCheckIn
-        programId={selectedProgramId ? Number(selectedProgramId) : null}
-      />
-
-      {/* 수요처명 입력*/}
-      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <LabeledInput
-          labelTitle={
-            <>
-              수요처명 <br />
-              <span className="text-[14px] font-normal">(서비스대상자명)</span>
-            </>
-          }
-          id="demandName"
-          placeholder="예) 00주민센터"
-          value={formData.demandName}
-          onChange={(e) => onChange("demandName", e.target.value)}
-        />
-      </div>
-
-      {/* 참여자명 입력*/}
-      <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <LabeledInput
-          labelTitle="참여자 성명"
-          id="userName"
-          placeholder="성함 입력"
-          value={formData.userName}
-          onChange={(e) => onChange("userName", e.target.value)}
-        />
-      </div>
-
-      {/* 액션 버튼 */}
-      <div className="flex justify-center gap-4 pt-5 max-[600px]:pt-3">
-        <Button variant="blue" onClick={handleClickSaveButton}>
-          저장하기
-        </Button>
-        <Button variant="white" onClick={handleClickNextButton}>
+      <BottomBar>
+        <button className={btnPrimaryClass} onClick={handleClickNextButton}>
           다음
-        </Button>
-      </div>
+        </button>
+        <button
+          className={btnTextClass + " self-center"}
+          onClick={saveToLocalStorage}
+        >
+          나중에 이어서 작성하고 저장만 하기
+        </button>
+      </BottomBar>
     </div>
   );
 };

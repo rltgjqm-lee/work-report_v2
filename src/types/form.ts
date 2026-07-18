@@ -4,6 +4,7 @@ export interface ActivityLogFormData {
   orgName: string;
   projectName: string;
   demandName: string;
+  gender: "남성" | "여성" | "";
   userName: string;
   // Page 3: 활동 일시
   actDate: string;

@@ -1,12 +1,28 @@
 import React, { useEffect, useRef } from "react";
-import Button from "../../components/atoms/Button";
+
 import type { ActivityLogFormData } from "../../types/form";
 import { downloadActivityLogPdf } from "../../utils/downloadActivityLogPdf";
+import AppBar from "../../components/appshell/AppBar";
+import ProgressBar from "../../components/appshell/ProgressBar";
+import Card from "../../components/appshell/Card";
+import BottomBar, { BottomBarRow } from "../../components/appshell/BottomBar";
+import {
+  pageClass,
+  bodyClass,
+  labelClass,
+  labelSmallClass,
+  sigBoxClass,
+  sigClearClass,
+  checkRowClass,
+  btnPrimaryClass,
+  btnOutlineClass,
+} from "../../components/appshell/classes";
 
 interface Page6Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
   printRef: React.RefObject<HTMLDivElement | null>; // 💡 PDF 인쇄 대상을 조준할 Ref
+  onBack: () => void;
   onSave: () => void;
   onHome: () => void;
   onAlert: (messages: string[]) => void;
@@ -16,6 +32,7 @@ const Page6Signature = ({
   formData,
   setFormData,
   printRef,
+  onBack,
   onSave,
   onHome,
   onAlert,
@@ -151,7 +168,7 @@ const Page6Signature = ({
         fileName: `${baseFileName}.pdf`,
       });
 
-      alert("🎉 보고서(PDF) 출력이 완료되었습니다!");
+      onAlert(["🎉 보고서(PDF) 출력이 완료되었습니다!"]);
     } catch (error) {
       console.error("보고서 생성 실패:", error);
       onAlert(["보고서 다운로드 중 오류가 발생했습니다."]);
@@ -159,97 +176,89 @@ const Page6Signature = ({
   };
 
   return (
-    <div
-      className="p-[30px_20px] flex flex-1 flex-col max-[600px]:p-[20px_15px]"
-      id="page6"
-    >
-      <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-        서명을 진행해주세요
+    <div className={pageClass}>
+      <AppBar title="서명" onBack={onBack} />
+      <ProgressBar step={5} />
+      <div className={bodyClass}>
+        <Card>
+          <label className={labelClass}>
+            여기에 서명해 주세요 (필수)
+            <small className={labelSmallClass}>
+              최초 서명 시 이후 계속 사용됩니다
+            </small>
+          </label>
+          <div className={sigBoxClass}>
+            <canvas
+              ref={userCanvasRef}
+              className="w-full h-full rounded-2xl touch-none"
+            />
+            <button
+              onClick={() => handleClearCanvas(userCanvasRef, "userSignature")}
+              className={sigClearClass}
+            >
+              지우기
+            </button>
+          </div>
+        </Card>
+
+        <Card>
+          <label className={labelClass}>
+            확인자 서명
+            <small className={labelSmallClass}>선택 사항이에요</small>
+          </label>
+          <div className={sigBoxClass}>
+            <canvas
+              ref={demandCanvasRef}
+              className="w-full h-full rounded-2xl touch-none"
+            />
+            <button
+              onClick={() =>
+                handleClearCanvas(demandCanvasRef, "demandSignature")
+              }
+              className={sigClearClass}
+            >
+              지우기
+            </button>
+          </div>
+        </Card>
+
+        <Card>
+          <label className={checkRowClass + " cursor-pointer select-none"}>
+            <input
+              type="checkbox"
+              checked={formData.saveSignatureConsent}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  saveSignatureConsent: e.target.checked,
+                }))
+              }
+              className="w-6 h-6 mt-0.5 accent-[#3182f6] flex-none"
+            />
+            <span>
+              이 서명을 다음에도 계속 사용할게요
+              <br />
+              <span className="text-[13px] text-[#9ca3af] font-normal">
+                (체크 해제 시 다음 작성 시 서명이 지워진 채로 시작합니다)
+              </span>
+            </span>
+          </label>
+        </Card>
       </div>
 
-      {/* 참여자 서명 */}
-      <div className="flex flex-col items-start mb-1 gap-2.5 w-full">
-        <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-          참여자 서명{" "}
-          <span className="text-[12px] font-normal text-[#e74c3c]">
-            (*필수)
-          </span>
-        </div>
-        <div className="border-2 border-dashed border-[#bdc3c7] rounded-xl bg-[#fafafa] relative w-full h-[180px] max-[600px]:h-[120px] mb-0">
-          <canvas
-            ref={userCanvasRef}
-            className="w-full h-full rounded-xl touch-none"
-          />
-          <button
-            onClick={() => handleClearCanvas(userCanvasRef, "userSignature")}
-            className="absolute top-1.5 right-1.5 bg-[#ff4d4d] text-white border-none rounded p-1 text-[12px] z-20 cursor-pointer hover:bg-[#e04343]"
-          >
-            지우기
+      <BottomBar>
+        <button className={btnPrimaryClass} onClick={onSave}>
+          저장하고 마치기
+        </button>
+        <BottomBarRow>
+          <button className={btnOutlineClass} onClick={handleExportReports}>
+            보고서 출력
           </button>
-        </div>
-      </div>
-      <div className="text-[13px] text-[#7f8c8d] text-right mb-[25px] w-full">
-        * 최초 서명 시 이후 계속 사용됩니다.
-      </div>
-
-      {/* 확인자 서명 */}
-      <div className="flex flex-col items-start mb-1 gap-2.5 w-full">
-        <div className="text-[16px] font-bold w-full text-[#34495e] flex-none max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-          확인자 (수요처) 서명{" "}
-          <span className="text-[14px] font-normal">(선택)</span>
-        </div>
-        <div className="border-2 border-dashed border-[#bdc3c7] rounded-xl bg-[#fafafa] relative w-full h-[180px] max-[600px]:h-[120px] mb-0">
-          <canvas
-            ref={demandCanvasRef}
-            className="w-full h-full rounded-xl touch-none"
-          />
-          <button
-            onClick={() =>
-              handleClearCanvas(demandCanvasRef, "demandSignature")
-            }
-            className="absolute top-1.5 right-1.5 bg-[#ff4d4d] text-white border-none rounded p-1 text-[12px] z-20 cursor-pointer hover:bg-[#e04343]"
-          >
-            지우기
+          <button className={btnOutlineClass} onClick={onHome}>
+            처음으로
           </button>
-        </div>
-      </div>
-
-      {/* 서명 보존 동의 */}
-      <label className="flex items-start gap-2 mb-[25px] cursor-pointer mt-3 w-full select-none">
-        <input
-          type="checkbox"
-          id="demandConsentCheck"
-          checked={formData.saveSignatureConsent}
-          onChange={(e) =>
-            setFormData((prev) => ({
-              ...prev,
-              saveSignatureConsent: e.target.checked,
-            }))
-          }
-          className="w-[18px] h-[18px] mt-0.5"
-        />
-        <div className="text-[14px] text-[#2c3e50] text-left">
-          <strong>이 서명으로 계속 사용함에 동의합니다.</strong> <br />
-          <span className="text-[12px] text-[#7f8c8d]">
-            (체크 해제 시 다음 작성 시 서명이 지워진 채로 시작합니다)
-          </span>
-        </div>
-      </label>
-
-      {/* 제어 액션 패널 */}
-      <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-        <Button variant="blue" onClick={onSave}>
-          저장하기
-        </Button>
-        <Button variant="white" onClick={handleExportReports}>
-          {" "}
-          {/* 🔥 연동 변경 */}
-          보고서 출력
-        </Button>
-        <Button variant="white" onClick={onHome}>
-          처음으로
-        </Button>
-      </div>
+        </BottomBarRow>
+      </BottomBar>
     </div>
   );
 };

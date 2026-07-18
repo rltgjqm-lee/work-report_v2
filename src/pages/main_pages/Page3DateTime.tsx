@@ -1,11 +1,25 @@
 import { useMemo, useEffect } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
-import Button from "../../components/atoms/Button";
+import AppBar from "../../components/appshell/AppBar";
+import ProgressBar from "../../components/appshell/ProgressBar";
+import Card from "../../components/appshell/Card";
+import BottomBar, { BottomBarRow } from "../../components/appshell/BottomBar";
+import {
+  pageClass,
+  bodyClass,
+  labelClass,
+  inputClass,
+  selectClass,
+  totalClass,
+  btnPrimaryClass,
+  btnOutlineClass,
+} from "../../components/appshell/classes";
 
 interface Page3Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
+  onBack: () => void;
   onSave?: () => void; // 💡 IndexedDB 임시저장 브릿지
   onNext: () => void;
   onAlert: (messages: string[]) => void;
@@ -17,6 +31,7 @@ interface Page3Props {
 const Page3DateTime = ({
   formData,
   setFormData,
+  onBack,
   onSave,
   onNext,
   onAlert,
@@ -159,66 +174,43 @@ const Page3DateTime = ({
   };
 
   return (
-    <div
-      className="p-[30px_20px] flex flex-1 flex-col max-[600px]:p-[20px_15px]"
-      id="page3"
-    >
-      <div className="text-[22px] font-bold mb-[25px] text-[#2c3e50] text-left tracking-[-0.5px] max-[600px]:text-[20px] max-[600px]:mb-[18px]">
-        활동 일시를 입력해주세요
-      </div>
+    <div className={pageClass}>
+      <AppBar title="활동 일시" onBack={onBack} />
+      <ProgressBar step={2} />
+      <div className={bodyClass}>
+        <Card>
+          <div>
+            <label className={labelClass}>활동일</label>
+            <input
+              type="date"
+              value={formData.actDate}
+              max={todayStr}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, actDate: e.target.value }))
+              }
+              className={inputClass}
+            />
+          </div>
 
-      {/* 활동일 입력칸 */}
-      <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-          활동일{" "}
-          <span className="text-[12px] font-normal text-[#e74c3c]">
-            (*활동일을 선택해 주세요)
-          </span>
-        </div>
-        <input
-          type="date"
-          id="actDate"
-          value={formData.actDate}
-          max={todayStr}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, actDate: e.target.value }))
-          }
-          className="w-full p-[14px] text-[16px] font-sans border-[2.5px] border-[#2c3e50] rounded-xl outline-none box-border max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px]"
-        />
-      </div>
-
-      {/* 활동시간 복합 선택 셀렉트 그리드 */}
-      <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-          활동시간을 선택하여 주세요 <br />
-          <span className="text-[12px] font-normal text-[#e74c3c]">
-            (*활동 종료 후 시간을 선택해 주세요)
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-3 w-full">
-          {/* 시작 시간 설정 */}
-          <div className="w-full">
-            <div className="mb-1 font-bold text-[#34495e] text-[14px]">
-              시작
-            </div>
-            <div className="flex gap-2 w-full">
+          <div>
+            <label className={labelClass}>시작 시간</label>
+            <div className="flex gap-2">
               <select
+                className={selectClass}
                 value={formData.startTime.ampm}
                 onChange={(e) =>
                   handleTimeChange("startTime", "ampm", e.target.value)
                 }
-                className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
               >
                 <option value="AM">오전</option>
                 <option value="PM">오후</option>
               </select>
               <select
+                className={selectClass}
                 value={formData.startTime.hour}
                 onChange={(e) =>
                   handleTimeChange("startTime", "hour", e.target.value)
                 }
-                className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
               >
                 <option value="" disabled>
                   시
@@ -229,13 +221,12 @@ const Page3DateTime = ({
                   </option>
                 ))}
               </select>
-              <span className="text-[16px] font-bold self-center">:</span>
               <select
+                className={selectClass}
                 value={formData.startTime.minute}
                 onChange={(e) =>
                   handleTimeChange("startTime", "minute", e.target.value)
                 }
-                className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
               >
                 <option value="" disabled>
                   분
@@ -249,28 +240,25 @@ const Page3DateTime = ({
             </div>
           </div>
 
-          {/* 종료 시간 설정 */}
-          <div className="w-full">
-            <div className="mb-1 font-bold text-[#34495e] text-[14px]">
-              종료
-            </div>
-            <div className="flex gap-2 w-full">
+          <div>
+            <label className={labelClass}>종료 시간</label>
+            <div className="flex gap-2">
               <select
+                className={selectClass}
                 value={formData.endTime.ampm}
                 onChange={(e) =>
                   handleTimeChange("endTime", "ampm", e.target.value)
                 }
-                className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
               >
                 <option value="AM">오전</option>
                 <option value="PM">오후</option>
               </select>
               <select
+                className={selectClass}
                 value={formData.endTime.hour}
                 onChange={(e) =>
                   handleTimeChange("endTime", "hour", e.target.value)
                 }
-                className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
               >
                 <option value="" disabled>
                   시
@@ -281,13 +269,12 @@ const Page3DateTime = ({
                   </option>
                 ))}
               </select>
-              <span className="text-[16px] font-bold self-center">:</span>
               <select
+                className={selectClass}
                 value={formData.endTime.minute}
                 onChange={(e) =>
                   handleTimeChange("endTime", "minute", e.target.value)
                 }
-                className="text-center w-auto flex-1 p-2 border-[2.5px] border-[#2c3e50] rounded-xl outline-none text-[14px] max-[600px]:p-[6px_2px] max-[600px]:text-[12px] max-[600px]:border-[1.5px]"
               >
                 <option value="" disabled>
                   분
@@ -300,35 +287,28 @@ const Page3DateTime = ({
               </select>
             </div>
           </div>
+        </Card>
+
+        <div
+          className={`${totalClass} ${formData.actTotalTime === "시간 오류" ? "!bg-[#fdf2f2] !text-[#e74c3c]" : ""}`}
+        >
+          총 {formData.actTotalTime} 활동했어요
         </div>
       </div>
 
-      {/* 총 활동 시간 */}
-      <div className="flex flex-col items-start mb-[25px] gap-2.5 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-        <div className="font-bold text-[#34495e] mb-1">총</div>
-        <div className="flex items-center gap-2.5 w-full">
-          <div
-            id="actTotalTime"
-            className={`w-full p-[14px] text-[16px] border-[2.5px] rounded-xl outline-none text-center font-bold max-[600px]:p-[10px] max-[600px]:text-[14px] max-[600px]:border-[1.5px] ${
-              formData.actTotalTime === "시간 오류"
-                ? "border-[#e74c3c] text-[#e74c3c] bg-[#fdf2f2]"
-                : "border-[#2c3e50] text-[#00a0e9] bg-[#f9f9f9]"
-            }`}
+      <BottomBar>
+        <BottomBarRow>
+          <button className={btnOutlineClass} onClick={handleSaveStep}>
+            저장하기
+          </button>
+          <button
+            className={btnPrimaryClass + " flex-1"}
+            onClick={handleNextStep}
           >
-            {formData.actTotalTime}
-          </div>
-        </div>
-      </div>
-
-      {/* 하단 액션 버튼 */}
-      <div className="flex justify-center gap-2 mt-auto pt-5 max-[600px]:mt-5 max-[600px]:pt-0">
-        <Button variant="blue" onClick={handleSaveStep}>
-          저장하기
-        </Button>
-        <Button variant="white" onClick={handleNextStep}>
-          다음
-        </Button>
-      </div>
+            다음
+          </button>
+        </BottomBarRow>
+      </BottomBar>
     </div>
   );
 };
