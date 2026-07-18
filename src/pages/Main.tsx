@@ -16,6 +16,7 @@ import type { TabKey } from "../components/appshell/TabBar";
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
+import { syncPendingActivityLogs } from "../utils/activityLogSync";
 
 const VIEW_TYPE = {
   AFFILIATION: "affiliation",
@@ -37,11 +38,18 @@ const formatTimeField = (time: ActivityLogFormData["startTime"]): string => {
   return `${String(hour24).padStart(2, "0")}:${time.minute}`;
 };
 
-// 💡 폼 데이터를 Page2Dashboard/PdfTemplate이 쓰는 ActivityLogItem 한 건으로 변환
+// 💡 폼 데이터를 ActivityLogPage/PdfTemplate이 쓰는 ActivityLogItem 한 건으로 변환.
+// preserve로 기존 레코드의 serverId만 이어받는다(있으면 다음 동기화 때 수정 API를 씀).
+// synced는 매번 저장할 때마다 false로 찍어서 — 한 번 동기화된 뒤 다음 단계에서 내용이
+// 더 채워져도 다시 서버에 반영되도록 한다.
 const buildLogItemFromFormData = (
   formData: ActivityLogFormData,
+  preserve?: Pick<ActivityLogItem, "serverId">,
 ): ActivityLogItem => ({
   ...(formData.id !== undefined && { id: formData.id }),
+  participantId: formData.participantId,
+  synced: false,
+  serverId: preserve?.serverId,
   date: formData.actDate,
   start: formatTimeField(formData.startTime),
   end: formatTimeField(formData.endTime),
@@ -113,10 +121,13 @@ const Main = () => {
     }));
   };
 
-  // 💡 홈에서 "+ 오늘 활동 기록하기" 클릭 시 활동 관련 필드만 초기화하고 3단계로 진입
+  // 💡 홈에서 "+ 오늘 활동 기록하기" 클릭 시 활동 관련 필드만 초기화하고 3단계로 진입.
+  // id를 반드시 비워야 한다 — 안 그러면 이번에 저장할 때 지난 번(오늘 이미 작성한) 글의
+  // IndexedDB 레코드를 그대로 덮어써서 이전 기록이 사라진다.
   const handleStartNewLog = () => {
     setFormData((prev) => ({
       ...prev,
+      id: undefined,
       actDate: "",
       startTime: { ampm: "AM", hour: "", minute: "" },
       endTime: { ampm: "PM", hour: "", minute: "" },
@@ -133,17 +144,28 @@ const Main = () => {
   const handleChangeTab = (tab: TabKey) =>
     setView(tab === "list" ? VIEW_TYPE.LOGS : VIEW_TYPE.HOME);
 
-  const handleSaveStepData = () => {
+  const handleSaveStepData = async () => {
     if (!db) {
       alert("데이터베이스가 연결되지 않았습니다.");
       return;
     }
 
-    const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
-    const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
+    // 💡 이미 저장된 적 있는 글이면(id 존재) 그 레코드의 동기화 상태(synced/serverId)를
+    // 읽어와 보존한다 — 안 그러면 저장할 때마다 서버에 중복으로 다시 등록되어 버린다.
+    const existing =
+      formData.id !== undefined
+        ? await new Promise<ActivityLogItem | undefined>((resolve) => {
+            const req = db
+              .transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly")
+              .objectStore(INDEXED_DB_CONFIG.STORE_NAME)
+              .get(formData.id!);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(undefined);
+          })
+        : undefined;
 
-    // 💡 데이터 포맷 조립 (Page2Dashboard가 읽는 ActivityLogItem 스키마와 동기화)
-    const logItem = buildLogItemFromFormData(formData);
+    // 💡 데이터 포맷 조립 (ActivityLogPage가 읽는 ActivityLogItem 스키마와 동기화)
+    const logItem = buildLogItemFromFormData(formData, existing);
 
     // 💡 서명 재사용을 위해 localStorage에도 보관 (참여자 서명은 항상, 확인자 서명은 동의 시에만)
     if (formData.userSignature) {
@@ -163,6 +185,8 @@ const Main = () => {
       }
     }
 
+    const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
+    const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
     const request = store.put(logItem);
 
     request.onsuccess = (event: Event) => {
@@ -177,6 +201,9 @@ const Main = () => {
       }));
 
       alert("📝 현재까지 입력된 내용이 안전하게 저장되었습니다.");
+
+      // 💡 온라인이면 바로 서버 동기화 시도, 오프라인/실패 시 다음 기회(mount/online 이벤트)에 재시도
+      syncPendingActivityLogs(db);
     };
 
     request.onerror = (err) => {
@@ -214,6 +241,7 @@ const Main = () => {
       console.log("🎯 IndexedDB 연결 성공!");
       const target = event.target as IDBOpenDBRequest;
       setDb(target.result); // 연결된 DB 객체를 상태에 보관
+      syncPendingActivityLogs(target.result); // 지난번에 오프라인으로 남겨둔 기록 재시도
     };
 
     // 4. DB 연결에 실패했을 때 실행
@@ -221,6 +249,14 @@ const Main = () => {
       console.error("❌ IndexedDB 연결 실패");
     };
   }, []);
+
+  // 💡 오프라인 상태에서 저장해둔 기록을, 다시 온라인이 되는 순간 서버로 동기화
+  useEffect(() => {
+    if (!db) return;
+    const handleOnline = () => syncPendingActivityLogs(db);
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [db]);
 
   return (
     <div className="w-full min-h-dvh flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
