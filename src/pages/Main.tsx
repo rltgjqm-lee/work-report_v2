@@ -87,8 +87,8 @@ const initialFormData: ActivityLogFormData = {
 
 const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
+  const [view, setView] = useState<View>(VIEW_TYPE.AFFILIATION);
   const printAreaRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<View>("affiliation");
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
