@@ -11,7 +11,7 @@ export const organizations = sqliteTable("organizations", {
   bizNo: text("biz_no"),
   regionSido: text("region_sido"),
   regionSigungu: text("region_sigungu"),
-  agencyType: text("agency_type"),
+  organizationType: text("organization_type"),
   prjYear: text("prj_year"),
   createdAt: text("created_at")
     .notNull()

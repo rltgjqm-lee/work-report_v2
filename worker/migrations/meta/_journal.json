@@ -64,6 +64,13 @@
       "when": 1784260800000,
       "tag": "0008_add_groups_attendance_safety_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1784500000000,
+      "tag": "0009_rename_agency_type_to_organization_type",
+      "breakpoints": true
     }
   ]
 }

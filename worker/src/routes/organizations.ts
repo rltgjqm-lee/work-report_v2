@@ -17,7 +17,7 @@ type OrganizationBody = {
   bizNo?: string;
   regionSido?: string;
   regionSigungu?: string;
-  agencyType?: string;
+  organizationType?: string;
   prjYear?: string;
 };
 
@@ -76,7 +76,7 @@ app.post("/", async (c) => {
       bizNo: body.bizNo,
       regionSido: body.regionSido,
       regionSigungu: body.regionSigungu,
-      agencyType: body.agencyType,
+      organizationType: body.organizationType,
       prjYear: body.prjYear,
     })
     .returning();

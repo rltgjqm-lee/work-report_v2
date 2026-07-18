@@ -30,7 +30,7 @@ const emptyForm = {
   bizNo: "",
   regionSido: "",
   regionSigungu: "",
-  agencyType: "",
+  organizationType: "",
   prjYear: "",
 };
 
@@ -78,7 +78,7 @@ const OrganizationsPage = () => {
       bizNo: org.bizNo ?? "",
       regionSido: org.regionSido ?? "",
       regionSigungu: org.regionSigungu ?? "",
-      agencyType: org.agencyType ?? "",
+      organizationType: org.organizationType ?? "",
       prjYear: org.prjYear ?? "",
     });
     setError(null);
@@ -330,9 +330,9 @@ const OrganizationsPage = () => {
               <input
                 className={inputClass}
                 placeholder="예: 시니어클럽, 노인복지관"
-                value={form.agencyType}
+                value={form.organizationType}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, agencyType: e.target.value }))
+                  setForm((f) => ({ ...f, organizationType: e.target.value }))
                 }
               />
             </FormField>

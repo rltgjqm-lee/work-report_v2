@@ -3,7 +3,7 @@ export type PublicOrganization = {
   name: string;
   regionSido: string | null;
   regionSigungu: string | null;
-  agencyType: string | null;
+  organizationType: string | null;
 };
 
 export type PublicProgram = {

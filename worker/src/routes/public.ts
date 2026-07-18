@@ -23,7 +23,7 @@ app.get("/organizations", async (c) => {
       name: organizations.name,
       regionSido: organizations.regionSido,
       regionSigungu: organizations.regionSigungu,
-      agencyType: organizations.agencyType,
+      organizationType: organizations.organizationType,
     })
     .from(organizations);
 

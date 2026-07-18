@@ -45,14 +45,15 @@ const AffiliationInputPage = ({
   onNext: () => void;
   onAlert: (messages: string[]) => void;
 }) => {
-  const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
-  const [programs, setPrograms] = useState<PublicProgram[]>([]);
-
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
-  const [agencyType, setAgencyType] = useState("");
+
+  const [organizationType, setOrganizationType] = useState("");
+  const [organizations, setOrganizations] = useState<PublicOrganization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState("");
+
   const [projectType, setProjectType] = useState("");
+  const [programs, setPrograms] = useState<PublicProgram[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
   useEffect(() => {
@@ -99,7 +100,7 @@ const AffiliationInputPage = ({
     [organizations, sido],
   );
 
-  const agencyTypeList = useMemo(
+  const organizationTypeList = useMemo(
     () =>
       Array.from(
         new Set(
@@ -109,7 +110,7 @@ const AffiliationInputPage = ({
                 organization.regionSido === sido &&
                 organization.regionSigungu === sigungu,
             )
-            .map((organization) => organization.agencyType)
+            .map((organization) => organization.organizationType)
             .filter(Boolean),
         ),
       ) as string[],
@@ -122,9 +123,9 @@ const AffiliationInputPage = ({
         (organization) =>
           organization.regionSido === sido &&
           organization.regionSigungu === sigungu &&
-          organization.agencyType === agencyType,
+          organization.organizationType === organizationType,
       ),
-    [organizations, sido, sigungu, agencyType],
+    [organizations, sido, sigungu, organizationType],
   );
 
   const projectTypeList = useMemo(
@@ -143,7 +144,7 @@ const AffiliationInputPage = ({
   const handleSelectSido = (value: string) => {
     setSido(value);
     setSigungu("");
-    setAgencyType("");
+    setOrganizationType("");
     setSelectedOrgId("");
     setPrograms([]);
     setProjectType("");
@@ -152,15 +153,15 @@ const AffiliationInputPage = ({
 
   const handleSelectSigungu = (value: string) => {
     setSigungu(value);
-    setAgencyType("");
+    setOrganizationType("");
     setSelectedOrgId("");
     setPrograms([]);
     setProjectType("");
     setSelectedProgramId("");
   };
 
-  const handleSelectAgencyType = (value: string) => {
-    setAgencyType(value);
+  const handleSelectOrganizationType = (value: string) => {
+    setOrganizationType(value);
     setSelectedOrgId("");
     setPrograms([]);
     setProjectType("");
@@ -230,7 +231,9 @@ const AffiliationInputPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="기본정보" />
+
       <ProgressBar step={1} />
+
       <div className={bodyClass}>
         <Card>
           <div className="flex gap-3.5">
@@ -272,12 +275,12 @@ const AffiliationInputPage = ({
               <label className={labelClass}>기관 유형</label>
               <select
                 className={selectClass + " w-full"}
-                value={agencyType}
+                value={organizationType}
                 disabled={!sigungu}
-                onChange={(e) => handleSelectAgencyType(e.target.value)}
+                onChange={(e) => handleSelectOrganizationType(e.target.value)}
               >
                 <option value="">선택하세요</option>
-                {agencyTypeList.map((a) => (
+                {organizationTypeList.map((a) => (
                   <option key={a} value={a}>
                     {a}
                   </option>
@@ -289,7 +292,7 @@ const AffiliationInputPage = ({
               <select
                 className={selectClass + " w-full"}
                 value={selectedOrgId}
-                disabled={!agencyType}
+                disabled={!organizationType}
                 onChange={(e) => handleSelectOrg(e.target.value)}
               >
                 <option value="">선택하세요</option>

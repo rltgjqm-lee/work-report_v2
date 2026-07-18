@@ -19,7 +19,7 @@ export type Organization = {
   bizNo: string | null;
   regionSido: string | null;
   regionSigungu: string | null;
-  agencyType: string | null;
+  organizationType: string | null;
   prjYear: string | null;
   createdAt: string;
 };
