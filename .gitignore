@@ -20,6 +20,9 @@ dist-ssr
 # Vite cache
 node_modules/.vite
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Editor / IDE
 .vscode/*
 !.vscode/extensions.json
