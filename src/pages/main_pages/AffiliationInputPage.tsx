@@ -231,7 +231,7 @@ const AffiliationInputPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="기본정보" />
+      <AppBar title="기본 정보" />
 
       <ProgressBar step={1} />
 
@@ -239,6 +239,7 @@ const AffiliationInputPage = ({
         <Card>
           <div className="flex gap-3.5">
             <div className="flex-1">
+              {/* 시/도 */}
               <label className={labelClass}>시·도</label>
               <select
                 className={selectClass + " w-full"}
@@ -253,6 +254,8 @@ const AffiliationInputPage = ({
                 ))}
               </select>
             </div>
+
+            {/* 시/군/구 */}
             <div className="flex-1">
               <label className={labelClass}>시·군·구</label>
               <select
@@ -271,6 +274,7 @@ const AffiliationInputPage = ({
             </div>
           </div>
 
+          {/* 기관 유형 */}
           <div className="flex gap-3.5">
             <div className="flex-1">
               <label className={labelClass}>기관 유형</label>
@@ -290,6 +294,8 @@ const AffiliationInputPage = ({
                 ))}
               </select>
             </div>
+
+            {/* 소속 기관 */}
             <div className="flex-1">
               <label className={labelClass}>소속 기관명</label>
               <select
@@ -308,6 +314,7 @@ const AffiliationInputPage = ({
             </div>
           </div>
 
+          {/* 사업 유형 */}
           <div>
             <label className={labelClass}>사업 유형</label>
             <select
@@ -325,6 +332,7 @@ const AffiliationInputPage = ({
             </select>
           </div>
 
+          {/* 사업단 */}
           <div>
             <label className={labelClass}>사업단명</label>
             <select
@@ -342,6 +350,7 @@ const AffiliationInputPage = ({
             </select>
           </div>
 
+          {/* 수요처 */}
           <div>
             <label className={labelClass}>
               수요처명
@@ -355,6 +364,7 @@ const AffiliationInputPage = ({
             />
           </div>
 
+          {/* 성별 */}
           <div className="flex gap-3.5">
             <div className="flex-1">
               <label className={labelClass}>성별</label>
@@ -374,6 +384,7 @@ const AffiliationInputPage = ({
               </select>
             </div>
 
+            {/* 참여자명 */}
             <div className="flex-1">
               <label className={labelClass}>참여자 성함</label>
               <input
