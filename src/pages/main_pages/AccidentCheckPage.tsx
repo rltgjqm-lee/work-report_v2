@@ -23,7 +23,7 @@ interface Page5Props {
   onAlert: (messages: string[]) => void;
 }
 
-const Page5Accident = ({
+const AccidentCheckPage = ({
   formData,
   setFormData,
   onBack,
@@ -152,4 +152,4 @@ const Page5Accident = ({
   );
 };
 
-export default Page5Accident;
+export default AccidentCheckPage;

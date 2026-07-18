@@ -18,7 +18,12 @@ interface PageListProps {
   onAlert: (messages: string[]) => void;
 }
 
-const PageList = ({ formData, db, onChangeTab, onAlert }: PageListProps) => {
+const ActivityLogPage = ({
+  formData,
+  db,
+  onChangeTab,
+  onAlert,
+}: PageListProps) => {
   const [currentYear, setCurrentYear] = useState<number>(() =>
     new Date().getFullYear(),
   );
@@ -171,4 +176,4 @@ const PageList = ({ formData, db, onChangeTab, onAlert }: PageListProps) => {
   );
 };
 
-export default PageList;
+export default ActivityLogPage;

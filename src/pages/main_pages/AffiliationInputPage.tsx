@@ -31,7 +31,7 @@ import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 /**
  * Page 1: 사용자 정보 입력 — 지역/기관유형/사업유형 캐스케이딩 선택
  */
-const Page1OnConfig = ({
+const AffiliationInputPage = ({
   formData,
   onChange,
   onNext,
@@ -385,4 +385,4 @@ const Page1OnConfig = ({
   );
 };
 
-export default Page1OnConfig;
+export default AffiliationInputPage;

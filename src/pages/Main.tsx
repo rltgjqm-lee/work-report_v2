@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from "react";
 
 import ConfirmModal from "../components/molecule/ConfirmModal";
 
-import Page1OnConfig from "./main_pages/Page1OnConfig";
-import PageHome from "./main_pages/PageHome";
-import PageList from "./main_pages/PageList";
-import Page3DateTime from "./main_pages/Page3DateTime";
-import Page4ContentPlace from "./main_pages/Page4ContentPlace";
-import Page5Accident from "./main_pages/Page5Accident";
-import Page6Signature from "./main_pages/Page6Signature";
+import AffiliationInputPage from "./main_pages/AffiliationInputPage";
+import HomePage from "./main_pages/HomePage";
+import ActivityLogPage from "./main_pages/ActivityLogPage";
+import WorkHoursInputPage from "./main_pages/WorkHoursInputPage";
+import ActivityReportPage from "./main_pages/ActivityReportPage";
+import AccidentCheckPage from "./main_pages/AccidentCheckPage";
+import SignaturePage from "./main_pages/SignaturePage";
+
 import { PdfTemplate } from "../components/organism/PdfTemplate";
 import type { TabKey } from "../components/appshell/TabBar";
 
@@ -16,7 +17,17 @@ import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 
-type View = "config" | "home" | "list" | 3 | 4 | 5 | 6;
+const VIEW_TYPE = {
+  AFFILIATION: "affiliation",
+  HOME: "home",
+  LOGS: "logs",
+  WORK_HOURS: "workHours",
+  REPORT: "report",
+  ACCIDENT: "accident",
+  SIGNATURE: "signature",
+} as const;
+
+export type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
 
 // 💡 "AM 09:00" 같은 폼 표기를 "09:00" 24시간제 문자열로 변환
 const formatTimeField = (time: ActivityLogFormData["startTime"]): string => {
@@ -69,7 +80,7 @@ const initialFormData: ActivityLogFormData = {
 const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<View>("config");
+  const [view, setView] = useState<View>("affiliation");
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
@@ -116,10 +127,11 @@ const Main = () => {
       accidentDetail: "",
       accidentAction: "업무수행",
     }));
-    setView(3);
+    setView(VIEW_TYPE.WORK_HOURS);
   };
 
-  const handleChangeTab = (tab: TabKey) => setView(tab);
+  const handleChangeTab = (tab: TabKey) =>
+    setView(tab === "list" ? VIEW_TYPE.LOGS : VIEW_TYPE.HOME);
 
   const handleSaveStepData = () => {
     if (!db) {
@@ -214,8 +226,8 @@ const Main = () => {
     <div className="w-full min-h-dvh flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
       <div className="w-full min-h-dvh bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
         {/* 1. 초기 설정 페이지 */}
-        {view === "config" && (
-          <Page1OnConfig
+        {view === VIEW_TYPE.AFFILIATION && (
+          <AffiliationInputPage
             formData={formData}
             onChange={handleInputChange}
             onNext={() => setView("home")}
@@ -224,8 +236,8 @@ const Main = () => {
         )}
 
         {/* 홈 */}
-        {view === "home" && (
-          <PageHome
+        {view === VIEW_TYPE.HOME && (
+          <HomePage
             formData={formData}
             onStartNewLog={handleStartNewLog}
             onChangeTab={handleChangeTab}
@@ -233,8 +245,8 @@ const Main = () => {
         )}
 
         {/* 목록 */}
-        {view === "list" && (
-          <PageList
+        {view === VIEW_TYPE.LOGS && (
+          <ActivityLogPage
             formData={formData}
             db={db}
             onChangeTab={handleChangeTab}
@@ -243,49 +255,49 @@ const Main = () => {
         )}
 
         {/* 3. 활동 일시 페이지 */}
-        {view === 3 && (
-          <Page3DateTime
+        {view === VIEW_TYPE.WORK_HOURS && (
+          <WorkHoursInputPage
             formData={formData}
             setFormData={setFormData}
             onBack={() => setView("home")}
             onSave={handleSaveStepData}
-            onNext={() => setView(4)}
+            onNext={() => setView(VIEW_TYPE.REPORT)}
             onAlert={openAlertModal}
           />
         )}
 
         {/* 4. 활동 내용/장소 페이지 */}
-        {view === 4 && (
-          <Page4ContentPlace
+        {view === VIEW_TYPE.REPORT && (
+          <ActivityReportPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(3)}
+            onBack={() => setView(VIEW_TYPE.WORK_HOURS)}
             onAlert={openAlertModal}
             onSave={handleSaveStepData}
-            onNext={() => setView(5)}
+            onNext={() => setView(VIEW_TYPE.ACCIDENT)}
           />
         )}
 
         {/* 5. 안전사고 유무 페이지 */}
-        {view === 5 && (
-          <Page5Accident
+        {view === VIEW_TYPE.ACCIDENT && (
+          <AccidentCheckPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(4)}
+            onBack={() => setView(VIEW_TYPE.REPORT)}
             onAlert={openAlertModal}
             onSave={handleSaveStepData}
-            onNext={() => setView(6)}
+            onNext={() => setView(VIEW_TYPE.SIGNATURE)}
           />
         )}
 
         {/* 6. 서명하기 페이지 */}
-        {view === 6 && (
+        {view === VIEW_TYPE.SIGNATURE && (
           <>
-            <Page6Signature
+            <SignaturePage
               formData={formData}
               setFormData={setFormData}
               printRef={printAreaRef}
-              onBack={() => setView(5)}
+              onBack={() => setView(VIEW_TYPE.ACCIDENT)}
               onAlert={openAlertModal}
               onSave={handleSaveStepData}
               onHome={() => setView("home")}

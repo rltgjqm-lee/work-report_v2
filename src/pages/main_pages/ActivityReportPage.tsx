@@ -26,7 +26,7 @@ interface Page4Props {
 /**
  * Page 4: 활동 내용 및 장소
  */
-const Page4ContentPlace = ({
+const ActivityReportPage = ({
   formData,
   setFormData,
   onBack,
@@ -102,4 +102,4 @@ const Page4ContentPlace = ({
   );
 };
 
-export default Page4ContentPlace;
+export default ActivityReportPage;

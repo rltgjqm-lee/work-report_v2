@@ -28,7 +28,7 @@ interface Page6Props {
   onAlert: (messages: string[]) => void;
 }
 
-const Page6Signature = ({
+const SignaturePage = ({
   formData,
   setFormData,
   printRef,
@@ -263,4 +263,4 @@ const Page6Signature = ({
   );
 };
 
-export default Page6Signature;
+export default SignaturePage;

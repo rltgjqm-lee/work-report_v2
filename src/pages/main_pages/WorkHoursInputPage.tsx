@@ -28,7 +28,7 @@ interface Page3Props {
 /**
  * Page 3: 활동 일시
  */
-const Page3DateTime = ({
+const WorkHoursInputPage = ({
   formData,
   setFormData,
   onBack,
@@ -313,4 +313,4 @@ const Page3DateTime = ({
   );
 };
 
-export default Page3DateTime;
+export default WorkHoursInputPage;

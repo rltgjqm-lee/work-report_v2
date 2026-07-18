@@ -13,7 +13,7 @@ interface PageHomeProps {
   onChangeTab: (tab: TabKey) => void;
 }
 
-const PageHome = ({ formData, onStartNewLog, onChangeTab }: PageHomeProps) => {
+const HomePage = ({ formData, onStartNewLog, onChangeTab }: PageHomeProps) => {
   const navigate = useNavigate();
 
   const todayLabel = useMemo(
@@ -59,4 +59,4 @@ const PageHome = ({ formData, onStartNewLog, onChangeTab }: PageHomeProps) => {
   );
 };
 
-export default PageHome;
+export default HomePage;
