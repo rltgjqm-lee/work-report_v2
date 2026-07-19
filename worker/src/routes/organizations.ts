@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 
 import { organizations, programs } from "../db/schema";
-import { canAccessOrg, getAuth } from "../lib/authz";
+import { canAccessOrg, getAuth, hasMinRole } from "../lib/authz";
 import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
@@ -88,7 +88,10 @@ app.put("/:id", async (c) => {
   const auth = getAuth(c);
   const id = Number(c.req.param("id"));
 
-  if (!canAccessOrg(auth, id)) return c.json({ error: "Forbidden" }, 403);
+  // 기관 정보 수정은 ORGANIZATION_ADMIN 이상만 가능 (SUB_ADMIN/MANAGER는 조회만)
+  if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) || !canAccessOrg(auth, id)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
 
   const db = drizzle(c.env.DB);
   const body = await c.req.json<OrganizationBody>();

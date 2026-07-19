@@ -185,12 +185,15 @@ const OrganizationsPage = () => {
                     {organization.address}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={() => openEdit(organization)}
-                    >
-                      수정
-                    </button>
+                    {(role === ROLES.SUPER_ADMIN ||
+                      role === ROLES.ORGANIZATION_ADMIN) && (
+                      <button
+                        className={rowActionBtnClass}
+                        onClick={() => openEdit(organization)}
+                      >
+                        수정
+                      </button>
+                    )}
                     {role === ROLES.SUPER_ADMIN && (
                       <button
                         className={rowActionBtnClass}
