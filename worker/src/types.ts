@@ -20,6 +20,9 @@ export type Env = {
     // Application의 Audience(AUD) 태그.
     CF_ACCESS_TEAM_DOMAIN: string;
     CF_ACCESS_AUD: string;
+    // 로컬 wrangler dev 전용 — CF Access 터널 없이 관리자 콘솔을 테스트하기 위한 바이패스.
+    // .dev.vars에만 설정하고, 배포 환경 시크릿에는 절대 넣지 않는다.
+    LOCAL_ADMIN_BYPASS_EMAIL?: string;
   };
   Variables: {
     admin: AdminSession;

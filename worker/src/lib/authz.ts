@@ -20,18 +20,28 @@ const parseIdArray = (raw: string | null): number[] => {
 // c.set("admin", ...) 해둔다. Cloudflare Access 자체가 이 경로를 보호하고 있어야 하며,
 // 여기서는 헤더를 그대로 믿지 않고 JWKS로 서명을 다시 검증한다 (cfAccess.ts 참고).
 export const requireAdmin = async (c: Context<Env>, next: Next) => {
-  const token = c.req.header("CF-Access-JWT-Assertion");
-  if (!token) {
-    return c.json({ error: "인증 토큰이 없습니다." }, 401);
-  }
+  let email: string;
 
-  const email = await verifyAccessJwt(
-    token,
-    c.env.CF_ACCESS_TEAM_DOMAIN,
-    c.env.CF_ACCESS_AUD,
-  );
-  if (!email) {
-    return c.json({ error: "유효하지 않은 인증 토큰입니다." }, 401);
+  if (c.env.LOCAL_ADMIN_BYPASS_EMAIL) {
+    // 로컬 wrangler dev 전용 바이패스: CF Access가 앞단에 없어 JWT 헤더가 절대 오지
+    // 않는 로컬 환경에서, .dev.vars의 LOCAL_ADMIN_BYPASS_EMAIL을 그대로 인증된
+    // 관리자 이메일로 취급한다. 배포 시크릿에 이 값이 없으면 이 분기는 타지 않는다.
+    email = c.env.LOCAL_ADMIN_BYPASS_EMAIL;
+  } else {
+    const token = c.req.header("CF-Access-JWT-Assertion");
+    if (!token) {
+      return c.json({ error: "인증 토큰이 없습니다." }, 401);
+    }
+
+    const verifiedEmail = await verifyAccessJwt(
+      token,
+      c.env.CF_ACCESS_TEAM_DOMAIN,
+      c.env.CF_ACCESS_AUD,
+    );
+    if (!verifiedEmail) {
+      return c.json({ error: "유효하지 않은 인증 토큰입니다." }, 401);
+    }
+    email = verifiedEmail;
   }
 
   const db = drizzle(c.env.DB);
