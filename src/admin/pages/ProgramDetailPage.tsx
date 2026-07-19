@@ -130,16 +130,19 @@ const ProgramDetailPage = () => {
         const rows = await parseParticipantsFile(selectedFile);
         if (rows.length === 0) {
           alert("파일에서 등록할 참여자를 찾지 못했습니다.");
+
           return;
         }
         await bulkAddParticipants(programId, { participants: rows });
       } else {
         if (!form.name) {
           alert("이름을 입력해주세요.");
+
           return;
         }
         if (!/^\d{4}$/.test(form.lastPhoneNumber)) {
           alert("전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.");
+
           return;
         }
         await addParticipant(programId, {
@@ -158,6 +161,7 @@ const ProgramDetailPage = () => {
   const handleCreateGroup = async () => {
     if (!groupForm.name || !groupForm.shiftStart || !groupForm.shiftEnd) {
       alert("조 이름과 근무시간을 입력해주세요.");
+
       return;
     }
     try {
