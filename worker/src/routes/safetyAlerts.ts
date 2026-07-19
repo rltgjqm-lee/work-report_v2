@@ -4,7 +4,7 @@ import { desc, eq, sql } from "drizzle-orm";
 
 import { safetyAlerts, disasterPushLogs } from "../db/schema";
 import { hasMinRole, getAuth } from "../lib/authz";
-import type { Env } from "../types";
+import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
 
@@ -12,7 +12,7 @@ const app = new Hono<Env>();
 // 집계해서 계산한다 (발송할 때마다 카운터를 갱신하는 추가 D1 쓰기를 피하려고, 12장 결정)
 app.get("/", async (c) => {
   const auth = getAuth(c);
-  if (!hasMinRole(auth, "MANAGER")) {
+  if (!hasMinRole(auth, ROLES.MANAGER)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -29,7 +29,10 @@ app.get("/", async (c) => {
       failCount: sql<number>`COALESCE(SUM(CASE WHEN ${disasterPushLogs.success} = 0 THEN 1 ELSE 0 END), 0)`,
     })
     .from(safetyAlerts)
-    .leftJoin(disasterPushLogs, eq(safetyAlerts.alertId, disasterPushLogs.messageId))
+    .leftJoin(
+      disasterPushLogs,
+      eq(safetyAlerts.alertId, disasterPushLogs.messageId),
+    )
     .groupBy(safetyAlerts.alertId)
     .orderBy(desc(safetyAlerts.sentAt));
 

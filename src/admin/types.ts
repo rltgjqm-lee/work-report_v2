@@ -1,4 +1,11 @@
-export type Role = "SUPER_ADMIN" | "AGENCY_ADMIN" | "SUB_ADMIN" | "MANAGER";
+export const ROLES = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  ORGANIZATION_ADMIN: "ORGANIZATION_ADMIN",
+  SUB_ADMIN: "SUB_ADMIN",
+  MANAGER: "MANAGER",
+} as const;
+
+export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export type AdminSession = {
   id: number;
@@ -86,3 +93,15 @@ export type SafetyAlert = {
 };
 
 export type ProgramWithParticipants = Program & { participants: Participant[] };
+
+export type Admin = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: Role;
+  organizationId: number | null;
+  programIds: number[];
+  groupIds: number[];
+  isActive: boolean;
+  createdAt: string;
+};

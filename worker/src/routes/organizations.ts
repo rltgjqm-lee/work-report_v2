@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 
 import { organizations, programs } from "../db/schema";
 import { canAccessOrg, getAuth } from "../lib/authz";
-import type { Env } from "../types";
+import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
 
@@ -25,7 +25,7 @@ app.get("/", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
 
-  if (auth.role === "SUPER_ADMIN") {
+  if (auth.role === ROLES.SUPER_ADMIN) {
     return c.json(await db.select().from(organizations));
   }
 
@@ -54,7 +54,7 @@ app.get("/:id", async (c) => {
 
 app.post("/", async (c) => {
   const auth = getAuth(c);
-  if (auth.role !== "SUPER_ADMIN") {
+  if (auth.role !== ROLES.SUPER_ADMIN) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -105,7 +105,7 @@ app.put("/:id", async (c) => {
 
 app.delete("/:id", async (c) => {
   const auth = getAuth(c);
-  if (auth.role !== "SUPER_ADMIN") {
+  if (auth.role !== ROLES.SUPER_ADMIN) {
     return c.json({ error: "Forbidden" }, 403);
   }
 

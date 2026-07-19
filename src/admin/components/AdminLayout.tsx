@@ -1,13 +1,20 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../context/useAuth";
+import { ROLES } from "../types";
 
-const navItems = [
+const BASE_NAV_ITEMS = [
   { to: "/admin/organizations", label: "기관 관리", badge: "1" },
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
   { to: "/admin/safety-alerts", label: "재난문자 발송이력", badge: "4" },
 ];
+
+const ADMIN_ACCOUNTS_NAV_ITEM = {
+  to: "/admin/admins",
+  label: "관리자 계정",
+  badge: "5",
+};
 
 const getTopbarTitle = (pathname: string) => {
   if (/^\/admin\/programs\/\d+/.test(pathname)) return "사업단 상세";
@@ -15,12 +22,19 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 발송이력";
+  if (pathname.startsWith("/admin/admins")) return "관리자 계정";
   return "관리자 콘솔";
 };
 
 const AdminLayout = () => {
   const { admin } = useAuth();
   const location = useLocation();
+
+  const navItems =
+    admin?.role === ROLES.SUPER_ADMIN ||
+    admin?.role === ROLES.ORGANIZATION_ADMIN
+      ? [...BASE_NAV_ITEMS, ADMIN_ACCOUNTS_NAV_ITEM]
+      : BASE_NAV_ITEMS;
 
   // 로그인/세션은 Cloudflare Access가 관리하므로, 앱에서 할 수 있는 건
   // Access 자체의 로그아웃 엔드포인트로 보내는 것뿐이다 (로컬 토큰을 지우는 게 아님).

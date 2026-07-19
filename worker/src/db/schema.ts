@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
 
+import { ROLES, type AdminRole } from "../types";
+
 export const organizations = sqliteTable("organizations", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
@@ -115,15 +117,16 @@ export const admins = sqliteTable("admins", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   // 기존 행은 마이그레이션 직후 NULL — 배포 전 Cloudflare Access 허용 이메일로 수동 채워야 함
   email: text("email").unique(),
-  role: text("role")
-    .$type<"SUPER_ADMIN" | "AGENCY_ADMIN" | "SUB_ADMIN" | "MANAGER">()
-    .notNull()
-    .default("MANAGER"),
+  // 기존 행(수동 등록분)엔 없을 수 있어 nullable — 관리자 계정 CRUD로 새로 만드는 계정은 필수로 검증
+  name: text("name"),
+  role: text("role").$type<AdminRole>().notNull().default(ROLES.MANAGER),
   organizationId: integer("organization_id").references(() => organizations.id),
   // MANAGER: 담당 사업단(복수) id 배열을 JSON 문자열로 저장 (예: "[1,2,3]")
   programIds: text("program_ids"),
   // SUB_ADMIN: 담당 조(복수) id 배열을 JSON 문자열로 저장
   groupIds: text("group_ids"),
+  // 계약 종료/퇴사 시 row를 지우지 않고 비활성화 — requireAdmin에서 비활성 계정은 로그인 차단
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

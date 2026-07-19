@@ -19,7 +19,7 @@ import {
   searchInputClass,
 } from "../uiClasses";
 import { KOREAN_REGIONS, SIDO_LIST } from "../data/koreanRegions";
-import type { Organization } from "../types";
+import { ROLES, type Organization } from "../types";
 
 const emptyForm = {
   name: "",
@@ -118,7 +118,7 @@ const OrganizationsPage = () => {
             사업단이 소속되는 기관 정보를 등록하고 관리합니다.
           </p>
         </div>
-        {role === "SUPER_ADMIN" && (
+        {role === ROLES.SUPER_ADMIN && (
           <button className={btnPrimaryClass} onClick={openAdd}>
             + 기관 추가
           </button>
@@ -191,7 +191,7 @@ const OrganizationsPage = () => {
                     >
                       수정
                     </button>
-                    {role === "SUPER_ADMIN" && (
+                    {role === ROLES.SUPER_ADMIN && (
                       <button
                         className={rowActionBtnClass}
                         onClick={() => handleDelete(organization)}

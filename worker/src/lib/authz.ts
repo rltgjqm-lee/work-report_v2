@@ -4,13 +4,15 @@ import { eq } from "drizzle-orm";
 
 import { admins } from "../db/schema";
 import { verifyAccessJwt } from "./cfAccess";
-import type { AdminRole, AdminSession, Env } from "../types";
+import { ROLES, type AdminRole, type AdminSession, type Env } from "../types";
 
 const parseIdArray = (raw: string | null): number[] => {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "number") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((v) => typeof v === "number")
+      : [];
   } catch {
     return [];
   }
@@ -50,6 +52,9 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
   if (!admin) {
     return c.json({ error: "등록되지 않은 관리자입니다." }, 403);
   }
+  if (!admin.isActive) {
+    return c.json({ error: "비활성화된 관리자 계정입니다." }, 403);
+  }
 
   const session: AdminSession = {
     id: admin.id,
@@ -66,26 +71,30 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
 export const getAuth = (c: Context<Env>): AdminSession => c.get("admin");
 
 const ROLE_LEVELS: Record<AdminRole, number> = {
-  SUPER_ADMIN: 4,
-  AGENCY_ADMIN: 3,
-  SUB_ADMIN: 2,
-  MANAGER: 1,
+  [ROLES.SUPER_ADMIN]: 4,
+  [ROLES.ORGANIZATION_ADMIN]: 3,
+  [ROLES.SUB_ADMIN]: 2,
+  [ROLES.MANAGER]: 1,
 };
 
 export const hasMinRole = (admin: AdminSession, required: AdminRole): boolean =>
   ROLE_LEVELS[admin.role] >= ROLE_LEVELS[required];
 
 // 기관 단위 접근: SUPER_ADMIN은 전체, 나머지는 소속 기관만
-export const canAccessOrg = (admin: AdminSession, organizationId: number): boolean =>
-  admin.role === "SUPER_ADMIN" || admin.organizationId === organizationId;
+export const canAccessOrg = (
+  admin: AdminSession,
+  organizationId: number,
+): boolean =>
+  admin.role === ROLES.SUPER_ADMIN || admin.organizationId === organizationId;
 
 // 사업단 단위 접근: 기관 소속이면 통과, MANAGER는 담당 사업단(programIds)만
 export const canAccessProgram = (
   admin: AdminSession,
   program: { organizationId: number; id: number },
 ): boolean => {
-  if (admin.role === "SUPER_ADMIN") return true;
-  if (admin.role === "MANAGER") return admin.programIds.includes(program.id);
+  if (admin.role === ROLES.SUPER_ADMIN) return true;
+  if (admin.role === ROLES.MANAGER)
+    return admin.programIds.includes(program.id);
   return admin.organizationId === program.organizationId;
 };
 
@@ -95,6 +104,6 @@ export const canAccessGroup = (
   group: { id: number; programId: number },
   program: { organizationId: number; id: number },
 ): boolean => {
-  if (admin.role === "SUB_ADMIN") return admin.groupIds.includes(group.id);
+  if (admin.role === ROLES.SUB_ADMIN) return admin.groupIds.includes(group.id);
   return canAccessProgram(admin, program);
 };

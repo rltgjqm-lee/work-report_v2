@@ -1,4 +1,11 @@
-export type AdminRole = "SUPER_ADMIN" | "AGENCY_ADMIN" | "SUB_ADMIN" | "MANAGER";
+export const ROLES = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  ORGANIZATION_ADMIN: "ORGANIZATION_ADMIN",
+  SUB_ADMIN: "SUB_ADMIN",
+  MANAGER: "MANAGER",
+} as const;
+
+export type AdminRole = (typeof ROLES)[keyof typeof ROLES];
 
 export type AdminSession = {
   id: number;

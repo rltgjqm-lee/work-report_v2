@@ -14,7 +14,7 @@ import {
   disasterPushLogs,
 } from "../db/schema";
 import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
-import type { Env } from "../types";
+import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
 
@@ -44,7 +44,7 @@ app.get("/", async (c) => {
   const queryOrgId = c.req.query("organizationId");
 
   const organizationId =
-    auth.role === "SUPER_ADMIN"
+    auth.role === ROLES.SUPER_ADMIN
       ? queryOrgId
         ? Number(queryOrgId)
         : undefined
@@ -58,7 +58,7 @@ app.get("/", async (c) => {
     : await db.select().from(programs);
 
   const visible =
-    auth.role === "MANAGER"
+    auth.role === ROLES.MANAGER
       ? rows.filter((p) => auth.programIds.includes(p.id))
       : rows;
 
@@ -93,12 +93,12 @@ app.post("/", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<ProgramBody>();
 
-  if (!hasMinRole(auth, "AGENCY_ADMIN")) {
+  if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
   const organizationId =
-    auth.role === "SUPER_ADMIN"
+    auth.role === ROLES.SUPER_ADMIN
       ? body.organizationId
       : (auth.organizationId as number);
   const { name, startDate, endDate, startTime, endTime } = body;
@@ -156,8 +156,8 @@ app.put("/:id", async (c) => {
     .where(eq(programs.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "Not found" }, 404);
-  // 사업단 수정은 SUB_ADMIN까지 허용 (등록/삭제는 AGENCY_ADMIN 이상)
-  if (!hasMinRole(auth, "SUB_ADMIN") || !canAccessProgram(auth, existing)) {
+  // 사업단 수정은 SUB_ADMIN까지 허용 (등록/삭제는 ORGANIZATION_ADMIN 이상)
+  if (!hasMinRole(auth, ROLES.SUB_ADMIN) || !canAccessProgram(auth, existing)) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -183,7 +183,10 @@ app.delete("/:id", async (c) => {
     .where(eq(programs.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "Not found" }, 404);
-  if (!hasMinRole(auth, "AGENCY_ADMIN") || !canAccessProgram(auth, existing)) {
+  if (
+    !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) ||
+    !canAccessProgram(auth, existing)
+  ) {
     return c.json({ error: "Forbidden" }, 403);
   }
 

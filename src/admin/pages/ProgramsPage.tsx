@@ -22,7 +22,7 @@ import {
   searchInputClass,
   selectClass,
 } from "../uiClasses";
-import type { Organization, Program } from "../types";
+import { ROLES, type Organization, type Program } from "../types";
 
 const emptyForm = {
   organizationId: "",
@@ -63,7 +63,7 @@ const ProgramsPage = () => {
 
   const refreshPrograms = () => {
     const organizationId =
-      role === "SUPER_ADMIN"
+      role === ROLES.SUPER_ADMIN
         ? instFilter === "all"
           ? undefined
           : Number(instFilter)
@@ -135,7 +135,7 @@ const ProgramsPage = () => {
         educationType: form.educationType,
         dementiaAmount: Number(form.dementiaAmount),
         dementiaType: form.dementiaType,
-        ...(role === "SUPER_ADMIN" && !editingId
+        ...(role === ROLES.SUPER_ADMIN && !editingId
           ? { organizationId: Number(form.organizationId) }
           : {}),
       };
@@ -180,7 +180,7 @@ const ProgramsPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <div className="flex items-center gap-2.5">
-            {role === "SUPER_ADMIN" && (
+            {role === ROLES.SUPER_ADMIN && (
               <select
                 className={selectClass}
                 value={instFilter}
@@ -299,7 +299,7 @@ const ProgramsPage = () => {
         }
       >
         {/* 기관 선택 */}
-        {role === "SUPER_ADMIN" && !editingId && (
+        {role === ROLES.SUPER_ADMIN && !editingId && (
           <FormField label="기관 선택">
             <select
               className={inputClass}
