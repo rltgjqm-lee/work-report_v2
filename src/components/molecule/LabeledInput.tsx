@@ -1,3 +1,4 @@
+import { labelClass } from "../atoms/classes";
 import TextInput from "../atoms/TextInput";
 import type { TextInputProps } from "../atoms/TextInput";
 
@@ -15,9 +16,9 @@ const LabeledInput = ({
 }: LabeledInput) => {
   return (
     <>
-      <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
+      <label className={labelClass} htmlFor={id}>
         {labelTitle}
-      </div>
+      </label>
 
       <TextInput {...{ id, placeholder, value, onChange, className }} />
     </>
