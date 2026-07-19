@@ -103,8 +103,8 @@ const ProgramDetailPage = () => {
     try {
       await deleteParticipant(programId, participantId);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
     }
   };
 
@@ -120,8 +120,8 @@ const ProgramDetailPage = () => {
     setSelectedFile(null);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFile(e.target.files?.[0] ?? null);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(event.target.files?.[0] ?? null);
   };
 
   const handleSave = async () => {
@@ -153,8 +153,8 @@ const ProgramDetailPage = () => {
       }
       closeModal();
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
     }
   };
 
@@ -169,8 +169,8 @@ const ProgramDetailPage = () => {
       setGroupModalOpen(false);
       setGroupForm(emptyGroupForm);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "조 등록에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "조 등록에 실패했습니다.");
     }
   };
 
@@ -180,8 +180,8 @@ const ProgramDetailPage = () => {
     try {
       await deleteGroup(group.id);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
     }
   };
 
@@ -189,8 +189,8 @@ const ProgramDetailPage = () => {
     try {
       if (groupId) await moveParticipantToGroup(participantId, Number(groupId));
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "조 배정에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "조 배정에 실패했습니다.");
     }
   };
 
@@ -202,8 +202,8 @@ const ProgramDetailPage = () => {
     try {
       await dropParticipant(participantId, reason || undefined);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "처리에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
   };
 
@@ -218,8 +218,8 @@ const ProgramDetailPage = () => {
     try {
       await registerParticipantLeave(participantId, { leaveStart, leaveEnd });
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "처리에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
   };
 
@@ -227,8 +227,8 @@ const ProgramDetailPage = () => {
     try {
       await endParticipantLeave(participantId);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "처리에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
   };
 
@@ -256,11 +256,13 @@ const ProgramDetailPage = () => {
           <select
             className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
             value={programId}
-            onChange={(e) => navigate(`/admin/programs/${e.target.value}`)}
+            onChange={(event) =>
+              navigate(`/admin/programs/${event.target.value}`)
+            }
           >
-            {allPrograms.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
+            {allPrograms.map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.name}
               </option>
             ))}
           </select>
@@ -320,18 +322,18 @@ const ProgramDetailPage = () => {
               등록된 조가 없습니다.
             </span>
           )}
-          {groups.map((g) => (
+          {groups.map((group) => (
             <div
-              key={g.id}
+              key={group.id}
               className="flex items-center gap-2.5 border border-[#e2e5eb] rounded-[2px] px-3 py-2 text-[13px]"
             >
-              <span className="font-semibold">{g.name}</span>
+              <span className="font-semibold">{group.name}</span>
               <span className="text-[#6b7280]">
-                {g.shiftStart}~{g.shiftEnd}
+                {group.shiftStart}~{group.shiftEnd}
               </span>
               <button
                 className={rowActionBtnClass}
-                onClick={() => handleDeleteGroup(g)}
+                onClick={() => handleDeleteGroup(group)}
               >
                 삭제
               </button>
@@ -348,7 +350,7 @@ const ProgramDetailPage = () => {
               type="month"
               className={inputClass}
               value={exportMonth}
-              onChange={(e) => setExportMonth(e.target.value)}
+              onChange={(event) => setExportMonth(event.target.value)}
             />
             <button
               className={btnGhostClass}
@@ -378,7 +380,7 @@ const ProgramDetailPage = () => {
             className={searchInputClass}
             placeholder="이름 또는 수요처명 검색"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}명
@@ -411,65 +413,73 @@ const ProgramDetailPage = () => {
               </tr>
             </thead>
             <tbody>
-              {pageItems.map((p, idx) => (
-                <tr key={p.id} className="hover:bg-[#f8fafc]">
+              {pageItems.map((participant, index) => (
+                <tr key={participant.id} className="hover:bg-[#f8fafc]">
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {(page - 1) * 15 + idx + 1}
+                    {(page - 1) * 15 + index + 1}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {p.name}
+                    {participant.name}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {p.demandName}
+                    {participant.demandName}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {p.phoneLast4}
+                    {participant.phoneLast4}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     <select
                       className={selectClass}
-                      value={p.groupId ?? ""}
-                      onChange={(e) => handleAssignGroup(p.id, e.target.value)}
+                      value={participant.groupId ?? ""}
+                      onChange={(event) =>
+                        handleAssignGroup(participant.id, event.target.value)
+                      }
                     >
                       <option value="">미배정</option>
-                      {groups.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.name}
+                      {groups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
                         </option>
                       ))}
                     </select>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {statusLabel[p.status]}
+                    {statusLabel[participant.status]}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {p.status === "ACTIVE" && (
+                    {participant.status === "ACTIVE" && (
                       <>
                         <button
                           className={rowActionBtnClass}
-                          onClick={() => handleLeave(p.id, p.name)}
+                          onClick={() =>
+                            handleLeave(participant.id, participant.name)
+                          }
                         >
                           휴무등록
                         </button>
                         <button
                           className={rowActionBtnClass}
-                          onClick={() => handleDrop(p.id, p.name)}
+                          onClick={() =>
+                            handleDrop(participant.id, participant.name)
+                          }
                         >
                           탈락처리
                         </button>
                       </>
                     )}
-                    {p.status === "ON_LEAVE" && (
+                    {participant.status === "ON_LEAVE" && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() => handleEndLeave(p.id)}
+                        onClick={() => handleEndLeave(participant.id)}
                       >
                         복귀처리
                       </button>
                     )}
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => handleDelete(p.id, p.name)}
+                      onClick={() =>
+                        handleDelete(participant.id, participant.name)
+                      }
                     >
                       삭제
                     </button>
@@ -548,15 +558,17 @@ const ProgramDetailPage = () => {
             <input
               className={inputClass}
               value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(event) =>
+                setForm((f) => ({ ...f, name: event.target.value }))
+              }
             />
           </FormField>
           <FormField label="수요처명">
             <input
               className={inputClass}
               value={form.demandName}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, demandName: e.target.value }))
+              onChange={(event) =>
+                setForm((f) => ({ ...f, demandName: event.target.value }))
               }
             />
           </FormField>
@@ -567,10 +579,10 @@ const ProgramDetailPage = () => {
               maxLength={4}
               inputMode="numeric"
               placeholder="0000"
-              onChange={(e) =>
+              onChange={(event) =>
                 setForm((f) => ({
                   ...f,
-                  lastPhoneNumber: e.target.value
+                  lastPhoneNumber: event.target.value
                     .replace(/\D/g, "")
                     .slice(0, 4),
                 }))
@@ -601,8 +613,8 @@ const ProgramDetailPage = () => {
             <input
               className={inputClass}
               value={groupForm.name}
-              onChange={(e) =>
-                setGroupForm((f) => ({ ...f, name: e.target.value }))
+              onChange={(event) =>
+                setGroupForm((f) => ({ ...f, name: event.target.value }))
               }
             />
           </FormField>
@@ -610,8 +622,8 @@ const ProgramDetailPage = () => {
             <input
               className={inputClass}
               value={groupForm.description}
-              onChange={(e) =>
-                setGroupForm((f) => ({ ...f, description: e.target.value }))
+              onChange={(event) =>
+                setGroupForm((f) => ({ ...f, description: event.target.value }))
               }
             />
           </FormField>
@@ -622,8 +634,11 @@ const ProgramDetailPage = () => {
                   type="time"
                   className={inputClass}
                   value={groupForm.shiftStart}
-                  onChange={(e) =>
-                    setGroupForm((f) => ({ ...f, shiftStart: e.target.value }))
+                  onChange={(event) =>
+                    setGroupForm((f) => ({
+                      ...f,
+                      shiftStart: event.target.value,
+                    }))
                   }
                 />
               </FormField>
@@ -634,8 +649,11 @@ const ProgramDetailPage = () => {
                   type="time"
                   className={inputClass}
                   value={groupForm.shiftEnd}
-                  onChange={(e) =>
-                    setGroupForm((f) => ({ ...f, shiftEnd: e.target.value }))
+                  onChange={(event) =>
+                    setGroupForm((f) => ({
+                      ...f,
+                      shiftEnd: event.target.value,
+                    }))
                   }
                 />
               </FormField>

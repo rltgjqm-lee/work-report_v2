@@ -27,16 +27,20 @@ const ParticipantsPage = () => {
       ([programList, orgList]) => {
         setPrograms(programList);
 
-        const orgNameById = new Map(orgList.map((o) => [o.id, o.name]));
+        const orgNameById = new Map(
+          orgList.map((organization) => [organization.id, organization.name]),
+        );
 
-        Promise.all(programList.map((p) => getProgram(p.id))).then(
+        Promise.all(programList.map((program) => getProgram(program.id))).then(
           (fullPrograms) => {
-            const allRows: ParticipantRow[] = fullPrograms.flatMap((fp) =>
-              fp.participants.map((participant) => ({
-                ...participant,
-                programName: fp.name,
-                organizationName: orgNameById.get(fp.organizationId) ?? "-",
-              })),
+            const allRows: ParticipantRow[] = fullPrograms.flatMap(
+              (fullProgram) =>
+                fullProgram.participants.map((participant) => ({
+                  ...participant,
+                  programName: fullProgram.name,
+                  organizationName:
+                    orgNameById.get(fullProgram.organizationId) ?? "-",
+                })),
             );
             setRows(allRows);
           },
@@ -50,11 +54,15 @@ const ParticipantsPage = () => {
   const filtered = useMemo(() => {
     let list = rows;
     if (programFilter !== "all") {
-      list = list.filter((r) => r.programId === Number(programFilter));
+      list = list.filter(
+        (participantRow) => participantRow.programId === Number(programFilter),
+      );
     }
     if (search) {
       list = list.filter(
-        (r) => r.name.includes(search) || (r.demandName ?? "").includes(search),
+        (participantRow) =>
+          participantRow.name.includes(search) ||
+          (participantRow.demandName ?? "").includes(search),
       );
     }
     return list;
@@ -67,8 +75,8 @@ const ParticipantsPage = () => {
     try {
       await deleteParticipant(row.programId, row.id);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
     }
   };
 
@@ -89,15 +97,15 @@ const ParticipantsPage = () => {
             <select
               className={selectClass}
               value={programFilter}
-              onChange={(e) => {
-                setProgramFilter(e.target.value);
+              onChange={(event) => {
+                setProgramFilter(event.target.value);
                 setPage(1);
               }}
             >
               <option value="all">전체 사업단</option>
-              {programs.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
+              {programs.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.name}
                 </option>
               ))}
             </select>
@@ -105,8 +113,8 @@ const ParticipantsPage = () => {
               className={searchInputClass}
               placeholder="이름 또는 수요처명 검색"
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+              onChange={(event) => {
+                setSearch(event.target.value);
                 setPage(1);
               }}
             />

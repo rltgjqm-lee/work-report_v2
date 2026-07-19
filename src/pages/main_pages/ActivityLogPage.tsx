@@ -100,7 +100,7 @@ const ActivityLogPage = ({
   const displayLogs = [
     ...filteredLogs,
     ...serverLogs.filter((log) => !knownServerIds.has(log.serverId)),
-  ].sort((a, b) => b.timestamp - a.timestamp);
+  ].sort((logA, logB) => logB.timestamp - logA.timestamp);
 
   const handleClickExportReportsButton = async () => {
     if (!db) return;
@@ -139,10 +139,10 @@ const ActivityLogPage = ({
       const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
       const req = store.getAll();
 
-      req.onsuccess = (e) => {
+      req.onsuccess = (event) => {
         const allLogs: ActivityLogItem[] =
-          (e.target as IDBRequest).result || [];
-        allLogs.sort((a, b) => b.timestamp - a.timestamp);
+          (event.target as IDBRequest).result || [];
+        allLogs.sort((logA, logB) => logB.timestamp - logA.timestamp);
         setLogs(allLogs);
       };
     } catch (error) {

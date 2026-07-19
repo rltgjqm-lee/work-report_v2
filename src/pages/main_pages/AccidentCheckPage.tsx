@@ -82,10 +82,10 @@ const AccidentCheckPage = ({
               <input
                 type="text"
                 value={formData.accidentDetail}
-                onChange={(e) =>
+                onChange={(event) =>
                   setFormData((prev) => ({
                     ...prev,
-                    accidentDetail: e.target.value,
+                    accidentDetail: event.target.value,
                   }))
                 }
                 className={inputClass}

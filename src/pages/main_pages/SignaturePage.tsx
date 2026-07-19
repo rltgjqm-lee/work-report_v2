@@ -59,29 +59,29 @@ const SignaturePage = ({
 
       let isDrawing = false;
 
-      const getPos = (e: MouseEvent | TouchEvent) => {
+      const getPos = (event: MouseEvent | TouchEvent) => {
         const r = canvas.getBoundingClientRect();
-        if ("touches" in e) {
-          if (e.touches.length === 0) return { x: 0, y: 0 };
+        if ("touches" in event) {
+          if (event.touches.length === 0) return { x: 0, y: 0 };
           return {
-            x: e.touches[0].clientX - r.left,
-            y: e.touches[0].clientY - r.top,
+            x: event.touches[0].clientX - r.left,
+            y: event.touches[0].clientY - r.top,
           };
         }
-        return { x: e.clientX - r.left, y: e.clientY - r.top };
+        return { x: event.clientX - r.left, y: event.clientY - r.top };
       };
 
-      const startDrawing = (e: MouseEvent | TouchEvent) => {
+      const startDrawing = (event: MouseEvent | TouchEvent) => {
         isDrawing = true;
-        const pos = getPos(e);
+        const pos = getPos(event);
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
       };
 
-      const draw = (e: MouseEvent | TouchEvent) => {
+      const draw = (event: MouseEvent | TouchEvent) => {
         if (!isDrawing) return;
-        e.preventDefault();
-        const pos = getPos(e);
+        event.preventDefault();
+        const pos = getPos(event);
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
       };
@@ -227,10 +227,10 @@ const SignaturePage = ({
             <input
               type="checkbox"
               checked={formData.saveSignatureConsent}
-              onChange={(e) =>
+              onChange={(event) =>
                 setFormData((prev) => ({
                   ...prev,
-                  saveSignatureConsent: e.target.checked,
+                  saveSignatureConsent: event.target.checked,
                 }))
               }
               className="w-6 h-6 mt-0.5 accent-[#3182f6] flex-none"

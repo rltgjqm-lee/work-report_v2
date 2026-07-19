@@ -185,8 +185,11 @@ const WorkHoursInputPage = ({
               type="date"
               value={formData.actDate}
               max={todayStr}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, actDate: e.target.value }))
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  actDate: event.target.value,
+                }))
               }
               className={inputClass}
             />
@@ -198,8 +201,8 @@ const WorkHoursInputPage = ({
               <select
                 className={selectClass}
                 value={formData.startTime.ampm}
-                onChange={(e) =>
-                  handleTimeChange("startTime", "ampm", e.target.value)
+                onChange={(event) =>
+                  handleTimeChange("startTime", "ampm", event.target.value)
                 }
               >
                 <option value="AM">오전</option>
@@ -208,32 +211,32 @@ const WorkHoursInputPage = ({
               <select
                 className={selectClass}
                 value={formData.startTime.hour}
-                onChange={(e) =>
-                  handleTimeChange("startTime", "hour", e.target.value)
+                onChange={(event) =>
+                  handleTimeChange("startTime", "hour", event.target.value)
                 }
               >
                 <option value="" disabled>
                   시
                 </option>
-                {hourOptions.map((h) => (
-                  <option key={h} value={h}>
-                    {h}시
+                {hourOptions.map((hour) => (
+                  <option key={hour} value={hour}>
+                    {hour}시
                   </option>
                 ))}
               </select>
               <select
                 className={selectClass}
                 value={formData.startTime.minute}
-                onChange={(e) =>
-                  handleTimeChange("startTime", "minute", e.target.value)
+                onChange={(event) =>
+                  handleTimeChange("startTime", "minute", event.target.value)
                 }
               >
                 <option value="" disabled>
                   분
                 </option>
-                {minuteOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {m}분
+                {minuteOptions.map((minute) => (
+                  <option key={minute} value={minute}>
+                    {minute}분
                   </option>
                 ))}
               </select>
@@ -246,8 +249,8 @@ const WorkHoursInputPage = ({
               <select
                 className={selectClass}
                 value={formData.endTime.ampm}
-                onChange={(e) =>
-                  handleTimeChange("endTime", "ampm", e.target.value)
+                onChange={(event) =>
+                  handleTimeChange("endTime", "ampm", event.target.value)
                 }
               >
                 <option value="AM">오전</option>
@@ -256,32 +259,32 @@ const WorkHoursInputPage = ({
               <select
                 className={selectClass}
                 value={formData.endTime.hour}
-                onChange={(e) =>
-                  handleTimeChange("endTime", "hour", e.target.value)
+                onChange={(event) =>
+                  handleTimeChange("endTime", "hour", event.target.value)
                 }
               >
                 <option value="" disabled>
                   시
                 </option>
-                {hourOptions.map((h) => (
-                  <option key={h} value={h}>
-                    {h}시
+                {hourOptions.map((hour) => (
+                  <option key={hour} value={hour}>
+                    {hour}시
                   </option>
                 ))}
               </select>
               <select
                 className={selectClass}
                 value={formData.endTime.minute}
-                onChange={(e) =>
-                  handleTimeChange("endTime", "minute", e.target.value)
+                onChange={(event) =>
+                  handleTimeChange("endTime", "minute", event.target.value)
                 }
               >
                 <option value="" disabled>
                   분
                 </option>
-                {minuteOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {m}분
+                {minuteOptions.map((minute) => (
+                  <option key={minute} value={minute}>
+                    {minute}분
                   </option>
                 ))}
               </select>

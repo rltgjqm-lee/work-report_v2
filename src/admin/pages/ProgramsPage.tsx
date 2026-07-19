@@ -72,9 +72,9 @@ const ProgramsPage = () => {
     listPrograms(organizationId).then((list) => {
       setPrograms(list);
       Promise.all(
-        list.map((p) =>
-          getProgram(p.id).then(
-            (full) => [p.id, full.participants.length] as const,
+        list.map((program) =>
+          getProgram(program.id).then(
+            (full) => [program.id, full.participants.length] as const,
           ),
         ),
       ).then((pairs) => setParticipantCounts(Object.fromEntries(pairs)));
@@ -84,10 +84,11 @@ const ProgramsPage = () => {
   useEffect(refreshPrograms, [instFilter, role]);
 
   const orgName = (organizationId: number) =>
-    organizations.find((o) => o.id === organizationId)?.name ?? "-";
+    organizations.find((organization) => organization.id === organizationId)
+      ?.name ?? "-";
 
   const filtered = useMemo(
-    () => programs.filter((p) => p.name.includes(search)),
+    () => programs.filter((program) => program.name.includes(search)),
     [programs, search],
   );
 
@@ -146,8 +147,8 @@ const ProgramsPage = () => {
       }
       setModalOpen(false);
       refreshPrograms();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
     }
   };
 
@@ -157,8 +158,8 @@ const ProgramsPage = () => {
     try {
       await deleteProgram(program.id);
       refreshPrograms();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
     }
   };
 
@@ -183,12 +184,12 @@ const ProgramsPage = () => {
               <select
                 className={selectClass}
                 value={instFilter}
-                onChange={(e) => setInstFilter(e.target.value)}
+                onChange={(event) => setInstFilter(event.target.value)}
               >
                 <option value="all">전체 기관</option>
-                {organizations.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.name}
+                {organizations.map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
                   </option>
                 ))}
               </select>
@@ -198,7 +199,7 @@ const ProgramsPage = () => {
               className={searchInputClass}
               placeholder="사업단명 검색"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
@@ -303,8 +304,8 @@ const ProgramsPage = () => {
             <select
               className={inputClass}
               value={form.organizationId}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, organizationId: e.target.value }))
+              onChange={(event) =>
+                setForm((f) => ({ ...f, organizationId: event.target.value }))
               }
             >
               <option value="">선택하세요</option>
@@ -322,7 +323,9 @@ const ProgramsPage = () => {
           <input
             className={inputClass}
             value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            onChange={(event) =>
+              setForm((f) => ({ ...f, name: event.target.value }))
+            }
           />
         </FormField>
 
@@ -334,8 +337,8 @@ const ProgramsPage = () => {
                 type="date"
                 className={inputClass}
                 value={form.startDate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, startDate: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, startDate: event.target.value }))
                 }
               />
             </FormField>
@@ -348,8 +351,8 @@ const ProgramsPage = () => {
                 type="date"
                 className={inputClass}
                 value={form.endDate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, endDate: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, endDate: event.target.value }))
                 }
               />
             </FormField>
@@ -364,8 +367,8 @@ const ProgramsPage = () => {
                 type="time"
                 className={inputClass}
                 value={form.startTime}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, startTime: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, startTime: event.target.value }))
                 }
               />
             </FormField>
@@ -378,8 +381,8 @@ const ProgramsPage = () => {
                 type="time"
                 className={inputClass}
                 value={form.endTime}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, endTime: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, endTime: event.target.value }))
                 }
               />
             </FormField>
@@ -391,8 +394,8 @@ const ProgramsPage = () => {
           <select
             className={inputClass}
             value={form.programType}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, programType: e.target.value }))
+            onChange={(event) =>
+              setForm((f) => ({ ...f, programType: event.target.value }))
             }
           >
             <option value="">선택하세요</option>
@@ -407,8 +410,8 @@ const ProgramsPage = () => {
             type="number"
             className={inputClass}
             value={form.hourlyWage}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, hourlyWage: e.target.value }))
+            onChange={(event) =>
+              setForm((f) => ({ ...f, hourlyWage: event.target.value }))
             }
           />
         </FormField>
@@ -421,8 +424,11 @@ const ProgramsPage = () => {
                 type="number"
                 className={inputClass}
                 value={form.educationAmount}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, educationAmount: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({
+                    ...f,
+                    educationAmount: event.target.value,
+                  }))
                 }
               />
             </FormField>
@@ -434,10 +440,10 @@ const ProgramsPage = () => {
               <select
                 className={inputClass}
                 value={form.educationType}
-                onChange={(e) =>
+                onChange={(event) =>
                   setForm((f) => ({
                     ...f,
-                    educationType: e.target.value as "add" | "deduct",
+                    educationType: event.target.value as "add" | "deduct",
                   }))
                 }
               >
@@ -456,8 +462,8 @@ const ProgramsPage = () => {
                 type="number"
                 className={inputClass}
                 value={form.dementiaAmount}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, dementiaAmount: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, dementiaAmount: event.target.value }))
                 }
               />
             </FormField>
@@ -469,10 +475,10 @@ const ProgramsPage = () => {
               <select
                 className={inputClass}
                 value={form.dementiaType}
-                onChange={(e) =>
+                onChange={(event) =>
                   setForm((f) => ({
                     ...f,
-                    dementiaType: e.target.value as "add" | "deduct",
+                    dementiaType: event.target.value as "add" | "deduct",
                   }))
                 }
               >

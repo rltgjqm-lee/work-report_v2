@@ -68,8 +68,10 @@ const AttendanceCheckIn = ({
       setParticipant(cached);
       setStatus(null);
       onIdentified?.(cached);
-    } catch (e) {
-      setStatus(e instanceof Error ? e.message : "본인 확인에 실패했습니다.");
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "본인 확인에 실패했습니다.",
+      );
     }
   };
 
@@ -78,8 +80,10 @@ const AttendanceCheckIn = ({
     try {
       await clockIn(participant.participantId);
       setStatus("출근 처리되었습니다.");
-    } catch (e) {
-      setStatus(e instanceof Error ? e.message : "출근 처리에 실패했습니다.");
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "출근 처리에 실패했습니다.",
+      );
     }
   };
 
@@ -88,8 +92,10 @@ const AttendanceCheckIn = ({
     try {
       const result = await clockOut(participant.participantId);
       setStatus(`퇴근 처리되었습니다. (근무 ${result.totalMinutes}분)`);
-    } catch (e) {
-      setStatus(e instanceof Error ? e.message : "퇴근 처리에 실패했습니다.");
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "퇴근 처리에 실패했습니다.",
+      );
     }
   };
 
@@ -126,7 +132,7 @@ const AttendanceCheckIn = ({
               id="attendance-name"
               placeholder="성함 입력"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
             />
           </div>
           <div>
@@ -135,8 +141,8 @@ const AttendanceCheckIn = ({
               id="attendance-phone"
               placeholder="0000"
               value={phoneLast4}
-              onChange={(e) =>
-                setPhoneLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
+              onChange={(event) =>
+                setPhoneLast4(event.target.value.replace(/\D/g, "").slice(0, 4))
               }
             />
           </div>

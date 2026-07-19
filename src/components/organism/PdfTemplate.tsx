@@ -137,9 +137,9 @@ export const PdfTemplate = ({
               </tr>
             </thead>
             <tbody>
-              {sortedLogs.map((log, i) => (
-                <tr key={log.id || i}>
-                  <td>{i + 1}</td>
+              {sortedLogs.map((log, index) => (
+                <tr key={log.id || index}>
+                  <td>{index + 1}</td>
                   <td>{log.date}</td>
                   <td>{log.start}</td>
                   <td>{log.end}</td>

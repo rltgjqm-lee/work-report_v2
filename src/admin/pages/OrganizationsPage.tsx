@@ -94,8 +94,8 @@ const OrganizationsPage = () => {
       }
       setModalOpen(false);
       refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "저장에 실패했습니다.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
     }
   };
 
@@ -104,8 +104,8 @@ const OrganizationsPage = () => {
     try {
       await deleteOrganization(org.id);
       refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
     }
   };
 
@@ -131,7 +131,7 @@ const OrganizationsPage = () => {
             className={searchInputClass}
             placeholder="기관명 또는 대표자 검색"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}개 기관
@@ -164,37 +164,37 @@ const OrganizationsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {pageItems.map((org) => (
-                <tr key={org.id} className="hover:bg-[#f8fafc]">
+              {pageItems.map((organization) => (
+                <tr key={organization.id} className="hover:bg-[#f8fafc]">
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {org.name}
+                    {organization.name}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {org.rep}
+                    {organization.rep}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {org.phone}
+                    {organization.phone}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {org.fax}
+                    {organization.fax}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {org.bizNo}
+                    {organization.bizNo}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {org.address}
+                    {organization.address}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => openEdit(org)}
+                      onClick={() => openEdit(organization)}
                     >
                       수정
                     </button>
                     {role === "SUPER_ADMIN" && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() => handleDelete(org)}
+                        onClick={() => handleDelete(organization)}
                       >
                         삭제
                       </button>
@@ -231,15 +231,17 @@ const OrganizationsPage = () => {
           <input
             className={inputClass}
             value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            onChange={(event) =>
+              setForm((f) => ({ ...f, name: event.target.value }))
+            }
           />
         </FormField>
         <FormField label="기관주소">
           <input
             className={inputClass}
             value={form.address}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, address: e.target.value }))
+            onChange={(event) =>
+              setForm((f) => ({ ...f, address: event.target.value }))
             }
           />
         </FormField>
@@ -247,7 +249,9 @@ const OrganizationsPage = () => {
           <input
             className={inputClass}
             value={form.rep}
-            onChange={(e) => setForm((f) => ({ ...f, rep: e.target.value }))}
+            onChange={(event) =>
+              setForm((f) => ({ ...f, rep: event.target.value }))
+            }
           />
         </FormField>
         <div className="flex gap-3">
@@ -256,8 +260,8 @@ const OrganizationsPage = () => {
               <input
                 className={inputClass}
                 value={form.phone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, phone: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, phone: event.target.value }))
                 }
               />
             </FormField>
@@ -267,8 +271,8 @@ const OrganizationsPage = () => {
               <input
                 className={inputClass}
                 value={form.fax}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, fax: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, fax: event.target.value }))
                 }
               />
             </FormField>
@@ -278,7 +282,9 @@ const OrganizationsPage = () => {
           <input
             className={inputClass}
             value={form.bizNo}
-            onChange={(e) => setForm((f) => ({ ...f, bizNo: e.target.value }))}
+            onChange={(event) =>
+              setForm((f) => ({ ...f, bizNo: event.target.value }))
+            }
           />
         </FormField>
         <div className="flex gap-3">
@@ -287,10 +293,10 @@ const OrganizationsPage = () => {
               <select
                 className={inputClass}
                 value={form.regionSido}
-                onChange={(e) =>
+                onChange={(event) =>
                   setForm((f) => ({
                     ...f,
-                    regionSido: e.target.value,
+                    regionSido: event.target.value,
                     regionSigungu: "",
                   }))
                 }
@@ -310,8 +316,8 @@ const OrganizationsPage = () => {
                 className={inputClass}
                 value={form.regionSigungu}
                 disabled={!form.regionSido}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, regionSigungu: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, regionSigungu: event.target.value }))
                 }
               >
                 <option value="">선택하세요</option>
@@ -331,8 +337,11 @@ const OrganizationsPage = () => {
                 className={inputClass}
                 placeholder="예: 시니어클럽, 노인복지관"
                 value={form.organizationType}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, organizationType: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({
+                    ...f,
+                    organizationType: event.target.value,
+                  }))
                 }
               />
             </FormField>
@@ -343,8 +352,8 @@ const OrganizationsPage = () => {
                 className={inputClass}
                 placeholder="예: 2026"
                 value={form.prjYear}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, prjYear: e.target.value }))
+                onChange={(event) =>
+                  setForm((f) => ({ ...f, prjYear: event.target.value }))
                 }
               />
             </FormField>

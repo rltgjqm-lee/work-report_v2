@@ -45,10 +45,10 @@ const AdminLayout = () => {
             노인일자리 사업 관리
           </div>
         </div>
-        {navItems.map((item) => (
+        {navItems.map((navItem) => (
           <NavLink
-            key={item.to}
-            to={item.to}
+            key={navItem.to}
+            to={navItem.to}
             className={({ isActive }) =>
               `flex items-center gap-3 px-6 py-[13px] text-sm font-medium border-l-[3px] ${
                 isActive
@@ -64,9 +64,9 @@ const AdminLayout = () => {
                     isActive ? "bg-[#1e3a5f] text-white" : "bg-white/[0.12]"
                   }`}
                 >
-                  {item.badge}
+                  {navItem.badge}
                 </span>
-                {item.label}
+                {navItem.label}
               </>
             )}
           </NavLink>

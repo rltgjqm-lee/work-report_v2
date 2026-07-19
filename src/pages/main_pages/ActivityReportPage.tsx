@@ -60,8 +60,11 @@ const ActivityReportPage = ({
             </label>
             <textarea
               value={formData.actContent}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, actContent: e.target.value }))
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  actContent: event.target.value,
+                }))
               }
               className={textareaClass}
               placeholder="오늘 수행하신 활동 내용을 적어주세요."
@@ -75,8 +78,11 @@ const ActivityReportPage = ({
             </label>
             <textarea
               value={formData.actPlace}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, actPlace: e.target.value }))
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  actPlace: event.target.value,
+                }))
               }
               className={textareaClass}
               placeholder="활동하신 장소를 적어주세요."

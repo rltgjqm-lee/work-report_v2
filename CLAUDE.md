@@ -28,6 +28,31 @@ organizations.map((organization) => organization.regionSido);
 programs.filter((program) => program.projectType === projectType);
 ```
 
+### 이벤트 핸들러 / catch 파라미터에 축약어 금지
+
+배열 메서드 콜백뿐 아니라 이벤트 핸들러와 `catch` 블록의 파라미터명도 축약하지 않습니다.
+
+- 이벤트 핸들러(`onChange`, `onClick` 등) 콜백의 파라미터는 `e`가 아니라 `event`로 씁니다.
+- `catch` 블록의 예외 파라미터는 `e`가 아니라 `error`로 씁니다.
+
+```ts
+// Bad
+onChange={(e) => setName(e.target.value)}
+try {
+  ...
+} catch (e) {
+  setError(e instanceof Error ? e.message : "실패했습니다.");
+}
+
+// Good
+onChange={(event) => setName(event.target.value)}
+try {
+  ...
+} catch (error) {
+  setError(error instanceof Error ? error.message : "실패했습니다.");
+}
+```
+
 ### 컴포넌트 폴더 구조 (atomic design)
 
 `src/components/`는 `atoms/`, `molecule/`, `organism/`만 사용합니다. 새로운 최상위 카테고리 폴더(예: `appshell/`)를 임의로 만들지 않습니다.

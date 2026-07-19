@@ -17,7 +17,10 @@ const app = new Hono<Env>();
 app.use(
   "*",
   cors({
-    origin: "*",
+    // 관리자 콘솔이 credentials: "include"로 요청을 보내므로, 와일드카드 origin은
+    // 브라우저가 credentialed 응답을 차단한다 — 요청 origin을 그대로 반사해준다.
+    origin: (origin) => origin,
+    credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
   }),

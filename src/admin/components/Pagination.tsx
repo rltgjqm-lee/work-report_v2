@@ -8,7 +8,7 @@ const buildPageNumbers = (
   current: number,
   total: number,
 ): (number | "ellipsis")[] => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
   const numbers: (number | "ellipsis")[] = [1];
 
   if (current > 3) numbers.push("ellipsis");
@@ -42,22 +42,25 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
       >
         ‹
       </button>
-      {pages.map((p, idx) =>
-        p === "ellipsis" ? (
-          <span key={`ellipsis-${idx}`} className="text-[#9aa1ab] text-xs px-1">
+      {pages.map((pageNumber, index) =>
+        pageNumber === "ellipsis" ? (
+          <span
+            key={`ellipsis-${index}`}
+            className="text-[#9aa1ab] text-xs px-1"
+          >
             …
           </span>
         ) : (
           <button
-            key={p}
-            onClick={() => onChange(p)}
+            key={pageNumber}
+            onClick={() => onChange(pageNumber)}
             className={`${pageBtnBase} ${
-              p === page
+              pageNumber === page
                 ? "bg-[#1e3a5f] border-[#1e3a5f] text-white"
                 : "bg-white border-[#d7dbe1] text-[#374151]"
             }`}
           >
-            {p}
+            {pageNumber}
           </button>
         ),
       )}
