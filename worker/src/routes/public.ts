@@ -42,7 +42,8 @@ app.get("/affiliations", async (c) => {
         endTime: programs.endTime,
         programType: programs.programType,
       })
-      .from(programs),
+      .from(programs)
+      .where(eq(programs.isActive, true)),
   ]);
 
   return c.json({ organizations: organizationRows, programs: programRows });

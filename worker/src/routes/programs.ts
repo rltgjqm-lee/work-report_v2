@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 
 import {
   programs,
@@ -9,9 +9,6 @@ import {
   groups,
   attendanceLogs,
   activityLogs,
-  pushSubscriptions,
-  pendingPushes,
-  disasterPushLogs,
 } from "../db/schema";
 import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
 import { ROLES, type Env } from "../types";
@@ -36,6 +33,7 @@ type ProgramBody = {
   employmentInsuranceRate?: number;
   industrialAccidentRate?: number;
   annualLeaveDailyWage?: number;
+  isActive?: boolean;
 };
 
 app.get("/", async (c) => {
@@ -163,59 +161,36 @@ app.put("/:id", async (c) => {
 
   const body = await c.req.json<ProgramBody>();
 
+  // 활성/비활성 전환(소프트 삭제)은 ORGANIZATION_ADMIN 이상만 — 일반 정보 수정과는 별개 권한
+  if (
+    body.isActive !== undefined &&
+    !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)
+  ) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
   const result = await db
     .update(programs)
     .set(body)
     .where(eq(programs.id, id))
     .returning();
 
+  // 💡 사업단을 비활성화하면 소속된 활성 참여자도 함께 참여종료(DROPPED) 처리한다
+  // (설계도 5-7-3: 사업단 삭제 시 활성 참여자 자동 탈락)
+  if (body.isActive === false) {
+    await db
+      .update(participants)
+      .set({
+        status: "DROPPED",
+        droppedAt: new Date().toISOString(),
+        dropReason: "사업단 종료",
+      })
+      .where(
+        and(eq(participants.programId, id), eq(participants.status, "ACTIVE")),
+      );
+  }
+
   return c.json(result[0]);
-});
-
-app.delete("/:id", async (c) => {
-  const auth = getAuth(c);
-  const db = drizzle(c.env.DB);
-  const id = Number(c.req.param("id"));
-
-  const existingRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, id));
-  const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
-  if (
-    !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) ||
-    !canAccessProgram(auth, existing)
-  ) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-
-  // 💡 참여자/사업단을 참조하는 자식 테이블을 FK 순서대로 먼저 지워야 programs 삭제가
-  // FOREIGN KEY constraint failed 없이 성공한다
-  const participantRows = await db
-    .select({ id: participants.id })
-    .from(participants)
-    .where(eq(participants.programId, id));
-  const participantIds = participantRows.map((participant) => participant.id);
-
-  if (participantIds.length > 0) {
-    await db
-      .delete(activityLogs)
-      .where(inArray(activityLogs.participantId, participantIds));
-    await db
-      .delete(participantLeaves)
-      .where(inArray(participantLeaves.participantId, participantIds));
-  }
-
-  await db.delete(attendanceLogs).where(eq(attendanceLogs.programId, id));
-  await db.delete(participants).where(eq(participants.programId, id));
-  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.programId, id));
-  await db.delete(pendingPushes).where(eq(pendingPushes.programId, id));
-  await db.delete(disasterPushLogs).where(eq(disasterPushLogs.programId, id));
-  await db.delete(groups).where(eq(groups.programId, id));
-  await db.delete(programs).where(eq(programs.id, id));
-
-  return c.json({ success: true });
 });
 
 app.get("/:id/groups", async (c) => {

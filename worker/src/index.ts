@@ -8,6 +8,7 @@ import participants from "./routes/participants";
 import excel from "./routes/excel";
 import safetyAlerts from "./routes/safetyAlerts";
 import admins from "./routes/admins";
+import demandSites from "./routes/demandSites";
 import publicRoutes from "./routes/public";
 import { requireAdmin, getAuth } from "./lib/authz";
 import { checkDisasterAlerts } from "./scheduled/checkDisasterAlerts";
@@ -40,6 +41,7 @@ app.route("/api/groups", groups);
 app.route("/api/participants", participants);
 app.route("/api/safety-alerts", safetyAlerts);
 app.route("/api/admins", admins);
+app.route("/api/demand-sites", demandSites);
 
 export default {
   fetch: app.fetch,

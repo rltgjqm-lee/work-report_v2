@@ -55,6 +55,8 @@ export const programs = sqliteTable("programs", {
   annualLeaveDailyWage: integer("annual_leave_daily_wage")
     .notNull()
     .default(31710),
+  // 계약 종료 시 소프트 삭제 — 비활성화하면 소속 활성 참여자도 함께 참여종료 처리한다
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
@@ -70,6 +72,40 @@ export const groups = sqliteTable("groups", {
   shiftStart: text("shift_start").notNull(),
   shiftEnd: text("shift_end").notNull(),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 수요처 — 참여자가 실제로 활동하는 장소. 위경도+반경은 이탈 관제(geofencing)에서 사용
+export const demandSites = sqliteTable("demand_sites", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id),
+  name: text("name").notNull(),
+  baseLat: real("base_lat").notNull(),
+  baseLng: real("base_lng").notNull(),
+  allowedRadius: integer("allowed_radius").notNull().default(1500),
+  address: text("address"),
+  contactPerson: text("contact_person"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 수요처 x 조 조합별 근무시간
+export const demandSiteSchedules = sqliteTable("demand_site_schedules", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  demandSiteId: integer("demand_site_id")
+    .notNull()
+    .references(() => demandSites.id),
+  groupId: integer("group_id")
+    .notNull()
+    .references(() => groups.id),
+  shiftStart: text("shift_start").notNull(),
+  shiftEnd: text("shift_end").notNull(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

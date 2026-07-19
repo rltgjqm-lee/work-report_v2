@@ -18,6 +18,14 @@ import {
 } from "../api/admin/excel";
 import { getOrganization } from "../api/admin/organizations";
 import { getProgram, listPrograms } from "../api/admin/programs";
+import {
+  createDemandSite,
+  createDemandSiteSchedule,
+  deleteDemandSiteSchedule,
+  listDemandSites,
+  listDemandSiteSchedules,
+  updateDemandSite,
+} from "../api/admin/demandSites";
 import Pagination from "../components/Pagination";
 
 import { usePagination } from "../hooks/usePagination";
@@ -29,7 +37,13 @@ import {
   inputClass,
   selectClass,
 } from "../uiClasses";
-import type { Group, Program, ProgramWithParticipants } from "../types";
+import type {
+  DemandSite,
+  DemandSiteSchedule,
+  Group,
+  Program,
+  ProgramWithParticipants,
+} from "../types";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
 import { downloadAddParticipantsTemplate } from "../../utils/downloadAddParticipantsTemplate";
@@ -39,11 +53,27 @@ const emptyForm = {
   name: "",
   lastPhoneNumber: "",
   demandName: "",
+  groupId: "",
 };
 
 const emptyGroupForm = {
   name: "",
   description: "",
+  shiftStart: "",
+  shiftEnd: "",
+};
+
+const emptyDemandSiteForm = {
+  name: "",
+  baseLat: "",
+  baseLng: "",
+  allowedRadius: "1500",
+  address: "",
+  contactPerson: "",
+};
+
+const emptyScheduleForm = {
+  groupId: "",
   shiftStart: "",
   shiftEnd: "",
 };
@@ -72,6 +102,20 @@ const ProgramDetailPage = () => {
   const [exportMonth, setExportMonth] = useState(
     new Date().toISOString().slice(0, 7),
   );
+  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
+  const [demandSiteSchedules, setDemandSiteSchedules] = useState<
+    Record<number, DemandSiteSchedule[]>
+  >({});
+  const [demandSiteModalOpen, setDemandSiteModalOpen] = useState(false);
+  const [editingDemandSiteId, setEditingDemandSiteId] = useState<number | null>(
+    null,
+  );
+  const [demandSiteForm, setDemandSiteForm] = useState(emptyDemandSiteForm);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [scheduleTargetSiteId, setScheduleTargetSiteId] = useState<
+    number | null
+  >(null);
+  const [scheduleForm, setScheduleForm] = useState(emptyScheduleForm);
 
   useEffect(() => {
     listPrograms().then(setAllPrograms);
@@ -83,6 +127,16 @@ const ProgramDetailPage = () => {
       getOrganization(full.organizationId).then((org) => setOrgName(org.name));
     });
     listGroups(programId).then(setGroups);
+    listDemandSites(programId).then((sites) => {
+      setDemandSites(sites);
+      Promise.all(
+        sites.map((site) =>
+          listDemandSiteSchedules(site.id).then(
+            (schedules) => [site.id, schedules] as const,
+          ),
+        ),
+      ).then((pairs) => setDemandSiteSchedules(Object.fromEntries(pairs)));
+    });
   };
 
   useEffect(refresh, [programId]);
@@ -126,7 +180,7 @@ const ProgramDetailPage = () => {
   const handleSave = async () => {
     try {
       if (selectedFile) {
-        const rows = await parseParticipantsFile(selectedFile);
+        const rows = await parseParticipantsFile(selectedFile, groups);
         if (rows.length === 0) {
           alert("파일에서 등록할 참여자를 찾지 못했습니다.");
 
@@ -148,6 +202,7 @@ const ProgramDetailPage = () => {
           name: form.name,
           demandName: form.demandName || undefined,
           phoneLast4: form.lastPhoneNumber,
+          groupId: form.groupId ? Number(form.groupId) : undefined,
         });
       }
       closeModal();
@@ -178,6 +233,109 @@ const ProgramDetailPage = () => {
 
     try {
       await deleteGroup(group.id);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
+    }
+  };
+
+  const openAddDemandSite = () => {
+    setEditingDemandSiteId(null);
+    setDemandSiteForm(emptyDemandSiteForm);
+    setDemandSiteModalOpen(true);
+  };
+
+  const openEditDemandSite = (site: DemandSite) => {
+    setEditingDemandSiteId(site.id);
+    setDemandSiteForm({
+      name: site.name,
+      baseLat: String(site.baseLat),
+      baseLng: String(site.baseLng),
+      allowedRadius: String(site.allowedRadius),
+      address: site.address ?? "",
+      contactPerson: site.contactPerson ?? "",
+    });
+    setDemandSiteModalOpen(true);
+  };
+
+  const handleSaveDemandSite = async () => {
+    if (
+      !demandSiteForm.name ||
+      !demandSiteForm.baseLat ||
+      !demandSiteForm.baseLng
+    ) {
+      alert("수요처명과 위도/경도를 입력해주세요.");
+
+      return;
+    }
+    try {
+      const payload = {
+        name: demandSiteForm.name,
+        baseLat: Number(demandSiteForm.baseLat),
+        baseLng: Number(demandSiteForm.baseLng),
+        allowedRadius: Number(demandSiteForm.allowedRadius) || undefined,
+        address: demandSiteForm.address || undefined,
+        contactPerson: demandSiteForm.contactPerson || undefined,
+      };
+      if (editingDemandSiteId) {
+        await updateDemandSite(editingDemandSiteId, payload);
+      } else {
+        await createDemandSite({ programId, ...payload });
+      }
+      setDemandSiteModalOpen(false);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    }
+  };
+
+  const handleToggleDemandSiteActive = async (site: DemandSite) => {
+    const actionLabel = site.isActive ? "비활성화" : "활성화";
+    if (!confirm(`'${site.name}' 수요처를 ${actionLabel}하시겠습니까?`)) return;
+
+    try {
+      await updateDemandSite(site.id, { isActive: !site.isActive });
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const openAddSchedule = (siteId: number) => {
+    setScheduleTargetSiteId(siteId);
+    setScheduleForm(emptyScheduleForm);
+    setScheduleModalOpen(true);
+  };
+
+  const handleSaveSchedule = async () => {
+    if (
+      !scheduleTargetSiteId ||
+      !scheduleForm.groupId ||
+      !scheduleForm.shiftStart ||
+      !scheduleForm.shiftEnd
+    ) {
+      alert("조와 근무시간을 입력해주세요.");
+
+      return;
+    }
+    try {
+      await createDemandSiteSchedule(scheduleTargetSiteId, {
+        groupId: Number(scheduleForm.groupId),
+        shiftStart: scheduleForm.shiftStart,
+        shiftEnd: scheduleForm.shiftEnd,
+      });
+      setScheduleModalOpen(false);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "등록에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: number) => {
+    if (!confirm("이 근무시간을 삭제하시겠습니까?")) return;
+
+    try {
+      await deleteDemandSiteSchedule(scheduleId);
       refresh();
     } catch (error) {
       alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
@@ -336,6 +494,82 @@ const ProgramDetailPage = () => {
               >
                 삭제
               </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
+          <span className="text-sm font-bold">수요처 관리</span>
+          <button className={btnGhostClass} onClick={openAddDemandSite}>
+            + 수요처 추가
+          </button>
+        </div>
+        <div className="flex flex-col gap-3 px-5 py-4">
+          {demandSites.length === 0 && (
+            <span className="text-[13px] text-[#9aa1ab]">
+              등록된 수요처가 없습니다.
+            </span>
+          )}
+          {demandSites.map((site) => (
+            <div
+              key={site.id}
+              className="border border-[#e2e5eb] rounded-[2px] px-4 py-3"
+            >
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <span className="font-semibold text-[13px]">{site.name}</span>
+                  <span className="ml-2 text-xs text-[#6b7280]">
+                    {site.isActive ? "활성" : "비활성"}
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    className={rowActionBtnClass}
+                    onClick={() => openEditDemandSite(site)}
+                  >
+                    수정
+                  </button>
+                  <button
+                    className={rowActionBtnClass}
+                    onClick={() => handleToggleDemandSiteActive(site)}
+                  >
+                    {site.isActive ? "비활성화" : "활성화"}
+                  </button>
+                </div>
+              </div>
+              <div className="text-xs text-[#6b7280] mt-1">
+                {site.address && <span>{site.address} · </span>}
+                위경도 {site.baseLat}, {site.baseLng} (반경 {site.allowedRadius}
+                m)
+                {site.contactPerson && (
+                  <span> · 담당자 {site.contactPerson}</span>
+                )}
+              </div>
+              <div className="flex items-center flex-wrap gap-1.5 mt-2.5">
+                {(demandSiteSchedules[site.id] ?? []).map((schedule) => (
+                  <span
+                    key={schedule.id}
+                    className="flex items-center gap-1.5 border border-[#e2e5eb] rounded-[2px] px-2.5 py-1 text-[12.5px]"
+                  >
+                    {schedule.groupName} {schedule.shiftStart}~
+                    {schedule.shiftEnd}
+                    <button
+                      className="bg-transparent border-none text-[#9aa1ab] cursor-pointer hover:text-[#b42318]"
+                      onClick={() => handleDeleteSchedule(schedule.id)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <button
+                  className={rowActionBtnClass}
+                  onClick={() => openAddSchedule(site.id)}
+                >
+                  + 근무시간
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -515,7 +749,7 @@ const ProgramDetailPage = () => {
             </div>
             <button
               className={btnGhostClass}
-              onClick={downloadAddParticipantsTemplate}
+              onClick={() => downloadAddParticipantsTemplate(groups)}
             >
               양식 다운로드
             </button>
@@ -588,6 +822,22 @@ const ProgramDetailPage = () => {
               }
             />
           </FormField>
+          <FormField label="조">
+            <select
+              className={selectClass + " w-full"}
+              value={form.groupId}
+              onChange={(event) =>
+                setForm((f) => ({ ...f, groupId: event.target.value }))
+              }
+            >
+              <option value="">미배정</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
         </SlideModal>
 
         <SlideModal
@@ -650,6 +900,177 @@ const ProgramDetailPage = () => {
                   value={groupForm.shiftEnd}
                   onChange={(event) =>
                     setGroupForm((f) => ({
+                      ...f,
+                      shiftEnd: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+          </div>
+        </SlideModal>
+
+        <SlideModal
+          isOpen={demandSiteModalOpen}
+          title={editingDemandSiteId ? "수요처 수정" : "수요처 추가"}
+          onClose={() => setDemandSiteModalOpen(false)}
+          footer={
+            <>
+              <button
+                className={btnGhostClass}
+                onClick={() => setDemandSiteModalOpen(false)}
+              >
+                취소
+              </button>
+              <button
+                className={btnPrimaryClass}
+                onClick={handleSaveDemandSite}
+              >
+                저장
+              </button>
+            </>
+          }
+        >
+          <FormField label="수요처명">
+            <input
+              className={inputClass}
+              value={demandSiteForm.name}
+              onChange={(event) =>
+                setDemandSiteForm((f) => ({ ...f, name: event.target.value }))
+              }
+            />
+          </FormField>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <FormField label="위도">
+                <input
+                  type="number"
+                  step="any"
+                  className={inputClass}
+                  value={demandSiteForm.baseLat}
+                  onChange={(event) =>
+                    setDemandSiteForm((f) => ({
+                      ...f,
+                      baseLat: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+            <div className="flex-1">
+              <FormField label="경도">
+                <input
+                  type="number"
+                  step="any"
+                  className={inputClass}
+                  value={demandSiteForm.baseLng}
+                  onChange={(event) =>
+                    setDemandSiteForm((f) => ({
+                      ...f,
+                      baseLng: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+          </div>
+          <FormField label="반경(m)">
+            <input
+              type="number"
+              className={inputClass}
+              value={demandSiteForm.allowedRadius}
+              onChange={(event) =>
+                setDemandSiteForm((f) => ({
+                  ...f,
+                  allowedRadius: event.target.value,
+                }))
+              }
+            />
+          </FormField>
+          <FormField label="주소">
+            <input
+              className={inputClass}
+              value={demandSiteForm.address}
+              onChange={(event) =>
+                setDemandSiteForm((f) => ({
+                  ...f,
+                  address: event.target.value,
+                }))
+              }
+            />
+          </FormField>
+          <FormField label="담당자">
+            <input
+              className={inputClass}
+              value={demandSiteForm.contactPerson}
+              onChange={(event) =>
+                setDemandSiteForm((f) => ({
+                  ...f,
+                  contactPerson: event.target.value,
+                }))
+              }
+            />
+          </FormField>
+        </SlideModal>
+
+        <SlideModal
+          isOpen={scheduleModalOpen}
+          title="근무시간 추가"
+          onClose={() => setScheduleModalOpen(false)}
+          footer={
+            <>
+              <button
+                className={btnGhostClass}
+                onClick={() => setScheduleModalOpen(false)}
+              >
+                취소
+              </button>
+              <button className={btnPrimaryClass} onClick={handleSaveSchedule}>
+                저장
+              </button>
+            </>
+          }
+        >
+          <FormField label="조">
+            <select
+              className={selectClass + " w-full"}
+              value={scheduleForm.groupId}
+              onChange={(event) =>
+                setScheduleForm((f) => ({ ...f, groupId: event.target.value }))
+              }
+            >
+              <option value="">선택하세요</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <FormField label="시작시간">
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={scheduleForm.shiftStart}
+                  onChange={(event) =>
+                    setScheduleForm((f) => ({
+                      ...f,
+                      shiftStart: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+            <div className="flex-1">
+              <FormField label="종료시간">
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={scheduleForm.shiftEnd}
+                  onChange={(event) =>
+                    setScheduleForm((f) => ({
                       ...f,
                       shiftEnd: event.target.value,
                     }))

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import {
   createProgram,
-  deleteProgram,
   getProgram,
   listPrograms,
   updateProgram,
@@ -152,14 +151,24 @@ const ProgramsPage = () => {
     }
   };
 
-  const handleDeleteProgram = async (program: Program) => {
-    if (!confirm(`'${program.name}' 사업단을 삭제하시겠습니까?`)) return;
+  const handleToggleActive = async (program: Program) => {
+    const actionLabel = program.isActive ? "비활성화" : "활성화";
+    if (
+      !confirm(
+        `'${program.name}' 사업단을 ${actionLabel}하시겠습니까?${
+          program.isActive
+            ? " 소속된 활성 참여자는 모두 참여종료 처리됩니다."
+            : ""
+        }`,
+      )
+    )
+      return;
 
     try {
-      await deleteProgram(program.id);
+      await updateProgram(program.id, { isActive: !program.isActive });
       refreshPrograms();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
   };
 
@@ -208,7 +217,7 @@ const ProgramsPage = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1010px] table-fixed border-collapse">
+          <table className="w-full min-w-[1100px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -225,6 +234,9 @@ const ProgramsPage = () => {
                 </th>
                 <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   참여자수
+                </th>
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  상태
                 </th>
                 <th className="w-[160px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
@@ -251,6 +263,9 @@ const ProgramsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     {participantCounts[program.id] ?? "-"}명
                   </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {program.isActive ? "활성" : "비활성"}
+                  </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
@@ -265,10 +280,10 @@ const ProgramsPage = () => {
                       className={rowActionBtnClass}
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleDeleteProgram(program);
+                        handleToggleActive(program);
                       }}
                     >
-                      삭제
+                      {program.isActive ? "비활성화" : "활성화"}
                     </button>
                   </td>
                 </tr>

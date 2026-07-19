@@ -1,11 +1,14 @@
 import type { Style, Cell } from "exceljs";
 
-export async function downloadAddParticipantsTemplate(): Promise<void> {
+export async function downloadAddParticipantsTemplate(
+  groups: { name: string }[] = [],
+): Promise<void> {
   // 1. 번들 용량 절약을 위한 동적 로딩
   const ExcelJS = (await import("exceljs")).default;
 
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("데이터 입력");
+  const groupNames = groups.map((group) => group.name);
 
   // 2. 1행, 2행 상단 고정
   worksheet.views = [{ state: "frozen", ySplit: 2, activeCell: "A3" }];
@@ -26,12 +29,13 @@ export async function downloadAddParticipantsTemplate(): Promise<void> {
     },
   };
 
-  // 4. 1행 헤더 입력 (A1 ~ D1)
+  // 4. 1행 헤더 입력 (A1 ~ E1)
   const headerRow = worksheet.addRow([
     "순번",
     "이름",
     "수요처명",
     "전화번호 뒷자리 (4자리)",
+    "조",
   ]);
   headerRow.height = 25;
   headerRow.eachCell((cell: Cell) => {
@@ -43,7 +47,7 @@ export async function downloadAddParticipantsTemplate(): Promise<void> {
     "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만, [전화번호]는 앞의 0이 지워지지 않도록 4자리 숫자를 문자 형태로 입력해 주세요.";
   const noticeRow = worksheet.addRow([noticeText]);
   noticeRow.height = 65; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 65로 대폭 확장
-  worksheet.mergeCells("A2:D2");
+  worksheet.mergeCells("A2:E2");
 
   noticeRow.getCell(1).style = {
     font: {
@@ -62,7 +66,19 @@ export async function downloadAddParticipantsTemplate(): Promise<void> {
     { key: "name", width: 18, numFmt: "@" },
     { key: "client", width: 28, numFmt: "@" },
     { key: "phone", width: 28, numFmt: "@" }, // 기본 텍스트 서식 지정
+    { key: "group", width: 18, numFmt: "@" },
   ];
+
+  // 6-1. 조 목록을 숨김 시트에 적어두고 E열 드롭다운 검증에서 참조한다
+  let groupListRange: string | null = null;
+  if (groupNames.length > 0) {
+    const groupListSheet = workbook.addWorksheet("조목록");
+    groupNames.forEach((name, index) => {
+      groupListSheet.getCell(index + 1, 1).value = name;
+    });
+    groupListSheet.state = "veryHidden";
+    groupListRange = `조목록!$A$1:$A$${groupNames.length}`;
+  }
 
   // 7. 데이터 입력 영역 생성 (3행부터 502행까지 잠금 해제)
   for (let i = 1; i <= 500; i++) {
@@ -72,6 +88,7 @@ export async function downloadAddParticipantsTemplate(): Promise<void> {
       name: "",
       client: "",
       phone: "",
+      group: "",
     });
 
     row.eachCell((cell: Cell, colNumber: number) => {
@@ -93,6 +110,18 @@ export async function downloadAddParticipantsTemplate(): Promise<void> {
         cell.numFmt = "@"; // 이름과 수요처명도 텍스트 서식으로 안전하게 지정
       }
     });
+
+    // 💡 E열(조)은 등록된 조 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
+    if (groupListRange) {
+      row.getCell(5).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [groupListRange],
+        showErrorMessage: true,
+        errorTitle: "잘못된 조 이름",
+        error: "목록에 있는 조 이름만 선택할 수 있어요.",
+      };
+    }
   }
 
   // 8. 시트 보호 활성화

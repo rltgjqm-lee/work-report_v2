@@ -51,7 +51,30 @@ export type Program = {
   employmentInsuranceRate: number;
   industrialAccidentRate: number;
   annualLeaveDailyWage: number;
+  isActive: boolean;
   createdAt: string;
+};
+
+export type DemandSite = {
+  id: number;
+  programId: number;
+  name: string;
+  baseLat: number;
+  baseLng: number;
+  allowedRadius: number;
+  address: string | null;
+  contactPerson: string | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type DemandSiteSchedule = {
+  id: number;
+  demandSiteId: number;
+  groupId: number;
+  groupName: string;
+  shiftStart: string;
+  shiftEnd: string;
 };
 
 export type ParticipantStatus = "ACTIVE" | "DROPPED" | "ON_LEAVE";

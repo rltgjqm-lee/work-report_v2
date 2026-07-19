@@ -26,8 +26,5 @@ export const updateProgram = (
     body: JSON.stringify(data),
   });
 
-export const deleteProgram = (id: number) =>
-  request<{ success: boolean }>(`/api/programs/${id}`, { method: "DELETE" });
-
 export const getMonthlyAttendance = (programId: number, month: string) =>
   request<unknown[]>(`/api/programs/${programId}/attendance?month=${month}`);
