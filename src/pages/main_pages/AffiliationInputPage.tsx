@@ -2,18 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 
 import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
 import AppBar from "../../components/molecule/AppBar";
+import LabeledInput from "../../components/molecule/LabeledInput";
 import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar from "../../components/atoms/BottomBar";
+import Button from "../../components/atoms/Button";
 import {
   pageClass,
   bodyClass,
   labelClass,
-  labelSmallClass,
-  inputClass,
   selectClass,
-  btnPrimaryClass,
-  btnTextClass,
 } from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
@@ -256,13 +254,6 @@ const AffiliationInputPage = ({
       return;
     }
 
-    if (!formData.participantId) {
-      onAlert([
-        "근태 체크 카드에서 이름과 전화번호 뒷 4자리로 본인 확인을 먼저 완료해주세요.",
-      ]);
-      return;
-    }
-
     saveToLocalStorage();
     onNext();
   };
@@ -390,12 +381,16 @@ const AffiliationInputPage = ({
 
           {/* 수요처 */}
           <div>
-            <label className={labelClass}>
-              수요처명
-              <small className={labelSmallClass}>서비스대상자명</small>
-            </label>
-            <input
-              className={inputClass}
+            <LabeledInput
+              labelTitle={
+                <>
+                  수요처명
+                  <small className="ml-1.5 text-[13px] font-semibold text-[#9ca3af]">
+                    서비스 대상자 명
+                  </small>
+                </>
+              }
+              id="demandName"
               placeholder="예) 00주민센터"
               value={formData.demandName}
               onChange={(event) => onChange("demandName", event.target.value)}
@@ -424,9 +419,9 @@ const AffiliationInputPage = ({
 
             {/* 참여자명 */}
             <div className="flex-1">
-              <label className={labelClass}>참여자 성함</label>
-              <input
-                className={inputClass}
+              <LabeledInput
+                labelTitle="참여자 성함"
+                id="userName"
                 placeholder="성함 입력"
                 value={formData.userName}
                 onChange={(event) => onChange("userName", event.target.value)}
@@ -448,15 +443,20 @@ const AffiliationInputPage = ({
       </div>
 
       <BottomBar>
-        <button className={btnPrimaryClass} onClick={handleClickNextButton}>
+        <Button
+          variant="primary"
+          disabled={!formData.participantId}
+          onClick={handleClickNextButton}
+        >
           다음
-        </button>
-        <button
-          className={btnTextClass + " self-center"}
+        </Button>
+        <Button
+          variant="text"
+          className="self-center"
           onClick={saveToLocalStorage}
         >
           나중에 이어서 작성하고 저장만 하기
-        </button>
+        </Button>
       </BottomBar>
     </div>
   );
