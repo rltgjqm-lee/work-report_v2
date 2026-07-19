@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  integer,
+  text,
+  real,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 import { ROLES, type AdminRole } from "../types";
 
@@ -119,6 +125,9 @@ export const participants = sqliteTable("participants", {
   groupId: integer("group_id").references(() => groups.id),
   name: text("name").notNull(),
   demandName: text("demand_name"),
+  // 실제 demand_sites 연결 — 이탈 관제(geofencing)에서 참여자가 있어야 할 위경도/반경을 알아내는 데 쓴다.
+  // demandName(자유 텍스트)은 수요처를 아직 안 만든 사업단을 위해 그대로 남겨둔다.
+  demandSiteId: integer("demand_site_id").references(() => demandSites.id),
   phoneLast4: text("phone_last4").notNull(),
   birthYear: integer("birth_year"),
   status: text("status")
@@ -142,6 +151,13 @@ export const participantLeaves = sqliteTable("participant_leaves", {
     .references(() => participants.id),
   leaveStart: text("leave_start").notNull(),
   leaveEnd: text("leave_end").notNull(),
+  // 유급(PAID)은 연차에서 차감, 무급(UNPAID)은 연차 잔여 확인/차감 없음
+  leaveType: text("leave_type")
+    .$type<"PAID" | "UNPAID">()
+    .notNull()
+    .default("PAID"),
+  // 서버가 leaveStart~leaveEnd로 자동 계산해 저장 (일 수)
+  leaveDays: integer("leave_days").notNull().default(0),
   reason: text("reason"),
   createdBy: integer("created_by")
     .notNull()
@@ -150,6 +166,30 @@ export const participantLeaves = sqliteTable("participant_leaves", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// 참여자 연도별 연차 잔여 — PAID 휴가 등록 시 이 값을 확인/차감한다
+export const participantAnnualLeave = sqliteTable(
+  "participant_annual_leave",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    year: text("year").notNull(),
+    totalDays: integer("total_days").notNull().default(0),
+    usedDays: integer("used_days").notNull().default(0),
+    remainingDays: integer("remaining_days").notNull().default(0),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("participant_annual_leave_participant_year_unique").on(
+      table.participantId,
+      table.year,
+    ),
+  ],
+);
 
 export const admins = sqliteTable("admins", {
   id: integer("id").primaryKey({ autoIncrement: true }),

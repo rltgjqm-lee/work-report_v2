@@ -1,5 +1,7 @@
 import { request } from "../client";
 import type {
+  LeaveRow,
+  LeaveStats,
   MonthlyAttendance,
   Program,
   ProgramWithParticipants,
@@ -34,3 +36,11 @@ export const getMonthlyAttendance = (programId: number, month: string) =>
   request<MonthlyAttendance>(
     `/api/programs/${programId}/attendance?month=${month}`,
   );
+
+export const getLeaves = (programId: number, month?: string) =>
+  request<LeaveRow[]>(
+    `/api/programs/${programId}/leaves${month ? `?month=${month}` : ""}`,
+  );
+
+export const getLeaveStats = (programId: number, year: string) =>
+  request<LeaveStats>(`/api/programs/${programId}/leaves/stats?year=${year}`);

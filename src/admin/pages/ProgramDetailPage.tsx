@@ -4,11 +4,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   addParticipant,
   bulkAddParticipants,
+  bulkUpdateParticipantStatus,
   deleteParticipant,
   dropParticipant,
   endParticipantLeave,
+  getAnnualLeave,
   moveParticipantToGroup,
+  reactivateParticipant,
   registerParticipantLeave,
+  setAnnualLeave,
 } from "../api/admin/participants";
 import { createGroup, listGroups, updateGroup } from "../api/admin/groups";
 import {
@@ -38,9 +42,11 @@ import {
   selectClass,
 } from "../uiClasses";
 import type {
+  AnnualLeave,
   DemandSite,
   DemandSiteSchedule,
   Group,
+  LeaveType,
   Program,
   ProgramWithParticipants,
 } from "../types";
@@ -53,6 +59,7 @@ const emptyForm = {
   name: "",
   lastPhoneNumber: "",
   demandName: "",
+  demandSiteId: "",
   groupId: "",
 };
 
@@ -76,6 +83,20 @@ const emptyScheduleForm = {
   groupId: "",
   shiftStart: "",
   shiftEnd: "",
+};
+
+const currentYear = new Date().getFullYear().toString();
+
+const emptyLeaveForm = {
+  leaveStart: "",
+  leaveEnd: "",
+  leaveType: "PAID" as LeaveType,
+  reason: "",
+};
+
+const emptyAnnualForm = {
+  year: currentYear,
+  totalDays: "",
 };
 
 const statusLabel: Record<string, string> = {
@@ -116,6 +137,24 @@ const ProgramDetailPage = () => {
     number | null
   >(null);
   const [scheduleForm, setScheduleForm] = useState(emptyScheduleForm);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<
+    number[]
+  >([]);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [leaveTarget, setLeaveTarget] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [leaveForm, setLeaveForm] = useState(emptyLeaveForm);
+  const [annualModalOpen, setAnnualModalOpen] = useState(false);
+  const [annualTarget, setAnnualTarget] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [annualForm, setAnnualForm] = useState(emptyAnnualForm);
+  const [annualBalance, setAnnualBalance] = useState<AnnualLeave | null>(null);
 
   useEffect(() => {
     listPrograms().then(setAllPrograms);
@@ -146,12 +185,24 @@ const ProgramDetailPage = () => {
     [groups],
   );
 
+  const activeDemandSites = useMemo(
+    () => demandSites.filter((demandSite) => demandSite.isActive),
+    [demandSites],
+  );
+
   const filtered = useMemo(
     () =>
-      (program?.participants ?? []).filter(
-        (p) => p.name.includes(search) || (p.demandName ?? "").includes(search),
-      ),
-    [program, search],
+      (program?.participants ?? []).filter((participant) => {
+        const matchesSearch =
+          participant.name.includes(search) ||
+          (participant.demandName ?? "").includes(search);
+        const matchesStatus =
+          statusFilter === "all" || participant.status === statusFilter;
+        const matchesGroup =
+          groupFilter === "all" || participant.groupId === Number(groupFilter);
+        return matchesSearch && matchesStatus && matchesGroup;
+      }),
+    [program, search, statusFilter, groupFilter],
   );
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
@@ -185,7 +236,11 @@ const ProgramDetailPage = () => {
   const handleSave = async () => {
     try {
       if (selectedFile) {
-        const rows = await parseParticipantsFile(selectedFile, activeGroups);
+        const rows = await parseParticipantsFile(
+          selectedFile,
+          activeGroups,
+          activeDemandSites,
+        );
         if (rows.length === 0) {
           alert("파일에서 등록할 참여자를 찾지 못했습니다.");
 
@@ -206,6 +261,9 @@ const ProgramDetailPage = () => {
         await addParticipant(programId, {
           name: form.name,
           demandName: form.demandName || undefined,
+          demandSiteId: form.demandSiteId
+            ? Number(form.demandSiteId)
+            : undefined,
           phoneLast4: form.lastPhoneNumber,
           groupId: form.groupId ? Number(form.groupId) : undefined,
         });
@@ -370,16 +428,33 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleLeave = async (participantId: number, name: string) => {
-    const leaveStart = prompt(`'${name}' 님의 휴무 시작일 (YYYY-MM-DD)`);
-    const leaveEnd = prompt(`'${name}' 님의 휴무 종료일 (YYYY-MM-DD)`);
+  const openLeaveModal = (participantId: number, name: string) => {
+    setLeaveTarget({ id: participantId, name });
+    setLeaveForm(emptyLeaveForm);
+    setLeaveModalOpen(true);
+  };
 
-    if (!leaveStart) return;
+  const closeLeaveModal = () => {
+    setLeaveModalOpen(false);
+    setLeaveTarget(null);
+    setLeaveForm(emptyLeaveForm);
+  };
 
-    if (!leaveEnd) return;
+  const handleSaveLeave = async () => {
+    if (!leaveTarget) return;
+    if (!leaveForm.leaveStart || !leaveForm.leaveEnd) {
+      alert("휴무 시작일과 종료일을 입력해주세요.");
 
+      return;
+    }
     try {
-      await registerParticipantLeave(participantId, { leaveStart, leaveEnd });
+      await registerParticipantLeave(leaveTarget.id, {
+        leaveStart: leaveForm.leaveStart,
+        leaveEnd: leaveForm.leaveEnd,
+        leaveType: leaveForm.leaveType,
+        reason: leaveForm.reason || undefined,
+      });
+      closeLeaveModal();
       refresh();
     } catch (error) {
       alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
@@ -389,6 +464,96 @@ const ProgramDetailPage = () => {
   const handleEndLeave = async (participantId: number) => {
     try {
       await endParticipantLeave(participantId);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const handleReactivate = async (participantId: number, name: string) => {
+    if (!confirm(`'${name}' 님을 다시 활동중 상태로 되돌리시겠습니까?`)) return;
+
+    try {
+      await reactivateParticipant(participantId);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const openAnnualModal = async (participantId: number, name: string) => {
+    setAnnualTarget({ id: participantId, name });
+    setAnnualForm(emptyAnnualForm);
+    setAnnualBalance(null);
+    setAnnualModalOpen(true);
+    const balance = await getAnnualLeave(participantId, currentYear);
+    setAnnualBalance(balance);
+  };
+
+  const closeAnnualModal = () => {
+    setAnnualModalOpen(false);
+    setAnnualTarget(null);
+    setAnnualBalance(null);
+  };
+
+  const handleSaveAnnual = async () => {
+    if (!annualTarget) return;
+    if (!annualForm.totalDays) {
+      alert("총 연차 일수를 입력해주세요.");
+
+      return;
+    }
+    try {
+      const balance = await setAnnualLeave(annualTarget.id, {
+        year: annualForm.year,
+        totalDays: Number(annualForm.totalDays),
+      });
+      setAnnualBalance(balance);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const toggleParticipantSelected = (participantId: number) => {
+    setSelectedParticipantIds((current) =>
+      current.includes(participantId)
+        ? current.filter((id) => id !== participantId)
+        : [...current, participantId],
+    );
+  };
+
+  const handleBulkDrop = async () => {
+    const reason = prompt("일괄 참여종료 사유를 입력해주세요.");
+    if (reason === null) return;
+
+    try {
+      await bulkUpdateParticipantStatus(programId, {
+        participantIds: selectedParticipantIds,
+        status: "DROPPED",
+        dropReason: reason || undefined,
+      });
+      setSelectedParticipantIds([]);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const handleBulkReactivate = async () => {
+    if (
+      !confirm(
+        `선택한 ${selectedParticipantIds.length}명을 재활성화하시겠습니까?`,
+      )
+    )
+      return;
+
+    try {
+      await bulkUpdateParticipantStatus(programId, {
+        participantIds: selectedParticipantIds,
+        status: "ACTIVE",
+      });
+      setSelectedParticipantIds([]);
       refresh();
     } catch (error) {
       alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
@@ -434,6 +599,12 @@ const ProgramDetailPage = () => {
             onClick={() => navigate(`/admin/programs/${programId}/attendance`)}
           >
             근태 조회
+          </button>
+          <button
+            className={btnGhostClass}
+            onClick={() => navigate(`/admin/programs/${programId}/leaves`)}
+          >
+            휴가 현황
           </button>
           <button className={btnPrimaryClass} onClick={handleClickAddButton}>
             + 참여자 추가
@@ -625,21 +796,63 @@ const ProgramDetailPage = () => {
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
-          <input
-            className={searchInputClass}
-            placeholder="이름 또는 수요처명 검색"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <input
+              className={searchInputClass}
+              placeholder="이름 또는 수요처명 검색"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <select
+              className={selectClass}
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="all">전체 상태</option>
+              <option value="ACTIVE">활동중</option>
+              <option value="ON_LEAVE">휴무중</option>
+              <option value="DROPPED">참여종료</option>
+            </select>
+            <select
+              className={selectClass}
+              value={groupFilter}
+              onChange={(event) => setGroupFilter(event.target.value)}
+            >
+              <option value="all">전체 조</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}명
           </span>
         </div>
 
+        {selectedParticipantIds.length > 0 && (
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-[#eceef1] bg-[#f5f8fb]">
+            <span className="text-xs text-[#1e3a5f] font-semibold">
+              {selectedParticipantIds.length}명 선택됨
+            </span>
+            <button className={rowActionBtnClass} onClick={handleBulkDrop}>
+              일괄 참여종료
+            </button>
+            <button
+              className={rowActionBtnClass}
+              onClick={handleBulkReactivate}
+            >
+              일괄 재활성화
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] table-fixed border-collapse">
+          <table className="w-full min-w-[960px] table-fixed border-collapse">
             <thead>
               <tr>
+                <th className="w-[40px] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]" />
                 <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   번호
                 </th>
@@ -658,12 +871,19 @@ const ProgramDetailPage = () => {
                 <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   상태
                 </th>
-                <th className="w-[180px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[260px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
             </thead>
             <tbody>
               {pageItems.map((participant, index) => (
                 <tr key={participant.id} className="hover:bg-[#f8fafc]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <input
+                      type="checkbox"
+                      checked={selectedParticipantIds.includes(participant.id)}
+                      onChange={() => toggleParticipantSelected(participant.id)}
+                    />
+                  </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {(page - 1) * 15 + index + 1}
                   </td>
@@ -706,10 +926,18 @@ const ProgramDetailPage = () => {
                         <button
                           className={rowActionBtnClass}
                           onClick={() =>
-                            handleLeave(participant.id, participant.name)
+                            openLeaveModal(participant.id, participant.name)
                           }
                         >
                           휴무
+                        </button>
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() =>
+                            openAnnualModal(participant.id, participant.name)
+                          }
+                        >
+                          연차설정
                         </button>
                         <button
                           className={rowActionBtnClass}
@@ -727,6 +955,16 @@ const ProgramDetailPage = () => {
                         onClick={() => handleEndLeave(participant.id)}
                       >
                         복귀
+                      </button>
+                    )}
+                    {participant.status === "DROPPED" && (
+                      <button
+                        className={rowActionBtnClass}
+                        onClick={() =>
+                          handleReactivate(participant.id, participant.name)
+                        }
+                      >
+                        재활성화
                       </button>
                     )}
                     <button
@@ -770,7 +1008,9 @@ const ProgramDetailPage = () => {
             </div>
             <button
               className={btnGhostClass}
-              onClick={() => downloadAddParticipantsTemplate(activeGroups)}
+              onClick={() =>
+                downloadAddParticipantsTemplate(activeGroups, activeDemandSites)
+              }
             >
               양식 다운로드
             </button>
@@ -855,6 +1095,22 @@ const ProgramDetailPage = () => {
               {activeGroups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="수요처 배정">
+            <select
+              className={selectClass + " w-full"}
+              value={form.demandSiteId}
+              onChange={(event) =>
+                setForm((f) => ({ ...f, demandSiteId: event.target.value }))
+              }
+            >
+              <option value="">미배정</option>
+              {activeDemandSites.map((demandSite) => (
+                <option key={demandSite.id} value={demandSite.id}>
+                  {demandSite.name}
                 </option>
               ))}
             </select>
@@ -1100,6 +1356,129 @@ const ProgramDetailPage = () => {
               </FormField>
             </div>
           </div>
+        </SlideModal>
+
+        <SlideModal
+          isOpen={leaveModalOpen}
+          title={
+            leaveTarget ? `'${leaveTarget.name}' 님 휴무 등록` : "휴무 등록"
+          }
+          onClose={closeLeaveModal}
+          footer={
+            <>
+              <button className={btnGhostClass} onClick={closeLeaveModal}>
+                취소
+              </button>
+              <button className={btnPrimaryClass} onClick={handleSaveLeave}>
+                저장
+              </button>
+            </>
+          }
+        >
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <FormField label="시작일">
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={leaveForm.leaveStart}
+                  onChange={(event) =>
+                    setLeaveForm((f) => ({
+                      ...f,
+                      leaveStart: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+            <div className="flex-1">
+              <FormField label="종료일">
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={leaveForm.leaveEnd}
+                  onChange={(event) =>
+                    setLeaveForm((f) => ({
+                      ...f,
+                      leaveEnd: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+          </div>
+          <FormField label="휴가 유형">
+            <select
+              className={selectClass + " w-full"}
+              value={leaveForm.leaveType}
+              onChange={(event) =>
+                setLeaveForm((f) => ({
+                  ...f,
+                  leaveType: event.target.value as LeaveType,
+                }))
+              }
+            >
+              <option value="PAID">유급(연차 차감)</option>
+              <option value="UNPAID">무급</option>
+            </select>
+          </FormField>
+          <FormField label="사유">
+            <input
+              className={inputClass}
+              value={leaveForm.reason}
+              onChange={(event) =>
+                setLeaveForm((f) => ({ ...f, reason: event.target.value }))
+              }
+            />
+          </FormField>
+        </SlideModal>
+
+        <SlideModal
+          isOpen={annualModalOpen}
+          title={
+            annualTarget ? `'${annualTarget.name}' 님 연차 설정` : "연차 설정"
+          }
+          onClose={closeAnnualModal}
+          footer={
+            <>
+              <button className={btnGhostClass} onClick={closeAnnualModal}>
+                닫기
+              </button>
+              <button className={btnPrimaryClass} onClick={handleSaveAnnual}>
+                저장
+              </button>
+            </>
+          }
+        >
+          {annualBalance && (
+            <div className="text-xs text-[#6b7280] mb-3">
+              {annualBalance.year}년 현황 — 총 {annualBalance.totalDays}일 /
+              사용 {annualBalance.usedDays}일 / 잔여{" "}
+              {annualBalance.remainingDays}일
+            </div>
+          )}
+          <FormField label="연도">
+            <input
+              className={inputClass}
+              value={annualForm.year}
+              onChange={(event) =>
+                setAnnualForm((f) => ({ ...f, year: event.target.value }))
+              }
+            />
+          </FormField>
+          <FormField label="총 연차 일수">
+            <input
+              type="number"
+              className={inputClass}
+              value={annualForm.totalDays}
+              onChange={(event) =>
+                setAnnualForm((f) => ({
+                  ...f,
+                  totalDays: event.target.value,
+                }))
+              }
+            />
+          </FormField>
         </SlideModal>
 
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />

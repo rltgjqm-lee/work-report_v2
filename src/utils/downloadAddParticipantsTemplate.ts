@@ -2,6 +2,7 @@ import type { Style, Cell } from "exceljs";
 
 export async function downloadAddParticipantsTemplate(
   groups: { name: string }[] = [],
+  demandSites: { name: string }[] = [],
 ): Promise<void> {
   // 1. 번들 용량 절약을 위한 동적 로딩
   const ExcelJS = (await import("exceljs")).default;
@@ -9,6 +10,7 @@ export async function downloadAddParticipantsTemplate(
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("데이터 입력");
   const groupNames = groups.map((group) => group.name);
+  const demandSiteNames = demandSites.map((demandSite) => demandSite.name);
 
   // 2. 1행, 2행 상단 고정
   worksheet.views = [{ state: "frozen", ySplit: 2, activeCell: "A3" }];
@@ -29,13 +31,14 @@ export async function downloadAddParticipantsTemplate(
     },
   };
 
-  // 4. 1행 헤더 입력 (A1 ~ E1)
+  // 4. 1행 헤더 입력 (A1 ~ F1)
   const headerRow = worksheet.addRow([
     "순번",
     "이름",
-    "수요처명",
+    "수요처명(자유입력)",
     "전화번호 뒷자리 (4자리)",
     "조",
+    "수요처 배정(목록선택)",
   ]);
   headerRow.height = 25;
   headerRow.eachCell((cell: Cell) => {
@@ -47,7 +50,7 @@ export async function downloadAddParticipantsTemplate(
     "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만, [전화번호]는 앞의 0이 지워지지 않도록 4자리 숫자를 문자 형태로 입력해 주세요.";
   const noticeRow = worksheet.addRow([noticeText]);
   noticeRow.height = 65; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 65로 대폭 확장
-  worksheet.mergeCells("A2:E2");
+  worksheet.mergeCells("A2:F2");
 
   noticeRow.getCell(1).style = {
     font: {
@@ -67,6 +70,7 @@ export async function downloadAddParticipantsTemplate(
     { key: "client", width: 28, numFmt: "@" },
     { key: "phone", width: 28, numFmt: "@" }, // 기본 텍스트 서식 지정
     { key: "group", width: 18, numFmt: "@" },
+    { key: "demandSite", width: 22, numFmt: "@" },
   ];
 
   // 6-1. 조 목록을 숨김 시트에 적어두고 E열 드롭다운 검증에서 참조한다
@@ -80,6 +84,17 @@ export async function downloadAddParticipantsTemplate(
     groupListRange = `조목록!$A$1:$A$${groupNames.length}`;
   }
 
+  // 6-2. 수요처 목록을 숨김 시트에 적어두고 F열 드롭다운 검증에서 참조한다
+  let demandSiteListRange: string | null = null;
+  if (demandSiteNames.length > 0) {
+    const demandSiteListSheet = workbook.addWorksheet("수요처목록");
+    demandSiteNames.forEach((name, index) => {
+      demandSiteListSheet.getCell(index + 1, 1).value = name;
+    });
+    demandSiteListSheet.state = "veryHidden";
+    demandSiteListRange = `수요처목록!$A$1:$A$${demandSiteNames.length}`;
+  }
+
   // 7. 데이터 입력 영역 생성 (3행부터 502행까지 잠금 해제)
   for (let i = 1; i <= 500; i++) {
     // 💡 번호 깨짐 방지: 전화번호를 입력할 빈 셀의 서식을 처음부터 강제로 '텍스트(@)'로 주입합니다.
@@ -89,6 +104,7 @@ export async function downloadAddParticipantsTemplate(
       client: "",
       phone: "",
       group: "",
+      demandSite: "",
     });
 
     row.eachCell((cell: Cell, colNumber: number) => {
@@ -120,6 +136,18 @@ export async function downloadAddParticipantsTemplate(
         showErrorMessage: true,
         errorTitle: "잘못된 조 이름",
         error: "목록에 있는 조 이름만 선택할 수 있어요.",
+      };
+    }
+
+    // 💡 F열(수요처 배정)은 등록된 수요처 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
+    if (demandSiteListRange) {
+      row.getCell(6).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [demandSiteListRange],
+        showErrorMessage: true,
+        errorTitle: "잘못된 수요처 이름",
+        error: "목록에 있는 수요처 이름만 선택할 수 있어요.",
       };
     }
   }

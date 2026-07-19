@@ -19,6 +19,7 @@ const ADMIN_ACCOUNTS_NAV_ITEM = {
 
 const getTopbarTitle = (pathname: string) => {
   if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근태 조회";
+  if (/^\/admin\/programs\/\d+\/leaves/.test(pathname)) return "휴가 현황";
   if (/^\/admin\/programs\/\d+/.test(pathname)) return "사업단 상세";
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";

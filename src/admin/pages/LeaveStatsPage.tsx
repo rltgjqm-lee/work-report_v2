@@ -1,0 +1,177 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { getLeaves, getLeaveStats, getProgram } from "../api/admin/programs";
+import { inputClass } from "../uiClasses";
+import type { LeaveRow, LeaveStats } from "../types";
+
+const LEAVE_TYPE_LABEL: Record<string, string> = {
+  PAID: "유급",
+  UNPAID: "무급",
+};
+
+const emptyStats: LeaveStats = {
+  monthly: [],
+  annual: {
+    participants: 0,
+    totalAnnual: 0,
+    usedAnnual: 0,
+    remainingAnnual: 0,
+  },
+};
+
+const LeaveStatsPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const programId = Number(id);
+
+  const [programName, setProgramName] = useState("");
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [leaves, setLeaves] = useState<LeaveRow[]>([]);
+  const [stats, setStats] = useState<LeaveStats>(emptyStats);
+
+  useEffect(() => {
+    getProgram(programId).then((program) => setProgramName(program.name));
+  }, [programId]);
+
+  useEffect(() => {
+    if (!programId) return;
+    getLeaves(programId, month).then(setLeaves);
+    getLeaveStats(programId, month.slice(0, 4)).then(setStats);
+  }, [programId, month]);
+
+  const monthStat = stats.monthly.find(
+    (row) => row.month === month.slice(5, 7),
+  );
+
+  return (
+    <div>
+      <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+        <div>
+          <div className="text-xs text-[#6b7280] mb-1.5">
+            사업단 관리 /{" "}
+            <a
+              onClick={() => navigate(`/admin/programs/${programId}`)}
+              className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+            >
+              {programName || "사업단 상세"}
+            </a>{" "}
+            / 휴가 현황
+          </div>
+          <h1 className="text-[21px] font-bold m-0">휴가 현황</h1>
+        </div>
+        <input
+          type="month"
+          className={inputClass}
+          value={month}
+          onChange={(event) => setMonth(event.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-4 mb-3">
+        <div className="px-5 py-4 border border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            이달 휴가
+          </div>
+          <div className="text-sm font-bold">
+            {monthStat?.totalLeaves ?? 0}건
+          </div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            유급 / 무급
+          </div>
+          <div className="text-sm font-bold">
+            {monthStat?.paidLeaves ?? 0}건 / {monthStat?.unpaidLeaves ?? 0}건
+          </div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            이달 휴가일수
+          </div>
+          <div className="text-sm font-bold">{monthStat?.totalDays ?? 0}일</div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            연간 연차 (총/사용/잔여)
+          </div>
+          <div className="text-sm font-bold">
+            {stats.annual.totalAnnual} / {stats.annual.usedAnnual} /{" "}
+            {stats.annual.remainingAnnual}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] table-fixed border-collapse">
+            <thead>
+              <tr>
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  참여자명
+                </th>
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  조
+                </th>
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  시작일
+                </th>
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  종료일
+                </th>
+                <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  일수
+                </th>
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  유형
+                </th>
+                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  사유
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaves.map((row) => (
+                <tr key={row.leave.id} className="hover:bg-[#f8fafc]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {row.participantName}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {row.groupName ?? "-"}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    {row.leave.leaveStart}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    {row.leave.leaveEnd}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {row.leave.leaveDays}일
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {LEAVE_TYPE_LABEL[row.leave.leaveType]}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    {row.leave.reason ?? "-"}
+                  </td>
+                </tr>
+              ))}
+              {leaves.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
+                  >
+                    해당 월에 휴가 기록이 없습니다.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LeaveStatsPage;

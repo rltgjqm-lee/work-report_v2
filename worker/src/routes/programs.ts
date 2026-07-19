@@ -1,12 +1,14 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, like, sql } from "drizzle-orm";
+import { and, eq, inArray, like, sql } from "drizzle-orm";
 
 import {
   programs,
   participants,
   participantLeaves,
+  participantAnnualLeave,
   groups,
+  demandSites,
   attendanceLogs,
   activityLogs,
 } from "../db/schema";
@@ -309,6 +311,7 @@ app.post("/:id/participants", async (c) => {
   const body = await c.req.json<{
     name?: string;
     demandName?: string;
+    demandSiteId?: number;
     phoneLast4?: string;
     groupId?: number;
     birthYear?: number;
@@ -320,6 +323,15 @@ app.post("/:id/participants", async (c) => {
   if (!body.phoneLast4 || !/^\d{4}$/.test(body.phoneLast4)) {
     return c.json({ error: "phoneLast4 must be 4 digits" }, 400);
   }
+  if (body.demandSiteId) {
+    const demandSiteRows = await db
+      .select()
+      .from(demandSites)
+      .where(eq(demandSites.id, body.demandSiteId));
+    if (demandSiteRows[0]?.programId !== programId) {
+      return c.json({ error: "해당 사업단의 수요처가 아닙니다." }, 400);
+    }
+  }
 
   const result = await db
     .insert(participants)
@@ -327,6 +339,7 @@ app.post("/:id/participants", async (c) => {
       programId,
       name: body.name,
       demandName: body.demandName,
+      demandSiteId: body.demandSiteId,
       phoneLast4: body.phoneLast4,
       groupId: body.groupId,
       birthYear: body.birthYear,
@@ -355,6 +368,7 @@ app.post("/:id/participants/bulk", async (c) => {
     participants?: {
       name?: string;
       demandName?: string;
+      demandSiteId?: number;
       phoneLast4?: string;
       groupId?: number;
       birthYear?: number;
@@ -386,6 +400,7 @@ app.post("/:id/participants/bulk", async (c) => {
         programId,
         name: row.name!,
         demandName: row.demandName,
+        demandSiteId: row.demandSiteId,
         phoneLast4: row.phoneLast4!,
         groupId: row.groupId,
         birthYear: row.birthYear,
@@ -438,6 +453,73 @@ app.delete("/:id/participants/:participantId", async (c) => {
   return c.json({ success: true });
 });
 
+// 여러 참여자를 한 번에 탈락/재활성화 처리
+app.post("/:id/participants/bulk-status", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const body = await c.req.json<{
+    participantIds?: number[];
+    status?: "ACTIVE" | "DROPPED";
+    dropReason?: string;
+  }>();
+
+  if (!body.participantIds?.length || !body.status) {
+    return c.json({ error: "participantIds, status are required" }, 400);
+  }
+
+  const targetRows = await db
+    .select()
+    .from(participants)
+    .where(
+      and(
+        eq(participants.programId, programId),
+        inArray(participants.id, body.participantIds),
+      ),
+    );
+
+  if (body.status === "DROPPED") {
+    const result = await db
+      .update(participants)
+      .set({
+        status: "DROPPED",
+        droppedAt: new Date().toISOString(),
+        dropReason: body.dropReason,
+      })
+      .where(
+        inArray(
+          participants.id,
+          targetRows.map((row) => row.id),
+        ),
+      )
+      .returning();
+    return c.json(result);
+  }
+
+  const reactivatableIds = targetRows
+    .filter((row) => row.status === "DROPPED")
+    .map((row) => row.id);
+  if (reactivatableIds.length === 0) return c.json([]);
+
+  const result = await db
+    .update(participants)
+    .set({ status: "ACTIVE", droppedAt: null, dropReason: null })
+    .where(inArray(participants.id, reactivatableIds))
+    .returning();
+  return c.json(result);
+});
+
 app.get("/:id/attendance", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -485,6 +567,116 @@ app.get("/:id/attendance", async (c) => {
   };
 
   return c.json({ logs: rows, stats });
+});
+
+app.get("/:id/leaves", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const month = c.req.query("month"); // "YYYY-MM"
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const conditions = [eq(participants.programId, programId)];
+  if (month) conditions.push(like(participantLeaves.leaveStart, `${month}%`));
+
+  const rows = await db
+    .select({
+      leave: participantLeaves,
+      participantName: participants.name,
+      groupName: groups.name,
+    })
+    .from(participantLeaves)
+    .innerJoin(
+      participants,
+      eq(participantLeaves.participantId, participants.id),
+    )
+    .leftJoin(groups, eq(participants.groupId, groups.id))
+    .where(and(...conditions))
+    .orderBy(sql`${participantLeaves.leaveStart} DESC`);
+
+  return c.json(rows);
+});
+
+app.get("/:id/leaves/stats", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const year = c.req.query("year") ?? new Date().getFullYear().toString();
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const leaveRows = await db
+    .select({ leave: participantLeaves })
+    .from(participantLeaves)
+    .innerJoin(
+      participants,
+      eq(participantLeaves.participantId, participants.id),
+    )
+    .where(
+      and(
+        eq(participants.programId, programId),
+        like(participantLeaves.leaveStart, `${year}%`),
+      ),
+    );
+
+  const monthly = Array.from({ length: 12 }, (_, index) => {
+    const month = String(index + 1).padStart(2, "0");
+    const monthRows = leaveRows.filter(
+      (row) => row.leave.leaveStart.slice(5, 7) === month,
+    );
+    return {
+      month,
+      totalLeaves: monthRows.length,
+      paidLeaves: monthRows.filter((row) => row.leave.leaveType === "PAID")
+        .length,
+      unpaidLeaves: monthRows.filter((row) => row.leave.leaveType === "UNPAID")
+        .length,
+      totalDays: monthRows.reduce((sum, row) => sum + row.leave.leaveDays, 0),
+    };
+  });
+
+  const annualRows = await db
+    .select({ annual: participantAnnualLeave })
+    .from(participantAnnualLeave)
+    .innerJoin(
+      participants,
+      eq(participantAnnualLeave.participantId, participants.id),
+    )
+    .where(
+      and(
+        eq(participants.programId, programId),
+        eq(participantAnnualLeave.year, year),
+      ),
+    );
+
+  const annual = {
+    participants: annualRows.length,
+    totalAnnual: annualRows.reduce((sum, row) => sum + row.annual.totalDays, 0),
+    usedAnnual: annualRows.reduce((sum, row) => sum + row.annual.usedDays, 0),
+    remainingAnnual: annualRows.reduce(
+      (sum, row) => sum + row.annual.remainingDays,
+      0,
+    ),
+  };
+
+  return c.json({ monthly, annual });
 });
 
 export default app;

@@ -1,11 +1,12 @@
 import { request } from "../client";
-import type { Participant } from "../../types";
+import type { AnnualLeave, LeaveType, Participant } from "../../types";
 
 export const addParticipant = (
   programId: number,
   data: {
     name: string;
     demandName?: string;
+    demandSiteId?: number;
     phoneLast4: string;
     groupId?: number;
     birthYear?: number;
@@ -25,7 +26,13 @@ export const deleteParticipant = (programId: number, participantId: number) =>
 export const bulkAddParticipants = (
   programId: number,
   data: {
-    participants: { name: string; demandName?: string; phoneLast4: string }[];
+    participants: {
+      name: string;
+      demandName?: string;
+      demandSiteId?: number;
+      phoneLast4: string;
+      groupId?: number;
+    }[];
   },
 ) =>
   request<Participant[]>(`/api/programs/${programId}/participants/bulk`, {
@@ -38,7 +45,12 @@ export const updateParticipant = (
   data: Partial<
     Pick<
       Participant,
-      "name" | "demandName" | "phoneLast4" | "birthYear" | "groupId"
+      | "name"
+      | "demandName"
+      | "demandSiteId"
+      | "phoneLast4"
+      | "birthYear"
+      | "groupId"
     >
   >,
 ) =>
@@ -61,7 +73,12 @@ export const dropParticipant = (id: number, dropReason?: string) =>
 
 export const registerParticipantLeave = (
   id: number,
-  data: { leaveStart: string; leaveEnd: string; reason?: string },
+  data: {
+    leaveStart: string;
+    leaveEnd: string;
+    leaveType: LeaveType;
+    reason?: string;
+  },
 ) =>
   request<Participant>(`/api/participants/${id}/leave`, {
     method: "POST",
@@ -72,3 +89,33 @@ export const endParticipantLeave = (id: number) =>
   request<Participant>(`/api/participants/${id}/leave/end`, {
     method: "POST",
   });
+
+export const reactivateParticipant = (id: number) =>
+  request<Participant>(`/api/participants/${id}/reactivate`, {
+    method: "POST",
+  });
+
+export const getAnnualLeave = (id: number, year: string) =>
+  request<AnnualLeave>(`/api/participants/${id}/annual-leave?year=${year}`);
+
+export const setAnnualLeave = (
+  id: number,
+  data: { year: string; totalDays: number },
+) =>
+  request<AnnualLeave>(`/api/participants/${id}/annual-leave`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const bulkUpdateParticipantStatus = (
+  programId: number,
+  data: {
+    participantIds: number[];
+    status: "ACTIVE" | "DROPPED";
+    dropReason?: string;
+  },
+) =>
+  request<Participant[]>(
+    `/api/programs/${programId}/participants/bulk-status`,
+    { method: "POST", body: JSON.stringify(data) },
+  );

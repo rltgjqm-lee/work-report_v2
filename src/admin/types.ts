@@ -85,6 +85,7 @@ export type Participant = {
   groupId: number | null;
   name: string;
   demandName: string | null;
+  demandSiteId: number | null;
   phoneLast4: string;
   birthYear: number | null;
   status: ParticipantStatus;
@@ -166,4 +167,50 @@ export type AttendanceStats = {
 export type MonthlyAttendance = {
   logs: AttendanceRow[];
   stats: AttendanceStats;
+};
+
+export type LeaveType = "PAID" | "UNPAID";
+
+export type ParticipantLeave = {
+  id: number;
+  participantId: number;
+  leaveStart: string;
+  leaveEnd: string;
+  leaveType: LeaveType;
+  leaveDays: number;
+  reason: string | null;
+  createdBy: number;
+  createdAt: string;
+};
+
+export type LeaveRow = {
+  leave: ParticipantLeave;
+  participantName: string;
+  groupName: string | null;
+};
+
+export type AnnualLeave = {
+  participantId: number;
+  year: string;
+  totalDays: number;
+  usedDays: number;
+  remainingDays: number;
+};
+
+export type LeaveMonthlyStat = {
+  month: string;
+  totalLeaves: number;
+  paidLeaves: number;
+  unpaidLeaves: number;
+  totalDays: number;
+};
+
+export type LeaveStats = {
+  monthly: LeaveMonthlyStat[];
+  annual: {
+    participants: number;
+    totalAnnual: number;
+    usedAnnual: number;
+    remainingAnnual: number;
+  };
 };

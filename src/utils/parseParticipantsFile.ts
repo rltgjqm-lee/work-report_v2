@@ -1,11 +1,13 @@
 export type ParsedParticipantRow = {
   name: string;
   demandName?: string;
+  demandSiteId?: number;
   phoneLast4: string;
   groupId?: number;
 };
 
 type GroupOption = { id: number; name: string };
+type DemandSiteOption = { id: number; name: string };
 
 const toText = (value: unknown): string => {
   if (value === null || value === undefined) return "";
@@ -38,9 +40,16 @@ const resolveGroupId = (
   groups: GroupOption[],
 ): number | undefined => groups.find((group) => group.name === groupName)?.id;
 
+const resolveDemandSiteId = (
+  demandSiteName: string,
+  demandSites: DemandSiteOption[],
+): number | undefined =>
+  demandSites.find((demandSite) => demandSite.name === demandSiteName)?.id;
+
 const parseXlsx = async (
   file: File,
   groups: GroupOption[],
+  demandSites: DemandSiteOption[],
 ): Promise<ParsedParticipantRow[]> => {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
@@ -56,10 +65,14 @@ const parseXlsx = async (
     if (!name) continue;
 
     const groupName = toText(row.getCell(5).value);
+    const demandSiteName = toText(row.getCell(6).value);
 
     rows.push({
       name,
       demandName: toText(row.getCell(3).value) || undefined,
+      demandSiteId: demandSiteName
+        ? resolveDemandSiteId(demandSiteName, demandSites)
+        : undefined,
       phoneLast4: toPhoneLast4(row.getCell(4).value),
       groupId: groupName ? resolveGroupId(groupName, groups) : undefined,
     });
@@ -71,6 +84,7 @@ const parseXlsx = async (
 const parseCsv = async (
   file: File,
   groups: GroupOption[],
+  demandSites: DemandSiteOption[],
 ): Promise<ParsedParticipantRow[]> => {
   const text = await file.text();
   const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
@@ -78,12 +92,15 @@ const parseCsv = async (
 
   for (const line of lines) {
     const cells = line.split(",").map((cell) => cell.trim());
-    const [, name, demandName, phone, groupName] = cells;
+    const [, name, demandName, phone, groupName, demandSiteName] = cells;
     if (!name || name === "이름") continue;
 
     rows.push({
       name,
       demandName: demandName || undefined,
+      demandSiteId: demandSiteName
+        ? resolveDemandSiteId(demandSiteName, demandSites)
+        : undefined,
       phoneLast4: toPhoneLast4(phone),
       groupId: groupName ? resolveGroupId(groupName, groups) : undefined,
     });
@@ -95,7 +112,10 @@ const parseCsv = async (
 export const parseParticipantsFile = (
   file: File,
   groups: GroupOption[] = [],
+  demandSites: DemandSiteOption[] = [],
 ): Promise<ParsedParticipantRow[]> => {
   const isCsv = file.name.toLowerCase().endsWith(".csv");
-  return isCsv ? parseCsv(file, groups) : parseXlsx(file, groups);
+  return isCsv
+    ? parseCsv(file, groups, demandSites)
+    : parseXlsx(file, groups, demandSites);
 };
