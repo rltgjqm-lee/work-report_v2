@@ -103,6 +103,7 @@ export type Group = {
   shiftStart: string;
   shiftEnd: string;
   isActive: boolean;
+  participantCount: number;
   createdAt: string;
 };
 

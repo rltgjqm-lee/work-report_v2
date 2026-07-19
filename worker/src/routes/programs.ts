@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, like } from "drizzle-orm";
+import { and, eq, like, sql } from "drizzle-orm";
 
 import {
   programs,
@@ -209,9 +209,22 @@ app.get("/:id/groups", async (c) => {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: groups.id,
+      programId: groups.programId,
+      name: groups.name,
+      description: groups.description,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
+      isActive: groups.isActive,
+      createdAt: groups.createdAt,
+      participantCount: sql<number>`COALESCE(SUM(CASE WHEN ${participants.status} = 'ACTIVE' THEN 1 ELSE 0 END), 0)`,
+    })
     .from(groups)
-    .where(eq(groups.programId, programId));
+    .leftJoin(participants, eq(participants.groupId, groups.id))
+    .where(eq(groups.programId, programId))
+    .groupBy(groups.id);
+
   return c.json(rows);
 });
 

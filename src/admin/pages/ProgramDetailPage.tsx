@@ -10,7 +10,7 @@ import {
   moveParticipantToGroup,
   registerParticipantLeave,
 } from "../api/admin/participants";
-import { createGroup, deleteGroup, listGroups } from "../api/admin/groups";
+import { createGroup, listGroups, updateGroup } from "../api/admin/groups";
 import {
   downloadActivityLogExcel,
   downloadAttendanceExcel,
@@ -141,6 +141,11 @@ const ProgramDetailPage = () => {
 
   useEffect(refresh, [programId]);
 
+  const activeGroups = useMemo(
+    () => groups.filter((group) => group.isActive),
+    [groups],
+  );
+
   const filtered = useMemo(
     () =>
       (program?.participants ?? []).filter(
@@ -180,7 +185,7 @@ const ProgramDetailPage = () => {
   const handleSave = async () => {
     try {
       if (selectedFile) {
-        const rows = await parseParticipantsFile(selectedFile, groups);
+        const rows = await parseParticipantsFile(selectedFile, activeGroups);
         if (rows.length === 0) {
           alert("파일에서 등록할 참여자를 찾지 못했습니다.");
 
@@ -228,14 +233,15 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleDeleteGroup = async (group: Group) => {
-    if (!confirm(`'${group.name}' 조를 삭제하시겠습니까?`)) return;
+  const handleToggleGroupActive = async (group: Group) => {
+    const actionLabel = group.isActive ? "비활성화" : "활성화";
+    if (!confirm(`'${group.name}' 조를 ${actionLabel}하시겠습니까?`)) return;
 
     try {
-      await deleteGroup(group.id);
+      await updateGroup(group.id, { isActive: !group.isActive });
       refresh();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
   };
 
@@ -488,11 +494,15 @@ const ProgramDetailPage = () => {
               <span className="text-[#6b7280]">
                 {group.shiftStart}~{group.shiftEnd}
               </span>
+              <span className="text-[#9aa1ab]">{group.participantCount}명</span>
+              <span className="text-[#9aa1ab]">
+                {group.isActive ? "활성" : "비활성"}
+              </span>
               <button
                 className={rowActionBtnClass}
-                onClick={() => handleDeleteGroup(group)}
+                onClick={() => handleToggleGroupActive(group)}
               >
-                삭제
+                {group.isActive ? "비활성화" : "활성화"}
               </button>
             </div>
           ))}
@@ -669,11 +679,16 @@ const ProgramDetailPage = () => {
                       }
                     >
                       <option value="">미배정</option>
-                      {groups.map((group) => (
-                        <option key={group.id} value={group.id}>
-                          {group.name}
-                        </option>
-                      ))}
+                      {groups
+                        .filter(
+                          (group) =>
+                            group.isActive || group.id === participant.groupId,
+                        )
+                        .map((group) => (
+                          <option key={group.id} value={group.id}>
+                            {group.name}
+                          </option>
+                        ))}
                     </select>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
@@ -749,7 +764,7 @@ const ProgramDetailPage = () => {
             </div>
             <button
               className={btnGhostClass}
-              onClick={() => downloadAddParticipantsTemplate(groups)}
+              onClick={() => downloadAddParticipantsTemplate(activeGroups)}
             >
               양식 다운로드
             </button>
@@ -831,7 +846,7 @@ const ProgramDetailPage = () => {
               }
             >
               <option value="">미배정</option>
-              {groups.map((group) => (
+              {activeGroups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
                 </option>
@@ -1040,7 +1055,7 @@ const ProgramDetailPage = () => {
               }
             >
               <option value="">선택하세요</option>
-              {groups.map((group) => (
+              {activeGroups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
                 </option>

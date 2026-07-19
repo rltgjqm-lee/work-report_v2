@@ -29,9 +29,6 @@ export const updateGroup = (
     body: JSON.stringify(data),
   });
 
-export const deleteGroup = (id: number) =>
-  request<{ success: boolean }>(`/api/groups/${id}`, { method: "DELETE" });
-
 export const bulkAssignGroup = (participantIds: number[], groupId: number) =>
   request<{ updated: number }>("/api/groups/bulk-assign", {
     method: "POST",
