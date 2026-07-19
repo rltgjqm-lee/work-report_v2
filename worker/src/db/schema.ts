@@ -240,6 +240,11 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
   clockIn: text("clock_in"),
   clockOut: text("clock_out"),
   totalMinutes: integer("total_minutes"),
+  // 퇴근 시 배정된 조의 근무시간 대비 자동 판정 (지각/조퇴 여부) — 출근 중엔 NORMAL
+  status: text("status")
+    .$type<"NORMAL" | "LATE" | "EARLY_LEAVE">()
+    .notNull()
+    .default("NORMAL"),
   note: text("note"),
   createdAt: text("created_at")
     .notNull()

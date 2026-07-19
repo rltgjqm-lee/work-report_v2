@@ -1,5 +1,9 @@
 import { request } from "../client";
-import type { Program, ProgramWithParticipants } from "../../types";
+import type {
+  MonthlyAttendance,
+  Program,
+  ProgramWithParticipants,
+} from "../../types";
 
 export const listPrograms = (organizationId?: number) =>
   request<Program[]>(
@@ -27,4 +31,6 @@ export const updateProgram = (
   });
 
 export const getMonthlyAttendance = (programId: number, month: string) =>
-  request<unknown[]>(`/api/programs/${programId}/attendance?month=${month}`);
+  request<MonthlyAttendance>(
+    `/api/programs/${programId}/attendance?month=${month}`,
+  );

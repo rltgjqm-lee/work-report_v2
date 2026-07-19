@@ -1,0 +1,1 @@
+ALTER TABLE `attendance_logs` ADD `status` text DEFAULT 'NORMAL' NOT NULL;

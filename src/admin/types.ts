@@ -130,3 +130,40 @@ export type Admin = {
   isActive: boolean;
   createdAt: string;
 };
+
+export type AttendanceStatus = "NORMAL" | "LATE" | "EARLY_LEAVE";
+
+export type AttendanceLog = {
+  id: number;
+  participantId: number;
+  groupId: number | null;
+  programId: number;
+  workDate: string;
+  clockIn: string | null;
+  clockOut: string | null;
+  totalMinutes: number | null;
+  status: AttendanceStatus;
+  note: string | null;
+  createdAt: string;
+};
+
+export type AttendanceRow = {
+  log: AttendanceLog;
+  participantName: string;
+  groupName: string | null;
+  shiftStart: string | null;
+  shiftEnd: string | null;
+};
+
+export type AttendanceStats = {
+  total: number;
+  normal: number;
+  late: number;
+  earlyLeave: number;
+  totalHours: number;
+};
+
+export type MonthlyAttendance = {
+  logs: AttendanceRow[];
+  stats: AttendanceStats;
+};

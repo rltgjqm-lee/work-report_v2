@@ -474,7 +474,17 @@ app.get("/:id/attendance", async (c) => {
       ),
     );
 
-  return c.json(rows);
+  const stats = {
+    total: rows.length,
+    normal: rows.filter((row) => row.log.status === "NORMAL").length,
+    late: rows.filter((row) => row.log.status === "LATE").length,
+    earlyLeave: rows.filter((row) => row.log.status === "EARLY_LEAVE").length,
+    totalHours: Math.floor(
+      rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60,
+    ),
+  };
+
+  return c.json({ logs: rows, stats });
 });
 
 export default app;

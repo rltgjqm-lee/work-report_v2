@@ -7,6 +7,7 @@ import {
   programs,
   pushSubscriptions,
   participants,
+  groups,
   attendanceLogs,
   activityLogs,
 } from "../db/schema";
@@ -14,6 +15,12 @@ import { getKstNow } from "../lib/kst";
 import type { Env } from "../types";
 
 const app = new Hono<Env>();
+
+// "HH:MM" -> 자정 기준 분
+const toMinutes = (hhmm: string): number => {
+  const [hour, minute] = hhmm.split(":").map(Number);
+  return hour * 60 + minute;
+};
 
 // 기관/사업단 목록을 한 번에 반환 — 기본 정보 입력 페이지의 지역/기관/사업단
 // 캐스케이딩 드롭다운이 라운드트립 없이 한 번의 호출로 채워지도록 묶어서 내려준다.
@@ -138,7 +145,40 @@ app.post("/attendance/clock-in", async (c) => {
   const participant = rows[0];
   if (!participant) return c.json({ error: "Not found" }, 404);
 
-  const { date, iso } = getKstNow();
+  if (participant.status === "ON_LEAVE") {
+    return c.json({ error: "휴가 중인 참여자는 출근할 수 없습니다." }, 400);
+  }
+
+  const { date, time, iso } = getKstNow();
+
+  // 배정된 조에 근무시간이 설정돼 있으면 그 시간 ±30분 범위에서만 출근을 허용한다.
+  // 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한 사업단도 있어서).
+  if (participant.groupId) {
+    const groupRows = await db
+      .select()
+      .from(groups)
+      .where(eq(groups.id, participant.groupId));
+    const group = groupRows[0];
+
+    if (group) {
+      const nowMinutes = toMinutes(time);
+      const earliest = toMinutes(group.shiftStart) - 30;
+      const latest = toMinutes(group.shiftEnd) + 30;
+
+      if (nowMinutes < earliest) {
+        return c.json(
+          { error: `아직 근무 시작 시간(${group.shiftStart})이 아닙니다.` },
+          400,
+        );
+      }
+      if (nowMinutes > latest) {
+        return c.json(
+          { error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` },
+          400,
+        );
+      }
+    }
+  }
 
   const existing = await db
     .select()
@@ -195,9 +235,36 @@ app.post("/attendance/clock-out", async (c) => {
     (new Date(iso).getTime() - new Date(log.clockIn).getTime()) / 60000,
   );
 
+  // 배정된 조의 근무시간이 있으면 지각/조퇴를 자동 판정한다 (±10분 여유)
+  let status: "NORMAL" | "LATE" | "EARLY_LEAVE" = "NORMAL";
+  let note: string | undefined;
+
+  if (log.groupId) {
+    const groupRows = await db
+      .select()
+      .from(groups)
+      .where(eq(groups.id, log.groupId));
+    const group = groupRows[0];
+
+    if (group) {
+      const startMinutes = toMinutes(group.shiftStart);
+      const endMinutes = toMinutes(group.shiftEnd);
+      const expectedMinutes = endMinutes - startMinutes;
+      const clockInMinutes = toMinutes(log.clockIn.slice(11, 16));
+
+      if (totalMinutes < expectedMinutes - 10) {
+        status = "EARLY_LEAVE";
+        note = `조퇴 (예상: ${expectedMinutes}분, 실제: ${totalMinutes}분)`;
+      } else if (clockInMinutes > startMinutes + 10) {
+        status = "LATE";
+        note = `지각 (예상 시작: ${group.shiftStart})`;
+      }
+    }
+  }
+
   const result = await db
     .update(attendanceLogs)
-    .set({ clockOut: iso, totalMinutes })
+    .set({ clockOut: iso, totalMinutes, status, note })
     .where(eq(attendanceLogs.id, log.id))
     .returning();
 

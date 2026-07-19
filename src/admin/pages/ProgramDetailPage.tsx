@@ -429,6 +429,12 @@ const ProgramDetailPage = () => {
               </option>
             ))}
           </select>
+          <button
+            className={btnGhostClass}
+            onClick={() => navigate(`/admin/programs/${programId}/attendance`)}
+          >
+            근태 조회
+          </button>
           <button className={btnPrimaryClass} onClick={handleClickAddButton}>
             + 참여자 추가
           </button>

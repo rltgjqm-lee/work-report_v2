@@ -99,6 +99,13 @@
       "when": 1784445135039,
       "tag": "0013_add_demand_sites_and_program_active",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1784449735434,
+      "tag": "0014_add_attendance_status",
+      "breakpoints": true
     }
   ]
 }
