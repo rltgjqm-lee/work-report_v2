@@ -51,7 +51,7 @@ const emptyGroupForm = {
 const statusLabel: Record<string, string> = {
   ACTIVE: "활동중",
   ON_LEAVE: "휴무중",
-  DROPPED: "탈락",
+  DROPPED: "참여종료",
 };
 
 const ProgramDetailPage = () => {
@@ -194,7 +194,7 @@ const ProgramDetailPage = () => {
   };
 
   const handleDrop = async (participantId: number, name: string) => {
-    const reason = prompt(`'${name}' 님의 탈락 사유를 입력해주세요.`);
+    const reason = prompt(`'${name}' 님의 참여종료 사유를 입력해주세요.`);
 
     if (reason === null) return;
 
@@ -454,7 +454,7 @@ const ProgramDetailPage = () => {
                             handleLeave(participant.id, participant.name)
                           }
                         >
-                          휴무등록
+                          휴무
                         </button>
                         <button
                           className={rowActionBtnClass}
@@ -462,7 +462,7 @@ const ProgramDetailPage = () => {
                             handleDrop(participant.id, participant.name)
                           }
                         >
-                          탈락처리
+                          참여종료
                         </button>
                       </>
                     )}
@@ -471,7 +471,7 @@ const ProgramDetailPage = () => {
                         className={rowActionBtnClass}
                         onClick={() => handleEndLeave(participant.id)}
                       >
-                        복귀처리
+                        복귀
                       </button>
                     )}
                     <button

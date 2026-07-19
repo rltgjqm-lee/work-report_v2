@@ -421,6 +421,18 @@ app.delete("/:id/participants/:participantId", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
+  // 💡 참여자를 참조하는 자식 테이블을 먼저 지워야 FOREIGN KEY constraint failed 없이
+  // 삭제가 성공한다 (사업단 삭제 라우트와 동일한 이유)
+  await db
+    .delete(activityLogs)
+    .where(eq(activityLogs.participantId, participantId));
+  await db
+    .delete(participantLeaves)
+    .where(eq(participantLeaves.participantId, participantId));
+  await db
+    .delete(attendanceLogs)
+    .where(eq(attendanceLogs.participantId, participantId));
+
   const result = await db
     .delete(participants)
     .where(
