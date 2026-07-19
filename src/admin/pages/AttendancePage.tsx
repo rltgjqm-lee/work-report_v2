@@ -51,11 +51,9 @@ const AttendancePage = () => {
   const programId = preselectedProgramId ?? Number(selectedProgramId);
 
   useEffect(() => {
-    if (!programId) {
-      setLogs([]);
-      setStats(emptyStats);
-      return;
-    }
+    // programId가 없으면(사이드바 진입 직후, 아직 미선택) 아래 렌더링에서 통계/표 대신
+    // 안내 문구를 보여주므로 logs/stats를 굳이 초기화할 필요가 없다
+    if (!programId) return;
     getMonthlyAttendance(programId, month).then((result) => {
       setLogs(result.logs);
       setStats(result.stats);
