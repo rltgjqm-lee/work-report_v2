@@ -152,7 +152,7 @@ const ProgramsPage = () => {
     }
   };
 
-  const handleDelete = async (program: Program) => {
+  const handleDeleteProgram = async (program: Program) => {
     if (!confirm(`'${program.name}' 사업단을 삭제하시겠습니까?`)) return;
 
     try {
@@ -265,7 +265,7 @@ const ProgramsPage = () => {
                       className={rowActionBtnClass}
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleDelete(program);
+                        handleDeleteProgram(program);
                       }}
                     >
                       삭제

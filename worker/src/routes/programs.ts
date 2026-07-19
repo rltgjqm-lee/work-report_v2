@@ -1,8 +1,18 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, like } from "drizzle-orm";
+import { and, eq, inArray, like } from "drizzle-orm";
 
-import { programs, participants, groups, attendanceLogs } from "../db/schema";
+import {
+  programs,
+  participants,
+  participantLeaves,
+  groups,
+  attendanceLogs,
+  activityLogs,
+  pushSubscriptions,
+  pendingPushes,
+  disasterPushLogs,
+} from "../db/schema";
 import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
 import type { Env } from "../types";
 
@@ -177,7 +187,29 @@ app.delete("/:id", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
+  // 💡 참여자/사업단을 참조하는 자식 테이블을 FK 순서대로 먼저 지워야 programs 삭제가
+  // FOREIGN KEY constraint failed 없이 성공한다
+  const participantRows = await db
+    .select({ id: participants.id })
+    .from(participants)
+    .where(eq(participants.programId, id));
+  const participantIds = participantRows.map((participant) => participant.id);
+
+  if (participantIds.length > 0) {
+    await db
+      .delete(activityLogs)
+      .where(inArray(activityLogs.participantId, participantIds));
+    await db
+      .delete(participantLeaves)
+      .where(inArray(participantLeaves.participantId, participantIds));
+  }
+
+  await db.delete(attendanceLogs).where(eq(attendanceLogs.programId, id));
   await db.delete(participants).where(eq(participants.programId, id));
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.programId, id));
+  await db.delete(pendingPushes).where(eq(pendingPushes.programId, id));
+  await db.delete(disasterPushLogs).where(eq(disasterPushLogs.programId, id));
+  await db.delete(groups).where(eq(groups.programId, id));
   await db.delete(programs).where(eq(programs.id, id));
 
   return c.json({ success: true });
@@ -198,7 +230,10 @@ app.get("/:id/groups", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
-  const rows = await db.select().from(groups).where(eq(groups.programId, programId));
+  const rows = await db
+    .select()
+    .from(groups)
+    .where(eq(groups.programId, programId));
   return c.json(rows);
 });
 
@@ -225,10 +260,7 @@ app.post("/:id/groups", async (c) => {
   }>();
 
   if (!body.name || !body.shiftStart || !body.shiftEnd) {
-    return c.json(
-      { error: "name, shiftStart, shiftEnd are required" },
-      400,
-    );
+    return c.json({ error: "name, shiftStart, shiftEnd are required" }, 400);
   }
 
   const result = await db
