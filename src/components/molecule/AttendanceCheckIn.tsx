@@ -120,22 +120,26 @@ const AttendanceCheckIn = ({
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">
-          <LabeledInput
-            labelTitle="이름"
-            id="attendance-name"
-            placeholder="성함 입력"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <LabeledInput
-            labelTitle="전화번호 뒷자리(4자리)"
-            id="attendance-phone"
-            placeholder="0000"
-            value={phoneLast4}
-            onChange={(e) =>
-              setPhoneLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
-            }
-          />
+          <div>
+            <LabeledInput
+              labelTitle="이름"
+              id="attendance-name"
+              placeholder="성함 입력"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <LabeledInput
+              labelTitle="전화번호 뒷자리(4자리)"
+              id="attendance-phone"
+              placeholder="0000"
+              value={phoneLast4}
+              onChange={(e) =>
+                setPhoneLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
+              }
+            />
+          </div>
           <Button variant="primary" onClick={handleIdentify}>
             본인 확인
           </Button>
