@@ -7,9 +7,13 @@ import {
   pushSubscriptions,
   safetyAlerts,
   disasterPushLogs,
+  disasterApiCallLog,
   pendingPushes,
 } from "../db/schema";
-import { fetchRecentDisasterMessages } from "../lib/disasterMsgApi";
+import {
+  fetchDisasterMessagesPage,
+  type DisasterMessage,
+} from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
 import { getKstNow } from "../lib/kst";
 import type { Env } from "../types";
@@ -19,14 +23,78 @@ import type { Env } from "../types";
 // 나머지는 pending_pushes에 남겨뒀다가 다음 실행(1분 뒤)에 이어서 보낸다.
 const MAX_PUSHES_PER_RUN = 40;
 
+// 행안부 API는 하루 1000회 호출 한도. 이 한도에 도달하면 그날 남은 폴링은 API를
+// 호출하지 않고 건너뛴다 — 한도를 넘겨서 그날 이후 재난문자를 아예 못 받는 사고를 막기 위함.
+const DAILY_CALL_CAP = 1000;
+// 한 페이지가 최대 1000건이라 하루치가 이 페이지 수를 넘는 건 사실상 대규모 재난 상황뿐 —
+// 그래도 무한 루프 방지용 안전장치로 상한을 둔다.
+const MAX_PAGES_PER_RUN = 5;
+
 type DB = ReturnType<typeof drizzle>;
 
-// 1단계: 새 재난문자를 조회해서 지역/근무시간에 매칭되는 구독을 대기열에 적재만 한다 (외부 fetch 없음)
+// 오늘 날짜(KST)의 호출 카운트를 확인하고, 한도 안이면 카운트를 올리고 true를 반환한다.
+// 한도에 도달했으면 카운트를 올리지 않고 false를 반환 — 호출하는 쪽은 이때 API를 호출하면 안 된다.
+const tryConsumeApiCallBudget = async (
+  db: DB,
+  date: string,
+): Promise<boolean> => {
+  const rows = await db
+    .select()
+    .from(disasterApiCallLog)
+    .where(eq(disasterApiCallLog.date, date));
+  const current = rows[0]?.callCount ?? 0;
+  if (current >= DAILY_CALL_CAP) return false;
+
+  if (rows[0]) {
+    await db
+      .update(disasterApiCallLog)
+      .set({ callCount: current + 1 })
+      .where(eq(disasterApiCallLog.date, date));
+  } else {
+    await db.insert(disasterApiCallLog).values({ date, callCount: 1 });
+  }
+  return true;
+};
+
+// crtDt=오늘(KST)로 페이지를 이어가며 그날치 재난문자를 전부 모은다.
+// 호출마다 일일 예산을 확인하고, 예산이 소진되면 그 자리에서 멈춘다(이미 모은 것까지는 처리).
+const fetchTodaysMessagesWithBudget = async (
+  db: DB,
+  env: Env["Bindings"],
+  date: string,
+): Promise<DisasterMessage[]> => {
+  const crtDt = date.replaceAll("-", "");
+  const collected: DisasterMessage[] = [];
+
+  for (let pageNo = 1; pageNo <= MAX_PAGES_PER_RUN; pageNo++) {
+    const allowed = await tryConsumeApiCallBudget(db, date);
+    if (!allowed) {
+      console.error(
+        `재난문자 API 일일 호출 한도(${DAILY_CALL_CAP}회) 도달 — 이후 폴링을 건너뜁니다.`,
+      );
+      break;
+    }
+
+    const { messages, totalCount } = await fetchDisasterMessagesPage(
+      env.DISASTER_API_KEY,
+      crtDt,
+      pageNo,
+    );
+    collected.push(...messages);
+
+    if (collected.length >= totalCount || messages.length === 0) break;
+  }
+
+  return collected;
+};
+
+// 1단계: 새 재난문자를 조회해서 지역/근무시간에 매칭되는 구독을 대기열에 적재만 한다
 const enqueueNewMatches = async (
   db: DB,
   env: Env["Bindings"],
 ): Promise<void> => {
-  const messages = await fetchRecentDisasterMessages(env.DISASTER_API_KEY);
+  const { date } = getKstNow();
+  const messages = await fetchTodaysMessagesWithBudget(db, env, date);
   if (messages.length === 0) return;
 
   const processedRows = await db
@@ -36,7 +104,7 @@ const enqueueNewMatches = async (
   const newMessages = messages.filter((m) => !processedIds.has(m.id));
   if (newMessages.length === 0) return;
 
-  const { date, time } = getKstNow();
+  const { time } = getKstNow();
 
   // 지역은 4장 결정에 따라 organizations(기관)에 있음 — 사업단은 소속 기관의 지역을 그대로 상속
   const programsWithOrg = await db

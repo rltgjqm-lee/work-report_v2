@@ -252,6 +252,13 @@ export const safetyAlerts = sqliteTable("safety_alerts", {
     .default(sql`(current_timestamp)`),
 });
 
+// 행안부 재난문자 API 일일 호출량(1000회/일 한도) 추적 — date(KST, YYYY-MM-DD)별로 누적.
+// 한도에 도달하면 그날 남은 폴링에서는 API를 호출하지 않고 건너뛴다.
+export const disasterApiCallLog = sqliteTable("disaster_api_call_log", {
+  date: text("date").primaryKey(),
+  callCount: integer("call_count").notNull().default(0),
+});
+
 // 재난문자 발송 로그 (구독/기기 단위 — 구독이 나중에 삭제돼도 조회 가능하도록 programId를 그대로 저장)
 export const disasterPushLogs = sqliteTable("disaster_push_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
