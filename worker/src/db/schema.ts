@@ -246,6 +246,10 @@ export const safetyAlerts = sqliteTable("safety_alerts", {
   alertId: text("alert_id").primaryKey(),
   message: text("message").notNull(),
   region: text("region"),
+  // 행안부 DST_SE_NM 값을 그대로 저장(예: 폭염/호우/기타), 테스트 발송은 'TEST'
+  alertType: text("alert_type"),
+  // 행안부 자동수신(MOIS)과 관리자 테스트 발송(MANUAL)을 이력에서 구분하기 위함
+  source: text("source").$type<"MOIS" | "MANUAL">().notNull().default("MOIS"),
   sentAt: text("sent_at").notNull(),
   createdAt: text("created_at")
     .notNull()

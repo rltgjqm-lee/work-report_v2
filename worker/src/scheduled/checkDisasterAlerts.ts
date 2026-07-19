@@ -153,6 +153,8 @@ const enqueueNewMatches = async (
         alertId: message.id,
         message: message.message,
         region: message.region,
+        alertType: message.alertType,
+        source: "MOIS",
         sentAt: message.sentAt,
       })
       .onConflictDoNothing();

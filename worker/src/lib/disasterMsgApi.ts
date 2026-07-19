@@ -2,6 +2,7 @@ export type DisasterMessage = {
   id: string;
   region: string;
   message: string;
+  alertType: string;
   sentAt: string;
 };
 
@@ -22,6 +23,7 @@ type RawDisasterMessage = {
   SN?: string | number;
   RCPTN_RGN_NM?: string;
   MSG_CN?: string;
+  DST_SE_NM?: string;
   CRT_DT?: string;
 };
 
@@ -55,6 +57,7 @@ export const fetchDisasterMessagesPage = async (
       id: String(row.SN ?? ""),
       region: row.RCPTN_RGN_NM ?? "",
       message: row.MSG_CN ?? "",
+      alertType: row.DST_SE_NM ?? "기타",
       sentAt: row.CRT_DT ?? "",
     }))
     .filter((m) => m.id);
