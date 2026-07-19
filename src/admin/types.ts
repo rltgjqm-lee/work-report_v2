@@ -28,6 +28,7 @@ export type Organization = {
   regionSigungu: string | null;
   organizationType: string | null;
   prjYear: string | null;
+  isActive: boolean;
   createdAt: string;
 };
 

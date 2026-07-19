@@ -85,6 +85,13 @@
       "when": 1784441416860,
       "tag": "0011_add_admin_name_and_active",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1784443615937,
+      "tag": "0012_add_organizations_is_active",
+      "breakpoints": true
     }
   ]
 }

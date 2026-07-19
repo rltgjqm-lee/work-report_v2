@@ -15,6 +15,8 @@ export const organizations = sqliteTable("organizations", {
   regionSigungu: text("region_sigungu"),
   organizationType: text("organization_type"),
   prjYear: text("prj_year"),
+  // 계약 종료 시 소프트 삭제 — 소속 사업단 등 참조 데이터를 지우지 않고 목록에서만 숨김
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

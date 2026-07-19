@@ -23,8 +23,3 @@ export const updateOrganization = (
     method: "PUT",
     body: JSON.stringify(data),
   });
-
-export const deleteOrganization = (id: number) =>
-  request<{ success: boolean }>(`/api/organizations/${id}`, {
-    method: "DELETE",
-  });

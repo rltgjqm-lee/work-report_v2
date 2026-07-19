@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   createOrganization,
-  deleteOrganization,
   listOrganizations,
   updateOrganization,
 } from "../api/admin/organizations";
@@ -53,7 +52,9 @@ const OrganizationsPage = () => {
   const filtered = useMemo(
     () =>
       organizations.filter(
-        (o) => o.name.includes(search) || (o.rep ?? "").includes(search),
+        (organization) =>
+          organization.name.includes(search) ||
+          (organization.rep ?? "").includes(search),
       ),
     [organizations, search],
   );
@@ -99,13 +100,14 @@ const OrganizationsPage = () => {
     }
   };
 
-  const handleDelete = async (org: Organization) => {
-    if (!confirm(`'${org.name}' 기관을 삭제하시겠습니까?`)) return;
+  const handleToggleActive = async (org: Organization) => {
+    const actionLabel = org.isActive ? "비활성화" : "활성화";
+    if (!confirm(`'${org.name}' 기관을 ${actionLabel}하시겠습니까?`)) return;
     try {
-      await deleteOrganization(org.id);
+      await updateOrganization(org.id, { isActive: !org.isActive });
       refresh();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
   };
 
@@ -126,20 +128,22 @@ const OrganizationsPage = () => {
       </div>
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
-          <input
-            className={searchInputClass}
-            placeholder="기관명 또는 대표자 검색"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
-            총 {filtered.length}개 기관
-          </span>
-        </div>
+        {role === ROLES.SUPER_ADMIN && (
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+            <input
+              className={searchInputClass}
+              placeholder="기관명 또는 대표자 검색"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
+              총 {filtered.length}개 기관
+            </span>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] table-fixed border-collapse">
+          <table className="w-full min-w-[1190px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -159,6 +163,9 @@ const OrganizationsPage = () => {
                 </th>
                 <th className="w-[240px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   주소
+                </th>
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  상태
                 </th>
                 <th className="w-[130px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
@@ -184,6 +191,9 @@ const OrganizationsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {organization.address}
                   </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {organization.isActive ? "활성" : "비활성"}
+                  </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     {(role === ROLES.SUPER_ADMIN ||
                       role === ROLES.ORGANIZATION_ADMIN) && (
@@ -197,9 +207,9 @@ const OrganizationsPage = () => {
                     {role === ROLES.SUPER_ADMIN && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() => handleDelete(organization)}
+                        onClick={() => handleToggleActive(organization)}
                       >
-                        삭제
+                        {organization.isActive ? "비활성화" : "활성화"}
                       </button>
                     )}
                   </td>
@@ -209,7 +219,9 @@ const OrganizationsPage = () => {
           </table>
         </div>
 
-        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        {role === ROLES.SUPER_ADMIN && (
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        )}
       </div>
 
       <SlideModal

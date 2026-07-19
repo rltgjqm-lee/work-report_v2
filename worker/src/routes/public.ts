@@ -29,7 +29,8 @@ app.get("/affiliations", async (c) => {
         regionSigungu: organizations.regionSigungu,
         organizationType: organizations.organizationType,
       })
-      .from(organizations),
+      .from(organizations)
+      .where(eq(organizations.isActive, true)),
     db
       .select({
         id: programs.id,

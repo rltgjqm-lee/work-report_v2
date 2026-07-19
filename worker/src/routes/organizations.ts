@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 
-import { organizations, programs } from "../db/schema";
+import { organizations } from "../db/schema";
 import { canAccessOrg, getAuth, hasMinRole } from "../lib/authz";
 import { ROLES, type Env } from "../types";
 
@@ -19,6 +19,7 @@ type OrganizationBody = {
   regionSigungu?: string;
   organizationType?: string;
   prjYear?: string;
+  isActive?: boolean;
 };
 
 app.get("/", async (c) => {
@@ -96,6 +97,11 @@ app.put("/:id", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<OrganizationBody>();
 
+  // 활성/비활성 전환(소프트 삭제)은 SUPER_ADMIN만 — 나머지 필드 수정과는 별개 권한
+  if (body.isActive !== undefined && auth.role !== ROLES.SUPER_ADMIN) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
   const result = await db
     .update(organizations)
     .set(body)
@@ -104,33 +110,6 @@ app.put("/:id", async (c) => {
 
   if (!result[0]) return c.json({ error: "Not found" }, 404);
   return c.json(result[0]);
-});
-
-app.delete("/:id", async (c) => {
-  const auth = getAuth(c);
-  if (auth.role !== ROLES.SUPER_ADMIN) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-
-  const id = Number(c.req.param("id"));
-  const db = drizzle(c.env.DB);
-
-  const dependentPrograms = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.organizationId, id));
-
-  if (dependentPrograms.length > 0) {
-    return c.json({ error: "소속 사업단이 있어 삭제할 수 없습니다" }, 400);
-  }
-
-  const result = await db
-    .delete(organizations)
-    .where(eq(organizations.id, id))
-    .returning();
-
-  if (!result[0]) return c.json({ error: "Not found" }, 404);
-  return c.json({ success: true });
 });
 
 export default app;

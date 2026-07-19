@@ -309,11 +309,13 @@ const AdminsPage = () => {
                 }
               >
                 <option value="">선택하세요</option>
-                {organizations.map((organization) => (
-                  <option key={organization.id} value={organization.id}>
-                    {organization.name}
-                  </option>
-                ))}
+                {organizations
+                  .filter((organization) => organization.isActive)
+                  .map((organization) => (
+                    <option key={organization.id} value={organization.id}>
+                      {organization.name}
+                    </option>
+                  ))}
               </select>
             </FormField>
           )}

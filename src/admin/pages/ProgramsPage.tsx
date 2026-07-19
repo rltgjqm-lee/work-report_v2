@@ -309,11 +309,13 @@ const ProgramsPage = () => {
               }
             >
               <option value="">선택하세요</option>
-              {organizations.map((inst) => (
-                <option key={inst.id} value={inst.id}>
-                  {inst.name}
-                </option>
-              ))}
+              {organizations
+                .filter((organization) => organization.isActive)
+                .map((organization) => (
+                  <option key={organization.id} value={organization.id}>
+                    {organization.name}
+                  </option>
+                ))}
             </select>
           </FormField>
         )}
