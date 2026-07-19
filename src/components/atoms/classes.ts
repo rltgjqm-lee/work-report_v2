@@ -24,7 +24,7 @@ export const totalClass =
   "bg-[#eef6ff] rounded-2xl p-4 text-center text-[18px] text-[#3182f6] font-extrabold";
 
 export const btnPrimaryClass =
-  "w-full h-[58px] bg-[#3182f6] text-white border-none rounded-2xl text-[18px] font-extrabold font-sans cursor-pointer disabled:opacity-50";
+  "w-full h-[58px] bg-[#3182f6] text-white border-none rounded-2xl text-[18px] font-extrabold font-sans cursor-pointer disabled:bg-[#e5e8eb] disabled:text-[#b0b8c1] disabled:cursor-not-allowed";
 
 export const btnOutlineClass =
   "flex-1 h-14 bg-white text-[#3182f6] border-[1.5px] border-[#3182f6] rounded-2xl text-[16px] font-extrabold font-sans cursor-pointer";
