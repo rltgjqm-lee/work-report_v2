@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { labelClass, labelSmallClass } from "../atoms/classes";
 import Button from "../atoms/Button";
 import LabeledInput from "./LabeledInput";
 import {
@@ -93,28 +94,32 @@ const AttendanceCheckIn = ({
   };
 
   return (
-    <div className="flex flex-col items-start mb-[25px] gap-2 max-[600px]:mb-[18px] max-[600px]:gap-[6px] w-full">
-      <div className="text-[16px] font-bold w-full text-[#34495e] max-[600px]:text-[15px] max-[600px]:mb-[2px]">
-        근태 체크
-      </div>
+    <div className="flex flex-col gap-3.5">
+      <div className={labelClass}>근태 체크</div>
 
       {participant ? (
-        <div className="flex flex-col gap-2.5 w-full">
-          <div className="text-[15px] text-[#2c3e50]">
-            <span className="font-bold text-[#4364F7]">{participant.name}</span>
+        <div className="flex flex-col gap-3.5">
+          <div className="text-[15px] font-semibold text-[#1f2937]">
+            <span className="font-extrabold text-[#3182f6]">
+              {participant.name}
+            </span>
             님, 출퇴근을 체크해주세요.
           </div>
           <div className="flex gap-2.5">
-            <Button variant="blue" onClick={handleClockIn}>
+            <Button
+              variant="primary"
+              className="flex-1"
+              onClick={handleClockIn}
+            >
               출근
             </Button>
-            <Button variant="white" onClick={handleClockOut}>
+            <Button variant="outline" onClick={handleClockOut}>
               퇴근
             </Button>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-2.5 w-full">
+        <div className="flex flex-col gap-3.5">
           <LabeledInput
             labelTitle="이름"
             id="attendance-name"
@@ -131,15 +136,13 @@ const AttendanceCheckIn = ({
               setPhoneLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
             }
           />
-          <Button variant="blue" onClick={handleIdentify}>
+          <Button variant="primary" onClick={handleIdentify}>
             본인 확인
           </Button>
         </div>
       )}
 
-      {status && (
-        <div className="text-[13px] text-[#7f8c8d] mt-1">{status}</div>
-      )}
+      {status && <div className={labelSmallClass}>{status}</div>}
     </div>
   );
 };
