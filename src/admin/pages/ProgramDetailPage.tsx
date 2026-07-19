@@ -172,6 +172,7 @@ const ProgramDetailPage = () => {
 
   const handleDeleteGroup = async (group: Group) => {
     if (!confirm(`'${group.name}' 조를 삭제하시겠습니까?`)) return;
+
     try {
       await deleteGroup(group.id);
       refresh();
@@ -191,7 +192,9 @@ const ProgramDetailPage = () => {
 
   const handleDrop = async (participantId: number, name: string) => {
     const reason = prompt(`'${name}' 님의 탈락 사유를 입력해주세요.`);
+
     if (reason === null) return;
+
     try {
       await dropParticipant(participantId, reason || undefined);
       refresh();
@@ -202,9 +205,12 @@ const ProgramDetailPage = () => {
 
   const handleLeave = async (participantId: number, name: string) => {
     const leaveStart = prompt(`'${name}' 님의 휴무 시작일 (YYYY-MM-DD)`);
-    if (!leaveStart) return;
     const leaveEnd = prompt(`'${name}' 님의 휴무 종료일 (YYYY-MM-DD)`);
+
+    if (!leaveStart) return;
+
     if (!leaveEnd) return;
+
     try {
       await registerParticipantLeave(participantId, { leaveStart, leaveEnd });
       refresh();
