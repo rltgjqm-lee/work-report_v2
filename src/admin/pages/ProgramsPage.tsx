@@ -32,7 +32,7 @@ const emptyForm = {
   startTime: "",
   endTime: "",
   programType: "",
-  hourlyWage: "3000",
+  hourlyWage: "10320",
   educationAmount: "0",
   educationType: "add" as "add" | "deduct",
   dementiaAmount: "0",
@@ -42,6 +42,7 @@ const emptyForm = {
 const ProgramsPage = () => {
   const { admin } = useAuth();
   const role = admin?.role;
+
   const navigate = useNavigate();
 
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -152,6 +153,7 @@ const ProgramsPage = () => {
 
   const handleDelete = async (program: Program) => {
     if (!confirm(`'${program.name}' 사업단을 삭제하시겠습니까?`)) return;
+
     try {
       await deleteProgram(program.id);
       refreshPrograms();
@@ -191,6 +193,7 @@ const ProgramsPage = () => {
                 ))}
               </select>
             )}
+
             <input
               className={searchInputClass}
               placeholder="사업단명 검색"
@@ -294,6 +297,7 @@ const ProgramsPage = () => {
           </>
         }
       >
+        {/* 기관 선택 */}
         {role === "SUPER_ADMIN" && !editingId && (
           <FormField label="기관 선택">
             <select
@@ -312,14 +316,18 @@ const ProgramsPage = () => {
             </select>
           </FormField>
         )}
-        <FormField label="사업단명">
+
+        {/* 사업단 명 */}
+        <FormField label="사업단 명">
           <input
             className={inputClass}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
         </FormField>
+
         <div className="flex gap-3">
+          {/* 시작일 */}
           <div className="flex-1">
             <FormField label="시작일">
               <input
@@ -332,6 +340,8 @@ const ProgramsPage = () => {
               />
             </FormField>
           </div>
+
+          {/* 종료일 */}
           <div className="flex-1">
             <FormField label="종료일">
               <input
@@ -345,9 +355,11 @@ const ProgramsPage = () => {
             </FormField>
           </div>
         </div>
+
         <div className="flex gap-3">
+          {/* 시작 시간 */}
           <div className="flex-1">
-            <FormField label="시작시간">
+            <FormField label="시작 시간">
               <input
                 type="time"
                 className={inputClass}
@@ -358,8 +370,10 @@ const ProgramsPage = () => {
               />
             </FormField>
           </div>
+
+          {/* 종료 시간  */}
           <div className="flex-1">
-            <FormField label="종료시간">
+            <FormField label="종료 시간">
               <input
                 type="time"
                 className={inputClass}
@@ -371,7 +385,9 @@ const ProgramsPage = () => {
             </FormField>
           </div>
         </div>
-        <FormField label="사업유형">
+
+        {/* 사업 유형 */}
+        <FormField label="사업 유형">
           <select
             className={inputClass}
             value={form.programType}
@@ -380,10 +396,12 @@ const ProgramsPage = () => {
             }
           >
             <option value="">선택하세요</option>
-            <option value="공익활동">공익활동</option>
-            <option value="역량활동">역량활동</option>
+            <option value="공익 활동">공익 활동</option>
+            <option value="역량 활동">역량 활동</option>
           </select>
         </FormField>
+
+        {/* 시급 */}
         <FormField label="시급(원)">
           <input
             type="number"
@@ -394,7 +412,9 @@ const ProgramsPage = () => {
             }
           />
         </FormField>
+
         <div className="flex gap-3">
+          {/* 교육비 */}
           <div className="flex-1">
             <FormField label="교육비(원)">
               <input
@@ -407,6 +427,8 @@ const ProgramsPage = () => {
               />
             </FormField>
           </div>
+
+          {/* 교육비 처리 - 가산/차감 */}
           <div className="flex-1">
             <FormField label="교육비 처리">
               <select
@@ -425,9 +447,11 @@ const ProgramsPage = () => {
             </FormField>
           </div>
         </div>
+
         <div className="flex gap-3">
+          {/* 치매 검진비 */}
           <div className="flex-1">
-            <FormField label="치매검진비(원)">
+            <FormField label="치매 검진비(원)">
               <input
                 type="number"
                 className={inputClass}
@@ -438,6 +462,8 @@ const ProgramsPage = () => {
               />
             </FormField>
           </div>
+
+          {/* 치매 검진비 처리 - 가산/차감 */}
           <div className="flex-1">
             <FormField label="치매검진비 처리">
               <select
@@ -456,6 +482,7 @@ const ProgramsPage = () => {
             </FormField>
           </div>
         </div>
+
         {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
       </SlideModal>
     </div>
