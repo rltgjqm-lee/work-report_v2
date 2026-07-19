@@ -5,7 +5,7 @@ import {
   deleteOrganization,
   listOrganizations,
   updateOrganization,
-} from "../api/client";
+} from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";

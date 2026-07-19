@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { listSafetyAlerts } from "../api/client";
+import { listSafetyAlerts } from "../api/admin/safetyAlerts";
 import type { SafetyAlert } from "../types";
 
 const SafetyAlertsPage = () => {

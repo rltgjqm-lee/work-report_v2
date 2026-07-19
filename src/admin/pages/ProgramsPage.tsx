@@ -5,10 +5,10 @@ import {
   createProgram,
   deleteProgram,
   getProgram,
-  listOrganizations,
   listPrograms,
   updateProgram,
-} from "../api/client";
+} from "../api/admin/programs";
+import { listOrganizations } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";

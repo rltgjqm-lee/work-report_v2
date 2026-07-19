@@ -4,21 +4,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   addParticipant,
   bulkAddParticipants,
-  createGroup,
-  deleteGroup,
   deleteParticipant,
+  dropParticipant,
+  endParticipantLeave,
+  moveParticipantToGroup,
+  registerParticipantLeave,
+} from "../api/admin/participants";
+import { createGroup, deleteGroup, listGroups } from "../api/admin/groups";
+import {
   downloadActivityLogExcel,
   downloadAttendanceExcel,
   downloadPaymentExcel,
-  dropParticipant,
-  endParticipantLeave,
-  getOrganization,
-  getProgram,
-  listGroups,
-  listPrograms,
-  moveParticipantToGroup,
-  registerParticipantLeave,
-} from "../api/client";
+} from "../api/admin/excel";
+import { getOrganization } from "../api/admin/organizations";
+import { getProgram, listPrograms } from "../api/admin/programs";
 import Pagination from "../components/Pagination";
 
 import { usePagination } from "../hooks/usePagination";

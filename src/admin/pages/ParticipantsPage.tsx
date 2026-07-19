@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  deleteParticipant,
-  getProgram,
-  listOrganizations,
-  listPrograms,
-} from "../api/client";
+import { deleteParticipant } from "../api/admin/participants";
+import { getProgram, listPrograms } from "../api/admin/programs";
+import { listOrganizations } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
 import { usePagination } from "../hooks/usePagination";
 import { rowActionBtnClass, searchInputClass, selectClass } from "../uiClasses";
