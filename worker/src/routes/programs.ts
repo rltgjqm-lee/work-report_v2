@@ -596,6 +596,9 @@ app.get("/:id/leaves", async (c) => {
       leave: participantLeaves,
       participantName: participants.name,
       groupName: groups.name,
+      annualTotalDays: participantAnnualLeave.totalDays,
+      annualUsedDays: participantAnnualLeave.usedDays,
+      annualRemainingDays: participantAnnualLeave.remainingDays,
     })
     .from(participantLeaves)
     .innerJoin(
@@ -603,6 +606,19 @@ app.get("/:id/leaves", async (c) => {
       eq(participantLeaves.participantId, participants.id),
     )
     .leftJoin(groups, eq(participants.groupId, groups.id))
+    .leftJoin(
+      participantAnnualLeave,
+      and(
+        eq(
+          participantAnnualLeave.participantId,
+          participantLeaves.participantId,
+        ),
+        eq(
+          participantAnnualLeave.year,
+          sql`substr(${participantLeaves.leaveStart}, 1, 4)`,
+        ),
+      ),
+    )
     .where(and(...conditions))
     .orderBy(sql`${participantLeaves.leaveStart} DESC`);
 

@@ -8,21 +8,22 @@ const BASE_NAV_ITEMS = [
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
   { to: "/admin/attendance", label: "근태 관리", badge: "4" },
-  { to: "/admin/escapes", label: "이탈 관제", badge: "5" },
-  { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
+  { to: "/admin/leaves", label: "휴가 현황", badge: "5" },
+  { to: "/admin/escapes", label: "이탈 관제", badge: "6" },
+  { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "7" },
 ];
 
 // 실제 발송 안 된 원본 수신내역까지 다 보이는 진단용 화면이라 SUPER_ADMIN에게만 노출
 const SAFETY_ALERT_TEST_NAV_ITEM = {
   to: "/admin/safety-alerts",
   label: "재난문자 테스트",
-  badge: "7",
+  badge: "8",
 };
 
 const ADMIN_ACCOUNTS_NAV_ITEM = {
   to: "/admin/admins",
   label: "관리자 계정",
-  badge: "8",
+  badge: "9",
 };
 
 const getTopbarTitle = (pathname: string) => {
@@ -34,6 +35,7 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   if (pathname.startsWith("/admin/attendance")) return "근태 관리";
+  if (pathname.startsWith("/admin/leaves")) return "휴가 현황";
   if (pathname.startsWith("/admin/escapes")) return "이탈 관제";
   if (pathname.startsWith("/admin/disaster-push-logs"))
     return "재난문자 발송이력";

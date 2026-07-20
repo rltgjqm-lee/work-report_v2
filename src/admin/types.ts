@@ -189,6 +189,9 @@ export type LeaveRow = {
   leave: ParticipantLeave;
   participantName: string;
   groupName: string | null;
+  annualTotalDays: number | null;
+  annualUsedDays: number | null;
+  annualRemainingDays: number | null;
 };
 
 export type AnnualLeave = {

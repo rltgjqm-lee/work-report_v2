@@ -29,6 +29,7 @@ const AdminApp = () => (
           <Route path="programs/:id/attendance" element={<AttendancePage />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="programs/:id/leaves" element={<LeaveStatsPage />} />
+          <Route path="leaves" element={<LeaveStatsPage />} />
           <Route path="programs/:id/escapes" element={<EscapesPage />} />
           <Route path="escapes" element={<EscapesPage />} />
           <Route path="participants" element={<ParticipantsPage />} />
