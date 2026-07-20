@@ -8,10 +8,15 @@ import {
   pushSubscriptions,
   participants,
   groups,
+  demandSites,
+  escapeLogs,
+  participantEscapeMeta,
   attendanceLogs,
   activityLogs,
 } from "../db/schema";
 import { getKstNow } from "../lib/kst";
+import { haversineKm } from "../lib/geo";
+import { sendWebPush } from "../lib/webPush";
 import type { Env } from "../types";
 
 const app = new Hono<Env>();
@@ -95,6 +100,30 @@ app.post("/push-subscriptions", async (c) => {
     .returning();
 
   return c.json(result[0], 201);
+});
+
+// 최초 구독 등록(위) 시점엔 아직 참여자가 특정되지 않아 programId로만 저장된다.
+// 출근 식별(identify) 이후 이 엔드포인트로 구독을 참여자 한 명에 연결해야
+// 이탈 경고처럼 그 사람에게만 보내야 하는 푸시(1단계)가 가능해진다.
+app.post("/push-subscriptions/link-participant", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{
+    endpoint?: string;
+    participantId?: number;
+  }>();
+
+  if (!body.endpoint || !body.participantId) {
+    return c.json({ error: "endpoint, participantId are required" }, 400);
+  }
+
+  const result = await db
+    .update(pushSubscriptions)
+    .set({ participantId: body.participantId })
+    .where(eq(pushSubscriptions.endpoint, body.endpoint))
+    .returning();
+
+  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  return c.json(result[0]);
 });
 
 // 참여자 셀프 근태체크 — 이름+전화번호 뒤4자리로 본인 확인 (등록 시 동명이인 구분에
@@ -269,6 +298,178 @@ app.post("/attendance/clock-out", async (c) => {
     .returning();
 
   return c.json(result[0]);
+});
+
+// 참여자 PWA(또는 향후 하이브리드 앱)가 출근 중일 때 주기적으로 위치를 보고하는 엔드포인트.
+// 배정된 수요처 반경을 벗어났는지 판정하고, 새로 벗어난 경우에만 이탈 이벤트를 기록한다
+// (반경 밖에 계속 있는 동안 매 호출마다 새로 기록하지 않음 — 벗어난 "사건" 단위로 집계).
+app.post("/location", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{
+    participantId?: number;
+    lat?: number;
+    lng?: number;
+  }>();
+
+  if (!body.participantId || body.lat === undefined || body.lng === undefined) {
+    return c.json({ error: "participantId, lat, lng are required" }, 400);
+  }
+
+  const participantRows = await db
+    .select()
+    .from(participants)
+    .where(eq(participants.id, body.participantId));
+  const participant = participantRows[0];
+  if (!participant) return c.json({ error: "Not found" }, 404);
+
+  const { date, iso } = getKstNow();
+
+  const openAttendance = await db
+    .select()
+    .from(attendanceLogs)
+    .where(
+      and(
+        eq(attendanceLogs.participantId, participant.id),
+        eq(attendanceLogs.workDate, date),
+        isNull(attendanceLogs.clockOut),
+      ),
+    );
+  if (openAttendance.length === 0) {
+    return c.json({ ok: true, escaped: false, message: "출근 중이 아닙니다." });
+  }
+
+  const metaRows = await db
+    .select()
+    .from(participantEscapeMeta)
+    .where(eq(participantEscapeMeta.participantId, participant.id));
+  const meta = metaRows[0];
+
+  const saveMeta = (fields: {
+    alertCount?: number;
+    outsideStart?: string | null;
+  }) =>
+    meta
+      ? db
+          .update(participantEscapeMeta)
+          .set({
+            ...fields,
+            lastLat: body.lat,
+            lastLng: body.lng,
+            lastLocationAt: iso,
+            // 새 위치가 들어왔으니 통신 끊김 상태는 해제
+            signalLossAlertedAt: null,
+            updatedAt: iso,
+          })
+          .where(eq(participantEscapeMeta.participantId, participant.id))
+      : db.insert(participantEscapeMeta).values({
+          participantId: participant.id,
+          alertCount: fields.alertCount ?? 0,
+          outsideStart: fields.outsideStart ?? null,
+          lastLat: body.lat,
+          lastLng: body.lng,
+          lastLocationAt: iso,
+        });
+
+  if (!participant.demandSiteId) {
+    await saveMeta({});
+    return c.json({ ok: true, escaped: false, message: "수요처 미배정" });
+  }
+
+  const demandSiteRows = await db
+    .select()
+    .from(demandSites)
+    .where(eq(demandSites.id, participant.demandSiteId));
+  const demandSite = demandSiteRows[0];
+  if (!demandSite) {
+    await saveMeta({});
+    return c.json({
+      ok: true,
+      escaped: false,
+      message: "수요처 정보를 찾을 수 없습니다.",
+    });
+  }
+
+  const distanceKm = haversineKm(
+    body.lat,
+    body.lng,
+    demandSite.baseLat,
+    demandSite.baseLng,
+  );
+  const limitKm = demandSite.allowedRadius / 1000;
+  const currentAlertCount = meta?.alertCount ?? 0;
+
+  if (distanceKm > limitKm) {
+    const isNewEscape = !meta?.outsideStart;
+    const newAlertCount = isNewEscape
+      ? currentAlertCount + 1
+      : currentAlertCount;
+
+    if (isNewEscape) {
+      await db.insert(escapeLogs).values({
+        participantId: participant.id,
+        programId: participant.programId,
+        demandSiteId: demandSite.id,
+        detectedAt: iso,
+        lat: body.lat,
+        lng: body.lng,
+        distanceKm,
+        alertCount: newAlertCount,
+      });
+
+      // 1단계(1회 이탈)만 참여자 본인에게 웹푸시 — 2·3단계는 관리자 콘솔 "이탈 현황" 화면에서 확인
+      if (newAlertCount === 1) {
+        const subscriptions = await db
+          .select()
+          .from(pushSubscriptions)
+          .where(eq(pushSubscriptions.participantId, participant.id));
+
+        for (const subscription of subscriptions) {
+          const result = await sendWebPush(
+            {
+              endpoint: subscription.endpoint,
+              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+            },
+            {
+              title: "⚠️ 이탈 경고",
+              body: `${demandSite.name} 활동 구역을 벗어났습니다.`,
+            },
+            {
+              privateJWK: c.env.VAPID_PRIVATE_KEY,
+              subject: c.env.VAPID_SUBJECT,
+            },
+          );
+          if (!result.ok && result.expired) {
+            await db
+              .delete(pushSubscriptions)
+              .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+          }
+        }
+      }
+    }
+
+    await saveMeta({
+      alertCount: newAlertCount,
+      outsideStart: meta?.outsideStart ?? iso,
+    });
+
+    return c.json({
+      ok: true,
+      escaped: true,
+      distanceKm,
+      alertCount: newAlertCount,
+      demandSiteName: demandSite.name,
+    });
+  }
+
+  // 반경 안으로 복귀 — alertCount는 유지하고(관리자가 RESOLVED해야 초기화) 진행 중이던 이탈만 종료
+  await saveMeta({ alertCount: currentAlertCount, outsideStart: null });
+
+  return c.json({
+    ok: true,
+    escaped: false,
+    distanceKm,
+    demandSiteName: demandSite.name,
+  });
 });
 
 type ActivityLogBody = {

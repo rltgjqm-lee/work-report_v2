@@ -1,0 +1,1 @@
+ALTER TABLE `participant_escape_meta` ADD `signal_loss_alerted_at` text;

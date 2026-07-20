@@ -8,6 +8,7 @@ import ProgramsPage from "./pages/ProgramsPage";
 import ProgramDetailPage from "./pages/ProgramDetailPage";
 import AttendancePage from "./pages/AttendancePage";
 import LeaveStatsPage from "./pages/LeaveStatsPage";
+import EscapesPage from "./pages/EscapesPage";
 import ParticipantsPage from "./pages/ParticipantsPage";
 import SafetyAlertsPage from "./pages/SafetyAlertsPage";
 import AdminsPage from "./pages/AdminsPage";
@@ -27,6 +28,7 @@ const AdminApp = () => (
           <Route path="programs/:id/attendance" element={<AttendancePage />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="programs/:id/leaves" element={<LeaveStatsPage />} />
+          <Route path="programs/:id/escapes" element={<EscapesPage />} />
           <Route path="participants" element={<ParticipantsPage />} />
           <Route path="safety-alerts" element={<SafetyAlertsPage />} />
           <Route path="admins" element={<AdminsPage />} />

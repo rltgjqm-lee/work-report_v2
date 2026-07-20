@@ -215,6 +215,10 @@ export const pushSubscriptions = sqliteTable("push_subscriptions", {
   programId: integer("program_id")
     .notNull()
     .references(() => programs.id),
+  // 최초 구독 시점(참여자 식별 전)엔 비어있고, 출근 식별 이후 연결된다.
+  // 재난문자(프로그램 전체 브로드캐스트)는 이 값이 없어도 되지만, 이탈 경고처럼
+  // 특정 참여자 한 명에게만 보내야 하는 푸시는 이 값으로 대상을 찾는다.
+  participantId: integer("participant_id").references(() => participants.id),
   endpoint: text("endpoint").notNull().unique(),
   p256dh: text("p256dh").notNull(),
   auth: text("auth").notNull(),
@@ -298,6 +302,50 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
     .default("NORMAL"),
   note: text("note"),
   createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 이탈 이벤트 1건 = 배정된 수요처 반경을 벗어난 순간(복귀 후 다시 벗어나면 새 건).
+// alertCount는 이 참여자가 해결(RESOLVED) 처리 이후 다시 벗어난 누적 횟수.
+export const escapeLogs = sqliteTable("escape_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  participantId: integer("participant_id")
+    .notNull()
+    .references(() => participants.id),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id),
+  demandSiteId: integer("demand_site_id").references(() => demandSites.id),
+  detectedAt: text("detected_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+  lat: real("lat").notNull(),
+  lng: real("lng").notNull(),
+  distanceKm: real("distance_km").notNull(),
+  alertCount: integer("alert_count").notNull().default(1),
+  status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
+  resolvedBy: integer("resolved_by").references(() => admins.id),
+  resolvedAt: text("resolved_at"),
+  memo: text("memo"),
+});
+
+// 참여자별 "현재 이탈 진행 상태" 1행 — alertCount 누적치, 지금 이탈 중이면 그 시작시각,
+// 마지막으로 위치를 보고한 시각/좌표(통신 끊김 감지에도 재사용). 관리자가 이탈을
+// RESOLVED 처리하면 이 행을 지워서 alertCount를 0으로 되돌린다.
+export const participantEscapeMeta = sqliteTable("participant_escape_meta", {
+  participantId: integer("participant_id")
+    .primaryKey()
+    .references(() => participants.id),
+  alertCount: integer("alert_count").notNull().default(0),
+  outsideStart: text("outside_start"),
+  lastLat: real("last_lat"),
+  lastLng: real("last_lng"),
+  lastLocationAt: text("last_location_at"),
+  // 통신 끊김 푸시를 매 폴링(1분)마다 중복 발송하지 않기 위한 표시 —
+  // 이미 알림을 보낸 상태면 다시 안 보내고, 새 위치가 들어오면(/location) null로 초기화
+  signalLossAlertedAt: text("signal_loss_alerted_at"),
+  updatedAt: text("updated_at")
     .notNull()
     .default(sql`(current_timestamp)`),
 });

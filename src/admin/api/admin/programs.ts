@@ -1,5 +1,7 @@
 import { request } from "../client";
 import type {
+  EscapeRow,
+  EscapeStatus,
   LeaveRow,
   LeaveStats,
   MonthlyAttendance,
@@ -44,3 +46,6 @@ export const getLeaves = (programId: number, month?: string) =>
 
 export const getLeaveStats = (programId: number, year: string) =>
   request<LeaveStats>(`/api/programs/${programId}/leaves/stats?year=${year}`);
+
+export const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
+  request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);

@@ -11,6 +11,7 @@ import {
   demandSites,
   attendanceLogs,
   activityLogs,
+  escapeLogs,
 } from "../db/schema";
 import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
 import { ROLES, type Env } from "../types";
@@ -677,6 +678,44 @@ app.get("/:id/leaves/stats", async (c) => {
   };
 
   return c.json({ monthly, annual });
+});
+
+app.get("/:id/escapes", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const status = c.req.query("status") ?? "OPEN";
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const rows = await db
+    .select({
+      escape: escapeLogs,
+      participantName: participants.name,
+      groupName: groups.name,
+      demandSiteName: demandSites.name,
+    })
+    .from(escapeLogs)
+    .innerJoin(participants, eq(escapeLogs.participantId, participants.id))
+    .leftJoin(groups, eq(participants.groupId, groups.id))
+    .leftJoin(demandSites, eq(escapeLogs.demandSiteId, demandSites.id))
+    .where(
+      and(
+        eq(escapeLogs.programId, programId),
+        eq(escapeLogs.status, status as "OPEN" | "RESOLVED"),
+      ),
+    )
+    .orderBy(sql`${escapeLogs.detectedAt} DESC`);
+
+  return c.json(rows);
 });
 
 export default app;

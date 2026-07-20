@@ -606,6 +606,12 @@ const ProgramDetailPage = () => {
           >
             휴가 현황
           </button>
+          <button
+            className={btnGhostClass}
+            onClick={() => navigate(`/admin/programs/${programId}/escapes`)}
+          >
+            이탈 현황
+          </button>
           <button className={btnPrimaryClass} onClick={handleClickAddButton}>
             + 참여자 추가
           </button>

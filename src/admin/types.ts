@@ -216,3 +216,28 @@ export type LeaveStats = {
     remainingAnnual: number;
   };
 };
+
+export type EscapeStatus = "OPEN" | "RESOLVED";
+
+export type EscapeLog = {
+  id: number;
+  participantId: number;
+  programId: number;
+  demandSiteId: number | null;
+  detectedAt: string;
+  lat: number;
+  lng: number;
+  distanceKm: number;
+  alertCount: number;
+  status: EscapeStatus;
+  resolvedBy: number | null;
+  resolvedAt: string | null;
+  memo: string | null;
+};
+
+export type EscapeRow = {
+  escape: EscapeLog;
+  participantName: string;
+  groupName: string | null;
+  demandSiteName: string | null;
+};

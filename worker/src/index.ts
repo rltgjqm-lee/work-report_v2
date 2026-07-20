@@ -9,9 +9,11 @@ import excel from "./routes/excel";
 import safetyAlerts from "./routes/safetyAlerts";
 import admins from "./routes/admins";
 import demandSites from "./routes/demandSites";
+import escapes from "./routes/escapes";
 import publicRoutes from "./routes/public";
 import { requireAdmin, getAuth } from "./lib/authz";
 import { checkDisasterAlerts } from "./scheduled/checkDisasterAlerts";
+import { checkSignalLoss } from "./scheduled/checkSignalLoss";
 import type { Env } from "./types";
 
 const app = new Hono<Env>();
@@ -42,6 +44,7 @@ app.route("/api/participants", participants);
 app.route("/api/safety-alerts", safetyAlerts);
 app.route("/api/admins", admins);
 app.route("/api/demand-sites", demandSites);
+app.route("/api/escapes", escapes);
 
 export default {
   fetch: app.fetch,
@@ -51,5 +54,6 @@ export default {
     ctx: ExecutionContext,
   ) => {
     ctx.waitUntil(checkDisasterAlerts(env));
+    ctx.waitUntil(checkSignalLoss(env));
   },
 };
