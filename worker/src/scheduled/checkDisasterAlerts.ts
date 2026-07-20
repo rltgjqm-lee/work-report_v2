@@ -16,6 +16,7 @@ import {
 } from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
 import { getKstNow } from "../lib/kst";
+import { isWeekendOrHoliday } from "../lib/koreanHolidays";
 import type { Env } from "../types";
 
 // Workers 무료 플랜은 실행(invocation) 1번당 외부 fetch(subrequest)가 50개로 제한된다.
@@ -211,6 +212,11 @@ const drainPushQueue = async (db: DB, env: Env["Bindings"]): Promise<void> => {
 export const checkDisasterAlerts = async (
   env: Env["Bindings"],
 ): Promise<void> => {
+  // 주말/공휴일엔 아무도 근무하지 않으니 재난문자를 조회할 이유가 없다 —
+  // 조회 자체를 건너뛰어 일일 호출 예산도 아낀다.
+  const { date } = getKstNow();
+  if (isWeekendOrHoliday(date)) return;
+
   const db = drizzle(env.DB);
 
   await enqueueNewMatches(db, env);
