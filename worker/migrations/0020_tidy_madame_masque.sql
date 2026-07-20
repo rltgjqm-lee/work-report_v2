@@ -1,0 +1,1 @@
+ALTER TABLE `escape_logs` ADD `alerted` integer DEFAULT false NOT NULL;

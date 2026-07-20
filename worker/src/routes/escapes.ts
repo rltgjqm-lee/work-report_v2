@@ -52,4 +52,37 @@ app.post("/:id/resolve", async (c) => {
   return c.json(result[0]);
 });
 
+// 관제 화면이 3단계 위급 이탈을 폴링으로 발견해 팝업을 띄운 뒤, 같은 이탈로 팝업이
+// 다시 뜨지 않도록 표시한다 (해결 처리 전까지 유지)
+app.post("/:id/alerted", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const escapeRows = await db
+    .select()
+    .from(escapeLogs)
+    .where(eq(escapeLogs.id, id));
+  const escape = escapeRows[0];
+  if (!escape) return c.json({ error: "Not found" }, 404);
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, escape.programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const result = await db
+    .update(escapeLogs)
+    .set({ alerted: true })
+    .where(eq(escapeLogs.id, id))
+    .returning();
+
+  return c.json(result[0]);
+});
+
 export default app;

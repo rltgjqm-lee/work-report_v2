@@ -4,6 +4,7 @@ import type {
   EscapeStatus,
   LeaveRow,
   LeaveStats,
+  LiveWorker,
   MonthlyAttendance,
   Program,
   ProgramWithParticipants,
@@ -49,3 +50,6 @@ export const getLeaveStats = (programId: number, year: string) =>
 
 export const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
   request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);
+
+export const getLiveWorkers = (programId: number) =>
+  request<LiveWorker[]>(`/api/programs/${programId}/workers/live`);

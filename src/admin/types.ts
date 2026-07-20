@@ -230,6 +230,7 @@ export type EscapeLog = {
   distanceKm: number;
   alertCount: number;
   status: EscapeStatus;
+  alerted: boolean;
   resolvedBy: number | null;
   resolvedAt: string | null;
   memo: string | null;
@@ -240,4 +241,16 @@ export type EscapeRow = {
   participantName: string;
   groupName: string | null;
   demandSiteName: string | null;
+};
+
+export type LiveWorker = {
+  participantId: number;
+  name: string;
+  groupName: string;
+  demandSiteName: string;
+  lat: number | null;
+  lng: number | null;
+  lastLocationAt: string | null;
+  alertCount: number;
+  status: "NORMAL" | "ESCAPE";
 };

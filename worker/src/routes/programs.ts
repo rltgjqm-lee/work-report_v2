@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, inArray, like, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, sql } from "drizzle-orm";
 
 import {
   programs,
@@ -12,8 +12,10 @@ import {
   attendanceLogs,
   activityLogs,
   escapeLogs,
+  participantEscapeMeta,
 } from "../db/schema";
 import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
+import { getKstNow } from "../lib/kst";
 import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
@@ -716,6 +718,73 @@ app.get("/:id/escapes", async (c) => {
     .orderBy(sql`${escapeLogs.detectedAt} DESC`);
 
   return c.json(rows);
+});
+
+// 관제 지도용 — 오늘 출근 중인 전체 활성 참여자의 마지막 위치+이탈상태
+app.get("/:id/workers/live", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const { date } = getKstNow();
+
+  const rows = await db
+    .select({
+      participantId: participants.id,
+      name: participants.name,
+      groupName: groups.name,
+      demandSiteName: demandSites.name,
+      lat: participantEscapeMeta.lastLat,
+      lng: participantEscapeMeta.lastLng,
+      lastLocationAt: participantEscapeMeta.lastLocationAt,
+      alertCount: participantEscapeMeta.alertCount,
+      outsideStart: participantEscapeMeta.outsideStart,
+    })
+    .from(participants)
+    .innerJoin(
+      attendanceLogs,
+      and(
+        eq(attendanceLogs.participantId, participants.id),
+        eq(attendanceLogs.workDate, date),
+        isNull(attendanceLogs.clockOut),
+      ),
+    )
+    .leftJoin(groups, eq(participants.groupId, groups.id))
+    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
+    .leftJoin(
+      participantEscapeMeta,
+      eq(participantEscapeMeta.participantId, participants.id),
+    )
+    .where(
+      and(
+        eq(participants.programId, programId),
+        eq(participants.status, "ACTIVE"),
+      ),
+    );
+
+  const workers = rows.map((row) => ({
+    participantId: row.participantId,
+    name: row.name,
+    groupName: row.groupName ?? "미배정",
+    demandSiteName: row.demandSiteName ?? "수요처 미배정",
+    lat: row.lat,
+    lng: row.lng,
+    lastLocationAt: row.lastLocationAt,
+    alertCount: row.alertCount ?? 0,
+    status: row.outsideStart ? ("ESCAPE" as const) : ("NORMAL" as const),
+  }));
+
+  return c.json(workers);
 });
 
 export default app;

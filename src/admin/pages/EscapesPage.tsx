@@ -1,9 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-import { getEscapes, getProgram } from "../api/admin/programs";
-import { resolveEscape } from "../api/admin/escapes";
-import type { EscapeRow, EscapeStatus } from "../types";
+import { getEscapes, getLiveWorkers, getProgram } from "../api/admin/programs";
+import { markEscapeAlerted, resolveEscape } from "../api/admin/escapes";
+import type { EscapeRow, EscapeStatus, LiveWorker } from "../types";
+
+const POLL_INTERVAL_MS = 10000;
+
+// 3단계 신호등 — alertCount 기준 (설계의 outside_minutes는 이번 구현에서 안 씀)
+const getMarkerColor = (worker: LiveWorker): string => {
+  if (worker.alertCount >= 3) return "#FF0000";
+  if (worker.alertCount >= 2) return "#FF7800";
+  if (worker.alertCount >= 1) return "#FFD200";
+  return "#2ECC71";
+};
 
 const EscapesPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +25,13 @@ const EscapesPage = () => {
   const [programName, setProgramName] = useState("");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [rows, setRows] = useState<EscapeRow[]>([]);
+  const [workers, setWorkers] = useState<LiveWorker[]>([]);
+  const [search, setSearch] = useState("");
+  const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
   useEffect(() => {
     getProgram(programId).then((program) => setProgramName(program.name));
@@ -24,12 +43,110 @@ const EscapesPage = () => {
 
   useEffect(refresh, [programId, status]);
 
+  // 관제 폴링 — 실시간 근무자 위치 갱신 + 새로 발생한 3단계(위급) 이탈을 감지해 팝업
+  useEffect(() => {
+    const tick = async () => {
+      getLiveWorkers(programId).then(setWorkers);
+
+      const openEscapes = await getEscapes(programId, "OPEN");
+      if (status === "OPEN") setRows(openEscapes);
+
+      const critical = openEscapes.find(
+        (row) => row.escape.alertCount >= 3 && !row.escape.alerted,
+      );
+      if (critical) {
+        setCriticalEscape(critical);
+        markEscapeAlerted(critical.escape.id);
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [programId, status]);
+
+  const filteredWorkers = useMemo(
+    () => workers.filter((worker) => worker.name.includes(search)),
+    [workers, search],
+  );
+
+  // 지도 초기화 (마운트 시 1회)
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = L.map(mapContainerRef.current).setView([36.5, 127.8], 7);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+    markersLayerRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // 근무자 목록이 바뀔 때마다 마커 다시 그리기
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = markersLayerRef.current;
+    if (!map || !layer) return;
+
+    layer.clearLayers();
+
+    const located = filteredWorkers.filter(
+      (worker): worker is LiveWorker & { lat: number; lng: number } =>
+        worker.lat !== null && worker.lng !== null,
+    );
+
+    located.forEach((worker) => {
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="width:18px;height:18px;border-radius:50%;background:${getMarkerColor(
+          worker,
+        )};border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.4);"></div>`,
+      });
+      const marker = L.marker([worker.lat, worker.lng], { icon });
+      marker.bindPopup(
+        `<strong>${worker.name}</strong><br/>` +
+          `상태: ${worker.status === "ESCAPE" ? "이탈중" : "정상"}<br/>` +
+          `이탈횟수: ${worker.alertCount}회<br/>` +
+          `수요처: ${worker.demandSiteName}<br/>` +
+          `마지막 위치: ${
+            worker.lastLocationAt
+              ? new Date(worker.lastLocationAt).toLocaleTimeString()
+              : "-"
+          }`,
+      );
+      marker.addTo(layer);
+    });
+
+    if (located.length > 0) {
+      const bounds = L.latLngBounds(
+        located.map((worker) => [worker.lat, worker.lng] as [number, number]),
+      );
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    }
+  }, [filteredWorkers]);
+
   const handleResolve = async (escapeId: number, participantName: string) => {
     const memo = prompt(`'${participantName}' 님 이탈 확인 처리 — 메모(선택)`);
     if (memo === null) return;
 
     try {
       await resolveEscape(escapeId, memo || undefined);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
+    }
+  };
+
+  const handleResolveCritical = async () => {
+    if (!criticalEscape) return;
+    try {
+      await resolveEscape(criticalEscape.escape.id);
+      setCriticalEscape(null);
       refresh();
     } catch (error) {
       alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
@@ -48,19 +165,32 @@ const EscapesPage = () => {
             >
               {programName || "사업단 상세"}
             </a>{" "}
-            / 이탈 현황
+            / 이탈 관제
           </div>
-          <h1 className="text-[21px] font-bold m-0">이탈 현황</h1>
+          <h1 className="text-[21px] font-bold m-0">이탈 관제</h1>
         </div>
-        <select
-          className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as EscapeStatus)}
-        >
-          <option value="OPEN">확인 필요</option>
-          <option value="RESOLVED">처리 완료</option>
-        </select>
+        <div className="flex items-center gap-2.5">
+          <input
+            className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
+            placeholder="🔍 어르신 이름 검색"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <select
+            className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as EscapeStatus)}
+          >
+            <option value="OPEN">확인 필요</option>
+            <option value="RESOLVED">처리 완료</option>
+          </select>
+        </div>
       </div>
+
+      <div
+        ref={mapContainerRef}
+        className="h-[420px] w-full mb-5 border border-[#e2e5eb] rounded-[2px]"
+      />
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="overflow-x-auto">
@@ -154,6 +284,45 @@ const EscapesPage = () => {
           </table>
         </div>
       </div>
+
+      {criticalEscape && (
+        <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
+          <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
+            <div className="text-[#e74c3c] text-xl font-bold mb-4">
+              🚨 3단계 위급 이탈
+            </div>
+            <div className="text-sm space-y-1.5 mb-5">
+              <p>
+                <strong>참여자:</strong> {criticalEscape.participantName}
+              </p>
+              <p>
+                <strong>수요처:</strong> {criticalEscape.demandSiteName ?? "-"}
+              </p>
+              <p>
+                <strong>이탈 횟수:</strong> {criticalEscape.escape.alertCount}회
+              </p>
+              <p>
+                <strong>이탈 거리:</strong>{" "}
+                {criticalEscape.escape.distanceKm.toFixed(2)}km
+              </p>
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                className="flex-1 py-3 text-sm font-bold rounded-[2px] bg-[#1e3a5f] text-white"
+                onClick={handleResolveCritical}
+              >
+                확인 완료
+              </button>
+              <button
+                className="flex-1 py-3 text-sm font-bold rounded-[2px] border border-[#d7dbe1] bg-white"
+                onClick={() => setCriticalEscape(null)}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

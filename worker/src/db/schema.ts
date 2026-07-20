@@ -325,6 +325,8 @@ export const escapeLogs = sqliteTable("escape_logs", {
   distanceKm: real("distance_km").notNull(),
   alertCount: integer("alert_count").notNull().default(1),
   status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
+  // 3단계(위급) 팝업을 관제 화면에서 한 번만 띄우기 위한 표시 — 팝업을 띄운 뒤 true로 바꾼다
+  alerted: integer("alerted", { mode: "boolean" }).notNull().default(false),
   resolvedBy: integer("resolved_by").references(() => admins.id),
   resolvedAt: text("resolved_at"),
   memo: text("memo"),

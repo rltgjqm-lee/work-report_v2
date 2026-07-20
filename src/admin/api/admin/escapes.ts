@@ -6,3 +6,6 @@ export const resolveEscape = (id: number, memo?: string) =>
     method: "POST",
     body: JSON.stringify({ memo }),
   });
+
+export const markEscapeAlerted = (id: number) =>
+  request<EscapeLog>(`/api/escapes/${id}/alerted`, { method: "POST" });

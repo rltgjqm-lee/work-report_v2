@@ -610,7 +610,7 @@ const ProgramDetailPage = () => {
             className={btnGhostClass}
             onClick={() => navigate(`/admin/programs/${programId}/escapes`)}
           >
-            이탈 현황
+            이탈 관제
           </button>
           <button className={btnPrimaryClass} onClick={handleClickAddButton}>
             + 참여자 추가
