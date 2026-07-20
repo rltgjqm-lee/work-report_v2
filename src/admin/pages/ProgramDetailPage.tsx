@@ -105,6 +105,10 @@ const statusLabel: Record<string, string> = {
   DROPPED: "참여종료",
 };
 
+/**
+ * 관리자 페이지 > 사업단 상세 페이지입니다.
+ *
+ */
 const ProgramDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

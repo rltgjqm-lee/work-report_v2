@@ -38,6 +38,10 @@ const emptyForm = {
   dementiaType: "deduct" as "add" | "deduct",
 };
 
+/**
+ * 관리자 페이지 > 사업단 페이지입니다.
+ *
+ */
 const ProgramsPage = () => {
   const { admin } = useAuth();
   const role = admin?.role;

@@ -13,6 +13,10 @@ type ParticipantRow = Participant & {
   organizationName: string;
 };
 
+/**
+ * 관리자 페이지 > 참여자 관리 페이지입니다.
+ *
+ */
 const ParticipantsPage = () => {
   const [rows, setRows] = useState<ParticipantRow[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);

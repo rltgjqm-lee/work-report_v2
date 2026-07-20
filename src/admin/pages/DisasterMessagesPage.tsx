@@ -13,6 +13,10 @@ const SOURCE_LABEL: Record<string, string> = {
   MANUAL: "테스트",
 };
 
+/**
+ * 관리자 페이지 > 재난 문자 페이지입니다.
+ *
+ */
 const DisasterMessagesPage = () => {
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);

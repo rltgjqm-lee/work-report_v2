@@ -23,6 +23,10 @@ const emptyStats: AttendanceStats = {
   totalHours: 0,
 };
 
+/**
+ * 관리자 페이지 > 근태 관리 페이지입니다.
+ *
+ */
 const AttendancePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

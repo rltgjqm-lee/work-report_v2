@@ -41,6 +41,10 @@ const emptyForm = {
   organizationId: "",
 };
 
+/**
+ * 관리자 페이지 > 관리자 계정 페이지입니다.
+ *
+ */
 const AdminsPage = () => {
   const { admin } = useAuth();
   const role = admin?.role;

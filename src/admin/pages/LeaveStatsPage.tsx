@@ -20,6 +20,10 @@ const emptyStats: LeaveStats = {
   },
 };
 
+/**
+ * 관리자 페이지 > 휴가 현황 페이지입니다.
+ *
+ */
 const LeaveStatsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

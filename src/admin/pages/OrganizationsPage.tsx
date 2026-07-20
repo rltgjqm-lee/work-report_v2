@@ -33,6 +33,10 @@ const emptyForm = {
   prjYear: "",
 };
 
+/**
+ * 관리자 페이지 > 기관 관리 페이지입니다.
+ *
+ */
 const OrganizationsPage = () => {
   const { admin } = useAuth();
   const role = admin?.role;

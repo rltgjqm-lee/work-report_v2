@@ -22,6 +22,10 @@ const getMarkerColor = (worker: LiveWorker): string => {
   return "#2ECC71";
 };
 
+/**
+ * 관리자 페이지 > 이탈 관제 페이지입니다.
+ *
+ */
 const EscapesPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

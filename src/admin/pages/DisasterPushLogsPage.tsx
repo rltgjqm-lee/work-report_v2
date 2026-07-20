@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import { listDisasterPushLogs } from "../api/admin/disasterPushLogs";
 import type { SafetyAlert } from "../types";
 
+/**
+ * 관리자 페이지 > 재난문자 발송이력 페이지입니다.
+ *
+ */
 const DisasterPushLogsPage = () => {
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
 
