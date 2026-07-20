@@ -9,13 +9,20 @@ const BASE_NAV_ITEMS = [
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
   { to: "/admin/attendance", label: "근태 관리", badge: "4" },
   { to: "/admin/escapes", label: "이탈 관제", badge: "5" },
-  { to: "/admin/safety-alerts", label: "재난문자 발송이력", badge: "6" },
+  { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
 ];
+
+// 실제 발송 안 된 원본 수신내역까지 다 보이는 진단용 화면이라 SUPER_ADMIN에게만 노출
+const SAFETY_ALERT_TEST_NAV_ITEM = {
+  to: "/admin/safety-alerts",
+  label: "재난문자 테스트",
+  badge: "7",
+};
 
 const ADMIN_ACCOUNTS_NAV_ITEM = {
   to: "/admin/admins",
   label: "관리자 계정",
-  badge: "7",
+  badge: "8",
 };
 
 const getTopbarTitle = (pathname: string) => {
@@ -28,7 +35,9 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   if (pathname.startsWith("/admin/attendance")) return "근태 관리";
   if (pathname.startsWith("/admin/escapes")) return "이탈 관제";
-  if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 발송이력";
+  if (pathname.startsWith("/admin/disaster-push-logs"))
+    return "재난문자 발송이력";
+  if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 테스트";
   if (pathname.startsWith("/admin/admins")) return "관리자 계정";
   return "관리자 콘솔";
 };
@@ -37,11 +46,14 @@ const AdminLayout = () => {
   const { admin } = useAuth();
   const location = useLocation();
 
-  const navItems =
-    admin?.role === ROLES.SUPER_ADMIN ||
+  const navItems = [
+    ...BASE_NAV_ITEMS,
+    ...(admin?.role === ROLES.SUPER_ADMIN ? [SAFETY_ALERT_TEST_NAV_ITEM] : []),
+    ...(admin?.role === ROLES.SUPER_ADMIN ||
     admin?.role === ROLES.ORGANIZATION_ADMIN
-      ? [...BASE_NAV_ITEMS, ADMIN_ACCOUNTS_NAV_ITEM]
-      : BASE_NAV_ITEMS;
+      ? [ADMIN_ACCOUNTS_NAV_ITEM]
+      : []),
+  ];
 
   // 로그인/세션은 Cloudflare Access가 관리하므로, 앱에서 할 수 있는 건
   // Access 자체의 로그아웃 엔드포인트로 보내는 것뿐이다 (로컬 토큰을 지우는 게 아님).

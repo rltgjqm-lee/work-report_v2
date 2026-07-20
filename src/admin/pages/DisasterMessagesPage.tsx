@@ -13,7 +13,7 @@ const SOURCE_LABEL: Record<string, string> = {
   MANUAL: "테스트",
 };
 
-const SafetyAlertsPage = () => {
+const DisasterMessagesPage = () => {
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [testProgramId, setTestProgramId] = useState("");
@@ -53,9 +53,11 @@ const SafetyAlertsPage = () => {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="text-[21px] font-bold m-0">재난문자 발송이력</h1>
+        <h1 className="text-[21px] font-bold m-0">재난문자 테스트</h1>
         <p className="text-[13px] text-[#6b7280] mt-1.5">
-          행안부에서 수신한 재난문자와 사업단 참여자 대상 푸시 발송 현황입니다.
+          테스트 발송 및 행안부 수신 원본 전체(매칭 안 돼 발송 안 된 것 포함)를
+          확인하는 진단용 화면입니다. 실제 발송 이력은 "재난문자 발송이력"
+          메뉴를 확인하세요.
         </p>
       </div>
 
@@ -103,7 +105,7 @@ const SafetyAlertsPage = () => {
                 <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   종류
                 </th>
-                <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   구분
                 </th>
                 <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -161,4 +163,4 @@ const SafetyAlertsPage = () => {
   );
 };
 
-export default SafetyAlertsPage;
+export default DisasterMessagesPage;
