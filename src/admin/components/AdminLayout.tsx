@@ -8,13 +8,14 @@ const BASE_NAV_ITEMS = [
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
   { to: "/admin/attendance", label: "근태 관리", badge: "4" },
-  { to: "/admin/safety-alerts", label: "재난문자 발송이력", badge: "5" },
+  { to: "/admin/escapes", label: "이탈 관제", badge: "5" },
+  { to: "/admin/safety-alerts", label: "재난문자 발송이력", badge: "6" },
 ];
 
 const ADMIN_ACCOUNTS_NAV_ITEM = {
   to: "/admin/admins",
   label: "관리자 계정",
-  badge: "6",
+  badge: "7",
 };
 
 const getTopbarTitle = (pathname: string) => {
@@ -26,6 +27,7 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   if (pathname.startsWith("/admin/attendance")) return "근태 관리";
+  if (pathname.startsWith("/admin/escapes")) return "이탈 관제";
   if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 발송이력";
   if (pathname.startsWith("/admin/admins")) return "관리자 계정";
   return "관리자 콘솔";

@@ -3,9 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { getEscapes, getLiveWorkers, getProgram } from "../api/admin/programs";
+import {
+  getEscapes,
+  getLiveWorkers,
+  getProgram,
+  listPrograms,
+} from "../api/admin/programs";
 import { markEscapeAlerted, resolveEscape } from "../api/admin/escapes";
-import type { EscapeRow, EscapeStatus, LiveWorker } from "../types";
+import type { EscapeRow, EscapeStatus, LiveWorker, Program } from "../types";
 
 const POLL_INTERVAL_MS = 10000;
 
@@ -20,8 +25,10 @@ const getMarkerColor = (worker: LiveWorker): string => {
 const EscapesPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const programId = Number(id);
+  const preselectedProgramId = id ? Number(id) : null;
 
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
   const [programName, setProgramName] = useState("");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [rows, setRows] = useState<EscapeRow[]>([]);
@@ -33,18 +40,34 @@ const EscapesPage = () => {
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
+  // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
   useEffect(() => {
-    getProgram(programId).then((program) => setProgramName(program.name));
-  }, [programId]);
+    if (!preselectedProgramId) listPrograms().then(setPrograms);
+  }, [preselectedProgramId]);
+
+  useEffect(() => {
+    if (preselectedProgramId) {
+      getProgram(preselectedProgramId).then((program) =>
+        setProgramName(program.name),
+      );
+    }
+  }, [preselectedProgramId]);
+
+  const programId = preselectedProgramId ?? Number(selectedProgramId);
 
   const refresh = () => {
+    if (!programId) return;
     getEscapes(programId, status).then(setRows);
   };
 
   useEffect(refresh, [programId, status]);
 
-  // 관제 폴링 — 실시간 근무자 위치 갱신 + 새로 발생한 3단계(위급) 이탈을 감지해 팝업
+  // 관제 폴링 — 실시간 근무자 위치 갱신 + 새로 발생한 3단계(위급) 이탈을 감지해 팝업.
+  // programId가 없으면(사이드바 진입 직후, 아직 미선택) 아래 렌더링에서 안내 문구만 보여주므로
+  // rows/workers를 굳이 초기화할 필요가 없다.
   useEffect(() => {
+    if (!programId) return;
+
     const tick = async () => {
       getLiveWorkers(programId).then(setWorkers);
 
@@ -70,7 +93,8 @@ const EscapesPage = () => {
     [workers, search],
   );
 
-  // 지도 초기화 (마운트 시 1회)
+  // 지도 초기화 — 사이드바로 진입해 사업단 미선택 상태면 지도 컨테이너 자체가 아직
+  // 렌더링 안 됐으므로, programId가 정해져 컨테이너가 나타난 뒤에 초기화한다
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -85,7 +109,7 @@ const EscapesPage = () => {
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [programId]);
 
   // 근무자 목록이 바뀔 때마다 마커 다시 그리기
   useEffect(() => {
@@ -157,19 +181,37 @@ const EscapesPage = () => {
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
-          <div className="text-xs text-[#6b7280] mb-1.5">
-            사업단 관리 /{" "}
-            <a
-              onClick={() => navigate(`/admin/programs/${programId}`)}
-              className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
-            >
-              {programName || "사업단 상세"}
-            </a>{" "}
-            / 이탈 관제
-          </div>
+          {preselectedProgramId ? (
+            <div className="text-xs text-[#6b7280] mb-1.5">
+              사업단 관리 /{" "}
+              <a
+                onClick={() =>
+                  navigate(`/admin/programs/${preselectedProgramId}`)
+                }
+                className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+              >
+                {programName || "사업단 상세"}
+              </a>{" "}
+              / 이탈 관제
+            </div>
+          ) : null}
           <h1 className="text-[21px] font-bold m-0">이탈 관제</h1>
         </div>
         <div className="flex items-center gap-2.5">
+          {!preselectedProgramId && (
+            <select
+              className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
+              value={selectedProgramId}
+              onChange={(event) => setSelectedProgramId(event.target.value)}
+            >
+              <option value="">사업단을 선택하세요</option>
+              {programs.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.name}
+                </option>
+              ))}
+            </select>
+          )}
           <input
             className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
             placeholder="🔍 어르신 이름 검색"
@@ -187,103 +229,111 @@ const EscapesPage = () => {
         </div>
       </div>
 
-      <div
-        ref={mapContainerRef}
-        className="h-[420px] w-full mb-5 border border-[#e2e5eb] rounded-[2px]"
-      />
-
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] table-fixed border-collapse">
-            <thead>
-              <tr>
-                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  감지시각
-                </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  참여자명
-                </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  조
-                </th>
-                <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  수요처
-                </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  이탈거리
-                </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  단계
-                </th>
-                <th className="w-[140px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr
-                  key={row.escape.id}
-                  className={
-                    row.escape.alertCount >= 3
-                      ? "bg-[#fdecea] hover:bg-[#fbdedb]"
-                      : "hover:bg-[#f8fafc]"
-                  }
-                >
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {row.escape.detectedAt}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {row.participantName}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {row.groupName ?? "-"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {row.demandSiteName ?? "-"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {row.escape.distanceKm.toFixed(2)}km
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] font-semibold">
-                    {row.escape.alertCount >= 3
-                      ? "3단계(위급)"
-                      : row.escape.alertCount === 2
-                        ? "2단계(주의)"
-                        : "1단계(경고)"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {row.escape.status === "OPEN" ? (
-                      <button
-                        className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
-                        onClick={() =>
-                          handleResolve(row.escape.id, row.participantName)
-                        }
-                      >
-                        확인 처리
-                      </button>
-                    ) : (
-                      <span className="text-xs text-[#6b7280]">
-                        {row.escape.memo || "처리완료"}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                  >
-                    {status === "OPEN"
-                      ? "확인이 필요한 이탈이 없습니다."
-                      : "처리된 이탈 이력이 없습니다."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {!programId ? (
+        <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+          조회할 사업단을 선택해주세요.
         </div>
-      </div>
+      ) : (
+        <>
+          <div
+            ref={mapContainerRef}
+            className="h-[420px] w-full mb-5 border border-[#e2e5eb] rounded-[2px]"
+          />
+
+          <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] table-fixed border-collapse">
+                <thead>
+                  <tr>
+                    <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                      감지시각
+                    </th>
+                    <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                      참여자명
+                    </th>
+                    <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                      조
+                    </th>
+                    <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                      수요처
+                    </th>
+                    <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                      이탈거리
+                    </th>
+                    <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                      단계
+                    </th>
+                    <th className="w-[140px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr
+                      key={row.escape.id}
+                      className={
+                        row.escape.alertCount >= 3
+                          ? "bg-[#fdecea] hover:bg-[#fbdedb]"
+                          : "hover:bg-[#f8fafc]"
+                      }
+                    >
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                        {row.escape.detectedAt}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                        {row.participantName}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                        {row.groupName ?? "-"}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                        {row.demandSiteName ?? "-"}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                        {row.escape.distanceKm.toFixed(2)}km
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] font-semibold">
+                        {row.escape.alertCount >= 3
+                          ? "3단계(위급)"
+                          : row.escape.alertCount === 2
+                            ? "2단계(주의)"
+                            : "1단계(경고)"}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                        {row.escape.status === "OPEN" ? (
+                          <button
+                            className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
+                            onClick={() =>
+                              handleResolve(row.escape.id, row.participantName)
+                            }
+                          >
+                            확인 처리
+                          </button>
+                        ) : (
+                          <span className="text-xs text-[#6b7280]">
+                            {row.escape.memo || "처리완료"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {rows.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
+                      >
+                        {status === "OPEN"
+                          ? "확인이 필요한 이탈이 없습니다."
+                          : "처리된 이탈 이력이 없습니다."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {criticalEscape && (
         <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
