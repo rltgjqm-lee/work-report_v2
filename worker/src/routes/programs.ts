@@ -13,6 +13,7 @@ import {
   activityLogs,
   escapeLogs,
   participantEscapeMeta,
+  pushSubscriptions,
 } from "../db/schema";
 import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
 import { getKstNow } from "../lib/kst";
@@ -431,7 +432,7 @@ app.delete("/:id/participants/:participantId", async (c) => {
   }
 
   // 💡 참여자를 참조하는 자식 테이블을 먼저 지워야 FOREIGN KEY constraint failed 없이
-  // 삭제가 성공한다 (사업단 삭제 라우트와 동일한 이유)
+  // 삭제가 성공한다 (사업단 삭제 라우트와 동일한 이유) — 8·9장에서 추가된 테이블도 포함
   await db
     .delete(activityLogs)
     .where(eq(activityLogs.participantId, participantId));
@@ -441,6 +442,20 @@ app.delete("/:id/participants/:participantId", async (c) => {
   await db
     .delete(attendanceLogs)
     .where(eq(attendanceLogs.participantId, participantId));
+  await db
+    .delete(participantAnnualLeave)
+    .where(eq(participantAnnualLeave.participantId, participantId));
+  await db
+    .delete(escapeLogs)
+    .where(eq(escapeLogs.participantId, participantId));
+  await db
+    .delete(participantEscapeMeta)
+    .where(eq(participantEscapeMeta.participantId, participantId));
+  // 푸시 구독 자체(기기)는 프로그램 단위로도 쓰이므로 지우지 않고 참여자 연결만 해제
+  await db
+    .update(pushSubscriptions)
+    .set({ participantId: null })
+    .where(eq(pushSubscriptions.participantId, participantId));
 
   const result = await db
     .delete(participants)

@@ -75,6 +75,7 @@ const ParticipantsPage = () => {
     if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
     try {
       await deleteParticipant(row.programId, row.id);
+      alert(`'${row.name}' 님을 삭제했습니다.`);
       refresh();
     } catch (error) {
       alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
