@@ -1,37 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  createOrganization,
   listOrganizations,
   updateOrganization,
 } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
-import SlideModal from "../components/SlideModal";
-import FormField from "../components/FormField";
+import OrganizationFormModal from "../components/modals/OrganizationFormModal";
 import SearchInput from "../components/SearchInput";
 import { usePagination } from "../hooks/usePagination";
 import { useAuth } from "../context/useAuth";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  inputClass,
-  rowActionBtnClass,
-} from "../uiClasses";
-import { KOREAN_REGIONS, SIDO_LIST } from "../data/koreanRegions";
+import { btnPrimaryClass, rowActionBtnClass } from "../uiClasses";
 import { ROLES, type Organization } from "../types";
-
-const emptyForm = {
-  name: "",
-  address: "",
-  rep: "",
-  phone: "",
-  fax: "",
-  bizNo: "",
-  regionSido: "",
-  regionSigungu: "",
-  organizationType: "",
-  prjYear: "",
-};
 
 /**
  * 관리자 페이지 > 기관 관리 페이지입니다.
@@ -43,9 +22,8 @@ const OrganizationsPage = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [error, setError] = useState<string | null>(null);
+  const [editingOrganization, setEditingOrganization] =
+    useState<Organization | null>(null);
 
   const refresh = () => {
     listOrganizations().then(setOrganizations);
@@ -66,42 +44,18 @@ const OrganizationsPage = () => {
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 5);
 
   const openAdd = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-    setError(null);
+    setEditingOrganization(null);
     setModalOpen(true);
   };
 
-  const openEdit = (org: Organization) => {
-    setEditingId(org.id);
-    setForm({
-      name: org.name,
-      address: org.address ?? "",
-      rep: org.rep ?? "",
-      phone: org.phone ?? "",
-      fax: org.fax ?? "",
-      bizNo: org.bizNo ?? "",
-      regionSido: org.regionSido ?? "",
-      regionSigungu: org.regionSigungu ?? "",
-      organizationType: org.organizationType ?? "",
-      prjYear: org.prjYear ?? "",
-    });
-    setError(null);
+  const openEdit = (organization: Organization) => {
+    setEditingOrganization(organization);
     setModalOpen(true);
   };
 
-  const handleSave = async () => {
-    try {
-      if (editingId) {
-        await updateOrganization(editingId, form);
-      } else {
-        await createOrganization(form);
-      }
-      setModalOpen(false);
-      refresh();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    }
+  const handleSaved = () => {
+    setModalOpen(false);
+    refresh();
   };
 
   const handleToggleActive = async (org: Organization) => {
@@ -227,158 +181,13 @@ const OrganizationsPage = () => {
         )}
       </div>
 
-      <SlideModal
-        isOpen={modalOpen}
-        title={editingId ? "기관 정보 수정" : "기관 추가"}
-        onClose={() => setModalOpen(false)}
-        footer={
-          <>
-            <button
-              className={btnGhostClass}
-              onClick={() => setModalOpen(false)}
-            >
-              취소
-            </button>
-            <button className={btnPrimaryClass} onClick={handleSave}>
-              저장
-            </button>
-          </>
-        }
-      >
-        <FormField label="기관명">
-          <input
-            className={inputClass}
-            value={form.name}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, name: event.target.value }))
-            }
-          />
-        </FormField>
-        <FormField label="기관주소">
-          <input
-            className={inputClass}
-            value={form.address}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, address: event.target.value }))
-            }
-          />
-        </FormField>
-        <FormField label="대표자">
-          <input
-            className={inputClass}
-            value={form.rep}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, rep: event.target.value }))
-            }
-          />
-        </FormField>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <FormField label="전화번호">
-              <input
-                className={inputClass}
-                value={form.phone}
-                onChange={(event) =>
-                  setForm((f) => ({ ...f, phone: event.target.value }))
-                }
-              />
-            </FormField>
-          </div>
-          <div className="flex-1">
-            <FormField label="팩스번호">
-              <input
-                className={inputClass}
-                value={form.fax}
-                onChange={(event) =>
-                  setForm((f) => ({ ...f, fax: event.target.value }))
-                }
-              />
-            </FormField>
-          </div>
-        </div>
-        <FormField label="사업자 등록번호">
-          <input
-            className={inputClass}
-            value={form.bizNo}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, bizNo: event.target.value }))
-            }
-          />
-        </FormField>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <FormField label="시/도 (재난문자 지역 매칭용)">
-              <select
-                className={inputClass}
-                value={form.regionSido}
-                onChange={(event) =>
-                  setForm((f) => ({
-                    ...f,
-                    regionSido: event.target.value,
-                    regionSigungu: "",
-                  }))
-                }
-              >
-                <option value="">선택하세요</option>
-                {SIDO_LIST.map((sido) => (
-                  <option key={sido} value={sido}>
-                    {sido}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-          <div className="flex-1">
-            <FormField label="시/군/구">
-              <select
-                className={inputClass}
-                value={form.regionSigungu}
-                disabled={!form.regionSido}
-                onChange={(event) =>
-                  setForm((f) => ({ ...f, regionSigungu: event.target.value }))
-                }
-              >
-                <option value="">선택하세요</option>
-                {(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => (
-                  <option key={sigungu} value={sigungu}>
-                    {sigungu}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <FormField label="기관유형">
-              <input
-                className={inputClass}
-                placeholder="예: 시니어클럽, 노인복지관"
-                value={form.organizationType}
-                onChange={(event) =>
-                  setForm((f) => ({
-                    ...f,
-                    organizationType: event.target.value,
-                  }))
-                }
-              />
-            </FormField>
-          </div>
-          <div className="flex-1">
-            <FormField label="사업연도">
-              <input
-                className={inputClass}
-                placeholder="예: 2026"
-                value={form.prjYear}
-                onChange={(event) =>
-                  setForm((f) => ({ ...f, prjYear: event.target.value }))
-                }
-              />
-            </FormField>
-          </div>
-        </div>
-        {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
-      </SlideModal>
+      {modalOpen && (
+        <OrganizationFormModal
+          onClose={() => setModalOpen(false)}
+          onSaved={handleSaved}
+          editingOrganization={editingOrganization}
+        />
+      )}
     </div>
   );
 };

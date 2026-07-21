@@ -10,6 +10,7 @@ interface FilterSelectProps {
   onChange: (value: string) => void;
   options: FilterSelectOption[];
   className?: string;
+  disabled?: boolean;
 }
 
 // 목록 툴바의 필터 드롭다운 전용 — "전체"/"선택하세요" 같은 옵션도
@@ -19,10 +20,12 @@ const FilterSelect = ({
   onChange,
   options,
   className,
+  disabled,
 }: FilterSelectProps) => (
   <select
     className={className ? `${selectClass} ${className}` : selectClass}
     value={value}
+    disabled={disabled}
     onChange={(event) => onChange(event.target.value)}
   >
     {options.map((option) => (

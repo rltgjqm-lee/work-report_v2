@@ -1,18 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { createAdmin, listAdmins, updateAdmin } from "../api/admin/admins";
+import { listAdmins, updateAdmin } from "../api/admin/admins";
 import { listOrganizations } from "../api/admin/organizations";
-import SlideModal from "../components/SlideModal";
-import FormField from "../components/FormField";
+import AdminFormModal from "../components/modals/AdminFormModal";
 import SearchInput from "../components/SearchInput";
-import FilterSelect from "../components/FilterSelect";
 import { useAuth } from "../context/useAuth";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  inputClass,
-  rowActionBtnClass,
-} from "../uiClasses";
+import { btnPrimaryClass, rowActionBtnClass } from "../uiClasses";
 import { ROLES, type Admin, type Organization, type Role } from "../types";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -34,13 +27,6 @@ const ASSIGNABLE_ROLES: Record<Role, Role[]> = {
   [ROLES.MANAGER]: [],
 };
 
-const emptyForm = {
-  email: "",
-  name: "",
-  role: ROLES.MANAGER as Role,
-  organizationId: "",
-};
-
 /**
  * 관리자 페이지 > 관리자 계정 페이지입니다.
  *
@@ -54,9 +40,7 @@ const AdminsPage = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [error, setError] = useState<string | null>(null);
+  const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
 
   const refresh = () => {
     listAdmins().then(setAdmins);
@@ -82,54 +66,18 @@ const AdminsPage = () => {
   );
 
   const openAdd = () => {
-    setEditingId(null);
-    setForm({ ...emptyForm, role: assignableRoles[0] ?? ROLES.MANAGER });
-    setError(null);
+    setEditingAdmin(null);
     setModalOpen(true);
   };
 
   const openEdit = (adminRow: Admin) => {
-    setEditingId(adminRow.id);
-    setForm({
-      email: adminRow.email,
-      name: adminRow.name ?? "",
-      role: adminRow.role,
-      organizationId: adminRow.organizationId
-        ? String(adminRow.organizationId)
-        : "",
-    });
-    setError(null);
+    setEditingAdmin(adminRow);
     setModalOpen(true);
   };
 
-  const handleSave = async () => {
-    if (!form.name) {
-      setError("이름을 입력해주세요.");
-      return;
-    }
-    try {
-      if (editingId) {
-        await updateAdmin(editingId, { name: form.name, role: form.role });
-      } else {
-        if (!form.email) {
-          setError("이메일을 입력해주세요.");
-          return;
-        }
-        await createAdmin({
-          email: form.email,
-          name: form.name,
-          role: form.role,
-          organizationId:
-            role === ROLES.SUPER_ADMIN && form.organizationId
-              ? Number(form.organizationId)
-              : undefined,
-        });
-      }
-      setModalOpen(false);
-      refresh();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    }
+  const handleSaved = () => {
+    setModalOpen(false);
+    refresh();
   };
 
   const handleToggleActive = async (adminRow: Admin) => {
@@ -245,80 +193,17 @@ const AdminsPage = () => {
         </div>
       </div>
 
-      <SlideModal
-        isOpen={modalOpen}
-        title={editingId ? "관리자 계정 수정" : "관리자 계정 발급"}
-        onClose={() => setModalOpen(false)}
-        footer={
-          <>
-            <button
-              className={btnGhostClass}
-              onClick={() => setModalOpen(false)}
-            >
-              취소
-            </button>
-            <button className={btnPrimaryClass} onClick={handleSave}>
-              저장
-            </button>
-          </>
-        }
-      >
-        <FormField label="이메일 (CF Access 로그인 계정)">
-          <input
-            className={inputClass}
-            value={form.email}
-            disabled={!!editingId}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, email: event.target.value }))
-            }
-          />
-        </FormField>
-        <FormField label="이름">
-          <input
-            className={inputClass}
-            value={form.name}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, name: event.target.value }))
-            }
-          />
-        </FormField>
-        <FormField label="역할">
-          <FilterSelect
-            className="w-full"
-            value={form.role}
-            onChange={(value) =>
-              setForm((f) => ({ ...f, role: value as Role }))
-            }
-            options={assignableRoles.map((assignableRole) => ({
-              value: assignableRole,
-              label: ROLE_LABEL[assignableRole],
-            }))}
-          />
-        </FormField>
-        {role === ROLES.SUPER_ADMIN &&
-          form.role !== ROLES.SUPER_ADMIN &&
-          !editingId && (
-            <FormField label="소속 기관">
-              <FilterSelect
-                className="w-full"
-                value={form.organizationId}
-                onChange={(value) =>
-                  setForm((f) => ({ ...f, organizationId: value }))
-                }
-                options={[
-                  { value: "", label: "선택하세요" },
-                  ...organizations
-                    .filter((organization) => organization.isActive)
-                    .map((organization) => ({
-                      value: String(organization.id),
-                      label: organization.name,
-                    })),
-                ]}
-              />
-            </FormField>
-          )}
-        {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
-      </SlideModal>
+      {modalOpen && (
+        <AdminFormModal
+          onClose={() => setModalOpen(false)}
+          onSaved={handleSaved}
+          editingAdmin={editingAdmin}
+          currentRole={role}
+          assignableRoles={assignableRoles}
+          roleLabel={ROLE_LABEL}
+          organizations={organizations}
+        />
+      )}
     </div>
   );
 };
