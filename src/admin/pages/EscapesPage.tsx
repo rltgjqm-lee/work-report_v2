@@ -10,6 +10,8 @@ import {
   listPrograms,
 } from "../api/admin/programs";
 import { markEscapeAlerted, resolveEscape } from "../api/admin/escapes";
+import SearchInput from "../components/SearchInput";
+import FilterSelect from "../components/FilterSelect";
 import type { EscapeRow, EscapeStatus, LiveWorker, Program } from "../types";
 
 const POLL_INTERVAL_MS = 10000;
@@ -203,33 +205,31 @@ const EscapesPage = () => {
         </div>
         <div className="flex items-center gap-2.5">
           {!preselectedProgramId && (
-            <select
-              className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
+            <FilterSelect
               value={selectedProgramId}
-              onChange={(event) => setSelectedProgramId(event.target.value)}
-            >
-              <option value="">사업단을 선택하세요</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedProgramId}
+              options={[
+                { value: "", label: "사업단을 선택하세요" },
+                ...programs.map((program) => ({
+                  value: String(program.id),
+                  label: program.name,
+                })),
+              ]}
+            />
           )}
-          <input
-            className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
-            placeholder="🔍 어르신 이름 검색"
+          <SearchInput
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={setSearch}
+            placeholder="🔍 어르신 이름 검색"
           />
-          <select
-            className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
+          <FilterSelect
             value={status}
-            onChange={(event) => setStatus(event.target.value as EscapeStatus)}
-          >
-            <option value="OPEN">확인 필요</option>
-            <option value="RESOLVED">처리 완료</option>
-          </select>
+            onChange={(value) => setStatus(value as EscapeStatus)}
+            options={[
+              { value: "OPEN", label: "확인 필요" },
+              { value: "RESOLVED", label: "처리 완료" },
+            ]}
+          />
         </div>
       </div>
 

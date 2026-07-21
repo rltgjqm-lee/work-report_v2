@@ -6,7 +6,8 @@ import {
   getProgram,
   listPrograms,
 } from "../api/admin/programs";
-import { inputClass, selectClass } from "../uiClasses";
+import FilterSelect from "../components/FilterSelect";
+import { inputClass } from "../uiClasses";
 import type { AttendanceRow, AttendanceStats, Program } from "../types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -86,18 +87,17 @@ const AttendancePage = () => {
         </div>
         <div className="flex items-center gap-2.5">
           {!preselectedProgramId && (
-            <select
-              className={selectClass}
+            <FilterSelect
               value={selectedProgramId}
-              onChange={(event) => setSelectedProgramId(event.target.value)}
-            >
-              <option value="">사업단을 선택하세요</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedProgramId}
+              options={[
+                { value: "", label: "사업단을 선택하세요" },
+                ...programs.map((program) => ({
+                  value: String(program.id),
+                  label: program.name,
+                })),
+              ]}
+            />
           )}
           <input
             type="month"

@@ -8,6 +8,7 @@ import {
 import Pagination from "../components/Pagination";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
+import SearchInput from "../components/SearchInput";
 import { usePagination } from "../hooks/usePagination";
 import { useAuth } from "../context/useAuth";
 import {
@@ -15,7 +16,6 @@ import {
   btnPrimaryClass,
   inputClass,
   rowActionBtnClass,
-  searchInputClass,
 } from "../uiClasses";
 import { KOREAN_REGIONS, SIDO_LIST } from "../data/koreanRegions";
 import { ROLES, type Organization } from "../types";
@@ -134,11 +134,10 @@ const OrganizationsPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         {role === ROLES.SUPER_ADMIN && (
           <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
-            <input
-              className={searchInputClass}
-              placeholder="기관명 또는 대표자 검색"
+            <SearchInput
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={setSearch}
+              placeholder="기관명 또는 대표자 검색"
             />
             <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
               총 {filtered.length}개 기관

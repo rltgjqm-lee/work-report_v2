@@ -31,12 +31,13 @@ import {
   updateDemandSite,
 } from "../api/admin/demandSites";
 import Pagination from "../components/Pagination";
+import SearchInput from "../components/SearchInput";
+import FilterSelect from "../components/FilterSelect";
 
 import { usePagination } from "../hooks/usePagination";
 import {
   btnPrimaryClass,
   rowActionBtnClass,
-  searchInputClass,
   btnGhostClass,
   inputClass,
   selectClass,
@@ -807,34 +808,32 @@ const ProgramDetailPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <input
-              className={searchInputClass}
-              placeholder="이름 또는 수요처명 검색"
+            <SearchInput
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={setSearch}
+              placeholder="이름 또는 수요처명 검색"
             />
-            <select
-              className={selectClass}
+            <FilterSelect
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-            >
-              <option value="all">전체 상태</option>
-              <option value="ACTIVE">활동중</option>
-              <option value="ON_LEAVE">휴무중</option>
-              <option value="DROPPED">참여종료</option>
-            </select>
-            <select
-              className={selectClass}
+              onChange={setStatusFilter}
+              options={[
+                { value: "all", label: "전체 상태" },
+                { value: "ACTIVE", label: "활동중" },
+                { value: "ON_LEAVE", label: "휴무중" },
+                { value: "DROPPED", label: "참여종료" },
+              ]}
+            />
+            <FilterSelect
               value={groupFilter}
-              onChange={(event) => setGroupFilter(event.target.value)}
-            >
-              <option value="all">전체 조</option>
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+              onChange={setGroupFilter}
+              options={[
+                { value: "all", label: "전체 조" },
+                ...groups.map((group) => ({
+                  value: String(group.id),
+                  label: group.name,
+                })),
+              ]}
+            />
           </div>
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}명

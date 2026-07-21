@@ -4,8 +4,10 @@ import { deleteParticipant } from "../api/admin/participants";
 import { getProgram, listPrograms } from "../api/admin/programs";
 import { listOrganizations } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
+import SearchInput from "../components/SearchInput";
+import FilterSelect from "../components/FilterSelect";
 import { usePagination } from "../hooks/usePagination";
-import { rowActionBtnClass, searchInputClass, selectClass } from "../uiClasses";
+import { rowActionBtnClass } from "../uiClasses";
 import type { Participant, Program } from "../types";
 
 type ParticipantRow = Participant & {
@@ -96,29 +98,27 @@ const ParticipantsPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <div className="flex items-center gap-2.5">
-            <select
-              className={selectClass}
+            <FilterSelect
               value={programFilter}
-              onChange={(event) => {
-                setProgramFilter(event.target.value);
+              onChange={(value) => {
+                setProgramFilter(value);
                 setPage(1);
               }}
-            >
-              <option value="all">전체 사업단</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
-            <input
-              className={searchInputClass}
-              placeholder="이름 또는 수요처명 검색"
+              options={[
+                { value: "all", label: "전체 사업단" },
+                ...programs.map((program) => ({
+                  value: String(program.id),
+                  label: program.name,
+                })),
+              ]}
+            />
+            <SearchInput
               value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
+              onChange={(value) => {
+                setSearch(value);
                 setPage(1);
               }}
+              placeholder="이름 또는 수요처명 검색"
             />
           </div>
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">

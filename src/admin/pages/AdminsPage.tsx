@@ -4,13 +4,13 @@ import { createAdmin, listAdmins, updateAdmin } from "../api/admin/admins";
 import { listOrganizations } from "../api/admin/organizations";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
+import SearchInput from "../components/SearchInput";
 import { useAuth } from "../context/useAuth";
 import {
   btnGhostClass,
   btnPrimaryClass,
   inputClass,
   rowActionBtnClass,
-  searchInputClass,
   selectClass,
 } from "../uiClasses";
 import { ROLES, type Admin, type Organization, type Role } from "../types";
@@ -172,11 +172,10 @@ const AdminsPage = () => {
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
-          <input
-            className={searchInputClass}
-            placeholder="이름 또는 이메일 검색"
+          <SearchInput
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={setSearch}
+            placeholder="이름 또는 이메일 검색"
           />
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}명

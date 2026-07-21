@@ -11,6 +11,8 @@ import { listOrganizations } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
+import SearchInput from "../components/SearchInput";
+import FilterSelect from "../components/FilterSelect";
 import { usePagination } from "../hooks/usePagination";
 import { useAuth } from "../context/useAuth";
 import {
@@ -18,8 +20,6 @@ import {
   btnPrimaryClass,
   inputClass,
   rowActionBtnClass,
-  searchInputClass,
-  selectClass,
 } from "../uiClasses";
 import { ROLES, type Organization, type Program } from "../types";
 
@@ -39,7 +39,7 @@ const emptyForm = {
 };
 
 /**
- * 관리자 페이지 > 사업단 페이지입니다.
+ * 관리자 페이지 > 사업단 관리 페이지입니다.
  *
  */
 const ProgramsPage = () => {
@@ -125,6 +125,17 @@ const ProgramsPage = () => {
   };
 
   const handleSave = async () => {
+    if (form.endDate && form.startDate && form.endDate < form.startDate) {
+      setError("종료일은 시작일 이후여야 합니다.");
+
+      return;
+    }
+    if (form.endTime && form.startTime && form.endTime < form.startTime) {
+      setError("종료 시간은 시작 시간 이후여야 합니다.");
+
+      return;
+    }
+
     try {
       const payload = {
         name: form.name,
@@ -194,25 +205,23 @@ const ProgramsPage = () => {
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <div className="flex items-center gap-2.5">
             {role === ROLES.SUPER_ADMIN && (
-              <select
-                className={selectClass}
+              <FilterSelect
                 value={instFilter}
-                onChange={(event) => setInstFilter(event.target.value)}
-              >
-                <option value="all">전체 기관</option>
-                {organizations.map((organization) => (
-                  <option key={organization.id} value={organization.id}>
-                    {organization.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setInstFilter}
+                options={[
+                  { value: "all", label: "전체 기관" },
+                  ...organizations.map((organization) => ({
+                    value: String(organization.id),
+                    label: organization.name,
+                  })),
+                ]}
+              />
             )}
 
-            <input
-              className={searchInputClass}
-              placeholder="사업단명 검색"
+            <SearchInput
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={setSearch}
+              placeholder="사업단명 검색"
             />
           </div>
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
@@ -372,6 +381,7 @@ const ProgramsPage = () => {
                 type="date"
                 className={inputClass}
                 value={form.endDate}
+                min={form.startDate || undefined}
                 onChange={(event) =>
                   setForm((f) => ({ ...f, endDate: event.target.value }))
                 }
@@ -402,6 +412,7 @@ const ProgramsPage = () => {
                 type="time"
                 className={inputClass}
                 value={form.endTime}
+                min={form.startTime || undefined}
                 onChange={(event) =>
                   setForm((f) => ({ ...f, endTime: event.target.value }))
                 }
