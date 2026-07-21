@@ -5,13 +5,13 @@ import { listOrganizations } from "../api/admin/organizations";
 import SlideModal from "../components/SlideModal";
 import FormField from "../components/FormField";
 import SearchInput from "../components/SearchInput";
+import FilterSelect from "../components/FilterSelect";
 import { useAuth } from "../context/useAuth";
 import {
   btnGhostClass,
   btnPrimaryClass,
   inputClass,
   rowActionBtnClass,
-  selectClass,
 } from "../uiClasses";
 import { ROLES, type Admin, type Organization, type Role } from "../types";
 
@@ -283,43 +283,38 @@ const AdminsPage = () => {
           />
         </FormField>
         <FormField label="역할">
-          <select
-            className={selectClass + " w-full"}
+          <FilterSelect
+            className="w-full"
             value={form.role}
-            onChange={(event) =>
-              setForm((f) => ({ ...f, role: event.target.value as Role }))
+            onChange={(value) =>
+              setForm((f) => ({ ...f, role: value as Role }))
             }
-          >
-            {assignableRoles.map((assignableRole) => (
-              <option key={assignableRole} value={assignableRole}>
-                {ROLE_LABEL[assignableRole]}
-              </option>
-            ))}
-          </select>
+            options={assignableRoles.map((assignableRole) => ({
+              value: assignableRole,
+              label: ROLE_LABEL[assignableRole],
+            }))}
+          />
         </FormField>
         {role === ROLES.SUPER_ADMIN &&
           form.role !== ROLES.SUPER_ADMIN &&
           !editingId && (
             <FormField label="소속 기관">
-              <select
-                className={selectClass + " w-full"}
+              <FilterSelect
+                className="w-full"
                 value={form.organizationId}
-                onChange={(event) =>
-                  setForm((f) => ({
-                    ...f,
-                    organizationId: event.target.value,
-                  }))
+                onChange={(value) =>
+                  setForm((f) => ({ ...f, organizationId: value }))
                 }
-              >
-                <option value="">선택하세요</option>
-                {organizations
-                  .filter((organization) => organization.isActive)
-                  .map((organization) => (
-                    <option key={organization.id} value={organization.id}>
-                      {organization.name}
-                    </option>
-                  ))}
-              </select>
+                options={[
+                  { value: "", label: "선택하세요" },
+                  ...organizations
+                    .filter((organization) => organization.isActive)
+                    .map((organization) => ({
+                      value: String(organization.id),
+                      label: organization.name,
+                    })),
+                ]}
+              />
             </FormField>
           )}
         {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}

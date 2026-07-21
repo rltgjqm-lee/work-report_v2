@@ -5,7 +5,8 @@ import {
   sendTestSafetyAlert,
 } from "../api/admin/safetyAlerts";
 import { listPrograms } from "../api/admin/programs";
-import { btnPrimaryClass, inputClass, selectClass } from "../uiClasses";
+import FilterSelect from "../components/FilterSelect";
+import { btnPrimaryClass, inputClass } from "../uiClasses";
 import type { Program, SafetyAlert } from "../types";
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -68,18 +69,17 @@ const DisasterMessagesPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-4 mb-5">
         <div className="text-[13px] font-bold mb-2.5">테스트 발송</div>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <select
-            className={selectClass}
+          <FilterSelect
             value={testProgramId}
-            onChange={(event) => setTestProgramId(event.target.value)}
-          >
-            <option value="">사업단을 선택하세요</option>
-            {programs.map((program) => (
-              <option key={program.id} value={program.id}>
-                {program.name}
-              </option>
-            ))}
-          </select>
+            onChange={setTestProgramId}
+            options={[
+              { value: "", label: "사업단을 선택하세요" },
+              ...programs.map((program) => ({
+                value: String(program.id),
+                label: program.name,
+              })),
+            ]}
+          />
           <input
             className={inputClass + " flex-1 min-w-[240px]"}
             placeholder="테스트 메시지를 입력하세요"

@@ -40,7 +40,6 @@ import {
   rowActionBtnClass,
   btnGhostClass,
   inputClass,
-  selectClass,
 } from "../uiClasses";
 import type {
   AnnualLeave,
@@ -906,25 +905,25 @@ const ProgramDetailPage = () => {
                     {participant.phoneLast4}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    <select
-                      className={selectClass}
-                      value={participant.groupId ?? ""}
-                      onChange={(event) =>
-                        handleAssignGroup(participant.id, event.target.value)
+                    <FilterSelect
+                      value={String(participant.groupId ?? "")}
+                      onChange={(value) =>
+                        handleAssignGroup(participant.id, value)
                       }
-                    >
-                      <option value="">미배정</option>
-                      {groups
-                        .filter(
-                          (group) =>
-                            group.isActive || group.id === participant.groupId,
-                        )
-                        .map((group) => (
-                          <option key={group.id} value={group.id}>
-                            {group.name}
-                          </option>
-                        ))}
-                    </select>
+                      options={[
+                        { value: "", label: "미배정" },
+                        ...groups
+                          .filter(
+                            (group) =>
+                              group.isActive ||
+                              group.id === participant.groupId,
+                          )
+                          .map((group) => ({
+                            value: String(group.id),
+                            label: group.name,
+                          })),
+                      ]}
+                    />
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {statusLabel[participant.status]}
@@ -1093,36 +1092,34 @@ const ProgramDetailPage = () => {
             />
           </FormField>
           <FormField label="조">
-            <select
-              className={selectClass + " w-full"}
+            <FilterSelect
+              className="w-full"
               value={form.groupId}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, groupId: event.target.value }))
-              }
-            >
-              <option value="">미배정</option>
-              {activeGroups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setForm((f) => ({ ...f, groupId: value }))}
+              options={[
+                { value: "", label: "미배정" },
+                ...activeGroups.map((group) => ({
+                  value: String(group.id),
+                  label: group.name,
+                })),
+              ]}
+            />
           </FormField>
           <FormField label="수요처 배정">
-            <select
-              className={selectClass + " w-full"}
+            <FilterSelect
+              className="w-full"
               value={form.demandSiteId}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, demandSiteId: event.target.value }))
+              onChange={(value) =>
+                setForm((f) => ({ ...f, demandSiteId: value }))
               }
-            >
-              <option value="">미배정</option>
-              {activeDemandSites.map((demandSite) => (
-                <option key={demandSite.id} value={demandSite.id}>
-                  {demandSite.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "미배정" },
+                ...activeDemandSites.map((demandSite) => ({
+                  value: String(demandSite.id),
+                  label: demandSite.name,
+                })),
+              ]}
+            />
           </FormField>
         </SlideModal>
 
@@ -1318,20 +1315,20 @@ const ProgramDetailPage = () => {
           }
         >
           <FormField label="조">
-            <select
-              className={selectClass + " w-full"}
+            <FilterSelect
+              className="w-full"
               value={scheduleForm.groupId}
-              onChange={(event) =>
-                setScheduleForm((f) => ({ ...f, groupId: event.target.value }))
+              onChange={(value) =>
+                setScheduleForm((f) => ({ ...f, groupId: value }))
               }
-            >
-              <option value="">선택하세요</option>
-              {activeGroups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "선택하세요" },
+                ...activeGroups.map((group) => ({
+                  value: String(group.id),
+                  label: group.name,
+                })),
+              ]}
+            />
           </FormField>
           <div className="flex gap-3">
             <div className="flex-1">
@@ -1417,19 +1414,20 @@ const ProgramDetailPage = () => {
             </div>
           </div>
           <FormField label="휴가 유형">
-            <select
-              className={selectClass + " w-full"}
+            <FilterSelect
+              className="w-full"
               value={leaveForm.leaveType}
-              onChange={(event) =>
+              onChange={(value) =>
                 setLeaveForm((f) => ({
                   ...f,
-                  leaveType: event.target.value as LeaveType,
+                  leaveType: value as LeaveType,
                 }))
               }
-            >
-              <option value="PAID">유급(연차 차감)</option>
-              <option value="UNPAID">무급</option>
-            </select>
+              options={[
+                { value: "PAID", label: "유급(연차 차감)" },
+                { value: "UNPAID", label: "무급" },
+              ]}
+            />
           </FormField>
           <FormField label="사유">
             <input
