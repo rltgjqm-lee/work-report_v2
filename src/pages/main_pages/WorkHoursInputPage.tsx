@@ -47,7 +47,7 @@ const WorkHoursInputPage = ({
     [],
   );
   const minuteOptions = useMemo(
-    () => Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0")),
+    () => Array.from({ length: 6 }, (_, i) => String(i * 10).padStart(2, "0")),
     [],
   );
 
