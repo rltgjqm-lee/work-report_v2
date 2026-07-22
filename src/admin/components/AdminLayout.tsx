@@ -44,6 +44,10 @@ const getTopbarTitle = (pathname: string) => {
   return "관리자 콘솔";
 };
 
+/**
+ * 관리자 콘솔의 사이드바 + 상단바를 포함한 공통 레이아웃입니다.
+ *
+ */
 const AdminLayout = () => {
   const { admin } = useAuth();
   const location = useLocation();

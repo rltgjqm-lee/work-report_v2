@@ -36,6 +36,10 @@ interface ProgramParticipantsSectionProps {
   onChanged: () => void;
 }
 
+/**
+ * 관리자 페이지 > 사업단 상세 페이지의 참여자 관리 섹션입니다.
+ *
+ */
 const ProgramParticipantsSection = ({
   programId,
   participants,

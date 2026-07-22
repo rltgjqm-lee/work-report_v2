@@ -30,6 +30,10 @@ const buildPageNumbers = (
 const pageBtnBase =
   "min-w-[30px] h-[30px] border rounded-[2px] text-xs font-semibold cursor-pointer";
 
+/**
+ * 여러 페이지의 목록에서 공통으로 쓰는 페이지네이션 컴포넌트입니다.
+ *
+ */
 const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
   const pages = buildPageNumbers(page, totalPages);
 

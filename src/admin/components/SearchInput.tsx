@@ -7,6 +7,10 @@ interface SearchInputProps {
   className?: string;
 }
 
+/**
+ * 여러 페이지의 목록 검색창에서 공통으로 쓰는 입력창입니다.
+ *
+ */
 const SearchInput = ({
   value,
   onChange,

@@ -17,6 +17,10 @@ interface ProgramDemandSitesSectionProps {
   onChanged: () => void;
 }
 
+/**
+ * 관리자 페이지 > 사업단 상세 페이지의 수요처 관리 섹션입니다.
+ *
+ */
 const ProgramDemandSitesSection = ({
   programId,
   demandSites,

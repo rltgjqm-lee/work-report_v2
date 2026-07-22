@@ -8,6 +8,10 @@ interface SlideModalProps {
   footer: ReactNode;
 }
 
+/**
+ * 우측에서 슬라이드로 나타나는 모달의 공통 레이아웃(제목/본문/푸터)입니다.
+ *
+ */
 const SlideModal = ({
   isOpen,
   title,

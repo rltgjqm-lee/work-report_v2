@@ -2,6 +2,10 @@ import { Outlet } from "react-router-dom";
 
 import { useAuth } from "../context/useAuth";
 
+/**
+ * Cloudflare Access 인증 여부를 확인해 관리자 라우트를 보호하는 컴포넌트입니다.
+ *
+ */
 const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 

@@ -11,6 +11,10 @@ interface ProgramExcelExportSectionProps {
   onExportMonthChange: (value: string) => void;
 }
 
+/**
+ * 관리자 페이지 > 사업단 상세 페이지의 엑셀 출력 섹션입니다.
+ *
+ */
 const ProgramExcelExportSection = ({
   programId,
   exportMonth,

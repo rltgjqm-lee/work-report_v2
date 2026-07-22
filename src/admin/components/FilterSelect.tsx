@@ -13,6 +13,10 @@ interface FilterSelectProps {
   disabled?: boolean;
 }
 
+/**
+ * 여러 페이지의 필터/폼에서 공통으로 쓰는 select 드롭다운입니다.
+ *
+ */
 // 목록 툴바의 필터 드롭다운 전용 — "전체"/"선택하세요" 같은 옵션도
 // 호출하는 쪽에서 options 배열에 그대로 포함시켜서 넘긴다.
 const FilterSelect = ({

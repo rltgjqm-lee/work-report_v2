@@ -11,6 +11,10 @@ interface ProgramGroupsSectionProps {
   onChanged: () => void;
 }
 
+/**
+ * 관리자 페이지 > 사업단 상세 페이지의 조 관리 섹션입니다.
+ *
+ */
 const ProgramGroupsSection = ({
   programId,
   groups,

@@ -24,6 +24,10 @@ interface AdminFormModalProps {
   organizations: Organization[];
 }
 
+/**
+ * 관리자 페이지 > 관리자 계정 페이지에서 계정을 발급/수정하는 모달입니다.
+ *
+ */
 // 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
 // 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const AdminFormModal = ({
