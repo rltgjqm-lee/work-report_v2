@@ -49,7 +49,7 @@ const AdminFormModal = ({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     if (!form.name) {
       setError("이름을 입력해주세요.");
 
@@ -93,7 +93,7 @@ const AdminFormModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

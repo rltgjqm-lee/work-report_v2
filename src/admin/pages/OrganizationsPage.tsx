@@ -43,22 +43,22 @@ const OrganizationsPage = () => {
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 5);
 
-  const openAdd = () => {
+  const handleAddButtonClick = () => {
     setEditingOrganization(null);
     setModalOpen(true);
   };
 
-  const openEdit = (organization: Organization) => {
+  const handleEditButtonClick = (organization: Organization) => {
     setEditingOrganization(organization);
     setModalOpen(true);
   };
 
-  const handleSaved = () => {
+  const handleOrganizationSaved = () => {
     setModalOpen(false);
     refresh();
   };
 
-  const handleToggleActive = async (org: Organization) => {
+  const handleToggleActiveButtonClick = async (org: Organization) => {
     const actionLabel = org.isActive ? "비활성화" : "활성화";
     if (!confirm(`'${org.name}' 기관을 ${actionLabel}하시겠습니까?`)) return;
     try {
@@ -79,7 +79,7 @@ const OrganizationsPage = () => {
           </p>
         </div>
         {role === ROLES.SUPER_ADMIN && (
-          <button className={btnPrimaryClass} onClick={openAdd}>
+          <button className={btnPrimaryClass} onClick={handleAddButtonClick}>
             + 기관 추가
           </button>
         )}
@@ -156,7 +156,7 @@ const OrganizationsPage = () => {
                       role === ROLES.ORGANIZATION_ADMIN) && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() => openEdit(organization)}
+                        onClick={() => handleEditButtonClick(organization)}
                       >
                         수정
                       </button>
@@ -164,7 +164,9 @@ const OrganizationsPage = () => {
                     {role === ROLES.SUPER_ADMIN && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() => handleToggleActive(organization)}
+                        onClick={() =>
+                          handleToggleActiveButtonClick(organization)
+                        }
                       >
                         {organization.isActive ? "비활성화" : "활성화"}
                       </button>
@@ -184,7 +186,7 @@ const OrganizationsPage = () => {
       {modalOpen && (
         <OrganizationFormModal
           onClose={() => setModalOpen(false)}
-          onSaved={handleSaved}
+          onSaved={handleOrganizationSaved}
           editingOrganization={editingOrganization}
         />
       )}

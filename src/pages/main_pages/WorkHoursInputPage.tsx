@@ -139,7 +139,7 @@ const WorkHoursInputPage = ({
   };
 
   // 💡 임시 저장 검증 핸들러
-  const handleSaveStep = () => {
+  const handleSaveStepButtonClick = () => {
     if (formData.actDate) {
       const futureError = getFutureLogError();
       if (futureError) {
@@ -151,7 +151,7 @@ const WorkHoursInputPage = ({
   };
 
   // 💡 다음 단계 검증 핸들러
-  const handleNextStep = () => {
+  const handleNextStepButtonClick = () => {
     if (!formData.actDate) {
       onAlert(["활동일을 선택하여 주세요."]);
       return;
@@ -301,12 +301,15 @@ const WorkHoursInputPage = ({
 
       <BottomBar>
         <BottomBarRow>
-          <button className={btnOutlineClass} onClick={handleSaveStep}>
+          <button
+            className={btnOutlineClass}
+            onClick={handleSaveStepButtonClick}
+          >
             저장하기
           </button>
           <button
             className={btnPrimaryClass + " flex-1"}
-            onClick={handleNextStep}
+            onClick={handleNextStepButtonClick}
           >
             다음
           </button>

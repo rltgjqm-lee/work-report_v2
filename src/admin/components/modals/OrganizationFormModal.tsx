@@ -55,7 +55,7 @@ const OrganizationFormModal = ({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     try {
       if (editingOrganization) {
         await updateOrganization(editingOrganization.id, form);
@@ -78,7 +78,7 @@ const OrganizationFormModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

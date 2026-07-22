@@ -181,7 +181,7 @@ const AffiliationInputPage = ({
     [organizationPrograms, programType],
   );
 
-  const handleSelectSido = (value: string) => {
+  const handleSidoChange = (value: string) => {
     setSido(value);
     setSigungu("");
     setOrganizationType("");
@@ -190,7 +190,7 @@ const AffiliationInputPage = ({
     setSelectedProgramId("");
   };
 
-  const handleSelectSigungu = (value: string) => {
+  const handleSigunguChange = (value: string) => {
     setSigungu(value);
     setOrganizationType("");
     setSelectedOrganizationId("");
@@ -198,14 +198,14 @@ const AffiliationInputPage = ({
     setSelectedProgramId("");
   };
 
-  const handleSelectOrganizationType = (value: string) => {
+  const handleOrganizationTypeChange = (value: string) => {
     setOrganizationType(value);
     setSelectedOrganizationId("");
     setProgramType("");
     setSelectedProgramId("");
   };
 
-  const handleSelectOrg = (orgId: string) => {
+  const handleOrganizationChange = (orgId: string) => {
     setSelectedOrganizationId(orgId);
     setProgramType("");
     setSelectedProgramId("");
@@ -217,13 +217,13 @@ const AffiliationInputPage = ({
     onChange("programName", "");
   };
 
-  const handleSelectProgramType = (value: string) => {
+  const handleProgramTypeChange = (value: string) => {
     setProgramType(value);
     setSelectedProgramId("");
     onChange("programName", "");
   };
 
-  const handleSelectProgram = (programId: string) => {
+  const handleProgramChange = (programId: string) => {
     setSelectedProgramId(programId);
     onChange(
       "programName",
@@ -231,7 +231,7 @@ const AffiliationInputPage = ({
     );
   };
 
-  const saveToLocalStorage = () => {
+  const handleSaveDraftButtonClick = () => {
     localStorage.setItem(
       LOCAL_STORAGE_KEYS.FORM_DRAFT,
       JSON.stringify(formData),
@@ -246,7 +246,7 @@ const AffiliationInputPage = ({
     }
   };
 
-  const handleClickNextButton = () => {
+  const handleNextButtonClick = () => {
     const errors = validateForm(formData, PAGE1_RULES);
 
     if (errors.length > 0) {
@@ -254,7 +254,7 @@ const AffiliationInputPage = ({
       return;
     }
 
-    saveToLocalStorage();
+    handleSaveDraftButtonClick();
     onNext();
   };
 
@@ -273,7 +273,7 @@ const AffiliationInputPage = ({
               <select
                 className={selectClass + " w-full"}
                 value={sido}
-                onChange={(event) => handleSelectSido(event.target.value)}
+                onChange={(event) => handleSidoChange(event.target.value)}
               >
                 <option value="">선택하세요</option>
                 {sidoList.map((sido) => (
@@ -291,7 +291,7 @@ const AffiliationInputPage = ({
                 className={selectClass + " w-full"}
                 value={sigungu}
                 disabled={!sido}
-                onChange={(event) => handleSelectSigungu(event.target.value)}
+                onChange={(event) => handleSigunguChange(event.target.value)}
               >
                 <option value="">선택하세요</option>
                 {sigunguList.map((sigungu) => (
@@ -312,7 +312,7 @@ const AffiliationInputPage = ({
                 value={organizationType}
                 disabled={!sigungu}
                 onChange={(event) =>
-                  handleSelectOrganizationType(event.target.value)
+                  handleOrganizationTypeChange(event.target.value)
                 }
               >
                 <option value="">선택하세요</option>
@@ -331,7 +331,9 @@ const AffiliationInputPage = ({
                 className={selectClass + " w-full"}
                 value={selectedOrganizationId}
                 disabled={!organizationType}
-                onChange={(event) => handleSelectOrg(event.target.value)}
+                onChange={(event) =>
+                  handleOrganizationChange(event.target.value)
+                }
               >
                 <option value="">선택하세요</option>
                 {organizationCandidates.map((organization) => (
@@ -350,7 +352,7 @@ const AffiliationInputPage = ({
               className={selectClass + " w-full"}
               value={programType}
               disabled={!selectedOrganizationId}
-              onChange={(event) => handleSelectProgramType(event.target.value)}
+              onChange={(event) => handleProgramTypeChange(event.target.value)}
             >
               <option value="">선택하세요</option>
               {programTypeList.map((programType) => (
@@ -368,7 +370,7 @@ const AffiliationInputPage = ({
               className={selectClass + " w-full"}
               value={selectedProgramId}
               disabled={!programType}
-              onChange={(event) => handleSelectProgram(event.target.value)}
+              onChange={(event) => handleProgramChange(event.target.value)}
             >
               <option value="">선택하세요</option>
               {programCandidates.map((program) => (
@@ -446,14 +448,14 @@ const AffiliationInputPage = ({
         <Button
           variant="primary"
           disabled={!formData.participantId}
-          onClick={handleClickNextButton}
+          onClick={handleNextButtonClick}
         >
           다음
         </Button>
         <Button
           variant="text"
           className="self-center"
-          onClick={saveToLocalStorage}
+          onClick={handleSaveDraftButtonClick}
         >
           나중에 이어서 작성하고 저장만 하기
         </Button>

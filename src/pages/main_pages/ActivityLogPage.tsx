@@ -68,7 +68,7 @@ const ActivityLogPage = ({
 
   const printAreaRef = useRef<HTMLDivElement>(null);
 
-  const handleChangeMonth = (delta: number) => {
+  const handleMonthNavigationButtonClick = (delta: number) => {
     setCurrentMonth((prev) => {
       const nextMonth = prev + delta;
       if (nextMonth > 12) {
@@ -102,7 +102,7 @@ const ActivityLogPage = ({
     ...serverLogs.filter((log) => !knownServerIds.has(log.serverId)),
   ].sort((logA, logB) => logB.timestamp - logA.timestamp);
 
-  const handleClickExportReportsButton = async () => {
+  const handleExportReportsButtonClick = async () => {
     if (!db) return;
 
     if (displayLogs.length === 0) {
@@ -183,7 +183,7 @@ const ActivityLogPage = ({
         <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
           <button
             className="w-[42px] h-[42px] rounded-xl border-none bg-[#f2f4f6] text-[17px] font-bold text-[#3182f6] cursor-pointer"
-            onClick={() => handleChangeMonth(-1)}
+            onClick={() => handleMonthNavigationButtonClick(-1)}
           >
             ◀
           </button>
@@ -192,7 +192,7 @@ const ActivityLogPage = ({
           </span>
           <button
             className="w-[42px] h-[42px] rounded-xl border-none bg-[#f2f4f6] text-[17px] font-bold text-[#3182f6] cursor-pointer"
-            onClick={() => handleChangeMonth(1)}
+            onClick={() => handleMonthNavigationButtonClick(1)}
           >
             ▶
           </button>
@@ -228,7 +228,7 @@ const ActivityLogPage = ({
         <BottomBarRow>
           <button
             className={btnOutlineClass}
-            onClick={handleClickExportReportsButton}
+            onClick={handleExportReportsButtonClick}
           >
             보고서 출력
           </button>

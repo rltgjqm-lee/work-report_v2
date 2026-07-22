@@ -152,7 +152,10 @@ const ProgramDetailPage = () => {
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
-  const handleDelete = async (participantId: number, name: string) => {
+  const handleDeleteButtonClick = async (
+    participantId: number,
+    name: string,
+  ) => {
     if (!confirm(`'${name}' 님을 참여자 명단에서 삭제하시겠습니까?`)) return;
     try {
       await deleteParticipant(programId, participantId);
@@ -162,7 +165,7 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleToggleGroupActive = async (group: Group) => {
+  const handleToggleGroupActiveButtonClick = async (group: Group) => {
     const actionLabel = group.isActive ? "비활성화" : "활성화";
     if (!confirm(`'${group.name}' 조를 ${actionLabel}하시겠습니까?`)) return;
 
@@ -174,17 +177,17 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const openAddDemandSite = () => {
+  const handleAddDemandSiteButtonClick = () => {
     setEditingDemandSite(null);
     setDemandSiteModalOpen(true);
   };
 
-  const openEditDemandSite = (site: DemandSite) => {
+  const handleEditDemandSiteButtonClick = (site: DemandSite) => {
     setEditingDemandSite(site);
     setDemandSiteModalOpen(true);
   };
 
-  const handleToggleDemandSiteActive = async (site: DemandSite) => {
+  const handleToggleDemandSiteActiveButtonClick = async (site: DemandSite) => {
     const actionLabel = site.isActive ? "비활성화" : "활성화";
     if (!confirm(`'${site.name}' 수요처를 ${actionLabel}하시겠습니까?`)) return;
 
@@ -196,12 +199,12 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const openAddSchedule = (siteId: number) => {
+  const handleAddScheduleButtonClick = (siteId: number) => {
     setScheduleTargetSiteId(siteId);
     setScheduleModalOpen(true);
   };
 
-  const handleDeleteSchedule = async (scheduleId: number) => {
+  const handleDeleteScheduleButtonClick = async (scheduleId: number) => {
     if (!confirm("이 근무시간을 삭제하시겠습니까?")) return;
 
     try {
@@ -212,7 +215,10 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleAssignGroup = async (participantId: number, groupId: string) => {
+  const handleGroupSelectChange = async (
+    participantId: number,
+    groupId: string,
+  ) => {
     try {
       if (groupId) await moveParticipantToGroup(participantId, Number(groupId));
       refresh();
@@ -221,7 +227,7 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleDrop = async (participantId: number, name: string) => {
+  const handleDropButtonClick = async (participantId: number, name: string) => {
     const reason = prompt(`'${name}' 님의 참여종료 사유를 입력해주세요.`);
 
     if (reason === null) return;
@@ -234,12 +240,12 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const openLeaveModal = (participantId: number, name: string) => {
+  const handleLeaveButtonClick = (participantId: number, name: string) => {
     setLeaveTarget({ id: participantId, name });
     setLeaveModalOpen(true);
   };
 
-  const handleEndLeave = async (participantId: number) => {
+  const handleEndLeaveButtonClick = async (participantId: number) => {
     try {
       await endParticipantLeave(participantId);
       refresh();
@@ -248,7 +254,10 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleReactivate = async (participantId: number, name: string) => {
+  const handleReactivateButtonClick = async (
+    participantId: number,
+    name: string,
+  ) => {
     if (!confirm(`'${name}' 님을 다시 활동중 상태로 되돌리시겠습니까?`)) return;
 
     try {
@@ -259,12 +268,15 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const openAnnualModal = (participantId: number, name: string) => {
+  const handleAnnualSettingButtonClick = (
+    participantId: number,
+    name: string,
+  ) => {
     setAnnualTarget({ id: participantId, name });
     setAnnualModalOpen(true);
   };
 
-  const toggleParticipantSelected = (participantId: number) => {
+  const handleParticipantSelectionChange = (participantId: number) => {
     setSelectedParticipantIds((current) =>
       current.includes(participantId)
         ? current.filter((id) => id !== participantId)
@@ -272,7 +284,7 @@ const ProgramDetailPage = () => {
     );
   };
 
-  const handleBulkDrop = async () => {
+  const handleBulkDropButtonClick = async () => {
     const reason = prompt("일괄 참여종료 사유를 입력해주세요.");
     if (reason === null) return;
 
@@ -289,7 +301,7 @@ const ProgramDetailPage = () => {
     }
   };
 
-  const handleBulkReactivate = async () => {
+  const handleBulkReactivateButtonClick = async () => {
     if (
       !confirm(
         `선택한 ${selectedParticipantIds.length}명을 재활성화하시겠습니까?`,
@@ -432,7 +444,7 @@ const ProgramDetailPage = () => {
               </span>
               <button
                 className={rowActionBtnClass}
-                onClick={() => handleToggleGroupActive(group)}
+                onClick={() => handleToggleGroupActiveButtonClick(group)}
               >
                 {group.isActive ? "비활성화" : "활성화"}
               </button>
@@ -444,7 +456,10 @@ const ProgramDetailPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
           <span className="text-sm font-bold">수요처 관리</span>
-          <button className={btnGhostClass} onClick={openAddDemandSite}>
+          <button
+            className={btnGhostClass}
+            onClick={handleAddDemandSiteButtonClick}
+          >
             + 수요처 추가
           </button>
         </div>
@@ -469,13 +484,15 @@ const ProgramDetailPage = () => {
                 <div className="flex gap-1.5">
                   <button
                     className={rowActionBtnClass}
-                    onClick={() => openEditDemandSite(site)}
+                    onClick={() => handleEditDemandSiteButtonClick(site)}
                   >
                     수정
                   </button>
                   <button
                     className={rowActionBtnClass}
-                    onClick={() => handleToggleDemandSiteActive(site)}
+                    onClick={() =>
+                      handleToggleDemandSiteActiveButtonClick(site)
+                    }
                   >
                     {site.isActive ? "비활성화" : "활성화"}
                   </button>
@@ -499,7 +516,9 @@ const ProgramDetailPage = () => {
                     {schedule.shiftEnd}
                     <button
                       className="bg-transparent border-none text-[#9aa1ab] cursor-pointer hover:text-[#b42318]"
-                      onClick={() => handleDeleteSchedule(schedule.id)}
+                      onClick={() =>
+                        handleDeleteScheduleButtonClick(schedule.id)
+                      }
                     >
                       ×
                     </button>
@@ -507,7 +526,7 @@ const ProgramDetailPage = () => {
                 ))}
                 <button
                   className={rowActionBtnClass}
-                  onClick={() => openAddSchedule(site.id)}
+                  onClick={() => handleAddScheduleButtonClick(site.id)}
                 >
                   + 근무시간
                 </button>
@@ -589,12 +608,15 @@ const ProgramDetailPage = () => {
             <span className="text-xs text-[#1e3a5f] font-semibold">
               {selectedParticipantIds.length}명 선택됨
             </span>
-            <button className={rowActionBtnClass} onClick={handleBulkDrop}>
+            <button
+              className={rowActionBtnClass}
+              onClick={handleBulkDropButtonClick}
+            >
               일괄 참여종료
             </button>
             <button
               className={rowActionBtnClass}
-              onClick={handleBulkReactivate}
+              onClick={handleBulkReactivateButtonClick}
             >
               일괄 재활성화
             </button>
@@ -634,7 +656,9 @@ const ProgramDetailPage = () => {
                     <input
                       type="checkbox"
                       checked={selectedParticipantIds.includes(participant.id)}
-                      onChange={() => toggleParticipantSelected(participant.id)}
+                      onChange={() =>
+                        handleParticipantSelectionChange(participant.id)
+                      }
                     />
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
@@ -653,7 +677,7 @@ const ProgramDetailPage = () => {
                     <FilterSelect
                       value={String(participant.groupId ?? "")}
                       onChange={(value) =>
-                        handleAssignGroup(participant.id, value)
+                        handleGroupSelectChange(participant.id, value)
                       }
                       options={[
                         { value: "", label: "미배정" },
@@ -679,7 +703,10 @@ const ProgramDetailPage = () => {
                         <button
                           className={rowActionBtnClass}
                           onClick={() =>
-                            openLeaveModal(participant.id, participant.name)
+                            handleLeaveButtonClick(
+                              participant.id,
+                              participant.name,
+                            )
                           }
                         >
                           휴무
@@ -687,7 +714,10 @@ const ProgramDetailPage = () => {
                         <button
                           className={rowActionBtnClass}
                           onClick={() =>
-                            openAnnualModal(participant.id, participant.name)
+                            handleAnnualSettingButtonClick(
+                              participant.id,
+                              participant.name,
+                            )
                           }
                         >
                           연차설정
@@ -695,7 +725,10 @@ const ProgramDetailPage = () => {
                         <button
                           className={rowActionBtnClass}
                           onClick={() =>
-                            handleDrop(participant.id, participant.name)
+                            handleDropButtonClick(
+                              participant.id,
+                              participant.name,
+                            )
                           }
                         >
                           참여종료
@@ -705,7 +738,9 @@ const ProgramDetailPage = () => {
                     {participant.status === "ON_LEAVE" && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() => handleEndLeave(participant.id)}
+                        onClick={() =>
+                          handleEndLeaveButtonClick(participant.id)
+                        }
                       >
                         복귀
                       </button>
@@ -714,7 +749,10 @@ const ProgramDetailPage = () => {
                       <button
                         className={rowActionBtnClass}
                         onClick={() =>
-                          handleReactivate(participant.id, participant.name)
+                          handleReactivateButtonClick(
+                            participant.id,
+                            participant.name,
+                          )
                         }
                       >
                         재활성화
@@ -723,7 +761,10 @@ const ProgramDetailPage = () => {
                     <button
                       className={rowActionBtnClass}
                       onClick={() =>
-                        handleDelete(participant.id, participant.name)
+                        handleDeleteButtonClick(
+                          participant.id,
+                          participant.name,
+                        )
                       }
                     >
                       삭제

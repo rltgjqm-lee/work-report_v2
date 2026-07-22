@@ -69,22 +69,22 @@ const ProgramsPage = () => {
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 6);
 
-  const openAdd = () => {
+  const handleAddButtonClick = () => {
     setEditingProgram(null);
     setModalOpen(true);
   };
 
-  const openEdit = (program: Program) => {
+  const handleEditButtonClick = (program: Program) => {
     setEditingProgram(program);
     setModalOpen(true);
   };
 
-  const handleSaved = () => {
+  const handleProgramSaved = () => {
     setModalOpen(false);
     refreshPrograms();
   };
 
-  const handleToggleActive = async (program: Program) => {
+  const handleToggleActiveButtonClick = async (program: Program) => {
     const actionLabel = program.isActive ? "비활성화" : "활성화";
     if (
       !confirm(
@@ -114,7 +114,7 @@ const ProgramsPage = () => {
             기관별 사업단 목록을 조회하고 등록합니다.
           </p>
         </div>
-        <button className={btnPrimaryClass} onClick={openAdd}>
+        <button className={btnPrimaryClass} onClick={handleAddButtonClick}>
           + 사업단 추가
         </button>
       </div>
@@ -202,7 +202,7 @@ const ProgramsPage = () => {
                       className={rowActionBtnClass}
                       onClick={(event) => {
                         event.stopPropagation();
-                        openEdit(program);
+                        handleEditButtonClick(program);
                       }}
                     >
                       수정
@@ -211,7 +211,7 @@ const ProgramsPage = () => {
                       className={rowActionBtnClass}
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleToggleActive(program);
+                        handleToggleActiveButtonClick(program);
                       }}
                     >
                       {program.isActive ? "비활성화" : "활성화"}
@@ -229,7 +229,7 @@ const ProgramsPage = () => {
       {modalOpen && (
         <ProgramFormModal
           onClose={() => setModalOpen(false)}
-          onSaved={handleSaved}
+          onSaved={handleProgramSaved}
           editingProgram={editingProgram}
           currentRole={role ?? ROLES.MANAGER}
           organizations={organizations}

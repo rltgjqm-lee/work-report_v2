@@ -131,7 +131,7 @@ const SignaturePage = ({
   }, []);
 
   // 💡 [그림판 클리어 핸들러]
-  const handleClearCanvas = (
+  const handleClearCanvasButtonClick = (
     ref: React.RefObject<HTMLCanvasElement | null>,
     key: "userSignature" | "demandSignature",
   ) => {
@@ -145,7 +145,7 @@ const SignaturePage = ({
   };
 
   // 🔥 [내장형 보고서 출력 핵심 로직] 6페이지 내부에서 직접 연산 및 파일 다운로드 처리
-  const handleExportReports = async () => {
+  const handleExportReportsButtonClick = async () => {
     // 1. 참여자 필수 서명 가드 확인
     if (!formData.userSignature) {
       onAlert(["참여자 서명이 누락되었습니다. 서명을 작성해주세요."]);
@@ -193,7 +193,9 @@ const SignaturePage = ({
               className="w-full h-full rounded-2xl touch-none"
             />
             <button
-              onClick={() => handleClearCanvas(userCanvasRef, "userSignature")}
+              onClick={() =>
+                handleClearCanvasButtonClick(userCanvasRef, "userSignature")
+              }
               className={sigClearClass}
             >
               지우기
@@ -213,7 +215,7 @@ const SignaturePage = ({
             />
             <button
               onClick={() =>
-                handleClearCanvas(demandCanvasRef, "demandSignature")
+                handleClearCanvasButtonClick(demandCanvasRef, "demandSignature")
               }
               className={sigClearClass}
             >
@@ -251,7 +253,10 @@ const SignaturePage = ({
           저장하고 마치기
         </button>
         <BottomBarRow>
-          <button className={btnOutlineClass} onClick={handleExportReports}>
+          <button
+            className={btnOutlineClass}
+            onClick={handleExportReportsButtonClick}
+          >
             보고서 출력
           </button>
           <button className={btnOutlineClass} onClick={onHome}>

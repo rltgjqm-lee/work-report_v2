@@ -32,7 +32,7 @@ const DisasterMessagesPage = () => {
     listPrograms().then(setPrograms);
   }, []);
 
-  const handleSendTest = async () => {
+  const handleSendTestButtonClick = async () => {
     if (!testProgramId || !testMessage) {
       alert("사업단과 메시지를 입력해주세요.");
 
@@ -86,7 +86,10 @@ const DisasterMessagesPage = () => {
             value={testMessage}
             onChange={(event) => setTestMessage(event.target.value)}
           />
-          <button className={btnPrimaryClass} onClick={handleSendTest}>
+          <button
+            className={btnPrimaryClass}
+            onClick={handleSendTestButtonClick}
+          >
             발송
           </button>
         </div>

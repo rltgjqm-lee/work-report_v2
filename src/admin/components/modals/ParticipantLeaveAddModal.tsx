@@ -29,7 +29,7 @@ const ParticipantLeaveAddModal = ({
 }: ParticipantLeaveAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     if (!target) return;
     if (!form.leaveStart || !form.leaveEnd) {
       alert("휴무 시작일과 종료일을 입력해주세요.");
@@ -59,7 +59,7 @@ const ParticipantLeaveAddModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

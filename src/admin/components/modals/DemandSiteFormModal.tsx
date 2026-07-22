@@ -46,7 +46,7 @@ const DemandSiteFormModal = ({
       : emptyForm,
   );
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     if (!form.name || !form.baseLat || !form.baseLng) {
       alert("수요처명과 위도/경도를 입력해주세요.");
 
@@ -82,7 +82,7 @@ const DemandSiteFormModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

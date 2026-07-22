@@ -23,7 +23,7 @@ interface GroupAddModalProps {
 const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     if (!form.name || !form.shiftStart || !form.shiftEnd) {
       alert("조 이름과 근무시간을 입력해주세요.");
 
@@ -47,7 +47,7 @@ const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

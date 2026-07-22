@@ -59,7 +59,7 @@ const AdminLayout = () => {
 
   // 로그인/세션은 Cloudflare Access가 관리하므로, 앱에서 할 수 있는 건
   // Access 자체의 로그아웃 엔드포인트로 보내는 것뿐이다 (로컬 토큰을 지우는 게 아님).
-  const handleLogout = () => {
+  const handleLogoutButtonClick = () => {
     window.location.href = "/cdn-cgi/access/logout";
   };
 
@@ -118,7 +118,7 @@ const AdminLayout = () => {
               {todayLabel} · {admin?.email}
             </span>
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutButtonClick}
               className="text-[#8a6d1f] font-semibold cursor-pointer bg-transparent border-none hover:underline"
             >
               로그아웃

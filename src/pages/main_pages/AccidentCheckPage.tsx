@@ -31,7 +31,7 @@ const AccidentCheckPage = ({
   onNext,
   onAlert,
 }: Page5Props) => {
-  const handleToggleAccident = (hasAccident: boolean) => {
+  const handleAccidentToggleButtonClick = (hasAccident: boolean) => {
     setFormData((prev) => ({
       ...prev,
       hasAccident,
@@ -40,7 +40,7 @@ const AccidentCheckPage = ({
     }));
   };
 
-  const handleNextStep = () => {
+  const handleNextStepButtonClick = () => {
     if (formData.hasAccident && !formData.accidentDetail.trim()) {
       onAlert(["사고내용 및 조치내용을 입력해주세요."]);
       return;
@@ -58,7 +58,7 @@ const AccidentCheckPage = ({
         </label>
         <div
           className={choiceCardClass(formData.hasAccident === true)}
-          onClick={() => handleToggleAccident(true)}
+          onClick={() => handleAccidentToggleButtonClick(true)}
         >
           <span className={choiceRadioClass(formData.hasAccident === true)}>
             {formData.hasAccident === true ? "✓" : ""}
@@ -67,7 +67,7 @@ const AccidentCheckPage = ({
         </div>
         <div
           className={choiceCardClass(formData.hasAccident === false)}
-          onClick={() => handleToggleAccident(false)}
+          onClick={() => handleAccidentToggleButtonClick(false)}
         >
           <span className={choiceRadioClass(formData.hasAccident === false)}>
             {formData.hasAccident === false ? "✓" : ""}
@@ -142,7 +142,7 @@ const AccidentCheckPage = ({
           </button>
           <button
             className={btnPrimaryClass + " flex-1"}
-            onClick={handleNextStep}
+            onClick={handleNextStepButtonClick}
           >
             다음
           </button>

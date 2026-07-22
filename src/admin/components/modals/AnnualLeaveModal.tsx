@@ -36,7 +36,7 @@ const AnnualLeaveModal = ({
     getAnnualLeave(target.id, currentYear).then(setBalance);
   }, [target]);
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     if (!target) return;
     if (!form.totalDays) {
       alert("총 연차 일수를 입력해주세요.");
@@ -65,7 +65,7 @@ const AnnualLeaveModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             닫기
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

@@ -50,7 +50,7 @@ const AttendanceCheckIn = ({
 
   if (!programId) return null;
 
-  const handleIdentify = async () => {
+  const handleIdentifyButtonClick = async () => {
     if (!name || !/^\d{4}$/.test(phoneLast4)) {
       setStatus("이름과 전화번호 뒷 4자리(숫자)를 입력해주세요.");
       return;
@@ -75,7 +75,7 @@ const AttendanceCheckIn = ({
     }
   };
 
-  const handleClockIn = async () => {
+  const handleClockInButtonClick = async () => {
     if (!participant) return;
     try {
       await clockIn(participant.participantId);
@@ -87,7 +87,7 @@ const AttendanceCheckIn = ({
     }
   };
 
-  const handleClockOut = async () => {
+  const handleClockOutButtonClick = async () => {
     if (!participant) return;
     try {
       const result = await clockOut(participant.participantId);
@@ -115,11 +115,11 @@ const AttendanceCheckIn = ({
             <Button
               variant="primary"
               className="flex-1"
-              onClick={handleClockIn}
+              onClick={handleClockInButtonClick}
             >
               출근
             </Button>
-            <Button variant="outline" onClick={handleClockOut}>
+            <Button variant="outline" onClick={handleClockOutButtonClick}>
               퇴근
             </Button>
           </div>
@@ -146,7 +146,7 @@ const AttendanceCheckIn = ({
               }
             />
           </div>
-          <Button variant="primary" onClick={handleIdentify}>
+          <Button variant="primary" onClick={handleIdentifyButtonClick}>
             본인 확인
           </Button>
         </div>

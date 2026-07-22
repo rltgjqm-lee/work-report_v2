@@ -115,12 +115,12 @@ const Main = () => {
   });
 
   // functions
-  const openAlertModal = (messages: string[]) => {
+  const handleAlertModalOpen = (messages: string[]) => {
     setModalMessages(messages);
     setModalOpen(true);
   };
 
-  const closeModal = () => {
+  const handleAlertModalClose = () => {
     setModalOpen(false);
   };
 
@@ -137,7 +137,7 @@ const Main = () => {
   // 💡 홈에서 "+ 오늘 활동 기록하기" 클릭 시 활동 관련 필드만 초기화하고 3단계로 진입.
   // id를 반드시 비워야 한다 — 안 그러면 이번에 저장할 때 지난 번(오늘 이미 작성한) 글의
   // IndexedDB 레코드를 그대로 덮어써서 이전 기록이 사라진다.
-  const handleStartNewLog = () => {
+  const handleNewLogButtonClick = () => {
     setFormData((prev) => ({
       ...prev,
       id: undefined,
@@ -154,10 +154,10 @@ const Main = () => {
     setView(VIEW_TYPE.WORK_HOURS);
   };
 
-  const handleChangeTab = (tab: TabKey) =>
+  const handleTabChange = (tab: TabKey) =>
     setView(tab === "list" ? VIEW_TYPE.LOGS : VIEW_TYPE.HOME);
 
-  const handleSaveStepData = async () => {
+  const handleStepDataSave = async () => {
     if (!db) {
       alert("데이터베이스가 연결되지 않았습니다.");
       return;
@@ -266,9 +266,9 @@ const Main = () => {
   // 💡 오프라인 상태에서 저장해둔 기록을, 다시 온라인이 되는 순간 서버로 동기화
   useEffect(() => {
     if (!db) return;
-    const handleOnline = () => syncPendingActivityLogs(db);
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    const handleNetworkOnline = () => syncPendingActivityLogs(db);
+    window.addEventListener("online", handleNetworkOnline);
+    return () => window.removeEventListener("online", handleNetworkOnline);
   }, [db]);
 
   return (
@@ -280,7 +280,7 @@ const Main = () => {
             formData={formData}
             onChange={handleInputChange}
             onNext={() => setView("home")}
-            onAlert={openAlertModal}
+            onAlert={handleAlertModalOpen}
           />
         )}
 
@@ -288,8 +288,8 @@ const Main = () => {
         {view === VIEW_TYPE.HOME && (
           <HomePage
             formData={formData}
-            onStartNewLog={handleStartNewLog}
-            onChangeTab={handleChangeTab}
+            onStartNewLog={handleNewLogButtonClick}
+            onChangeTab={handleTabChange}
           />
         )}
 
@@ -298,8 +298,8 @@ const Main = () => {
           <ActivityLogPage
             formData={formData}
             db={db}
-            onChangeTab={handleChangeTab}
-            onAlert={openAlertModal}
+            onChangeTab={handleTabChange}
+            onAlert={handleAlertModalOpen}
           />
         )}
 
@@ -309,9 +309,9 @@ const Main = () => {
             formData={formData}
             setFormData={setFormData}
             onBack={() => setView("home")}
-            onSave={handleSaveStepData}
+            onSave={handleStepDataSave}
             onNext={() => setView(VIEW_TYPE.REPORT)}
-            onAlert={openAlertModal}
+            onAlert={handleAlertModalOpen}
           />
         )}
 
@@ -321,8 +321,8 @@ const Main = () => {
             formData={formData}
             setFormData={setFormData}
             onBack={() => setView(VIEW_TYPE.WORK_HOURS)}
-            onAlert={openAlertModal}
-            onSave={handleSaveStepData}
+            onAlert={handleAlertModalOpen}
+            onSave={handleStepDataSave}
             onNext={() => setView(VIEW_TYPE.ACCIDENT)}
           />
         )}
@@ -333,8 +333,8 @@ const Main = () => {
             formData={formData}
             setFormData={setFormData}
             onBack={() => setView(VIEW_TYPE.REPORT)}
-            onAlert={openAlertModal}
-            onSave={handleSaveStepData}
+            onAlert={handleAlertModalOpen}
+            onSave={handleStepDataSave}
             onNext={() => setView(VIEW_TYPE.SIGNATURE)}
           />
         )}
@@ -347,8 +347,8 @@ const Main = () => {
               setFormData={setFormData}
               printRef={printAreaRef}
               onBack={() => setView(VIEW_TYPE.ACCIDENT)}
-              onAlert={openAlertModal}
-              onSave={handleSaveStepData}
+              onAlert={handleAlertModalOpen}
+              onSave={handleStepDataSave}
               onHome={() => setView("home")}
             />
             {/* 💡 보고서 출력 버튼이 조준할 히든 인쇄용 템플릿 */}
@@ -365,8 +365,8 @@ const Main = () => {
       <ConfirmModal
         isOpen={modalOpen}
         messages={modalMessages}
-        onConfirm={closeModal}
-        onClose={closeModal}
+        onConfirm={handleAlertModalClose}
+        onClose={handleAlertModalClose}
       />
     </div>
   );

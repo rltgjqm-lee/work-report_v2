@@ -65,22 +65,22 @@ const AdminsPage = () => {
     [admins, search],
   );
 
-  const openAdd = () => {
+  const handleAddButtonClick = () => {
     setEditingAdmin(null);
     setModalOpen(true);
   };
 
-  const openEdit = (adminRow: Admin) => {
+  const handleEditButtonClick = (adminRow: Admin) => {
     setEditingAdmin(adminRow);
     setModalOpen(true);
   };
 
-  const handleSaved = () => {
+  const handleAdminSaved = () => {
     setModalOpen(false);
     refresh();
   };
 
-  const handleToggleActive = async (adminRow: Admin) => {
+  const handleToggleActiveButtonClick = async (adminRow: Admin) => {
     const actionLabel = adminRow.isActive ? "비활성화" : "활성화";
     if (
       !confirm(
@@ -113,7 +113,7 @@ const AdminsPage = () => {
             기관과 계약 체결 후 발급하는 관리자 계정을 등록하고 관리합니다.
           </p>
         </div>
-        <button className={btnPrimaryClass} onClick={openAdd}>
+        <button className={btnPrimaryClass} onClick={handleAddButtonClick}>
           + 관리자 계정 발급
         </button>
       </div>
@@ -175,13 +175,13 @@ const AdminsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => openEdit(adminRow)}
+                      onClick={() => handleEditButtonClick(adminRow)}
                     >
                       수정
                     </button>
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => handleToggleActive(adminRow)}
+                      onClick={() => handleToggleActiveButtonClick(adminRow)}
                     >
                       {adminRow.isActive ? "비활성화" : "활성화"}
                     </button>
@@ -196,7 +196,7 @@ const AdminsPage = () => {
       {modalOpen && (
         <AdminFormModal
           onClose={() => setModalOpen(false)}
-          onSaved={handleSaved}
+          onSaved={handleAdminSaved}
           editingAdmin={editingAdmin}
           currentRole={role}
           assignableRoles={assignableRoles}

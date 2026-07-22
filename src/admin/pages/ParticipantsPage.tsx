@@ -73,7 +73,7 @@ const ParticipantsPage = () => {
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
-  const handleDelete = async (row: ParticipantRow) => {
+  const handleDeleteButtonClick = async (row: ParticipantRow) => {
     if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
     try {
       await deleteParticipant(row.programId, row.id);
@@ -163,7 +163,7 @@ const ParticipantsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => handleDelete(row)}
+                      onClick={() => handleDeleteButtonClick(row)}
                     >
                       삭제
                     </button>

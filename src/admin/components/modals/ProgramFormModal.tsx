@@ -59,7 +59,7 @@ const ProgramFormModal = ({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     if (form.endDate && form.startDate && form.endDate < form.startDate) {
       setError("종료일은 시작일 이후여야 합니다.");
 
@@ -110,7 +110,7 @@ const ProgramFormModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

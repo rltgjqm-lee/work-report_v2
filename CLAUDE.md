@@ -53,6 +53,29 @@ try {
 }
 ```
 
+### 이벤트 핸들러 함수 이름 규칙
+
+핸들러 함수명은 `handle + [대상 명사] + [이벤트 종류]` 구조로 짓습니다. `handleClick1`, `handleClick2`처럼 대상이 빠진 모호하고 중복되는 이름은 금지합니다.
+
+- 제출 버튼 클릭: `handleSubmitButtonClick`
+- 취소 버튼 클릭: `handleCancelButtonClick`
+- 이메일 입력란 변경: `handleEmailInputChange` 또는 `handleEmailChange`
+
+`on*`은 하위 컴포넌트로 이벤트를 전달하는 props(전달자)에 붙이는 이름입니다. 컴포넌트 내부에서 정의하는 핸들러 함수 자체에는 쓰지 않습니다.
+
+```ts
+// Bad
+const handleClick1 = () => setModalOpen(true);
+const handleClick2 = () => setModalOpen(false);
+
+// Good
+const handleAddButtonClick = () => setModalOpen(true);
+const handleModalClose = () => setModalOpen(false);
+
+// 하위 컴포넌트로 넘기는 props는 on* 그대로 유지
+<OrganizationFormModal onClose={handleModalClose} onSaved={handleSaved} />
+```
+
 ### 컴포넌트 폴더 구조 (atomic design)
 
 `src/components/`는 `atoms/`, `molecule/`, `organism/`만 사용합니다. 새로운 최상위 카테고리 폴더(예: `appshell/`)를 임의로 만들지 않습니다.

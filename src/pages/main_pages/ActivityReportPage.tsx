@@ -35,7 +35,7 @@ const ActivityReportPage = ({
   onAlert,
 }: Page4Props) => {
   // 💡 다음 단계 이동 전 유효성 검증 핸들러
-  const handleNextStep = () => {
+  const handleNextStepButtonClick = () => {
     if (!formData.actContent.trim()) {
       onAlert(["활동 내용을 입력해주세요."]);
       return;
@@ -98,7 +98,7 @@ const ActivityReportPage = ({
           </button>
           <button
             className={btnPrimaryClass + " flex-1"}
-            onClick={handleNextStep}
+            onClick={handleNextStepButtonClick}
           >
             다음
           </button>

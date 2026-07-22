@@ -44,7 +44,7 @@ const ParticipantAddModal = ({
     setSelectedFile(event.target.files?.[0] ?? null);
   };
 
-  const handleSave = async () => {
+  const handleSaveButtonClick = async () => {
     try {
       if (selectedFile) {
         const rows = await parseParticipantsFile(
@@ -95,7 +95,7 @@ const ParticipantAddModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button className={btnPrimaryClass} onClick={handleSave}>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
             저장
           </button>
         </>

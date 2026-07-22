@@ -160,7 +160,10 @@ const EscapesPage = () => {
     }
   }, [filteredWorkers]);
 
-  const handleResolve = async (escapeId: number, participantName: string) => {
+  const handleResolveButtonClick = async (
+    escapeId: number,
+    participantName: string,
+  ) => {
     const memo = prompt(`'${participantName}' 님 이탈 확인 처리 — 메모(선택)`);
     if (memo === null) return;
 
@@ -172,7 +175,7 @@ const EscapesPage = () => {
     }
   };
 
-  const handleResolveCritical = async () => {
+  const handleResolveCriticalButtonClick = async () => {
     if (!criticalEscape) return;
     try {
       await resolveEscape(criticalEscape.escape.id);
@@ -307,7 +310,10 @@ const EscapesPage = () => {
                           <button
                             className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
                             onClick={() =>
-                              handleResolve(row.escape.id, row.participantName)
+                              handleResolveButtonClick(
+                                row.escape.id,
+                                row.participantName,
+                              )
                             }
                           >
                             확인 처리
@@ -363,7 +369,7 @@ const EscapesPage = () => {
             <div className="flex gap-2.5">
               <button
                 className="flex-1 py-3 text-sm font-bold rounded-[2px] bg-[#1e3a5f] text-white"
-                onClick={handleResolveCritical}
+                onClick={handleResolveCriticalButtonClick}
               >
                 확인 완료
               </button>
