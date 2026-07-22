@@ -33,6 +33,30 @@ const MAX_PAGES_PER_RUN = 5;
 
 type DB = ReturnType<typeof drizzle>;
 
+// RCPTN_RGN_NM은 콤마로 여러 지역을 나열하는데("경기도 안성시 ,경기도 오산시 "),
+// 시/도 전역 알림은 시/군/구 없이 시/도만 온다("경기도  "). 이 구간이 시/도 이름
+// 그 자체(뒤에 시/군/구 없이 공백만)인지 확인해서 전역 알림 여부를 판단한다.
+const isSidoOnlySegment = (segment: string, sido: string): boolean => {
+  const trimmed = segment.trim();
+  if (!trimmed.startsWith(sido)) return false;
+  return trimmed.slice(sido.length).trim() === "";
+};
+
+// 시/군/구가 명시된 알림은 그 시/군/구 이름이 그대로 포함돼 있어야 매칭되고,
+// 시/도 전역 알림(시/군/구 없이 시/도만 옴)은 시/군/구와 무관하게 그 시/도 소속
+// 사업단 전부에 매칭된다.
+const matchesOrgRegion = (
+  regionText: string,
+  sido: string,
+  sigungu: string,
+): boolean => {
+  if (!regionText.includes(sido)) return false;
+  if (regionText.includes(sigungu)) return true;
+  return regionText
+    .split(",")
+    .some((segment) => isSidoOnlySegment(segment, sido));
+};
+
 // 오늘 날짜(KST)의 호출 카운트를 확인하고, 한도 안이면 카운트를 올리고 true를 반환한다.
 // 한도에 도달했으면 카운트를 올리지 않고 false를 반환 — 호출하는 쪽은 이때 API를 호출하면 안 된다.
 const tryConsumeApiCallBudget = async (
@@ -117,8 +141,7 @@ const enqueueNewMatches = async (
     const matchingPrograms = programsWithOrg.filter(({ program, org }) => {
       if (!org.regionSido || !org.regionSigungu) return false;
       if (
-        !message.region.includes(org.regionSido) ||
-        !message.region.includes(org.regionSigungu)
+        !matchesOrgRegion(message.region, org.regionSido, org.regionSigungu)
       ) {
         return false;
       }
