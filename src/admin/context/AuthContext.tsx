@@ -18,8 +18,8 @@ const initialState: AuthState = { admin: null, loading: true };
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AuthState>(initialState);
 
-  // 로그인 자체는 Cloudflare Access(이메일 OTP)가 이 앱 앞단에서 처리한다.
-  // 여기서는 그 인증이 끝난 뒤 /api/me로 "이 이메일이 admins에 등록돼 있는지"만 확인한다.
+  // 세션 쿠키가 있으면 /api/me가 그 쿠키로 관리자 정보를 내려준다 — 없거나
+  // 만료됐으면 401이 나고 아래 catch에서 admin: null로 처리된다.
   const refresh = useCallback(async () => {
     setState((s) => ({ ...s, loading: true }));
     try {

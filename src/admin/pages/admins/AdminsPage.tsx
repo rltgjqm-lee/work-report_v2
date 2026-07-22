@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listAdmins, updateAdmin } from "../../api/admin/admins";
 import { listOrganizations } from "../../api/admin/organizations";
 import AdminFormModal from "./AdminFormModal";
+import ResetPasswordModal from "./ResetPasswordModal";
 import SearchInput from "../../components/SearchInput";
 import { useAuth } from "../../context/useAuth";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
@@ -41,6 +42,10 @@ const AdminsPage = () => {
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   const refresh = () => {
     listAdmins().then(setAdmins);
@@ -96,6 +101,13 @@ const AdminsPage = () => {
     }
   };
 
+  const handleResetPasswordButtonClick = (adminRow: Admin) => {
+    setResetPasswordTarget({
+      id: adminRow.id,
+      name: adminRow.name ?? adminRow.email,
+    });
+  };
+
   if (!role || assignableRoles.length === 0) {
     return (
       <div className="text-[13px] text-[#6b7280]">
@@ -131,7 +143,7 @@ const AdminsPage = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] table-fixed border-collapse">
+          <table className="w-full min-w-[900px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -149,7 +161,7 @@ const AdminsPage = () => {
                 <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   상태
                 </th>
-                <th className="w-[130px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[210px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
             </thead>
             <tbody>
@@ -185,6 +197,12 @@ const AdminsPage = () => {
                     >
                       {adminRow.isActive ? "비활성화" : "활성화"}
                     </button>
+                    <button
+                      className={rowActionBtnClass}
+                      onClick={() => handleResetPasswordButtonClick(adminRow)}
+                    >
+                      비밀번호 재설정
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -202,6 +220,13 @@ const AdminsPage = () => {
           assignableRoles={assignableRoles}
           roleLabel={ROLE_LABEL}
           organizations={organizations}
+        />
+      )}
+
+      {resetPasswordTarget && (
+        <ResetPasswordModal
+          onClose={() => setResetPasswordTarget(null)}
+          target={resetPasswordTarget}
         />
       )}
     </div>

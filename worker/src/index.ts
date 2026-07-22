@@ -12,7 +12,9 @@ import admins from "./routes/admins";
 import demandSites from "./routes/demandSites";
 import escapes from "./routes/escapes";
 import publicRoutes from "./routes/public";
-import { requireAdmin, getAuth } from "./lib/authz";
+import authRoutes from "./routes/auth";
+import meRoutes from "./routes/me";
+import { requireAdmin } from "./lib/authz";
 import { checkDisasterAlerts } from "./scheduled/checkDisasterAlerts";
 import { checkSignalLoss } from "./scheduled/checkSignalLoss";
 import type { Env } from "./types";
@@ -22,9 +24,16 @@ const app = new Hono<Env>();
 app.use(
   "*",
   cors({
-    // 관리자 콘솔이 credentials: "include"로 요청을 보내므로, 와일드카드 origin은
-    // 브라우저가 credentialed 응답을 차단한다 — 요청 origin을 그대로 반사해준다.
-    origin: (origin) => origin,
+    // 인증이 쿠키 기반이라, origin을 아무거나 반사하면 브라우저가 어느 사이트에서든
+    // credentials 포함 요청을 보낼 수 있게 된다(악성 사이트가 관리자 세션 쿠키를
+    // 실어 API를 호출하고 응답까지 읽어갈 수 있음) — ALLOWED_ORIGINS 화이트리스트에
+    // 있는 origin만 반사한다.
+    origin: (origin, c) => {
+      const allowedOrigins: string[] = c.env.ALLOWED_ORIGINS.split(",").map(
+        (allowedOrigin: string) => allowedOrigin.trim(),
+      );
+      return allowedOrigins.includes(origin) ? origin : "";
+    },
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
@@ -32,11 +41,11 @@ app.use(
 );
 
 app.route("/public", publicRoutes);
+app.route("/auth", authRoutes);
 
 app.use("/api/*", requireAdmin);
 
-app.get("/api/me", (c) => c.json(getAuth(c)));
-
+app.route("/api/me", meRoutes);
 app.route("/api/organizations", organizations);
 app.route("/api/programs", programs);
 app.route("/api/programs", excel);

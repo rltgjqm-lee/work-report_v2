@@ -205,10 +205,79 @@ export const admins = sqliteTable("admins", {
   groupIds: text("group_ids"),
   // 계약 종료/퇴사 시 row를 지우지 않고 비활성화 — requireAdmin에서 비활성 계정은 로그인 차단
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  // "salt:iterations:hash" 형식 (worker/src/lib/password.ts 참고). CF Access 시절 수동
+  // 등록분엔 없을 수 있어 nullable — 없는 계정은 로그인 자체가 불가 (관리자가 새로 발급해야 함).
+  passwordHash: text("password_hash"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// 로그인 세션 — 쿠키엔 원문 토큰만 담고 DB엔 해시만 저장한다 (DB가 유출돼도 세션을
+// 그대로 재사용할 수 없도록). 로그아웃 = 해당 row 삭제, 만료 = expiresAt 경과.
+export const adminSessions = sqliteTable("admin_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  adminId: integer("admin_id")
+    .notNull()
+    .references(() => admins.id),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 로그인 실패 횟수 추적 — 무차별 대입 방지용. 이메일 단위로 잠그며, 성공 시 초기화된다.
+export const adminLoginAttempts = sqliteTable("admin_login_attempts", {
+  email: text("email").primaryKey(),
+  failCount: integer("fail_count").notNull().default(0),
+  lockedUntil: text("locked_until"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 로그인 시도 감사 이력 — 성공/실패 모두 남긴다. adminId는 이메일이 실제 계정과
+// 매칭됐을 때만 채워짐(존재하지 않는 이메일로 시도한 실패 건은 null).
+export const adminLoginHistory = sqliteTable("admin_login_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  adminId: integer("admin_id").references(() => admins.id),
+  email: text("email").notNull(),
+  success: integer("success", { mode: "boolean" }).notNull(),
+  ipAddress: text("ip_address"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// PUT /api/me/password(본인 비밀번호 변경)에서 현재 비밀번호를 틀린 횟수 추적 —
+// 로그인 세션이 이미 있는 상태에서 현재 비밀번호를 무차별 대입하는 걸 막는다.
+export const adminPasswordChangeAttempts = sqliteTable(
+  "admin_password_change_attempts",
+  {
+    adminId: integer("admin_id")
+      .primaryKey()
+      .references(() => admins.id),
+    failCount: integer("fail_count").notNull().default(0),
+    lockedUntil: text("locked_until"),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+);
+
+// PUT /api/admins/:id/password(남의 비밀번호 재설정)를 수행한 관리자별로 15분당
+// 재설정 횟수를 추적 — 탈취된 세션으로 계정을 대량 재설정/잠금시키는 남용을 막는다.
+export const adminPasswordResetAttempts = sqliteTable(
+  "admin_password_reset_attempts",
+  {
+    actorAdminId: integer("actor_admin_id")
+      .primaryKey()
+      .references(() => admins.id),
+    count: integer("count").notNull().default(0),
+    windowStart: text("window_start").notNull(),
+  },
+);
 
 export const pushSubscriptions = sqliteTable("push_subscriptions", {
   id: integer("id").primaryKey({ autoIncrement: true }),

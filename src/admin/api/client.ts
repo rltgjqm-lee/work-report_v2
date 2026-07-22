@@ -7,9 +7,9 @@ export const setOnUnauthorized = (handler: () => void) => {
   onUnauthorized = handler;
 };
 
-// Cloudflare Access가 이 Worker 앞단에서 로그인을 처리하고 CF-Access-JWT-Assertion을
-// 요청에 실어 보낸다 — 브라우저가 그 인증 쿠키를 함께 보내야 하므로 credentials: "include".
-// 클라이언트가 직접 토큰을 들고 있거나 Authorization 헤더를 붙이는 부분은 없다.
+// 로그인 성공 시 서버가 httpOnly 세션 쿠키를 내려주고, 이후 요청은 그 쿠키로 인증된다 —
+// 브라우저가 쿠키를 함께 보내야 하므로 credentials: "include". 클라이언트가 토큰을
+// 직접 들고 있거나 Authorization 헤더를 붙이는 부분은 없다.
 export const request = async <T>(
   path: string,
   options: RequestInit = {},

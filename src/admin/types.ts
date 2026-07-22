@@ -120,6 +120,15 @@ export type SafetyAlert = {
   failCount: number;
 };
 
+export type LoginHistoryEntry = {
+  id: number;
+  email: string;
+  adminName: string | null;
+  success: boolean;
+  ipAddress: string | null;
+  createdAt: string;
+};
+
 export type ProgramWithParticipants = Program & { participants: Participant[] };
 
 export type Admin = {

@@ -1,9 +1,11 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
-import { admins } from "../db/schema";
+import { admins, adminLoginHistory, adminSessions } from "../db/schema";
 import { getAuth } from "../lib/authz";
+import { hashPassword } from "../lib/password";
+import { tryConsumePasswordResetBudget } from "../lib/passwordResetRateLimit";
 import { ROLES, type AdminRole, type Env } from "../types";
 
 const app = new Hono<Env>();
@@ -54,6 +56,9 @@ type AdminBody = {
   programIds?: number[];
   groupIds?: number[];
   isActive?: boolean;
+  // 계정 발급 시(POST)에만 쓰임 — 발급자가 임시 비밀번호를 정해주고, 본인이 로그인 후
+  // PUT /api/me/password로 바꾼다. 수정(PUT)에서는 본인 외 아무도 비밀번호를 못 바꾼다.
+  password?: string;
 };
 
 app.get("/", async (c) => {
@@ -82,8 +87,11 @@ app.post("/", async (c) => {
   }
 
   const body = await c.req.json<AdminBody>();
-  if (!body.email || !body.name || !body.role) {
-    return c.json({ error: "email, name, role are required" }, 400);
+  if (!body.email || !body.name || !body.role || !body.password) {
+    return c.json({ error: "email, name, role, password are required" }, 400);
+  }
+  if (body.password.length < 8) {
+    return c.json({ error: "비밀번호는 8자 이상이어야 합니다." }, 400);
   }
   if (!assignable.includes(body.role)) {
     return c.json({ error: "이 역할의 계정을 발급할 권한이 없습니다." }, 403);
@@ -97,16 +105,22 @@ app.post("/", async (c) => {
     return c.json({ error: "organizationId is required" }, 400);
   }
 
+  const passwordHash = await hashPassword(body.password);
+  // 로그인(auth.ts)이 이메일을 소문자로 정규화해서 조회하므로, 저장할 때도 똑같이
+  // 정규화해야 대소문자가 다르게 입력됐을 때 로그인이 막히는 걸 방지한다.
+  const email = body.email.trim().toLowerCase();
+
   const db = drizzle(c.env.DB);
   const result = await db
     .insert(admins)
     .values({
-      email: body.email,
+      email,
       name: body.name,
       role: body.role,
       organizationId,
       programIds: body.programIds ? JSON.stringify(body.programIds) : null,
       groupIds: body.groupIds ? JSON.stringify(body.groupIds) : null,
+      passwordHash,
     })
     .returning();
 
@@ -160,6 +174,74 @@ app.put("/:id", async (c) => {
     .returning();
 
   return c.json(toAdminJson(result[0]));
+});
+
+// 남의 비밀번호 재설정 — 이메일 재설정 플로우가 없어서, 비밀번호를 잊어버린 계정은
+// 발급 권한이 있는 관리자(SUPER_ADMIN 전체, ORGANIZATION_ADMIN은 자기 기관 내)가
+// 대신 새 비밀번호를 정해준다. 현재 비밀번호 확인 없이 강제로 바꾸는 것이므로,
+// 재설정 후 그 계정의 기존 세션을 전부 끊어서(로그아웃) 안전하게 만든다.
+app.put("/:id/password", async (c) => {
+  const auth = getAuth(c);
+  const assignable = ASSIGNABLE_ROLES[auth.role];
+  if (assignable.length === 0) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const db = drizzle(c.env.DB);
+
+  if (!(await tryConsumePasswordResetBudget(db, auth.id))) {
+    return c.json(
+      { error: "재설정 요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
+      429,
+    );
+  }
+
+  const id = Number(c.req.param("id"));
+  const existingRows = await db.select().from(admins).where(eq(admins.id, id));
+  const existing = existingRows[0];
+  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (
+    auth.role !== ROLES.SUPER_ADMIN &&
+    existing.organizationId !== auth.organizationId
+  ) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const body = await c.req.json<{ newPassword?: string }>();
+  if (!body.newPassword || body.newPassword.length < 8) {
+    return c.json({ error: "새 비밀번호는 8자 이상이어야 합니다." }, 400);
+  }
+
+  const passwordHash = await hashPassword(body.newPassword);
+  await db.update(admins).set({ passwordHash }).where(eq(admins.id, id));
+  await db.delete(adminSessions).where(eq(adminSessions.adminId, id));
+
+  return c.json({ ok: true });
+});
+
+// 로그인 시도 이력 조회 — IP/성공여부까지 보이는 민감 정보라 SUPER_ADMIN 전용.
+app.get("/login-history", async (c) => {
+  const auth = getAuth(c);
+  if (auth.role !== ROLES.SUPER_ADMIN) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const db = drizzle(c.env.DB);
+  const rows = await db
+    .select({
+      id: adminLoginHistory.id,
+      email: adminLoginHistory.email,
+      adminName: admins.name,
+      success: adminLoginHistory.success,
+      ipAddress: adminLoginHistory.ipAddress,
+      createdAt: adminLoginHistory.createdAt,
+    })
+    .from(adminLoginHistory)
+    .leftJoin(admins, eq(adminLoginHistory.adminId, admins.id))
+    .orderBy(desc(adminLoginHistory.createdAt))
+    .limit(200);
+
+  return c.json(rows);
 });
 
 export default app;

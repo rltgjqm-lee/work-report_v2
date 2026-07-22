@@ -12,6 +12,7 @@ const emptyForm = {
   name: "",
   role: ROLES.MANAGER as Role,
   organizationId: "",
+  password: "",
 };
 
 interface AdminFormModalProps {
@@ -48,6 +49,7 @@ const AdminFormModal = ({
           organizationId: editingAdmin.organizationId
             ? String(editingAdmin.organizationId)
             : "",
+          password: "",
         }
       : { ...emptyForm, role: assignableRoles[0] ?? ROLES.MANAGER },
   );
@@ -71,6 +73,11 @@ const AdminFormModal = ({
 
           return;
         }
+        if (form.password.length < 8) {
+          setError("임시 비밀번호는 8자 이상이어야 합니다.");
+
+          return;
+        }
         await createAdmin({
           email: form.email,
           name: form.name,
@@ -79,6 +86,7 @@ const AdminFormModal = ({
             currentRole === ROLES.SUPER_ADMIN && form.organizationId
               ? Number(form.organizationId)
               : undefined,
+          password: form.password,
         });
       }
       onSaved();
@@ -103,7 +111,7 @@ const AdminFormModal = ({
         </>
       }
     >
-      <FormField label="이메일 (CF Access 로그인 계정)">
+      <FormField label="이메일 (로그인 계정)">
         <input
           className={inputClass}
           value={form.email}
@@ -113,6 +121,18 @@ const AdminFormModal = ({
           }
         />
       </FormField>
+      {!editingAdmin && (
+        <FormField label="임시 비밀번호 (8자 이상)">
+          <input
+            type="password"
+            className={inputClass}
+            value={form.password}
+            onChange={(event) =>
+              setForm((f) => ({ ...f, password: event.target.value }))
+            }
+          />
+        </FormField>
+      )}
       <FormField label="이름">
         <input
           className={inputClass}

@@ -1,9 +1,10 @@
 import type { Context, Next } from "hono";
+import { getCookie } from "hono/cookie";
 import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 
-import { admins } from "../db/schema";
-import { verifyAccessJwt } from "./cfAccess";
+import { admins, adminSessions } from "../db/schema";
+import { hashSessionToken, SESSION_COOKIE_NAME } from "./sessionToken";
 import { ROLES, type AdminRole, type AdminSession, type Env } from "../types";
 
 const parseIdArray = (raw: string | null): number[] => {
@@ -18,36 +19,38 @@ const parseIdArray = (raw: string | null): number[] => {
   }
 };
 
-// /api/* 앞단에 걸어서 CF-Access-JWT-Assertion을 검증하고, 이메일로 admins를 조회해
-// c.set("admin", ...) 해둔다. Cloudflare Access 자체가 이 경로를 보호하고 있어야 하며,
-// 여기서는 헤더를 그대로 믿지 않고 JWKS로 서명을 다시 검증한다 (cfAccess.ts 참고).
+// /api/* 앞단에 걸어서 세션 쿠키를 검증하고, 연결된 관리자를 조회해 c.set("admin", ...)
+// 해둔다. 쿠키엔 원문 토큰만 있고 DB엔 해시만 있으므로 여기서 해시를 다시 계산해 대조한다.
 export const requireAdmin = async (c: Context<Env>, next: Next) => {
-  let email: string;
-
-  if (c.env.LOCAL_ADMIN_BYPASS_EMAIL) {
-    // 로컬 wrangler dev 전용 바이패스: CF Access가 앞단에 없어 JWT 헤더가 절대 오지
-    // 않는 로컬 환경에서, .dev.vars의 LOCAL_ADMIN_BYPASS_EMAIL을 그대로 인증된
-    // 관리자 이메일로 취급한다. 배포 시크릿에 이 값이 없으면 이 분기는 타지 않는다.
-    email = c.env.LOCAL_ADMIN_BYPASS_EMAIL;
-  } else {
-    const token = c.req.header("CF-Access-JWT-Assertion");
-    if (!token) {
-      return c.json({ error: "인증 토큰이 없습니다." }, 401);
-    }
-
-    const verifiedEmail = await verifyAccessJwt(
-      token,
-      c.env.CF_ACCESS_TEAM_DOMAIN,
-      c.env.CF_ACCESS_AUD,
-    );
-    if (!verifiedEmail) {
-      return c.json({ error: "유효하지 않은 인증 토큰입니다." }, 401);
-    }
-    email = verifiedEmail;
+  const token = getCookie(c, SESSION_COOKIE_NAME);
+  if (!token) {
+    return c.json({ error: "로그인이 필요합니다." }, 401);
   }
 
   const db = drizzle(c.env.DB);
-  const rows = await db.select().from(admins).where(eq(admins.email, email));
+  const tokenHash = await hashSessionToken(token);
+
+  const sessionRows = await db
+    .select({ adminId: adminSessions.adminId })
+    .from(adminSessions)
+    .where(
+      and(
+        eq(adminSessions.tokenHash, tokenHash),
+        gt(adminSessions.expiresAt, new Date().toISOString()),
+      ),
+    );
+  const sessionRow = sessionRows[0];
+  if (!sessionRow) {
+    return c.json(
+      { error: "세션이 만료되었습니다. 다시 로그인해주세요." },
+      401,
+    );
+  }
+
+  const rows = await db
+    .select()
+    .from(admins)
+    .where(eq(admins.id, sessionRow.adminId));
   const admin = rows[0];
   if (!admin) {
     return c.json({ error: "등록되지 않은 관리자입니다." }, 403);
@@ -58,7 +61,7 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
 
   const session: AdminSession = {
     id: admin.id,
-    email,
+    email: admin.email as string,
     role: admin.role,
     organizationId: admin.organizationId,
     programIds: parseIdArray(admin.programIds),

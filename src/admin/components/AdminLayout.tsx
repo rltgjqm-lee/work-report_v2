@@ -1,5 +1,8 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { logout } from "../api/auth";
+import ChangePasswordModal from "./ChangePasswordModal";
 import { useAuth } from "../context/useAuth";
 import { ROLES } from "../types";
 
@@ -26,6 +29,13 @@ const ADMIN_ACCOUNTS_NAV_ITEM = {
   badge: "9",
 };
 
+// IP 등 민감정보가 보이는 화면이라 SUPER_ADMIN에게만 노출
+const LOGIN_HISTORY_NAV_ITEM = {
+  to: "/admin/login-history",
+  label: "로그인 이력",
+  badge: "10",
+};
+
 const getTopbarTitle = (pathname: string) => {
   if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근태 조회";
   if (/^\/admin\/programs\/\d+\/leaves/.test(pathname)) return "휴가 현황";
@@ -41,6 +51,7 @@ const getTopbarTitle = (pathname: string) => {
     return "재난문자 발송이력";
   if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 테스트";
   if (pathname.startsWith("/admin/admins")) return "관리자 계정";
+  if (pathname.startsWith("/admin/login-history")) return "로그인 이력";
   return "관리자 콘솔";
 };
 
@@ -49,8 +60,10 @@ const getTopbarTitle = (pathname: string) => {
  *
  */
 const AdminLayout = () => {
-  const { admin } = useAuth();
+  const { admin, refresh } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
   const navItems = [
     ...BASE_NAV_ITEMS,
@@ -59,12 +72,13 @@ const AdminLayout = () => {
     admin?.role === ROLES.ORGANIZATION_ADMIN
       ? [ADMIN_ACCOUNTS_NAV_ITEM]
       : []),
+    ...(admin?.role === ROLES.SUPER_ADMIN ? [LOGIN_HISTORY_NAV_ITEM] : []),
   ];
 
-  // 로그인/세션은 Cloudflare Access가 관리하므로, 앱에서 할 수 있는 건
-  // Access 자체의 로그아웃 엔드포인트로 보내는 것뿐이다 (로컬 토큰을 지우는 게 아님).
-  const handleLogoutButtonClick = () => {
-    window.location.href = "/cdn-cgi/access/logout";
+  const handleLogoutButtonClick = async () => {
+    await logout();
+    await refresh();
+    navigate("/admin/login");
   };
 
   const todayLabel = new Date().toLocaleDateString("ko-KR", {
@@ -122,6 +136,12 @@ const AdminLayout = () => {
               {todayLabel} · {admin?.email}
             </span>
             <button
+              onClick={() => setPasswordModalOpen(true)}
+              className="text-[#374151] font-semibold cursor-pointer bg-transparent border-none hover:underline"
+            >
+              비밀번호 변경
+            </button>
+            <button
               onClick={handleLogoutButtonClick}
               className="text-[#8a6d1f] font-semibold cursor-pointer bg-transparent border-none hover:underline"
             >
@@ -134,6 +154,10 @@ const AdminLayout = () => {
           <Outlet />
         </div>
       </div>
+
+      {passwordModalOpen && (
+        <ChangePasswordModal onClose={() => setPasswordModalOpen(false)} />
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
+import LoginPage from "./pages/LoginPage";
 import OrganizationsPage from "./pages/organizations/OrganizationsPage";
 import ProgramsPage from "./pages/programs/ProgramsPage";
 import ProgramDetailPage from "./pages/program_detail/ProgramDetailPage";
@@ -13,10 +14,12 @@ import ParticipantsPage from "./pages/ParticipantsPage";
 import DisasterMessagesPage from "./pages/DisasterMessagesPage";
 import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
 import AdminsPage from "./pages/admins/AdminsPage";
+import LoginHistoryPage from "./pages/LoginHistoryPage";
 
 const AdminApp = () => (
   <AuthProvider>
     <Routes>
+      <Route path="login" element={<LoginPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
           <Route
@@ -36,6 +39,7 @@ const AdminApp = () => (
           <Route path="safety-alerts" element={<DisasterMessagesPage />} />
           <Route path="disaster-push-logs" element={<DisasterPushLogsPage />} />
           <Route path="admins" element={<AdminsPage />} />
+          <Route path="login-history" element={<LoginHistoryPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />

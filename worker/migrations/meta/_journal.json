@@ -148,6 +148,27 @@
       "when": 1784507478114,
       "tag": "0020_tidy_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1784692130748,
+      "tag": "0021_massive_meggan",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1784693926242,
+      "tag": "0022_flowery_shinko_yamashiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1784698107840,
+      "tag": "0023_pretty_sinister_six",
+      "breakpoints": true
     }
   ]
 }

@@ -7,11 +7,17 @@
     {
       "binding": "DB",
       "database_name": "work-report-db",
-      "database_id": "c7375437-44bf-411a-8fd6-78d03f30d117"
-    }
+      "database_id": "c7375437-44bf-411a-8fd6-78d03f30d117",
+    },
   ],
   "triggers": {
     // KST 09:00~17:59 매분 + KST 18:00 정각 1회 (Cron은 UTC 기준, KST = UTC+9)
-    "crons": ["* 0-8 * * *", "0 9 * * *"]
-  }
+    "crons": ["* 0-8 * * *", "0 9 * * *"],
+  },
+  // 쿠키 기반 세션이라 CORS origin을 아무거나 허용하면 안 됨 (index.ts 참고) — 이
+  // 콤마구분 목록에 있는 origin만 credentials 포함 요청을 허용한다. 민감정보가
+  // 아니라 vars(평문)로 둔다.
+  "vars": {
+    "ALLOWED_ORIGINS": "https://work-report-v3.pages.dev,http://localhost:5173",
+  },
 }
