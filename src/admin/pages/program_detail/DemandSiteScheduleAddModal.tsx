@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 import { createDemandSiteSchedule } from "../../api/admin/demandSites";
-import SlideModal from "../SlideModal";
-import FormField from "../FormField";
-import FilterSelect from "../FilterSelect";
+import SlideModal from "../../components/SlideModal";
+import FormField from "../../components/FormField";
+import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { Group } from "../../types";
 

@@ -1,27 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { listGroups } from "../api/admin/groups";
-import { getOrganization } from "../api/admin/organizations";
-import { getProgram, listPrograms } from "../api/admin/programs";
+import { listGroups } from "../../api/admin/groups";
+import { getOrganization } from "../../api/admin/organizations";
+import { getProgram, listPrograms } from "../../api/admin/programs";
 import {
   listDemandSites,
   listDemandSiteSchedules,
-} from "../api/admin/demandSites";
-import ProgramGroupsSection from "../components/ProgramGroupsSection";
-import ProgramDemandSitesSection from "../components/ProgramDemandSitesSection";
-import ProgramExcelExportSection from "../components/ProgramExcelExportSection";
-import ProgramParticipantsSection from "../components/ProgramParticipantsSection";
-import ParticipantAddModal from "../components/modals/ParticipantAddModal";
+} from "../../api/admin/demandSites";
+import ProgramGroupsSection from "./ProgramGroupsSection";
+import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
+import ProgramExcelExportSection from "./ProgramExcelExportSection";
+import ProgramParticipantsSection from "./ProgramParticipantsSection";
+import ParticipantAddModal from "./ParticipantAddModal";
 
-import { btnPrimaryClass, btnGhostClass } from "../uiClasses";
+import { btnPrimaryClass, btnGhostClass } from "../../uiClasses";
 import type {
   DemandSite,
   DemandSiteSchedule,
   Group,
   Program,
   ProgramWithParticipants,
-} from "../types";
+} from "../../types";
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지입니다.

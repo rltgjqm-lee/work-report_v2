@@ -4,9 +4,9 @@ import {
   addParticipant,
   bulkAddParticipants,
 } from "../../api/admin/participants";
-import SlideModal from "../SlideModal";
-import FormField from "../FormField";
-import FilterSelect from "../FilterSelect";
+import SlideModal from "../../components/SlideModal";
+import FormField from "../../components/FormField";
+import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { DemandSite, Group } from "../../types";
 import { downloadAddParticipantsTemplate } from "../../../utils/downloadAddParticipantsTemplate";

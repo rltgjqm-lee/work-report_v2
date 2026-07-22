@@ -3,11 +3,11 @@ import { useMemo, useState } from "react";
 import {
   updateDemandSite,
   deleteDemandSiteSchedule,
-} from "../api/admin/demandSites";
-import DemandSiteFormModal from "./modals/DemandSiteFormModal";
-import DemandSiteScheduleAddModal from "./modals/DemandSiteScheduleAddModal";
-import { btnGhostClass, rowActionBtnClass } from "../uiClasses";
-import type { DemandSite, DemandSiteSchedule, Group } from "../types";
+} from "../../api/admin/demandSites";
+import DemandSiteFormModal from "./DemandSiteFormModal";
+import DemandSiteScheduleAddModal from "./DemandSiteScheduleAddModal";
+import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
+import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
 
 interface ProgramDemandSitesSectionProps {
   programId: number;

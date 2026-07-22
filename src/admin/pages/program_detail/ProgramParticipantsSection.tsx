@@ -7,15 +7,15 @@ import {
   moveParticipantToGroup,
   reactivateParticipant,
   bulkUpdateParticipantStatus,
-} from "../api/admin/participants";
-import ParticipantLeaveAddModal from "./modals/ParticipantLeaveAddModal";
-import AnnualLeaveModal from "./modals/AnnualLeaveModal";
-import Pagination from "./Pagination";
-import SearchInput from "./SearchInput";
-import FilterSelect from "./FilterSelect";
-import { usePagination } from "../hooks/usePagination";
-import { rowActionBtnClass } from "../uiClasses";
-import type { Group, Participant } from "../types";
+} from "../../api/admin/participants";
+import ParticipantLeaveAddModal from "./ParticipantLeaveAddModal";
+import AnnualLeaveModal from "./AnnualLeaveModal";
+import Pagination from "../../components/Pagination";
+import SearchInput from "../../components/SearchInput";
+import FilterSelect from "../../components/FilterSelect";
+import { usePagination } from "../../hooks/usePagination";
+import { rowActionBtnClass } from "../../uiClasses";
+import type { Group, Participant } from "../../types";
 
 const statusLabel: Record<string, string> = {
   ACTIVE: "활동중",

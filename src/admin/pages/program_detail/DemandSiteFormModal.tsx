@@ -4,8 +4,8 @@ import {
   createDemandSite,
   updateDemandSite,
 } from "../../api/admin/demandSites";
-import SlideModal from "../SlideModal";
-import FormField from "../FormField";
+import SlideModal from "../../components/SlideModal";
+import FormField from "../../components/FormField";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { DemandSite } from "../../types";
 

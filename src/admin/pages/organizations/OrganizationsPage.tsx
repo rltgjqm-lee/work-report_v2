@@ -3,14 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   listOrganizations,
   updateOrganization,
-} from "../api/admin/organizations";
-import Pagination from "../components/Pagination";
-import OrganizationFormModal from "../components/modals/OrganizationFormModal";
-import SearchInput from "../components/SearchInput";
-import { usePagination } from "../hooks/usePagination";
-import { useAuth } from "../context/useAuth";
-import { btnPrimaryClass, rowActionBtnClass } from "../uiClasses";
-import { ROLES, type Organization } from "../types";
+} from "../../api/admin/organizations";
+import Pagination from "../../components/Pagination";
+import OrganizationFormModal from "./OrganizationFormModal";
+import SearchInput from "../../components/SearchInput";
+import { usePagination } from "../../hooks/usePagination";
+import { useAuth } from "../../context/useAuth";
+import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
+import { ROLES, type Organization } from "../../types";
 
 /**
  * 관리자 페이지 > 기관 관리 페이지입니다.

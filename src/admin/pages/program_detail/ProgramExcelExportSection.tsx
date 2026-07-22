@@ -2,8 +2,8 @@ import {
   downloadActivityLogExcel,
   downloadAttendanceExcel,
   downloadPaymentExcel,
-} from "../api/admin/excel";
-import { btnGhostClass, inputClass } from "../uiClasses";
+} from "../../api/admin/excel";
+import { btnGhostClass, inputClass } from "../../uiClasses";
 
 interface ProgramExcelExportSectionProps {
   programId: number;

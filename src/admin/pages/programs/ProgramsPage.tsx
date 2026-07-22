@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getProgram, listPrograms, updateProgram } from "../api/admin/programs";
-import { listOrganizations } from "../api/admin/organizations";
-import Pagination from "../components/Pagination";
-import ProgramFormModal from "../components/modals/ProgramFormModal";
-import SearchInput from "../components/SearchInput";
-import FilterSelect from "../components/FilterSelect";
-import { usePagination } from "../hooks/usePagination";
-import { useAuth } from "../context/useAuth";
-import { btnPrimaryClass, rowActionBtnClass } from "../uiClasses";
-import { ROLES, type Organization, type Program } from "../types";
+import {
+  getProgram,
+  listPrograms,
+  updateProgram,
+} from "../../api/admin/programs";
+import { listOrganizations } from "../../api/admin/organizations";
+import Pagination from "../../components/Pagination";
+import ProgramFormModal from "./ProgramFormModal";
+import SearchInput from "../../components/SearchInput";
+import FilterSelect from "../../components/FilterSelect";
+import { usePagination } from "../../hooks/usePagination";
+import { useAuth } from "../../context/useAuth";
+import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
+import { ROLES, type Organization, type Program } from "../../types";
 
 /**
  * 관리자 페이지 > 사업단 관리 페이지입니다.

@@ -3,16 +3,16 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
-import OrganizationsPage from "./pages/OrganizationsPage";
-import ProgramsPage from "./pages/ProgramsPage";
-import ProgramDetailPage from "./pages/ProgramDetailPage";
+import OrganizationsPage from "./pages/organizations/OrganizationsPage";
+import ProgramsPage from "./pages/programs/ProgramsPage";
+import ProgramDetailPage from "./pages/program_detail/ProgramDetailPage";
 import AttendancePage from "./pages/AttendancePage";
 import LeaveStatsPage from "./pages/LeaveStatsPage";
 import EscapesPage from "./pages/EscapesPage";
 import ParticipantsPage from "./pages/ParticipantsPage";
 import DisasterMessagesPage from "./pages/DisasterMessagesPage";
 import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
-import AdminsPage from "./pages/AdminsPage";
+import AdminsPage from "./pages/admins/AdminsPage";
 
 const AdminApp = () => (
   <AuthProvider>

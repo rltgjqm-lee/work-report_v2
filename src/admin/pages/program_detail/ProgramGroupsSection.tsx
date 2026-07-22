@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-import { updateGroup } from "../api/admin/groups";
-import GroupAddModal from "./modals/GroupAddModal";
-import { btnGhostClass, rowActionBtnClass } from "../uiClasses";
-import type { Group } from "../types";
+import { updateGroup } from "../../api/admin/groups";
+import GroupAddModal from "./GroupAddModal";
+import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
+import type { Group } from "../../types";
 
 interface ProgramGroupsSectionProps {
   programId: number;

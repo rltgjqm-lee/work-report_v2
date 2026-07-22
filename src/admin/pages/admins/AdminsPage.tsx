@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { listAdmins, updateAdmin } from "../api/admin/admins";
-import { listOrganizations } from "../api/admin/organizations";
-import AdminFormModal from "../components/modals/AdminFormModal";
-import SearchInput from "../components/SearchInput";
-import { useAuth } from "../context/useAuth";
-import { btnPrimaryClass, rowActionBtnClass } from "../uiClasses";
-import { ROLES, type Admin, type Organization, type Role } from "../types";
+import { listAdmins, updateAdmin } from "../../api/admin/admins";
+import { listOrganizations } from "../../api/admin/organizations";
+import AdminFormModal from "./AdminFormModal";
+import SearchInput from "../../components/SearchInput";
+import { useAuth } from "../../context/useAuth";
+import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
+import { ROLES, type Admin, type Organization, type Role } from "../../types";
 
 const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",
