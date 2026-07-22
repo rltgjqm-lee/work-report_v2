@@ -7,16 +7,24 @@ interface ExportExcelArgs {
   fileName: string;
 }
 
+export interface ActivityLogSheetHeader {
+  orgName: string;
+  programName: string;
+  participantName: string;
+  demandName: string;
+}
+
 /**
- * 💡 활동 일지 데이터를 바탕으로 국문 서식의 ExcelJS 보고서를 생성하고 다운로드합니다.
+ * 💡 참여자 1인의 활동 일지 데이터를 워크북에 국문 서식의 시트 1개로 추가합니다.
+ * 관리자 콘솔의 사업단 단위 일괄 출력(참여자별 시트)과 참여자 개인 다운로드에서 함께 씁니다.
  */
-export const downloadActivityLogExcel = async ({
-  filteredLogs,
-  formData,
-  fileName,
-}: ExportExcelArgs): Promise<void> => {
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("공익활동일지");
+export const addActivityLogSheet = (
+  workbook: ExcelJS.Workbook,
+  sheetName: string,
+  header: ActivityLogSheetHeader,
+  logs: ActivityLogItem[],
+): void => {
+  const sheet = workbook.addWorksheet(sheetName);
 
   // 1. 제목 셀 설정 및 병합
   sheet.mergeCells("A1:J1");
@@ -33,14 +41,14 @@ export const downloadActivityLogExcel = async ({
   sheet.mergeCells("G3:J3");
 
   sheet.getCell("A2").value = "기관명";
-  sheet.getCell("B2").value = formData.orgName;
+  sheet.getCell("B2").value = header.orgName;
   sheet.getCell("F2").value = "참여사업명";
-  sheet.getCell("G2").value = formData.programName;
+  sheet.getCell("G2").value = header.programName;
 
   sheet.getCell("A3").value = "참여자 성명";
-  sheet.getCell("B3").value = formData.userName;
+  sheet.getCell("B3").value = header.participantName;
   sheet.getCell("F3").value = "수요처명(서비스대상자명)";
-  sheet.getCell("G3").value = formData.demandName;
+  sheet.getCell("G3").value = header.demandName;
 
   // 3. 테이블 헤더 서식 및 텍스트 바인딩
   sheet.mergeCells("A4:A5");
@@ -127,28 +135,36 @@ export const downloadActivityLogExcel = async ({
   const startRow = 6;
 
   // 원본을 변형하지 않기 위해 복사본을 정렬하여 루프를 돕니다.
-  const sortedLogs = [...filteredLogs].sort(
-    (a, b) => a.timestamp - b.timestamp,
-  );
+  const sortedLogs = [...logs].sort((a, b) => a.timestamp - b.timestamp);
 
-  sortedLogs.forEach((log, i) => {
-    let accText = log.accident;
+  if (sortedLogs.length === 0) {
+    sheet.mergeCells(`A${startRow}:J${startRow}`);
+    sheet.getCell(`A${startRow}`).value = "해당 기간에 등록된 활동일지가 없습니다.";
+    sheet.getCell(`A${startRow}`).alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    sheet.getCell(`A${startRow}`).font = { italic: true, color: { argb: "FF888888" } };
+  }
+
+  sortedLogs.forEach((log, index) => {
+    let accidentText: string = log.accident;
     if (log.accident === "유") {
-      accText += `\n(${log.accidentDetail} / ${log.accidentAction})`;
+      accidentText += `\n(${log.accidentDetail} / ${log.accidentAction})`;
     }
 
-    const currentRow = startRow + i;
+    const currentRow = startRow + index;
     const row = sheet.getRow(currentRow);
     row.height = 40;
     row.values = [
-      i + 1,
+      index + 1,
       log.date,
       log.start,
       log.end,
       log.totalTime,
       log.content,
       log.place,
-      accText,
+      accidentText,
       "",
       "",
     ];
@@ -171,16 +187,16 @@ export const downloadActivityLogExcel = async ({
     if (log.uSign) {
       try {
         const base64Data = log.uSign.split(",")[1];
-        const imgId = workbook.addImage({
+        const imageId = workbook.addImage({
           base64: base64Data,
           extension: "png",
         });
-        sheet.addImage(imgId, {
+        sheet.addImage(imageId, {
           tl: { col: 8, row: currentRow - 1 },
           ext: { width: 45, height: 25 },
         });
-      } catch (err) {
-        console.error("참여자 서명 이미지 내보내기 실패:", err);
+      } catch (error) {
+        console.error("참여자 서명 이미지 내보내기 실패:", error);
       }
     }
 
@@ -188,21 +204,53 @@ export const downloadActivityLogExcel = async ({
     if (log.dSign) {
       try {
         const base64Data = log.dSign.split(",")[1];
-        const imgId = workbook.addImage({
+        const imageId = workbook.addImage({
           base64: base64Data,
           extension: "png",
         });
-        sheet.addImage(imgId, {
+        sheet.addImage(imageId, {
           tl: { col: 9, row: currentRow - 1 },
           ext: { width: 45, height: 25 },
         });
-      } catch (err) {
-        console.error("수요처 서명 이미지 내보내기 실패:", err);
+      } catch (error) {
+        console.error("수요처 서명 이미지 내보내기 실패:", error);
       }
     }
   });
 
-  // 8. 바이너리 파일 다운로드 트리거
+  // 8. 하단 확인 문구 (서식 원본에 있는 부정수급 동의 문구)
+  const noteRow = startRow + sortedLogs.length + 1;
+  sheet.mergeCells(`A${noteRow}:J${noteRow}`);
+  sheet.getCell(`A${noteRow}`).value =
+    "※ 활동 내역이 사실과 틀림없음을 확인하였으며, 추후 보조금 부정수급으로 인한 제재 등의 조치에 동의합니다.";
+  sheet.getCell(`A${noteRow}`).font = { size: 9 };
+  sheet.getCell(`A${noteRow}`).alignment = {
+    horizontal: "left",
+    vertical: "middle",
+  };
+};
+
+/**
+ * 💡 활동 일지 데이터를 바탕으로 국문 서식의 ExcelJS 보고서를 생성하고 다운로드합니다.
+ */
+export const downloadActivityLogExcel = async ({
+  filteredLogs,
+  formData,
+  fileName,
+}: ExportExcelArgs): Promise<void> => {
+  const workbook = new ExcelJS.Workbook();
+  addActivityLogSheet(
+    workbook,
+    "공익활동일지",
+    {
+      orgName: formData.orgName,
+      programName: formData.programName,
+      participantName: formData.userName,
+      demandName: formData.demandName,
+    },
+    filteredLogs,
+  );
+
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

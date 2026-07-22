@@ -46,7 +46,8 @@ const loadAccessibleProgram = async (
   return rows[0] ?? null;
 };
 
-// 활동일지 (공익활동) CSV
+// 활동일지 (공익활동) — 참여자별 시트로 조립할 원본 데이터. 실제 xlsx(서식+서명 이미지)는
+// 관리자 콘솔이 exceljs로 클라이언트에서 조립한다 (다운로드 참여자 개인용 흐름과 서식 통일).
 app.get("/:id/export/activity-log", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -58,32 +59,61 @@ app.get("/:id/export/activity-log", async (c) => {
   if (!program) return c.json({ error: "Not found" }, 404);
   if (!canAccessProgram(auth, program)) return c.json({ error: "Forbidden" }, 403);
 
+  const organizationRows = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, program.organizationId));
+  const organizationName = organizationRows[0]?.name ?? "";
+
   const rows = await db
-    .select({ log: activityLogs, participantName: participants.name })
+    .select({
+      log: activityLogs,
+      participantName: participants.name,
+      demandName: participants.demandName,
+    })
     .from(activityLogs)
     .innerJoin(participants, eq(activityLogs.participantId, participants.id))
     .where(
       and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)),
-    );
+    )
+    .orderBy(activityLogs.actDate);
 
-  const csvRows: (string | number | null)[][] = [
-    [`활동일지 (${month}) — ${program.name}`],
-    [],
-    ["참여자명", "활동일", "시작", "종료", "활동내용", "활동장소", "사고유무", "사고내용", "조치내용"],
-    ...rows.map((r) => [
-      r.participantName,
-      r.log.actDate,
-      r.log.startTime,
-      r.log.endTime,
-      r.log.content,
-      r.log.place,
-      r.log.hasAccident ? "유" : "무",
-      r.log.accidentDetail,
-      r.log.accidentAction,
-    ]),
-  ];
+  const participantsByName = new Map<
+    string,
+    { demandName: string | null; logs: (typeof rows)[number]["log"][] }
+  >();
+  for (const row of rows) {
+    if (!participantsByName.has(row.participantName)) {
+      participantsByName.set(row.participantName, {
+        demandName: row.demandName,
+        logs: [],
+      });
+    }
+    participantsByName.get(row.participantName)!.logs.push(row.log);
+  }
 
-  return toCsvResponse(csvRows, `활동일지_${month}.csv`);
+  return c.json({
+    programName: program.name,
+    organizationName,
+    participants: Array.from(participantsByName.entries()).map(
+      ([participantName, participantData]) => ({
+        participantName,
+        demandName: participantData.demandName,
+        logs: participantData.logs.map((log) => ({
+          actDate: log.actDate,
+          startTime: log.startTime,
+          endTime: log.endTime,
+          content: log.content,
+          place: log.place,
+          hasAccident: log.hasAccident,
+          accidentDetail: log.accidentDetail,
+          accidentAction: log.accidentAction,
+          userSignature: log.userSignature,
+          demandSignature: log.demandSignature,
+        })),
+      }),
+    ),
+  });
 });
 
 // 출근부 (역량활동) CSV — 참여자별 월간 캘린더, 출석일은 조의 근무시간 표시
