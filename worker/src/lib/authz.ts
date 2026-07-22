@@ -62,6 +62,7 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
   const session: AdminSession = {
     id: admin.id,
     email: admin.email as string,
+    name: admin.name,
     role: admin.role,
     organizationId: admin.organizationId,
     programIds: parseIdArray(admin.programIds),

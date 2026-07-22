@@ -10,6 +10,7 @@ export type AdminRole = (typeof ROLES)[keyof typeof ROLES];
 export type AdminSession = {
   id: number;
   email: string;
+  name: string | null;
   role: AdminRole;
   organizationId: number | null;
   programIds: number[];

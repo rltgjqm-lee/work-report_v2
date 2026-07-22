@@ -133,7 +133,7 @@ const AdminLayout = () => {
           </div>
           <div className="flex items-center gap-4 text-xs text-[#6b7280]">
             <span>
-              {todayLabel} · {admin?.email}
+              {todayLabel} · {admin?.name ?? admin?.email}
             </span>
             <button
               onClick={() => setPasswordModalOpen(true)}
