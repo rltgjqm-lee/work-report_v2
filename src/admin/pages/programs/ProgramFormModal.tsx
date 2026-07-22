@@ -190,6 +190,7 @@ const ProgramFormModal = ({
           <FormField label="시작 시간">
             <input
               type="time"
+              step={600}
               className={inputClass}
               value={form.startTime}
               onChange={(event) =>
@@ -204,6 +205,7 @@ const ProgramFormModal = ({
           <FormField label="종료 시간">
             <input
               type="time"
+              step={600}
               className={inputClass}
               value={form.endTime}
               min={form.startTime || undefined}

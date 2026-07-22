@@ -80,6 +80,7 @@ const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
           <FormField label="근무 시작시간">
             <input
               type="time"
+              step={600}
               className={inputClass}
               value={form.shiftStart}
               onChange={(event) =>
@@ -92,6 +93,7 @@ const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
           <FormField label="근무 종료시간">
             <input
               type="time"
+              step={600}
               className={inputClass}
               value={form.shiftEnd}
               onChange={(event) =>

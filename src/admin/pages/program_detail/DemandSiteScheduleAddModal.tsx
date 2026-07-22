@@ -87,6 +87,7 @@ const DemandSiteScheduleAddModal = ({
           <FormField label="시작시간">
             <input
               type="time"
+              step={600}
               className={inputClass}
               value={form.shiftStart}
               onChange={(event) =>
@@ -99,6 +100,7 @@ const DemandSiteScheduleAddModal = ({
           <FormField label="종료시간">
             <input
               type="time"
+              step={600}
               className={inputClass}
               value={form.shiftEnd}
               onChange={(event) =>
