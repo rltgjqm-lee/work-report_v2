@@ -14,14 +14,20 @@ export const request = async <T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> => {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  } catch (error) {
+    console.error(`요청 실패 (${path}):`, error);
+    throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+  }
 
   if (res.status === 401 || res.status === 403) {
     onUnauthorized?.();
