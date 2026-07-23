@@ -15,3 +15,20 @@ export const btnGhostClass =
   "border border-[#d7dbe1] px-4 py-2.5 text-[13px] font-semibold rounded-[2px] cursor-pointer bg-white text-[#374151] hover:bg-[#f5f6f8] whitespace-nowrap";
 export const rowActionBtnClass =
   "bg-transparent border-none text-[#8a6d1f] text-xs font-semibold cursor-pointer px-1.5 py-1 hover:underline";
+export const countChipClass =
+  "text-xs text-[#6b7280] font-medium whitespace-nowrap";
+// 밑줄 강조형 탭(관리자 페이지.dc.html 디자인) — pill형 탭이 필요하면 별도로 쓸 것.
+// border-none은 border-style:none이라 border-b-2(너비)를 줘도 안 그려진다 — border-0(너비 0)으로
+// 좌/우/위만 리셋하고 아래쪽만 border-b-2로 두께를 올려야 밑줄이 실제로 보인다.
+export const tabBarClass = "flex gap-1 mb-4 border-b border-[#e2e5eb]";
+export const tabBtnClass =
+  "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-transparent text-[#6b7280] hover:text-[#1f2937]";
+export const tabBtnActiveClass =
+  "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-[#1e3a5f] text-[#1e3a5f]";
+// 탭 안의 서브탭(교육 정의/이수 현황/필수교육 현황)용 알약형 버튼 — 바깥 밑줄 탭과
+// 시각적으로 구분되게 관리자 페이지.dc.html의 .sub-tabs/.sub-tab-btn을 그대로 따름.
+export const subTabBarClass = "flex gap-2 mb-4";
+export const subTabBtnClass =
+  "border border-[#e2e5eb] bg-white px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-[#6b7280] hover:border-[#c7cdd6] hover:text-[#1f2937]";
+export const subTabBtnActiveClass =
+  "border border-[#1e3a5f] bg-[#1e3a5f] px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-white";

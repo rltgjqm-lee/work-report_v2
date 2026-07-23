@@ -6,6 +6,7 @@ import {
   invalidateAttendance,
 } from "../../api/admin/attendance";
 import MonthPicker from "../../components/MonthPicker";
+import StatusChip, { type StatusChipVariant } from "../../components/StatusChip";
 import {
   btnGhostClass,
   btnPrimaryClass,
@@ -20,6 +21,13 @@ const STATUS_LABEL: Record<string, string> = {
   LATE: "지각",
   EARLY_LEAVE: "조퇴",
   INVALID: "무효화됨",
+};
+
+const STATUS_VARIANT: Record<string, StatusChipVariant> = {
+  NORMAL: "ok",
+  LATE: "warn",
+  EARLY_LEAVE: "warn",
+  INVALID: "bad",
 };
 
 interface CorrectionForm {
@@ -213,7 +221,9 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
                     {row.log.totalMinutes ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {STATUS_LABEL[row.log.status]}
+                    <StatusChip variant={STATUS_VARIANT[row.log.status]}>
+                      {STATUS_LABEL[row.log.status]}
+                    </StatusChip>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {row.log.note ?? "-"}

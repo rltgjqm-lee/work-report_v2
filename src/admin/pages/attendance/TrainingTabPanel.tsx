@@ -13,6 +13,8 @@ import FilterSelect from "../../components/FilterSelect";
 import SearchInput from "../../components/SearchInput";
 import SlideModal from "../../components/SlideModal";
 import FormField from "../../components/FormField";
+import StatusChip from "../../components/StatusChip";
+import SubTabBar from "../../components/SubTabBar";
 import {
   btnGhostClass,
   btnPrimaryClass,
@@ -221,32 +223,22 @@ const TrainingTabPanel = ({
 
   return (
     <div>
-      <div className="flex gap-2 mb-4">
-        {(
-          [
-            ["definitions", "교육 정의"],
-            ["logs", "이수 현황"],
-            ["summary", "필수교육 현황"],
-          ] as [SubTab, string][]
-        ).map(([tabKey, label]) => (
-          <button
-            key={tabKey}
-            onClick={() => setSubTab(tabKey)}
-            className={
-              subTab === tabKey
-                ? "px-4 py-2 text-[13px] font-semibold rounded-[2px] bg-[#1e3a5f] text-white border-none cursor-pointer"
-                : "px-4 py-2 text-[13px] font-semibold rounded-[2px] bg-white text-[#374151] border border-[#d7dbe1] cursor-pointer hover:bg-[#f5f6f8]"
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SubTabBar
+        tabs={[
+          ["definitions", "교육 정의"],
+          ["logs", "이수 현황"],
+          ["summary", "필수교육 현황"],
+        ]}
+        active={subTab}
+        onChange={setSubTab}
+      />
 
       {subTab === "definitions" && (
-        <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
-            <span className="text-sm font-bold">교육 목록</span>
+        <div>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <span className="text-sm font-bold">
+              교육 목록 ({trainings.length}건)
+            </span>
             <button
               className={btnGhostClass}
               onClick={handleAddTrainingButtonClick}
@@ -254,77 +246,56 @@ const TrainingTabPanel = ({
               + 교육 추가
             </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] table-fixed border-collapse">
-              <thead>
-                <tr>
-                  <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                    교육명
-                  </th>
-                  <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                    구분
-                  </th>
-                  <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                    지급방식
-                  </th>
-                  <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                    필수
-                  </th>
-                  <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                    상태
-                  </th>
-                  <th className="w-[150px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
-                </tr>
-              </thead>
-              <tbody>
-                {trainings.map((training) => (
-                  <tr key={training.id} className="hover:bg-[#f8fafc]">
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+          {trainings.length === 0 ? (
+            <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+              등록된 교육이 없습니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+              {trainings.map((training) => (
+                <div
+                  key={training.id}
+                  className="bg-white border border-[#e2e5eb] rounded-lg p-[18px] flex flex-col"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-[15px] font-bold">
                       {training.name}
-                    </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                      {CATEGORY_LABEL[training.category]}
-                    </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                      {PAY_MODE_LABEL[training.payMode]}
-                    </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                      {training.isRequired ? "필수" : "-"}
-                    </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    </span>
+                    <StatusChip variant={training.isActive ? "ok" : "pending"}>
                       {training.isActive ? "활성" : "비활성"}
-                    </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                      <button
-                        className={rowActionBtnClass}
-                        onClick={() => handleEditTrainingButtonClick(training)}
-                      >
-                        수정
-                      </button>
-                      <button
-                        className={rowActionBtnClass}
-                        onClick={() =>
-                          handleToggleTrainingActiveButtonClick(training)
-                        }
-                      >
-                        {training.isActive ? "비활성화" : "활성화"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {trainings.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
+                    </StatusChip>
+                  </div>
+                  <div className="text-[13px] text-[#6b7280] leading-relaxed mb-3.5">
+                    {CATEGORY_LABEL[training.category]} ·{" "}
+                    {PAY_MODE_LABEL[training.payMode]}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {training.isRequired && (
+                      <span className="text-[11.5px] font-semibold text-[#5b6472] bg-[#f3f4f6] px-2.5 py-1 rounded-full">
+                        필수교육
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-1 mt-auto pt-3 border-t border-[#eceef1]">
+                    <button
+                      className={rowActionBtnClass}
+                      onClick={() => handleEditTrainingButtonClick(training)}
                     >
-                      등록된 교육이 없습니다.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      수정
+                    </button>
+                    <button
+                      className={rowActionBtnClass}
+                      onClick={() =>
+                        handleToggleTrainingActiveButtonClick(training)
+                      }
+                    >
+                      {training.isActive ? "비활성화" : "활성화"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -404,7 +375,13 @@ const TrainingTabPanel = ({
                       {row.log.payAmount.toLocaleString()}원
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                      {row.log.status === "COMPLETED" ? "완료" : "취소됨"}
+                      <StatusChip
+                        variant={
+                          row.log.status === "COMPLETED" ? "ok" : "bad"
+                        }
+                      >
+                        {row.log.status === "COMPLETED" ? "완료" : "취소됨"}
+                      </StatusChip>
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                       {row.log.status === "COMPLETED" && (

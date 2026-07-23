@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 
 import { getLeaves, getLeaveStats } from "../../api/admin/programs";
 import MonthPicker from "../../components/MonthPicker";
+import StatusChip, { type StatusChipVariant } from "../../components/StatusChip";
 import type { LeaveRow, LeaveStats } from "../../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
   PAID: "유급",
   UNPAID: "무급",
+};
+
+const LEAVE_TYPE_VARIANT: Record<string, StatusChipVariant> = {
+  PAID: "ok",
+  UNPAID: "pending",
 };
 
 const emptyStats: LeaveStats = {
@@ -124,7 +130,9 @@ const LeaveTabPanel = ({ programId }: LeaveTabPanelProps) => {
                     {row.leave.leaveDays}일
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {LEAVE_TYPE_LABEL[row.leave.leaveType]}
+                    <StatusChip variant={LEAVE_TYPE_VARIANT[row.leave.leaveType]}>
+                      {LEAVE_TYPE_LABEL[row.leave.leaveType]}
+                    </StatusChip>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {row.leave.reason ?? "-"}

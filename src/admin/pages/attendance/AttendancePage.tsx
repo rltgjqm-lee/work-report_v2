@@ -6,9 +6,10 @@ import FilterSelect from "../../components/FilterSelect";
 import AttendanceTabPanel from "./AttendanceTabPanel";
 import LeaveTabPanel from "./LeaveTabPanel";
 import TrainingTabPanel from "./TrainingTabPanel";
+import { tabBarClass, tabBtnActiveClass, tabBtnClass } from "../../uiClasses";
 import type { Participant, Program } from "../../types";
 
-type Tab = "attendance" | "leave" | "training";
+type Tab = "attendance" | "training" | "leave";
 
 /**
  * 관리자 페이지 > 근태 관리 페이지입니다. 근태/휴가/교육을 탭으로 묶어서 보여줍니다.
@@ -59,6 +60,9 @@ const AttendancePage = () => {
             </div>
           ) : null}
           <h1 className="text-[21px] font-bold m-0">근태 관리</h1>
+          <p className="text-[13px] text-[#6b7280] mt-1.5">
+            참여자의 근태, 교육, 휴가 현황을 확인합니다.
+          </p>
         </div>
         {!preselectedProgramId && (
           <FilterSelect
@@ -81,22 +85,18 @@ const AttendancePage = () => {
         </div>
       ) : (
         <>
-          <div className="flex gap-2 mb-4">
+          <div className={tabBarClass}>
             {(
               [
                 ["attendance", "근태"],
-                ["leave", "휴가"],
                 ["training", "교육"],
+                ["leave", "휴가 현황"],
               ] as [Tab, string][]
             ).map(([tabKey, label]) => (
               <button
                 key={tabKey}
                 onClick={() => setTab(tabKey)}
-                className={
-                  tab === tabKey
-                    ? "px-4 py-2 text-[13px] font-semibold rounded-[2px] bg-[#1e3a5f] text-white border-none cursor-pointer"
-                    : "px-4 py-2 text-[13px] font-semibold rounded-[2px] bg-white text-[#374151] border border-[#d7dbe1] cursor-pointer hover:bg-[#f5f6f8]"
-                }
+                className={tab === tabKey ? tabBtnActiveClass : tabBtnClass}
               >
                 {label}
               </button>
@@ -104,10 +104,10 @@ const AttendancePage = () => {
           </div>
 
           {tab === "attendance" && <AttendanceTabPanel programId={programId} />}
-          {tab === "leave" && <LeaveTabPanel programId={programId} />}
           {tab === "training" && (
             <TrainingTabPanel programId={programId} participants={participants} />
           )}
+          {tab === "leave" && <LeaveTabPanel programId={programId} />}
         </>
       )}
     </div>
