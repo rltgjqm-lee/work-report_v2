@@ -307,7 +307,7 @@ const EscapesPage = () => {
           <div className="flex gap-3 items-start">
             <div
               ref={mapContainerRef}
-              className="h-[720px] flex-[2] border border-[#e2e5eb] rounded-[2px]"
+              className="h-[calc(100vh-190px)] flex-[2] border border-[#e2e5eb] rounded-[2px]"
             />
             <div className="flex-1 min-w-[420px] flex flex-col gap-3">
               <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-4 py-4">
