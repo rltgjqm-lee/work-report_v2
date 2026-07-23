@@ -157,12 +157,20 @@ export type AttendanceLog = {
   totalMinutes: number | null;
   status: AttendanceStatus;
   note: string | null;
+  signatureKey: string | null;
   createdAt: string;
 };
 
 export type AttendanceRow = {
   log: AttendanceLog;
   participantName: string;
+  groupName: string | null;
+  shiftStart: string | null;
+  shiftEnd: string | null;
+};
+
+export type ParticipantAttendanceRow = {
+  log: AttendanceLog;
   groupName: string | null;
   shiftStart: string | null;
   shiftEnd: string | null;
@@ -179,6 +187,17 @@ export type AttendanceStats = {
 export type MonthlyAttendance = {
   logs: AttendanceRow[];
   stats: AttendanceStats;
+};
+
+export type ParticipantMonthlyAttendance = {
+  logs: ParticipantAttendanceRow[];
+  stats: AttendanceStats;
+};
+
+export type ParticipantDetail = Participant & {
+  programName: string;
+  groupName: string | null;
+  organizationName: string | null;
 };
 
 export type LeaveType = "PAID" | "UNPAID";

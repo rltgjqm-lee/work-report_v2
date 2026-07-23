@@ -11,6 +11,7 @@ import AttendancePage from "./pages/AttendancePage";
 import LeaveStatsPage from "./pages/LeaveStatsPage";
 import EscapesPage from "./pages/EscapesPage";
 import ParticipantsPage from "./pages/ParticipantsPage";
+import ParticipantDetailPage from "./pages/ParticipantDetailPage";
 import DisasterMessagesPage from "./pages/DisasterMessagesPage";
 import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
 import AdminsPage from "./pages/admins/AdminsPage";
@@ -36,6 +37,10 @@ const AdminApp = () => (
           <Route path="programs/:id/escapes" element={<EscapesPage />} />
           <Route path="escapes" element={<EscapesPage />} />
           <Route path="participants" element={<ParticipantsPage />} />
+          <Route
+            path="participants/:id"
+            element={<ParticipantDetailPage />}
+          />
           <Route path="safety-alerts" element={<DisasterMessagesPage />} />
           <Route path="disaster-push-logs" element={<DisasterPushLogsPage />} />
           <Route path="admins" element={<AdminsPage />} />

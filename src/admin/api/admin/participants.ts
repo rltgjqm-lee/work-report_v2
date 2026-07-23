@@ -1,5 +1,23 @@
 import { request } from "../client";
-import type { AnnualLeave, LeaveType, Participant } from "../../types";
+import type {
+  AnnualLeave,
+  LeaveType,
+  Participant,
+  ParticipantDetail,
+  ParticipantLeave,
+  ParticipantMonthlyAttendance,
+} from "../../types";
+
+export const getParticipant = (id: number) =>
+  request<ParticipantDetail>(`/api/participants/${id}`);
+
+export const getParticipantAttendance = (id: number, month: string) =>
+  request<ParticipantMonthlyAttendance>(
+    `/api/participants/${id}/attendance?month=${month}`,
+  );
+
+export const getParticipantLeaves = (id: number) =>
+  request<ParticipantLeave[]>(`/api/participants/${id}/leaves`);
 
 export const addParticipant = (
   programId: number,

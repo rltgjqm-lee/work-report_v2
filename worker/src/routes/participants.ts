@@ -1,13 +1,15 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, like, sql } from "drizzle-orm";
 
 import {
   participants,
   programs,
+  organizations,
   participantLeaves,
   participantAnnualLeave,
   participantMonthlySchedule,
+  attendanceLogs,
   groups,
   demandSites,
 } from "../db/schema";
@@ -43,6 +45,102 @@ const loadParticipantWithProgram = async (
 
   return { participant, program };
 };
+
+// 참여자 상세 페이지 헤더 정보 — 소속 사업단/조/기관명까지 한 번에 내려준다
+app.get("/:id", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const [groupRows, organizationRows] = await Promise.all([
+    found.participant.groupId
+      ? db.select().from(groups).where(eq(groups.id, found.participant.groupId))
+      : Promise.resolve([]),
+    db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, found.program.organizationId)),
+  ]);
+
+  return c.json({
+    ...found.participant,
+    programName: found.program.name,
+    groupName: groupRows[0]?.name ?? null,
+    organizationName: organizationRows[0]?.name ?? null,
+  });
+});
+
+// 참여자 개인 근태 이력 — 관리자 콘솔 참여자 상세 페이지에서 쓴다
+app.get("/:id/attendance", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const month = c.req.query("month");
+  if (!month) return c.json({ error: "month is required" }, 400);
+
+  const rows = await db
+    .select({
+      log: attendanceLogs,
+      groupName: groups.name,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
+    })
+    .from(attendanceLogs)
+    .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
+    .where(
+      and(
+        eq(attendanceLogs.participantId, id),
+        like(attendanceLogs.workDate, `${month}%`),
+      ),
+    )
+    .orderBy(desc(attendanceLogs.workDate));
+
+  const stats = {
+    total: rows.length,
+    normal: rows.filter((row) => row.log.status === "NORMAL").length,
+    late: rows.filter((row) => row.log.status === "LATE").length,
+    earlyLeave: rows.filter((row) => row.log.status === "EARLY_LEAVE").length,
+    totalHours: Math.floor(
+      rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60,
+    ),
+  };
+
+  return c.json({ logs: rows, stats });
+});
+
+// 참여자 개인 휴가 이력 — 연차 현황(annual-leave)과 별개로 실제 휴가 신청 기록 목록
+app.get("/:id/leaves", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const rows = await db
+    .select()
+    .from(participantLeaves)
+    .where(eq(participantLeaves.participantId, id))
+    .orderBy(desc(participantLeaves.leaveStart));
+
+  return c.json(rows);
+});
 
 app.put("/:id", async (c) => {
   const auth = getAuth(c);

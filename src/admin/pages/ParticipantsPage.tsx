@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { deleteParticipant } from "../api/admin/participants";
 import { getProgram, listPrograms } from "../api/admin/programs";
@@ -20,6 +21,7 @@ type ParticipantRow = Participant & {
  *
  */
 const ParticipantsPage = () => {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<ParticipantRow[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [programFilter, setProgramFilter] = useState("all");
@@ -147,7 +149,11 @@ const ParticipantsPage = () => {
             </thead>
             <tbody>
               {pageItems.map((row) => (
-                <tr key={row.id} className="hover:bg-[#f8fafc]">
+                <tr
+                  key={row.id}
+                  className="hover:bg-[#f8fafc] cursor-pointer"
+                  onClick={() => navigate(`/admin/participants/${row.id}`)}
+                >
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {row.name}
                   </td>
@@ -163,7 +169,10 @@ const ParticipantsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => handleDeleteButtonClick(row)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteButtonClick(row);
+                      }}
                     >
                       삭제
                     </button>
