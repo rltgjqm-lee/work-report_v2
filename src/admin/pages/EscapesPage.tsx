@@ -29,7 +29,7 @@ const getMarkerColor = (worker: LiveWorker): string => {
 };
 
 /**
- * 관리자 페이지 > 이탈 관제 페이지입니다.
+ * 관리자 페이지 > 안전 관제 페이지입니다.
  *
  */
 const EscapesPage = () => {
@@ -263,10 +263,10 @@ const EscapesPage = () => {
               >
                 {programName || "사업단 상세"}
               </a>{" "}
-              / 이탈 관제
+              / 안전 관제
             </div>
           ) : null}
-          <h1 className="text-[21px] font-bold m-0">이탈 관제</h1>
+          <h1 className="text-[21px] font-bold m-0">안전 관제</h1>
         </div>
         <div className="flex items-center gap-2.5">
           {!preselectedProgramId && (

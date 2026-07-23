@@ -11,7 +11,7 @@ const BASE_NAV_ITEMS = [
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
   { to: "/admin/attendance", label: "근태 관리", badge: "4" },
-  { to: "/admin/escapes", label: "이탈 관제", badge: "5" },
+  { to: "/admin/escapes", label: "안전 관제", badge: "5" },
   { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
 ];
 
@@ -38,13 +38,13 @@ const LOGIN_HISTORY_NAV_ITEM = {
 // 근태 관리 페이지 안에 근태/휴가/교육이 탭으로 합쳐져 있음 — 상단바 제목은 그대로 "근태 관리"
 const getTopbarTitle = (pathname: string) => {
   if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근태 관리";
-  if (/^\/admin\/programs\/\d+\/escapes/.test(pathname)) return "이탈 관제";
+  if (/^\/admin\/programs\/\d+\/escapes/.test(pathname)) return "안전 관제";
   if (/^\/admin\/programs\/\d+/.test(pathname)) return "사업단 상세";
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   if (pathname.startsWith("/admin/attendance")) return "근태 관리";
-  if (pathname.startsWith("/admin/escapes")) return "이탈 관제";
+  if (pathname.startsWith("/admin/escapes")) return "안전 관제";
   if (pathname.startsWith("/admin/disaster-push-logs"))
     return "재난문자 발송이력";
   if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 테스트";

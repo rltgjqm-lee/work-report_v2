@@ -141,7 +141,7 @@ const ProgramDetailPage = () => {
             className={btnGhostClass}
             onClick={() => navigate(`/admin/programs/${programId}/escapes`)}
           >
-            이탈 관제
+            안전 관제
           </button>
           <button
             className={btnPrimaryClass}
