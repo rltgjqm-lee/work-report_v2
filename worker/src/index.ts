@@ -12,6 +12,7 @@ import admins from "./routes/admins";
 import demandSites from "./routes/demandSites";
 import escapes from "./routes/escapes";
 import attendance from "./routes/attendance";
+import trainings from "./routes/trainings";
 import publicRoutes from "./routes/public";
 import authRoutes from "./routes/auth";
 import meRoutes from "./routes/me";
@@ -58,6 +59,7 @@ app.route("/api/admins", admins);
 app.route("/api/demand-sites", demandSites);
 app.route("/api/escapes", escapes);
 app.route("/api/attendance", attendance);
+app.route("/api/trainings", trainings);
 
 export default {
   fetch: app.fetch,

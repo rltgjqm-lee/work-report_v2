@@ -313,3 +313,45 @@ export type LiveWorker = {
   alertCount: number;
   status: "NORMAL" | "ESCAPE";
 };
+
+export type TrainingCategory = "PRE" | "DURING";
+export type TrainingPayMode = "WORK" | "HOURLY" | "DAILY" | "NONE";
+
+export type ProjectTraining = {
+  id: number;
+  programId: number;
+  name: string;
+  category: TrainingCategory;
+  isPaid: boolean;
+  payMode: TrainingPayMode;
+  hours: number | null;
+  dailyWage: number | null;
+  isRequired: boolean;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type TrainingLogStatus = "COMPLETED" | "CANCELLED";
+
+export type ParticipantTrainingLog = {
+  id: number;
+  participantId: number;
+  trainingId: number;
+  attendDate: string;
+  attendHours: number;
+  payAmount: number;
+  status: TrainingLogStatus;
+  createdAt: string;
+};
+
+export type TrainingLogRow = {
+  log: ParticipantTrainingLog;
+  participantName: string;
+  trainingName: string;
+};
+
+export type TrainingSummaryRow = {
+  participantId: number;
+  participantName: string;
+  missingTrainings: { id: number; name: string }[];
+};

@@ -197,6 +197,13 @@
       "when": 1784786276283,
       "tag": "0027_skinny_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1784796515928,
+      "tag": "0028_normal_the_watchers",
+      "breakpoints": true
     }
   ]
 }

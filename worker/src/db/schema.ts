@@ -443,6 +443,56 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
     .default(sql`(current_timestamp)`),
 });
 
+// 교육 마스터 — 사전/기간중 교육 정의. payMode에 따라 이수 등록 시 지급액 계산 방식이 달라진다.
+export const projectTrainings = sqliteTable("project_trainings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  programId: integer("program_id")
+    .notNull()
+    .references(() => programs.id),
+  name: text("name").notNull(),
+  category: text("category").$type<"PRE" | "DURING">().notNull(),
+  isPaid: integer("is_paid", { mode: "boolean" }).notNull().default(false),
+  // WORK: 근무시간으로 합산(주휴수당 포함) / HOURLY: 시간×시급 별도지급
+  // DAILY: 고정 일당 별도지급 / NONE: 기록만, 급여 미반영
+  payMode: text("pay_mode")
+    .$type<"WORK" | "HOURLY" | "DAILY" | "NONE">()
+    .notNull()
+    .default("NONE"),
+  hours: real("hours"),
+  dailyWage: integer("daily_wage"),
+  isRequired: integer("is_required", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 참여자별 교육 이수 기록. payAmount는 등록 시 교육의 payMode 기준으로 서버가 계산해 저장한다.
+export const participantTrainingLogs = sqliteTable(
+  "participant_training_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    trainingId: integer("training_id")
+      .notNull()
+      .references(() => projectTrainings.id),
+    attendDate: text("attend_date").notNull(),
+    attendHours: real("attend_hours").notNull().default(0),
+    payAmount: integer("pay_amount").notNull().default(0),
+    status: text("status")
+      .$type<"COMPLETED" | "CANCELLED">()
+      .notNull()
+      .default("COMPLETED"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+);
+
 // 이탈 이벤트 1건 = 배정된 수요처 반경을 벗어난 순간(복귀 후 다시 벗어나면 새 건).
 // alertCount는 이 참여자가 해결(RESOLVED) 처리 이후 다시 벗어난 누적 횟수.
 export const escapeLogs = sqliteTable("escape_logs", {
