@@ -441,6 +441,11 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
+  // 강제수정/무효화한 관리자와 시각 — 프론트에는 안 보여주고 감사 목적으로만 DB에 남긴다.
+  correctedByAdminId: integer("corrected_by_admin_id").references(
+    () => admins.id,
+  ),
+  correctedAt: text("corrected_at"),
 });
 
 // 교육 마스터 — 사전/기간중 교육 정의. payMode에 따라 이수 등록 시 지급액 계산 방식이 달라진다.

@@ -30,7 +30,8 @@ const loadAttendanceLogWithProgram = async (
 };
 
 // 4-2 근태 강제 수정 — 출퇴근 시간(HH:MM)/상태/사유를 관리자가 직접 고친다.
-// 사유는 감사 목적으로 note에 남긴다 (별도 감사로그 테이블은 아직 없음).
+// 사유는 프론트에도 보이는 note에 남기고, 누가/언제 고쳤는지는 correctedByAdminId/
+// correctedAt에 감사 목적으로만 남긴다 (프론트에는 노출 안 함).
 app.put("/:logId", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -64,6 +65,8 @@ app.put("/:logId", async (c) => {
       totalMinutes: body.totalMinutes ?? found.log.totalMinutes,
       status: body.status ?? found.log.status,
       note: `[수동수정] ${body.reason}`,
+      correctedByAdminId: auth.id,
+      correctedAt: new Date().toISOString(),
     })
     .where(eq(attendanceLogs.id, logId))
     .returning();
@@ -93,6 +96,8 @@ app.post("/:logId/invalidate", async (c) => {
     .set({
       status: "INVALID",
       note: `[무효화] ${body.reason || "사유 미입력"}`,
+      correctedByAdminId: auth.id,
+      correctedAt: new Date().toISOString(),
     })
     .where(eq(attendanceLogs.id, logId))
     .returning();
