@@ -60,9 +60,6 @@ export type DemandSite = {
   id: number;
   programId: number;
   name: string;
-  baseLat: number;
-  baseLng: number;
-  allowedRadius: number;
   address: string | null;
   contactPerson: string | null;
   isActive: boolean;
@@ -76,6 +73,22 @@ export type DemandSiteSchedule = {
   groupName: string;
   shiftStart: string;
   shiftEnd: string;
+};
+
+export type LatLngPoint = { lat: number; lng: number };
+
+export type DemandSiteLocationShape = "RADIUS" | "POLYGON";
+
+export type DemandSiteLocation = {
+  id: number;
+  demandSiteId: number;
+  name: string;
+  shapeType: DemandSiteLocationShape;
+  baseLat: number | null;
+  baseLng: number | null;
+  radius: number | null;
+  polygon: LatLngPoint[] | null;
+  createdAt: string;
 };
 
 export type ParticipantStatus = "ACTIVE" | "DROPPED" | "ON_LEAVE";

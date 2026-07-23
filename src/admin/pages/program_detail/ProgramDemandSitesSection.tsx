@@ -6,6 +6,7 @@ import {
 } from "../../api/admin/demandSites";
 import DemandSiteFormModal from "./DemandSiteFormModal";
 import DemandSiteScheduleAddModal from "./DemandSiteScheduleAddModal";
+import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
 import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
 import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
 
@@ -36,6 +37,7 @@ const ProgramDemandSitesSection = ({
   const [scheduleTargetSiteId, setScheduleTargetSiteId] = useState<
     number | null
   >(null);
+  const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
 
   const activeGroups = useMemo(
     () => groups.filter((group) => group.isActive),
@@ -112,6 +114,18 @@ const ProgramDemandSitesSection = ({
               <div className="flex gap-1.5">
                 <button
                   className={rowActionBtnClass}
+                  onClick={() =>
+                    setExpandedSiteId((current) =>
+                      current === demandSite.id ? null : demandSite.id,
+                    )
+                  }
+                >
+                  {expandedSiteId === demandSite.id
+                    ? "거점 편집 닫기"
+                    : "거점 관리"}
+                </button>
+                <button
+                  className={rowActionBtnClass}
                   onClick={() => handleEditButtonClick(demandSite)}
                 >
                   수정
@@ -125,9 +139,7 @@ const ProgramDemandSitesSection = ({
               </div>
             </div>
             <div className="text-xs text-[#6b7280] mt-1">
-              {demandSite.address && <span>{demandSite.address} · </span>}
-              위경도 {demandSite.baseLat}, {demandSite.baseLng} (반경{" "}
-              {demandSite.allowedRadius}m)
+              {demandSite.address && <span>{demandSite.address}</span>}
               {demandSite.contactPerson && (
                 <span> · 담당자 {demandSite.contactPerson}</span>
               )}
@@ -154,6 +166,13 @@ const ProgramDemandSitesSection = ({
                 + 근무시간
               </button>
             </div>
+
+            {expandedSiteId === demandSite.id && (
+              <DemandSiteLocationsPanel
+                demandSite={demandSite}
+                onClose={() => setExpandedSiteId(null)}
+              />
+            )}
           </div>
         ))}
       </div>

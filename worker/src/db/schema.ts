@@ -131,19 +131,36 @@ export const participantMonthlySchedule = sqliteTable(
   ],
 );
 
-// 수요처 — 참여자가 실제로 활동하는 장소. 위경도+반경은 이탈 관제(geofencing)에서 사용
+// 수요처 마스터 — 실제 위경도/반경/다각형은 하위 demandSiteLocations로 이동(수요처 1개 : 거점 여러 개)
 export const demandSites = sqliteTable("demand_sites", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   programId: integer("program_id")
     .notNull()
     .references(() => programs.id),
   name: text("name").notNull(),
-  baseLat: real("base_lat").notNull(),
-  baseLng: real("base_lng").notNull(),
-  allowedRadius: integer("allowed_radius").notNull().default(1500),
   address: text("address"),
   contactPerson: text("contact_person"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// 수요처 하위 거점/관제구역 — 수요처 1개에 여러 개 있을 수 있다 (건물 여러 동, 넓은 부지 등).
+// RADIUS는 baseLat/baseLng/radius(m)로 원형 판정, POLYGON은 polygon(GeoJSON 좌표 배열)로 판정.
+// 이탈 판정(/public/location)은 참여자가 배정된 수요처의 거점들 중 하나라도 안에 있으면 정상으로 본다.
+export const demandSiteLocations = sqliteTable("demand_site_locations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  demandSiteId: integer("demand_site_id")
+    .notNull()
+    .references(() => demandSites.id),
+  name: text("name").notNull(),
+  shapeType: text("shape_type").$type<"RADIUS" | "POLYGON">().notNull(),
+  baseLat: real("base_lat"),
+  baseLng: real("base_lng"),
+  radius: integer("radius"),
+  // JSON: [{ lat: number, lng: number }, ...] — POLYGON일 때만 사용
+  polygon: text("polygon"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

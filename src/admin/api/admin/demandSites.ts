@@ -1,5 +1,11 @@
 import { request } from "../client";
-import type { DemandSite, DemandSiteSchedule } from "../../types";
+import type {
+  DemandSite,
+  DemandSiteLocation,
+  DemandSiteLocationShape,
+  DemandSiteSchedule,
+  LatLngPoint,
+} from "../../types";
 
 export const listDemandSites = (programId: number) =>
   request<DemandSite[]>(`/api/demand-sites?programId=${programId}`);
@@ -7,9 +13,6 @@ export const listDemandSites = (programId: number) =>
 export const createDemandSite = (data: {
   programId: number;
   name: string;
-  baseLat: number;
-  baseLng: number;
-  allowedRadius?: number;
   address?: string;
   contactPerson?: string;
 }) =>
@@ -22,9 +25,6 @@ export const updateDemandSite = (
   id: number,
   data: Partial<{
     name: string;
-    baseLat: number;
-    baseLng: number;
-    allowedRadius: number;
     address: string;
     contactPerson: string;
     isActive: boolean;
@@ -60,3 +60,44 @@ export const deleteDemandSiteSchedule = (scheduleId: number) =>
   request<{ success: boolean }>(`/api/demand-sites/schedules/${scheduleId}`, {
     method: "DELETE",
   });
+
+export const listDemandSiteLocations = (demandSiteId: number) =>
+  request<DemandSiteLocation[]>(`/api/demand-sites/${demandSiteId}/locations`);
+
+export const createDemandSiteLocation = (
+  demandSiteId: number,
+  data: {
+    name: string;
+    shapeType: DemandSiteLocationShape;
+    baseLat?: number;
+    baseLng?: number;
+    radius?: number;
+    polygon?: LatLngPoint[];
+  },
+) =>
+  request<DemandSiteLocation>(`/api/demand-sites/${demandSiteId}/locations`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const updateDemandSiteLocation = (
+  locationId: number,
+  data: Partial<{
+    name: string;
+    shapeType: DemandSiteLocationShape;
+    baseLat: number;
+    baseLng: number;
+    radius: number;
+    polygon: LatLngPoint[];
+  }>,
+) =>
+  request<DemandSiteLocation>(`/api/demand-sites/locations/${locationId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
+export const deleteDemandSiteLocation = (locationId: number) =>
+  request<{ success: boolean }>(
+    `/api/demand-sites/locations/${locationId}`,
+    { method: "DELETE" },
+  );

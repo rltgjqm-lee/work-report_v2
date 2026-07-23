@@ -176,6 +176,27 @@
       "when": 1784770284022,
       "tag": "0024_typical_hellcat",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1784784565968,
+      "tag": "0025_ordinary_marten_broadcloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1784784600000,
+      "tag": "0026_migrate_demand_site_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1784786276283,
+      "tag": "0027_skinny_gargoyle",
+      "breakpoints": true
     }
   ]
 }

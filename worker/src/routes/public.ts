@@ -9,15 +9,67 @@ import {
   participants,
   groups,
   demandSites,
+  demandSiteLocations,
   escapeLogs,
   participantEscapeMeta,
   attendanceLogs,
   activityLogs,
 } from "../db/schema";
 import { getKstNow } from "../lib/kst";
-import { haversineKm } from "../lib/geo";
+import { haversineKm, isPointInPolygon, polygonCentroid } from "../lib/geo";
 import { sendWebPush } from "../lib/webPush";
 import type { Env } from "../types";
+
+// 참여자 위치가 거점 하나(원형 or 다각형) 안에 있는지 판정
+const isInsideLocation = (
+  lat: number,
+  lng: number,
+  location: typeof demandSiteLocations.$inferSelect,
+): boolean => {
+  if (location.shapeType === "RADIUS") {
+    if (
+      location.baseLat === null ||
+      location.baseLng === null ||
+      location.radius === null
+    ) {
+      return false;
+    }
+    return (
+      haversineKm(lat, lng, location.baseLat, location.baseLng) <=
+      location.radius / 1000
+    );
+  }
+  if (!location.polygon) return false;
+  const polygon = JSON.parse(location.polygon) as {
+    lat: number;
+    lng: number;
+  }[];
+  return isPointInPolygon({ lat, lng }, polygon);
+};
+
+// 로그에 남길 "대략적인 이탈 거리" — 가장 가까운 거점까지의 거리(원형은 중심, 다각형은 중심점 기준)
+const distanceToNearestLocation = (
+  lat: number,
+  lng: number,
+  locations: (typeof demandSiteLocations.$inferSelect)[],
+): number => {
+  const distances = locations.map((location) => {
+    if (location.shapeType === "RADIUS") {
+      if (location.baseLat === null || location.baseLng === null) {
+        return Infinity;
+      }
+      return haversineKm(lat, lng, location.baseLat, location.baseLng);
+    }
+    if (!location.polygon) return Infinity;
+    const polygon = JSON.parse(location.polygon) as {
+      lat: number;
+      lng: number;
+    }[];
+    const centroid = polygonCentroid(polygon);
+    return haversineKm(lat, lng, centroid.lat, centroid.lng);
+  });
+  return Math.min(...distances);
+};
 
 const app = new Hono<Env>();
 
@@ -434,16 +486,31 @@ app.post("/location", async (c) => {
     });
   }
 
-  const distanceKm = haversineKm(
-    body.lat,
-    body.lng,
-    demandSite.baseLat,
-    demandSite.baseLng,
+  const locations = await db
+    .select()
+    .from(demandSiteLocations)
+    .where(eq(demandSiteLocations.demandSiteId, demandSite.id));
+
+  if (locations.length === 0) {
+    await saveMeta({});
+    return c.json({
+      ok: true,
+      escaped: false,
+      message: "등록된 거점이 없습니다.",
+    });
+  }
+
+  const isInside = locations.some((location) =>
+    isInsideLocation(body.lat!, body.lng!, location),
   );
-  const limitKm = demandSite.allowedRadius / 1000;
+  const distanceKm = distanceToNearestLocation(
+    body.lat!,
+    body.lng!,
+    locations,
+  );
   const currentAlertCount = meta?.alertCount ?? 0;
 
-  if (distanceKm > limitKm) {
+  if (!isInside) {
     const isNewEscape = !meta?.outsideStart;
     const newAlertCount = isNewEscape
       ? currentAlertCount + 1
