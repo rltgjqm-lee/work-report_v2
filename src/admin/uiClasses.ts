@@ -1,5 +1,10 @@
 export const inputClass =
   "w-full border border-[#d7dbe1] px-3 py-2.5 text-[13px] rounded-[2px] font-sans box-border";
+// inputClass는 w-full이 박혀있어서 flex 한 줄에 여러 인풋을 나란히 두면 자기들끼리
+// 밀어내며 줄바꿈된다 (Tailwind는 클래스 문자열 순서가 아니라 자체 생성 순서로
+// 우선순위를 매겨서 뒤에 w-[Npx]를 붙여도 못 이김) — 그래서 폭 고정 인풋은 이걸 쓴다.
+export const compactInputClass =
+  "flex-none w-[64px] border border-[#d7dbe1] px-2 py-2.5 text-[13px] rounded-[2px] font-sans box-border";
 export const selectClass =
   "border border-[#d7dbe1] px-2.5 py-2.5 text-[13px] rounded-[2px] font-sans bg-white";
 export const searchInputClass =

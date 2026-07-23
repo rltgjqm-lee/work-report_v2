@@ -4,10 +4,16 @@ import {
   getGroupMonthlySchedule,
   updateGroupMonthlySchedule,
 } from "../../api/admin/monthlySchedule";
+import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import {
+  btnGhostClass,
+  btnPrimaryClass,
+  compactInputClass,
+  inputClass,
+} from "../../uiClasses";
 import type { Group } from "../../types";
 
 const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
@@ -36,6 +42,8 @@ const GroupMonthlyScheduleModal = ({
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
   const [loading, setLoading] = useState(false);
+  const [patternWorkDays, setPatternWorkDays] = useState("1");
+  const [patternRestDays, setPatternRestDays] = useState("2");
 
   useEffect(() => {
     setLoading(true);
@@ -81,6 +89,17 @@ const GroupMonthlyScheduleModal = ({
         ? current.filter((workDate) => workDate !== date)
         : [...current, date].sort(),
     );
+  };
+
+  const handleGeneratePatternButtonClick = () => {
+    const workDays = Number(patternWorkDays);
+    const restDays = Number(patternRestDays);
+    if (!workDays || workDays < 1 || restDays < 0) {
+      alert("근무일/휴무일을 올바르게 입력해주세요.");
+
+      return;
+    }
+    setWorkDates(generateWorkPattern(yearMonth, workDays, restDays));
   };
 
   const handleSaveButtonClick = async () => {
@@ -133,6 +152,37 @@ const GroupMonthlyScheduleModal = ({
           value={maxMonthlyHours}
           onChange={(event) => setMaxMonthlyHours(event.target.value)}
         />
+      </FormField>
+
+      <FormField label="패턴 자동생성 (예: 1근무 2휴무)">
+        <div className="flex items-center gap-2 flex-nowrap">
+          <input
+            type="number"
+            min={1}
+            className={compactInputClass}
+            value={patternWorkDays}
+            onChange={(event) => setPatternWorkDays(event.target.value)}
+          />
+          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">
+            일 근무 /
+          </span>
+          <input
+            type="number"
+            min={0}
+            className={compactInputClass}
+            value={patternRestDays}
+            onChange={(event) => setPatternRestDays(event.target.value)}
+          />
+          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">
+            일 휴무
+          </span>
+          <button
+            className={btnGhostClass}
+            onClick={handleGeneratePatternButtonClick}
+          >
+            자동 생성
+          </button>
+        </div>
       </FormField>
 
       <FormField label="근무일 (클릭해서 선택/해제)">
