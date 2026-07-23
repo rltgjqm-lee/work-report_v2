@@ -5,8 +5,11 @@ export const inputClass =
 // 우선순위를 매겨서 뒤에 w-[Npx]를 붙여도 못 이김) — 그래서 폭 고정 인풋은 이걸 쓴다.
 export const compactInputClass =
   "flex-none w-[64px] border border-[#d7dbe1] px-2 py-2.5 text-[13px] rounded-[2px] font-sans box-border";
+// 네이티브 select 화살표는 브라우저가 그리는 영역이라 padding-right를 줘도 위치가
+// 안 움직인다(특히 Safari) — appearance-none으로 네이티브 화살표를 없애고
+// FilterSelect에서 lucide ChevronDown 아이콘을 직접 얹어서 위치를 제어한다.
 export const selectClass =
-  "border border-[#d7dbe1] px-2.5 py-2.5 text-[13px] rounded-[2px] font-sans bg-white";
+  "appearance-none border border-[#d7dbe1] pl-2.5 pr-8 py-2.5 text-[13px] rounded-[2px] font-sans bg-white";
 export const searchInputClass =
   "border border-[#d7dbe1] px-3 py-2.5 text-[13px] rounded-[2px] min-w-[220px] font-sans box-border";
 export const btnPrimaryClass =
