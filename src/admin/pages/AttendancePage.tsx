@@ -6,15 +6,34 @@ import {
   getProgram,
   listPrograms,
 } from "../api/admin/programs";
+import {
+  correctAttendance,
+  invalidateAttendance,
+} from "../api/admin/attendance";
 import FilterSelect from "../components/FilterSelect";
 import MonthPicker from "../components/MonthPicker";
+import {
+  btnGhostClass,
+  btnPrimaryClass,
+  inputClass,
+  rowActionBtnClass,
+  selectClass,
+} from "../uiClasses";
 import type { AttendanceRow, AttendanceStats, Program } from "../types";
 
 const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",
   LATE: "지각",
   EARLY_LEAVE: "조퇴",
+  INVALID: "무효화됨",
 };
+
+interface CorrectionForm {
+  clockIn: string;
+  clockOut: string;
+  status: "NORMAL" | "LATE" | "EARLY_LEAVE";
+  reason: string;
+}
 
 const emptyStats: AttendanceStats = {
   total: 0,
@@ -55,15 +74,76 @@ const AttendancePage = () => {
 
   const programId = preselectedProgramId ?? Number(selectedProgramId);
 
-  useEffect(() => {
-    // programId가 없으면(사이드바 진입 직후, 아직 미선택) 아래 렌더링에서 통계/표 대신
-    // 안내 문구를 보여주므로 logs/stats를 굳이 초기화할 필요가 없다
+  const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(
+    null,
+  );
+  const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
+    clockIn: "",
+    clockOut: "",
+    status: "NORMAL",
+    reason: "",
+  });
+
+  const refresh = () => {
     if (!programId) return;
     getMonthlyAttendance(programId, month).then((result) => {
       setLogs(result.logs);
       setStats(result.stats);
     });
+  };
+
+  useEffect(() => {
+    // programId가 없으면(사이드바 진입 직후, 아직 미선택) 아래 렌더링에서 통계/표 대신
+    // 안내 문구를 보여주므로 logs/stats를 굳이 초기화할 필요가 없다
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId, month]);
+
+  const handleCorrectButtonClick = (row: AttendanceRow) => {
+    setCorrectionTarget(row);
+    setCorrectionForm({
+      clockIn: row.log.clockIn?.slice(11, 16) ?? "",
+      clockOut: row.log.clockOut?.slice(11, 16) ?? "",
+      status:
+        row.log.status === "INVALID" ? "NORMAL" : row.log.status,
+      reason: "",
+    });
+  };
+
+  const handleSaveCorrectionButtonClick = async () => {
+    if (!correctionTarget) return;
+    if (!correctionForm.reason) {
+      alert("수정 사유를 입력해주세요.");
+
+      return;
+    }
+    try {
+      await correctAttendance(correctionTarget.log.id, {
+        clockIn: correctionForm.clockIn || undefined,
+        clockOut: correctionForm.clockOut || undefined,
+        status: correctionForm.status,
+        reason: correctionForm.reason,
+      });
+      setCorrectionTarget(null);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "수정에 실패했습니다.");
+    }
+  };
+
+  const handleInvalidateButtonClick = async (row: AttendanceRow) => {
+    const reason = prompt(
+      `'${row.participantName}' 님의 ${row.log.workDate} 근태 기록을 무효화합니다. 사유를 입력해주세요.`,
+    );
+    if (reason === null) return;
+
+    try {
+      await invalidateAttendance(row.log.id, reason || undefined);
+      refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "무효화에 실패했습니다.");
+    }
+  };
 
   return (
     <div>
@@ -171,11 +251,19 @@ const AttendancePage = () => {
                     <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                       비고
                     </th>
+                    <th className="w-[150px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((row) => (
-                    <tr key={row.log.id} className="hover:bg-[#f8fafc]">
+                    <tr
+                      key={row.log.id}
+                      className={
+                        row.log.status === "INVALID"
+                          ? "opacity-50 hover:bg-[#f8fafc]"
+                          : "hover:bg-[#f8fafc]"
+                      }
+                    >
                       <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                         {row.log.workDate}
                       </td>
@@ -200,12 +288,30 @@ const AttendancePage = () => {
                       <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                         {row.log.note ?? "-"}
                       </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                        {row.log.status !== "INVALID" && (
+                          <>
+                            <button
+                              className={rowActionBtnClass}
+                              onClick={() => handleCorrectButtonClick(row)}
+                            >
+                              수정
+                            </button>
+                            <button
+                              className={rowActionBtnClass}
+                              onClick={() => handleInvalidateButtonClick(row)}
+                            >
+                              무효화
+                            </button>
+                          </>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {logs.length === 0 && (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
                       >
                         해당 월에 근태 기록이 없습니다.
@@ -217,6 +323,101 @@ const AttendancePage = () => {
             </div>
           </div>
         </>
+      )}
+
+      {correctionTarget && (
+        <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
+          <div className="bg-white rounded-[8px] shadow-xl w-[380px] p-5">
+            <div className="text-[14px] font-bold mb-4">
+              {correctionTarget.participantName} — {correctionTarget.log.workDate}{" "}
+              근태 수정
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                  출근시간
+                </label>
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={correctionForm.clockIn}
+                  onChange={(event) =>
+                    setCorrectionForm((f) => ({
+                      ...f,
+                      clockIn: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                  퇴근시간
+                </label>
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={correctionForm.clockOut}
+                  onChange={(event) =>
+                    setCorrectionForm((f) => ({
+                      ...f,
+                      clockOut: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                  상태
+                </label>
+                <select
+                  className={selectClass}
+                  value={correctionForm.status}
+                  onChange={(event) =>
+                    setCorrectionForm((f) => ({
+                      ...f,
+                      status: event.target.value as CorrectionForm["status"],
+                    }))
+                  }
+                >
+                  <option value="NORMAL">정상</option>
+                  <option value="LATE">지각</option>
+                  <option value="EARLY_LEAVE">조퇴</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                  수정 사유 (필수)
+                </label>
+                <input
+                  className={inputClass}
+                  value={correctionForm.reason}
+                  onChange={(event) =>
+                    setCorrectionForm((f) => ({
+                      ...f,
+                      reason: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                className={btnGhostClass}
+                onClick={() => setCorrectionTarget(null)}
+              >
+                취소
+              </button>
+              <button
+                className={btnPrimaryClass}
+                onClick={handleSaveCorrectionButtonClick}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -157,7 +157,7 @@ export type Admin = {
   createdAt: string;
 };
 
-export type AttendanceStatus = "NORMAL" | "LATE" | "EARLY_LEAVE";
+export type AttendanceStatus = "NORMAL" | "LATE" | "EARLY_LEAVE" | "INVALID";
 
 export type AttendanceLog = {
   id: number;
