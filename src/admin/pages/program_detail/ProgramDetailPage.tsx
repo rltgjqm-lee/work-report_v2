@@ -135,13 +135,7 @@ const ProgramDetailPage = () => {
             className={btnGhostClass}
             onClick={() => navigate(`/admin/programs/${programId}/attendance`)}
           >
-            근태 조회
-          </button>
-          <button
-            className={btnGhostClass}
-            onClick={() => navigate(`/admin/programs/${programId}/leaves`)}
-          >
-            휴가 현황
+            근태 관리
           </button>
           <button
             className={btnGhostClass}

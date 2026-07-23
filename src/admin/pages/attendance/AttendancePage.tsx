@@ -1,0 +1,117 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { getProgram, listPrograms } from "../../api/admin/programs";
+import FilterSelect from "../../components/FilterSelect";
+import AttendanceTabPanel from "./AttendanceTabPanel";
+import LeaveTabPanel from "./LeaveTabPanel";
+import TrainingTabPanel from "./TrainingTabPanel";
+import type { Participant, Program } from "../../types";
+
+type Tab = "attendance" | "leave" | "training";
+
+/**
+ * 관리자 페이지 > 근태 관리 페이지입니다. 근태/휴가/교육을 탭으로 묶어서 보여줍니다.
+ *
+ */
+const AttendancePage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const preselectedProgramId = id ? Number(id) : null;
+
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
+  const [programName, setProgramName] = useState("");
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [tab, setTab] = useState<Tab>("attendance");
+
+  // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
+  useEffect(() => {
+    if (!preselectedProgramId) listPrograms().then(setPrograms);
+  }, [preselectedProgramId]);
+
+  const programId = preselectedProgramId ?? Number(selectedProgramId);
+
+  useEffect(() => {
+    if (!programId) return;
+    getProgram(programId).then((program) => {
+      setProgramName(program.name);
+      setParticipants(program.participants);
+    });
+  }, [programId]);
+
+  return (
+    <div>
+      <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+        <div>
+          {preselectedProgramId ? (
+            <div className="text-xs text-[#6b7280] mb-1.5">
+              사업단 관리 /{" "}
+              <a
+                onClick={() =>
+                  navigate(`/admin/programs/${preselectedProgramId}`)
+                }
+                className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+              >
+                {programName || "사업단 상세"}
+              </a>{" "}
+              / 근태 관리
+            </div>
+          ) : null}
+          <h1 className="text-[21px] font-bold m-0">근태 관리</h1>
+        </div>
+        {!preselectedProgramId && (
+          <FilterSelect
+            value={selectedProgramId}
+            onChange={setSelectedProgramId}
+            options={[
+              { value: "", label: "사업단을 선택하세요" },
+              ...programs.map((program) => ({
+                value: String(program.id),
+                label: program.name,
+              })),
+            ]}
+          />
+        )}
+      </div>
+
+      {!programId ? (
+        <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+          조회할 사업단을 선택해주세요.
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-2 mb-4">
+            {(
+              [
+                ["attendance", "근태"],
+                ["leave", "휴가"],
+                ["training", "교육"],
+              ] as [Tab, string][]
+            ).map(([tabKey, label]) => (
+              <button
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
+                className={
+                  tab === tabKey
+                    ? "px-4 py-2 text-[13px] font-semibold rounded-[2px] bg-[#1e3a5f] text-white border-none cursor-pointer"
+                    : "px-4 py-2 text-[13px] font-semibold rounded-[2px] bg-white text-[#374151] border border-[#d7dbe1] cursor-pointer hover:bg-[#f5f6f8]"
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "attendance" && <AttendanceTabPanel programId={programId} />}
+          {tab === "leave" && <LeaveTabPanel programId={programId} />}
+          {tab === "training" && (
+            <TrainingTabPanel programId={programId} participants={participants} />
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default AttendancePage;

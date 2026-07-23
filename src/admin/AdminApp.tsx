@@ -7,12 +7,10 @@ import LoginPage from "./pages/LoginPage";
 import OrganizationsPage from "./pages/organizations/OrganizationsPage";
 import ProgramsPage from "./pages/programs/ProgramsPage";
 import ProgramDetailPage from "./pages/program_detail/ProgramDetailPage";
-import AttendancePage from "./pages/AttendancePage";
-import LeaveStatsPage from "./pages/LeaveStatsPage";
+import AttendancePage from "./pages/attendance/AttendancePage";
 import EscapesPage from "./pages/EscapesPage";
 import ParticipantsPage from "./pages/ParticipantsPage";
 import ParticipantDetailPage from "./pages/ParticipantDetailPage";
-import TrainingsPage from "./pages/TrainingsPage";
 import DisasterMessagesPage from "./pages/DisasterMessagesPage";
 import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
 import AdminsPage from "./pages/admins/AdminsPage";
@@ -33,12 +31,8 @@ const AdminApp = () => (
           <Route path="programs/:id" element={<ProgramDetailPage />} />
           <Route path="programs/:id/attendance" element={<AttendancePage />} />
           <Route path="attendance" element={<AttendancePage />} />
-          <Route path="programs/:id/leaves" element={<LeaveStatsPage />} />
-          <Route path="leaves" element={<LeaveStatsPage />} />
           <Route path="programs/:id/escapes" element={<EscapesPage />} />
           <Route path="escapes" element={<EscapesPage />} />
-          <Route path="programs/:id/trainings" element={<TrainingsPage />} />
-          <Route path="trainings" element={<TrainingsPage />} />
           <Route path="participants" element={<ParticipantsPage />} />
           <Route
             path="participants/:id"

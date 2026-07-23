@@ -10,45 +10,40 @@ const BASE_NAV_ITEMS = [
   { to: "/admin/organizations", label: "기관 관리", badge: "1" },
   { to: "/admin/programs", label: "사업단 관리", badge: "2" },
   { to: "/admin/participants", label: "참여자 관리", badge: "3" },
-  { to: "/admin/trainings", label: "교육 관리", badge: "4" },
-  { to: "/admin/attendance", label: "근태 관리", badge: "5" },
-  { to: "/admin/leaves", label: "휴가 현황", badge: "6" },
-  { to: "/admin/escapes", label: "이탈 관제", badge: "7" },
-  { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "8" },
+  { to: "/admin/attendance", label: "근태 관리", badge: "4" },
+  { to: "/admin/escapes", label: "이탈 관제", badge: "5" },
+  { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
 ];
 
 // 실제 발송 안 된 원본 수신내역까지 다 보이는 진단용 화면이라 SUPER_ADMIN에게만 노출
 const SAFETY_ALERT_TEST_NAV_ITEM = {
   to: "/admin/safety-alerts",
   label: "재난문자 테스트",
-  badge: "9",
+  badge: "7",
 };
 
 const ADMIN_ACCOUNTS_NAV_ITEM = {
   to: "/admin/admins",
   label: "관리자 계정",
-  badge: "10",
+  badge: "8",
 };
 
 // IP 등 민감정보가 보이는 화면이라 SUPER_ADMIN에게만 노출
 const LOGIN_HISTORY_NAV_ITEM = {
   to: "/admin/login-history",
   label: "로그인 이력",
-  badge: "11",
+  badge: "9",
 };
 
+// 근태 관리 페이지 안에 근태/휴가/교육이 탭으로 합쳐져 있음 — 상단바 제목은 그대로 "근태 관리"
 const getTopbarTitle = (pathname: string) => {
-  if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근태 조회";
-  if (/^\/admin\/programs\/\d+\/leaves/.test(pathname)) return "휴가 현황";
+  if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근태 관리";
   if (/^\/admin\/programs\/\d+\/escapes/.test(pathname)) return "이탈 관제";
-  if (/^\/admin\/programs\/\d+\/trainings/.test(pathname)) return "교육 관리";
   if (/^\/admin\/programs\/\d+/.test(pathname)) return "사업단 상세";
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
-  if (pathname.startsWith("/admin/trainings")) return "교육 관리";
   if (pathname.startsWith("/admin/attendance")) return "근태 관리";
-  if (pathname.startsWith("/admin/leaves")) return "휴가 현황";
   if (pathname.startsWith("/admin/escapes")) return "이탈 관제";
   if (pathname.startsWith("/admin/disaster-push-logs"))
     return "재난문자 발송이력";
