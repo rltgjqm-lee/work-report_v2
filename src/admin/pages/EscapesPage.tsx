@@ -10,6 +10,10 @@ import {
   listPrograms,
 } from "../api/admin/programs";
 import { markEscapeAlerted, resolveEscape } from "../api/admin/escapes";
+import {
+  listDemandSiteLocations,
+  listDemandSites,
+} from "../api/admin/demandSites";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
 import type { EscapeRow, EscapeStatus, LiveWorker, Program } from "../types";
@@ -45,6 +49,7 @@ const EscapesPage = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const geofenceLayerRef = useRef<L.LayerGroup | null>(null);
 
   // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
   useEffect(() => {
@@ -109,7 +114,64 @@ const EscapesPage = () => {
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
+    geofenceLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
+
+    // 사업단을 고르면 근무자 위치가 아직 없어도 그 사업단 수요처 거점(원형/다각형)들을
+    // 지도에 그리고 그쪽으로 먼저 포커스한다 (근무자가 위치를 보고하기 시작하면 아래
+    // 마커 렌더링 effect가 그쪽으로 다시 맞춘다). 거점 자체는 계속 보이는 별도 레이어.
+    if (programId) {
+      listDemandSites(programId).then(async (sites) => {
+        const points: [number, number][] = [];
+        const geofenceLayer = geofenceLayerRef.current;
+
+        for (const site of sites) {
+          const locations = await listDemandSiteLocations(site.id);
+          for (const location of locations) {
+            const tooltipLabel = `${site.name} · ${location.name}`;
+
+            if (
+              location.shapeType === "RADIUS" &&
+              location.baseLat !== null &&
+              location.baseLng !== null &&
+              location.radius !== null
+            ) {
+              points.push([location.baseLat, location.baseLng]);
+              const circle = L.circle([location.baseLat, location.baseLng], {
+                radius: location.radius,
+                color: "#3182f6",
+                weight: 2,
+                dashArray: "6 4",
+                fillOpacity: 0.06,
+              }).bindTooltip(tooltipLabel);
+              geofenceLayer?.addLayer(circle);
+            } else if (location.shapeType === "POLYGON" && location.polygon) {
+              location.polygon.forEach((point) =>
+                points.push([point.lat, point.lng]),
+              );
+              const polygon = L.polygon(
+                location.polygon.map(
+                  (point) => [point.lat, point.lng] as [number, number],
+                ),
+                {
+                  color: "#3182f6",
+                  weight: 2,
+                  dashArray: "6 4",
+                  fillOpacity: 0.06,
+                },
+              ).bindTooltip(tooltipLabel);
+              geofenceLayer?.addLayer(polygon);
+            }
+          }
+        }
+        if (points.length > 0 && mapRef.current) {
+          mapRef.current.fitBounds(L.latLngBounds(points), {
+            padding: [60, 60],
+            maxZoom: 16,
+          });
+        }
+      });
+    }
 
     return () => {
       map.remove();
@@ -242,104 +304,126 @@ const EscapesPage = () => {
         </div>
       ) : (
         <>
-          <div
-            ref={mapContainerRef}
-            className="h-[420px] w-full mb-5 border border-[#e2e5eb] rounded-[2px]"
-          />
+          <div className="flex gap-3 items-start">
+            <div
+              ref={mapContainerRef}
+              className="h-[720px] flex-[2] border border-[#e2e5eb] rounded-[2px]"
+            />
+            <div className="flex-1 min-w-[420px] flex flex-col gap-3">
+              <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-4 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-wide text-[#6b7280] mb-3">
+                  이탈 단계
+                </div>
+                <div className="flex items-center gap-4 text-[13px] flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#2ECC71] flex-none" />
+                    정상
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#FFD200] flex-none" />
+                    1단계
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#FF7800] flex-none" />
+                    2단계
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#FF0000] flex-none" />
+                    3단계
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full border-2 border-dashed border-[#3182f6] flex-none" />
+                    관제구역
+                  </div>
+                  <div className="text-[#6b7280] ml-auto">
+                    근무중 {filteredWorkers.length}명
+                  </div>
+                </div>
+              </div>
 
-          <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] table-fixed border-collapse">
-                <thead>
-                  <tr>
-                    <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                      감지시각
-                    </th>
-                    <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                      참여자명
-                    </th>
-                    <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                      조
-                    </th>
-                    <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                      수요처
-                    </th>
-                    <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                      이탈거리
-                    </th>
-                    <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                      단계
-                    </th>
-                    <th className="w-[140px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr
-                      key={row.escape.id}
-                      className={
-                        row.escape.alertCount >= 3
-                          ? "bg-[#fdecea] hover:bg-[#fbdedb]"
-                          : "hover:bg-[#f8fafc]"
-                      }
-                    >
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                        {row.escape.detectedAt}
-                      </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                        {row.participantName}
-                      </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                        {row.groupName ?? "-"}
-                      </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                        {row.demandSiteName ?? "-"}
-                      </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                        {row.escape.distanceKm.toFixed(2)}km
-                      </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] font-semibold">
-                        {row.escape.alertCount >= 3
-                          ? "3단계(위급)"
-                          : row.escape.alertCount === 2
-                            ? "2단계(주의)"
-                            : "1단계(경고)"}
-                      </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                        {row.escape.status === "OPEN" ? (
-                          <button
-                            className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
-                            onClick={() =>
-                              handleResolveButtonClick(
-                                row.escape.id,
-                                row.participantName,
-                              )
-                            }
+              <div className="bg-white border border-[#e2e5eb] rounded-[2px] flex-1 overflow-hidden flex flex-col">
+                <div className="overflow-auto max-h-[640px]">
+                  <table className="w-full min-w-[560px] table-fixed border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                          감지시각
+                        </th>
+                        <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                          참여자명
+                        </th>
+                        <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                          이탈거리
+                        </th>
+                        <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                          단계
+                        </th>
+                        <th className="w-[110px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr
+                          key={row.escape.id}
+                          className={
+                            row.escape.alertCount >= 3
+                              ? "bg-[#fdecea] hover:bg-[#fbdedb]"
+                              : "hover:bg-[#f8fafc]"
+                          }
+                        >
+                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                            {row.escape.detectedAt}
+                          </td>
+                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                            {row.participantName}
+                          </td>
+                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                            {row.escape.distanceKm.toFixed(2)}km
+                          </td>
+                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] font-semibold">
+                            {row.escape.alertCount >= 3
+                              ? "3단계"
+                              : row.escape.alertCount === 2
+                                ? "2단계"
+                                : "1단계"}
+                          </td>
+                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                            {row.escape.status === "OPEN" ? (
+                              <button
+                                className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
+                                onClick={() =>
+                                  handleResolveButtonClick(
+                                    row.escape.id,
+                                    row.participantName,
+                                  )
+                                }
+                              >
+                                확인 처리
+                              </button>
+                            ) : (
+                              <span className="text-xs text-[#6b7280]">
+                                {row.escape.memo || "처리완료"}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {rows.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-3 py-8 text-center text-[13px] text-[#9aa1ab]"
                           >
-                            확인 처리
-                          </button>
-                        ) : (
-                          <span className="text-xs text-[#6b7280]">
-                            {row.escape.memo || "처리완료"}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {rows.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                      >
-                        {status === "OPEN"
-                          ? "확인이 필요한 이탈이 없습니다."
-                          : "처리된 이탈 이력이 없습니다."}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                            {status === "OPEN"
+                              ? "확인이 필요한 이탈이 없습니다."
+                              : "처리된 이탈 이력이 없습니다."}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </>
