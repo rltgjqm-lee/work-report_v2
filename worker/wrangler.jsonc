@@ -10,6 +10,12 @@
       "database_id": "c7375437-44bf-411a-8fd6-78d03f30d117",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "SIGNATURES_BUCKET",
+      "bucket_name": "work-report-signatures",
+    },
+  ],
   "triggers": {
     // KST 09:00~17:59 매분 + KST 18:00 정각 1회 (Cron은 UTC 기준, KST = UTC+9)
     "crons": ["* 0-8 * * *", "0 9 * * *"],

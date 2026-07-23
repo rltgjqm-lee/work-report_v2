@@ -20,6 +20,7 @@ export type AdminSession = {
 export type Env = {
   Bindings: {
     DB: D1Database;
+    SIGNATURES_BUCKET: R2Bucket;
     VAPID_PRIVATE_KEY: string;
     VAPID_SUBJECT: string;
     DISASTER_API_KEY: string;

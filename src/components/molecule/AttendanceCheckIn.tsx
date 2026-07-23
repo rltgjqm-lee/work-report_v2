@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { labelClass, labelSmallClass } from "../atoms/classes";
 import Button from "../atoms/Button";
 import LabeledInput from "./LabeledInput";
+import SignatureCanvas from "../atoms/SignatureCanvas";
 import {
   clockIn,
   clockOut,
   identifyParticipant,
+  signAttendance,
 } from "../../utils/attendanceApi";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 
@@ -41,6 +43,8 @@ const AttendanceCheckIn = ({
   const [name, setName] = useState("");
   const [phoneLast4, setPhoneLast4] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [signing, setSigning] = useState(false);
+  const [signature, setSignature] = useState("");
 
   // 이미 캐시된 식별 결과가 있으면 마운트 시점에 상위로도 알려준다 (activityLogs 연결용)
   useEffect(() => {
@@ -92,9 +96,24 @@ const AttendanceCheckIn = ({
     try {
       const result = await clockOut(participant.participantId);
       setStatus(`퇴근 처리되었습니다. (근무 ${result.totalMinutes}분)`);
+      setSigning(true);
     } catch (error) {
       setStatus(
         error instanceof Error ? error.message : "퇴근 처리에 실패했습니다.",
+      );
+    }
+  };
+
+  const handleSignSubmitButtonClick = async () => {
+    if (!participant || !signature) return;
+    try {
+      await signAttendance(participant.participantId, signature);
+      setStatus("서명이 저장되었습니다. 수고하셨습니다.");
+      setSigning(false);
+      setSignature("");
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "서명 저장에 실패했습니다.",
       );
     }
   };
@@ -123,6 +142,22 @@ const AttendanceCheckIn = ({
               퇴근
             </Button>
           </div>
+
+          {signing && (
+            <div className="flex flex-col gap-3.5">
+              <div className={labelClass}>
+                오늘 근무를 확인하는 서명을 해주세요
+              </div>
+              <SignatureCanvas value={signature} onChange={setSignature} />
+              <Button
+                variant="primary"
+                onClick={handleSignSubmitButtonClick}
+                disabled={!signature}
+              >
+                서명 완료
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">

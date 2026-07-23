@@ -10,6 +10,7 @@ import {
 } from "../../api/admin/participants";
 import ParticipantLeaveAddModal from "./ParticipantLeaveAddModal";
 import AnnualLeaveModal from "./AnnualLeaveModal";
+import ParticipantMonthlyScheduleModal from "./ParticipantMonthlyScheduleModal";
 import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
@@ -69,6 +70,9 @@ const ProgramParticipantsSection = ({
     id: number;
     name: string;
   } | null>(null);
+  const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(
+    null,
+  );
 
   const handleParticipantSelectionChange = (participantId: number) => {
     setSelectedParticipantIds((current) =>
@@ -345,6 +349,12 @@ const ProgramParticipantsSection = ({
                       </button>
                       <button
                         className={rowActionBtnClass}
+                        onClick={() => setScheduleTarget(participant)}
+                      >
+                        개인 스케줄
+                      </button>
+                      <button
+                        className={rowActionBtnClass}
                         onClick={() =>
                           handleDropButtonClick(
                             participant.id,
@@ -410,6 +420,18 @@ const ProgramParticipantsSection = ({
           onClose={() => setAnnualModalOpen(false)}
           onSaved={onChanged}
           target={annualTarget}
+        />
+      )}
+
+      {scheduleTarget && (
+        <ParticipantMonthlyScheduleModal
+          participant={scheduleTarget}
+          group={groups.find((group) => group.id === scheduleTarget.groupId)}
+          onClose={() => setScheduleTarget(null)}
+          onSaved={() => {
+            setScheduleTarget(null);
+            onChanged();
+          }}
         />
       )}
     </div>

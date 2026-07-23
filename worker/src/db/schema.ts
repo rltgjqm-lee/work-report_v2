@@ -83,6 +83,54 @@ export const groups = sqliteTable("groups", {
     .default(sql`(current_timestamp)`),
 });
 
+// 역량활동 월간 근무 스케줄(조 단위 기본값) — "월 24일"이 아니라 "월 30시간 10일" 같은
+// 불규칙 근무일 패턴을 조 전체에 일괄 세팅한다. 참여자 개인 예외는 participantMonthlySchedule 참고.
+export const groupMonthlySchedule = sqliteTable(
+  "group_monthly_schedule",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id),
+    yearMonth: text("year_month").notNull(), // "YYYY-MM"
+    workDates: text("work_dates").notNull().default("[]"), // JSON: ["YYYY-MM-DD", ...]
+    maxMonthlyMinutes: integer("max_monthly_minutes").notNull().default(1800),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("group_monthly_schedule_group_month_unique").on(
+      table.groupId,
+      table.yearMonth,
+    ),
+  ],
+);
+
+// 참여자 개인 예외 — 이 달에 레코드가 있으면 조 스케줄 대신 이걸 쓴다 (무급휴가 등 개인 사정).
+// maxMonthlyMinutes가 null이면 조 스케줄의 상한을 그대로 따른다.
+export const participantMonthlySchedule = sqliteTable(
+  "participant_monthly_schedule",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    yearMonth: text("year_month").notNull(),
+    workDates: text("work_dates").notNull().default("[]"),
+    maxMonthlyMinutes: integer("max_monthly_minutes"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("participant_monthly_schedule_participant_month_unique").on(
+      table.participantId,
+      table.yearMonth,
+    ),
+  ],
+);
+
 // 수요처 — 참여자가 실제로 활동하는 장소. 위경도+반경은 이탈 관제(geofencing)에서 사용
 export const demandSites = sqliteTable("demand_sites", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -370,6 +418,8 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
     .notNull()
     .default("NORMAL"),
   note: text("note"),
+  // 역량활동 하루 근무 종료 후 참여자 서명 — 실제 이미지는 R2에, 여기엔 객체 키만 저장
+  signatureKey: text("signature_key"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),

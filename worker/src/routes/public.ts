@@ -300,6 +300,51 @@ app.post("/attendance/clock-out", async (c) => {
   return c.json(result[0]);
 });
 
+// 역량활동 하루 근무 종료 후 참여자 서명 수집. base64를 거치지 않고 이미지 바이너리를
+// 그대로 요청 body로 받아 R2에 저장한다 — attendance_logs에는 객체 키만 남긴다.
+// (엑셀 출력 시 서버가 R2에서 읽어 base64로 되돌려준다: 그건 export 응답 JSON에만 필요)
+app.post("/attendance/sign", async (c) => {
+  const db = drizzle(c.env.DB);
+  const participantId = Number(c.req.query("participantId"));
+  if (!participantId) {
+    return c.json({ error: "participantId is required" }, 400);
+  }
+
+  const contentType = c.req.header("Content-Type") || "image/png";
+  const extension = contentType.split("/")[1]?.split(";")[0] || "png";
+  const bytes = await c.req.arrayBuffer();
+  if (bytes.byteLength === 0) {
+    return c.json({ error: "서명 이미지가 비어있습니다." }, 400);
+  }
+
+  const { date } = getKstNow();
+
+  const rows = await db
+    .select()
+    .from(attendanceLogs)
+    .where(
+      and(
+        eq(attendanceLogs.participantId, participantId),
+        eq(attendanceLogs.workDate, date),
+      ),
+    );
+  const log = rows[0];
+  if (!log) return c.json({ error: "근태 기록이 없습니다." }, 404);
+
+  const key = `signatures/${log.programId}/${date.slice(0, 7)}/${log.participantId}/${log.id}.${extension}`;
+  await c.env.SIGNATURES_BUCKET.put(key, bytes, {
+    httpMetadata: { contentType },
+  });
+
+  const result = await db
+    .update(attendanceLogs)
+    .set({ signatureKey: key })
+    .where(eq(attendanceLogs.id, log.id))
+    .returning();
+
+  return c.json(result[0]);
+});
+
 // 참여자 PWA(또는 향후 하이브리드 앱)가 출근 중일 때 주기적으로 위치를 보고하는 엔드포인트.
 // 배정된 수요처 반경을 벗어났는지 판정하고, 새로 벗어난 경우에만 이탈 이벤트를 기록한다
 // (반경 밖에 계속 있는 동안 매 호출마다 새로 기록하지 않음 — 벗어난 "사건" 단위로 집계).

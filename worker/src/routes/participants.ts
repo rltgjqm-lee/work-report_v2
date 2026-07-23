@@ -7,6 +7,7 @@ import {
   programs,
   participantLeaves,
   participantAnnualLeave,
+  participantMonthlySchedule,
   groups,
   demandSites,
 } from "../db/schema";
@@ -368,6 +369,132 @@ app.post("/:id/annual-leave", async (c) => {
     .returning();
 
   return c.json(result[0], 201);
+});
+
+// 참여자 개인 예외 스케줄 조회 — 레코드가 없으면 조 스케줄을 그대로 따른다는 뜻으로
+// workDates: null을 내려준다 (조 기본값은 groups.ts의 :id/monthly-schedule에서 따로 조회)
+app.get("/:id/monthly-schedule", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const yearMonth = c.req.query("month");
+  if (!yearMonth) return c.json({ error: "month is required" }, 400);
+
+  const rows = await db
+    .select()
+    .from(participantMonthlySchedule)
+    .where(
+      and(
+        eq(participantMonthlySchedule.participantId, id),
+        eq(participantMonthlySchedule.yearMonth, yearMonth),
+      ),
+    );
+  const schedule = rows[0];
+
+  return c.json({
+    participantId: id,
+    yearMonth,
+    workDates: schedule ? (JSON.parse(schedule.workDates) as string[]) : null,
+    maxMonthlyMinutes: schedule?.maxMonthlyMinutes ?? null,
+  });
+});
+
+app.put("/:id/monthly-schedule", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const body = await c.req.json<{
+    yearMonth?: string;
+    workDates?: string[];
+    maxMonthlyMinutes?: number | null;
+  }>();
+  if (!body.yearMonth || !body.workDates) {
+    return c.json({ error: "yearMonth, workDates are required" }, 400);
+  }
+
+  const existingRows = await db
+    .select()
+    .from(participantMonthlySchedule)
+    .where(
+      and(
+        eq(participantMonthlySchedule.participantId, id),
+        eq(participantMonthlySchedule.yearMonth, body.yearMonth),
+      ),
+    );
+  const existing = existingRows[0];
+  const workDatesJson = JSON.stringify(body.workDates);
+  const maxMonthlyMinutes = body.maxMonthlyMinutes ?? null;
+
+  if (existing) {
+    await db
+      .update(participantMonthlySchedule)
+      .set({ workDates: workDatesJson, maxMonthlyMinutes })
+      .where(eq(participantMonthlySchedule.id, existing.id));
+    return c.json({
+      participantId: id,
+      yearMonth: body.yearMonth,
+      workDates: body.workDates,
+      maxMonthlyMinutes,
+    });
+  }
+
+  await db.insert(participantMonthlySchedule).values({
+    participantId: id,
+    yearMonth: body.yearMonth,
+    workDates: workDatesJson,
+    maxMonthlyMinutes,
+  });
+
+  return c.json(
+    {
+      participantId: id,
+      yearMonth: body.yearMonth,
+      workDates: body.workDates,
+      maxMonthlyMinutes,
+    },
+    201,
+  );
+});
+
+// 개인 예외 삭제 — 다시 조 스케줄을 그대로 따르게 한다
+app.delete("/:id/monthly-schedule", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const yearMonth = c.req.query("month");
+  if (!yearMonth) return c.json({ error: "month is required" }, 400);
+
+  await db
+    .delete(participantMonthlySchedule)
+    .where(
+      and(
+        eq(participantMonthlySchedule.participantId, id),
+        eq(participantMonthlySchedule.yearMonth, yearMonth),
+      ),
+    );
+
+  return c.json({ success: true });
 });
 
 export default app;

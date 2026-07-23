@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { updateGroup } from "../../api/admin/groups";
 import GroupAddModal from "./GroupAddModal";
+import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
 import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
 import type { Group } from "../../types";
 
@@ -21,6 +22,7 @@ const ProgramGroupsSection = ({
   onChanged,
 }: ProgramGroupsSectionProps) => {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [scheduleTarget, setScheduleTarget] = useState<Group | null>(null);
 
   const handleToggleActiveButtonClick = async (group: Group) => {
     const actionLabel = group.isActive ? "비활성화" : "활성화";
@@ -66,6 +68,12 @@ const ProgramGroupsSection = ({
             </span>
             <button
               className={rowActionBtnClass}
+              onClick={() => setScheduleTarget(group)}
+            >
+              월간 스케줄
+            </button>
+            <button
+              className={rowActionBtnClass}
               onClick={() => handleToggleActiveButtonClick(group)}
             >
               {group.isActive ? "비활성화" : "활성화"}
@@ -82,6 +90,17 @@ const ProgramGroupsSection = ({
             onChanged();
           }}
           programId={programId}
+        />
+      )}
+
+      {scheduleTarget && (
+        <GroupMonthlyScheduleModal
+          group={scheduleTarget}
+          onClose={() => setScheduleTarget(null)}
+          onSaved={() => {
+            setScheduleTarget(null);
+            onChanged();
+          }}
         />
       )}
     </div>

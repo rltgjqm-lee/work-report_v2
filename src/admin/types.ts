@@ -256,6 +256,20 @@ export type EscapeRow = {
   demandSiteName: string | null;
 };
 
+export type GroupMonthlySchedule = {
+  groupId: number;
+  yearMonth: string;
+  workDates: string[];
+  maxMonthlyMinutes: number;
+};
+
+export type ParticipantMonthlySchedule = {
+  participantId: number;
+  yearMonth: string;
+  workDates: string[] | null;
+  maxMonthlyMinutes: number | null;
+};
+
 export type LiveWorker = {
   participantId: number;
   name: string;
