@@ -8,7 +8,7 @@ import {
   listPrograms,
 } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
-import { inputClass } from "../uiClasses";
+import MonthPicker from "../components/MonthPicker";
 import type { LeaveRow, LeaveStats, Program } from "../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
@@ -104,12 +104,7 @@ const LeaveStatsPage = () => {
               ]}
             />
           )}
-          <input
-            type="month"
-            className={inputClass}
-            value={month}
-            onChange={(event) => setMonth(event.target.value)}
-          />
+          <MonthPicker value={month} onChange={setMonth} />
         </div>
       </div>
 

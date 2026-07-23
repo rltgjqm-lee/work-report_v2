@@ -7,7 +7,7 @@ import {
   listPrograms,
 } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
-import { inputClass } from "../uiClasses";
+import MonthPicker from "../components/MonthPicker";
 import type { AttendanceRow, AttendanceStats, Program } from "../types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -99,12 +99,7 @@ const AttendancePage = () => {
               ]}
             />
           )}
-          <input
-            type="month"
-            className={inputClass}
-            value={month}
-            onChange={(event) => setMonth(event.target.value)}
-          />
+          <MonthPicker value={month} onChange={setMonth} />
         </div>
       </div>
 
