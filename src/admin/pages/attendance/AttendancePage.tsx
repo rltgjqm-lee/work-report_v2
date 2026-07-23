@@ -3,10 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { getProgram, listPrograms } from "../../api/admin/programs";
 import FilterSelect from "../../components/FilterSelect";
+import TabBar from "../../components/TabBar";
 import AttendanceTabPanel from "./AttendanceTabPanel";
 import LeaveTabPanel from "./LeaveTabPanel";
 import TrainingTabPanel from "./TrainingTabPanel";
-import { tabBarClass, tabBtnActiveClass, tabBtnClass } from "../../uiClasses";
 import type { Participant, Program } from "../../types";
 
 type Tab = "attendance" | "training" | "leave";
@@ -85,23 +85,15 @@ const AttendancePage = () => {
         </div>
       ) : (
         <>
-          <div className={tabBarClass}>
-            {(
-              [
-                ["attendance", "근태"],
-                ["training", "교육"],
-                ["leave", "휴가 현황"],
-              ] as [Tab, string][]
-            ).map(([tabKey, label]) => (
-              <button
-                key={tabKey}
-                onClick={() => setTab(tabKey)}
-                className={tab === tabKey ? tabBtnActiveClass : tabBtnClass}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <TabBar
+            tabs={[
+              ["attendance", "근태"],
+              ["training", "교육"],
+              ["leave", "휴가 현황"],
+            ]}
+            active={tab}
+            onChange={setTab}
+          />
 
           {tab === "attendance" && <AttendanceTabPanel programId={programId} />}
           {tab === "training" && (

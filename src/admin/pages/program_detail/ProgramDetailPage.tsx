@@ -13,6 +13,7 @@ import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
 import ProgramExcelExportSection from "./ProgramExcelExportSection";
 import ProgramParticipantsSection from "./ProgramParticipantsSection";
 import ParticipantAddModal from "./ParticipantAddModal";
+import TabBar from "../../components/TabBar";
 
 import { btnPrimaryClass, btnGhostClass } from "../../uiClasses";
 import type {
@@ -22,6 +23,8 @@ import type {
   Program,
   ProgramWithParticipants,
 } from "../../types";
+
+type Tab = "groups" | "demandSites" | "participants" | "excel";
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지입니다.
@@ -44,9 +47,7 @@ const ProgramDetailPage = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [exportMonth, setExportMonth] = useState(
-    new Date().toISOString().slice(0, 7),
-  );
+  const [tab, setTab] = useState<Tab>("groups");
 
   useEffect(() => {
     listPrograms().then(setAllPrograms);
@@ -143,12 +144,14 @@ const ProgramDetailPage = () => {
           >
             안전 관제
           </button>
-          <button
-            className={btnPrimaryClass}
-            onClick={() => setIsModalOpen(true)}
-          >
-            + 참여자 추가
-          </button>
+          {tab === "participants" && (
+            <button
+              className={btnPrimaryClass}
+              onClick={() => setIsModalOpen(true)}
+            >
+              + 참여자 추가
+            </button>
+          )}
         </div>
       </div>
 
@@ -183,38 +186,51 @@ const ProgramDetailPage = () => {
         </div>
       </div>
 
-      <ProgramGroupsSection
-        programId={programId}
-        groups={groups}
-        onChanged={refresh}
+      <TabBar
+        tabs={[
+          ["groups", "조 관리"],
+          ["demandSites", "수요처 관리"],
+          ["participants", "참여자 명단"],
+          ["excel", "엑셀 출력"],
+        ]}
+        active={tab}
+        onChange={setTab}
       />
 
-      <ProgramDemandSitesSection
-        programId={programId}
-        demandSites={demandSites}
-        demandSiteSchedules={demandSiteSchedules}
-        groups={groups}
-        onChanged={refresh}
-      />
+      {tab === "groups" && (
+        <ProgramGroupsSection
+          programId={programId}
+          groups={groups}
+          onChanged={refresh}
+        />
+      )}
 
-      <ProgramExcelExportSection
-        programId={programId}
-        exportMonth={exportMonth}
-        onExportMonthChange={setExportMonth}
-      />
+      {tab === "demandSites" && (
+        <ProgramDemandSitesSection
+          programId={programId}
+          demandSites={demandSites}
+          demandSiteSchedules={demandSiteSchedules}
+          groups={groups}
+          onChanged={refresh}
+        />
+      )}
 
-      <ProgramParticipantsSection
-        programId={programId}
-        participants={filtered}
-        groups={groups}
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        groupFilter={groupFilter}
-        onGroupFilterChange={setGroupFilter}
-        onChanged={refresh}
-      />
+      {tab === "participants" && (
+        <ProgramParticipantsSection
+          programId={programId}
+          participants={filtered}
+          groups={groups}
+          search={search}
+          onSearchChange={setSearch}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          groupFilter={groupFilter}
+          onGroupFilterChange={setGroupFilter}
+          onChanged={refresh}
+        />
+      )}
+
+      {tab === "excel" && <ProgramExcelExportSection programId={programId} />}
 
       {isModalOpen && (
         <ParticipantAddModal

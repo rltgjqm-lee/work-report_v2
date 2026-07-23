@@ -32,3 +32,20 @@ export const subTabBtnClass =
   "border border-[#e2e5eb] bg-white px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-[#6b7280] hover:border-[#c7cdd6] hover:text-[#1f2937]";
 export const subTabBtnActiveClass =
   "border border-[#1e3a5f] bg-[#1e3a5f] px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-white";
+// 엑셀 출력 카드(관리자 페이지.dc.html의 .export-grid/.export-card) — 사업단 상세 >
+// 엑셀 출력 탭에서 서식별로 카드 하나씩 보여줄 때 쓴다.
+export const exportGridClass =
+  "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4";
+export const exportCardClass =
+  "bg-white border border-[#e2e5eb] rounded-lg p-[22px]";
+export const exportIconClass = "text-[26px] mb-2.5";
+export const exportNameClass = "text-[15px] font-bold text-[#1f2937] mb-1.5";
+export const exportDescClass =
+  "text-[12.5px] text-[#8b95a3] leading-relaxed mb-[18px] min-h-[36px]";
+export const monthSelectClass =
+  "h-[38px] border border-[#d7dce3] rounded-md px-2.5 text-[13px] font-sans text-[#1f2937] bg-white box-border";
+// btnPrimaryClass는 rounded-[2px]가 박혀있어서 rounded-md를 뒤에 붙여도 못 이긴다
+// (Tailwind 우선순위는 클래스 문자열 순서가 아니라 자체 생성 순서라서) — 그래서 export
+// 카드의 다운로드 버튼처럼 더 둥근 모서리가 필요하면 rounded-[2px] 자체가 없는 이 클래스를 쓴다.
+export const exportBtnClass =
+  "border-none w-full text-center px-4 py-2.5 text-[13px] font-semibold rounded-md cursor-pointer bg-[#1e3a5f] text-white hover:brightness-110 whitespace-nowrap";
