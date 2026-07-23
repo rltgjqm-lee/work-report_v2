@@ -142,6 +142,20 @@ const ProgramFormModal = ({
         </FormField>
       )}
 
+      {/* 사업 유형 */}
+      <FormField label="사업 유형">
+        <FilterSelect
+          className="w-full"
+          value={form.programType}
+          onChange={(value) => setForm((f) => ({ ...f, programType: value }))}
+          options={[
+            { value: "", label: "선택하세요" },
+            { value: "공익 활동", label: "공익 활동" },
+            { value: "역량 활동", label: "역량 활동" },
+          ]}
+        />
+      </FormField>
+
       {/* 사업단 명 */}
       <FormField label="사업단 명">
         <input
@@ -216,20 +230,6 @@ const ProgramFormModal = ({
           </FormField>
         </div>
       </div>
-
-      {/* 사업 유형 */}
-      <FormField label="사업 유형">
-        <FilterSelect
-          className="w-full"
-          value={form.programType}
-          onChange={(value) => setForm((f) => ({ ...f, programType: value }))}
-          options={[
-            { value: "", label: "선택하세요" },
-            { value: "공익 활동", label: "공익 활동" },
-            { value: "역량 활동", label: "역량 활동" },
-          ]}
-        />
-      </FormField>
 
       {/* 시급 */}
       <FormField label="시급(원)">
