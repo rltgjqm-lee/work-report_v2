@@ -12,6 +12,8 @@ import {
   groupMonthlySchedule,
   participantMonthlySchedule,
   participantLeaves,
+  participantAnnualLeave,
+  participantTrainingLogs,
 } from "../db/schema";
 import { canAccessProgram, getAuth } from "../lib/authz";
 import { getHolidayName } from "../lib/koreanHolidays";
@@ -26,29 +28,6 @@ const base64FromArrayBuffer = (buffer: ArrayBuffer): string => {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
-};
-
-const toCsvResponse = (rows: (string | number | null | undefined)[][], filename: string) => {
-  const csv =
-    "﻿" +
-    rows
-      .map((row) =>
-        row
-          .map((cell) => {
-            const value = cell ?? "";
-            const escaped = String(value).replace(/"/g, '""');
-            return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
-          })
-          .join(","),
-      )
-      .join("\n");
-
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
-  });
 };
 
 const loadAccessibleProgram = async (
@@ -507,6 +486,9 @@ app.get("/:id/export/payslip", async (c) => {
 });
 
 // 급여대장 CSV — 계좌/주민번호는 담당자가 수기로 채우도록 빈 칸 (9장 결정)
+// 급여대장 (역량활동) — 실제 서식(work-report-v4/서식(1)/역량활용/2026ESG 급여대장.xlsx
+// 의 "인건비 (6)" 시트)과 같은 33열 구조. 만근 기준 근무시간/주휴시간은 이 사업만의
+// 정책값이라 자동 계산하지 않고 엑셀에서 직접 입력하도록 빈 칸으로 남긴다.
 app.get("/:id/export/payment", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -518,15 +500,14 @@ app.get("/:id/export/payment", async (c) => {
   if (!program) return c.json({ error: "Not found" }, 404);
   if (!canAccessProgram(auth, program)) return c.json({ error: "Forbidden" }, 403);
 
-  const orgRows = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.id, program.organizationId));
-  const org = orgRows[0];
-
-  const participantRows = await db
-    .select()
+  const activeParticipants = await db
+    .select({
+      participant: participants,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
+    })
     .from(participants)
+    .leftJoin(groups, eq(participants.groupId, groups.id))
     .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const attendanceRows = await db
@@ -535,7 +516,6 @@ app.get("/:id/export/payment", async (c) => {
     .where(
       and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
-
   const minutesByParticipant = new Map<number, number>();
   for (const log of attendanceRows) {
     if (!log.totalMinutes) continue;
@@ -545,39 +525,104 @@ app.get("/:id/export/payment", async (c) => {
     );
   }
 
-  const csvRows: (string | number | null)[][] = [
-    [`급여대장 (${month}) — ${org?.name ?? ""} / ${program.name}`],
-    [
-      "시급",
-      program.hourlyWage,
-      "교육비",
-      `${program.educationAmount}(${program.educationType})`,
-      "치매검진비",
-      `${program.dementiaAmount}(${program.dementiaType})`,
-    ],
-    [
-      "건강보험료율(%)",
-      program.healthInsuranceRate,
-      "장기요양보험료율(%)",
-      program.longtermCareRate,
-      "고용보험료율(%)",
-      program.employmentInsuranceRate,
-      "산재보험료율(%)",
-      program.industrialAccidentRate,
-    ],
-    [],
-    ["참여자명", "생년", "근무시간(분)", "은행명", "계좌번호", "주민번호"],
-    ...participantRows.map((p) => [
-      p.name,
-      p.birthYear,
-      minutesByParticipant.get(p.id) ?? 0,
-      "", // 계좌 정보는 DB에 저장하지 않음 — 담당자 수기 입력
-      "",
-      "",
-    ]),
-  ];
+  const trainingRows = await db
+    .select({ log: participantTrainingLogs })
+    .from(participantTrainingLogs)
+    .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
+    .where(
+      and(
+        eq(participants.programId, programId),
+        eq(participantTrainingLogs.status, "COMPLETED"),
+        like(participantTrainingLogs.attendDate, `${month}%`),
+      ),
+    )
+    .then((rows) => rows.map((row) => row.log));
+  const trainingHoursByParticipant = new Map<number, number>();
+  for (const log of trainingRows) {
+    trainingHoursByParticipant.set(
+      log.participantId,
+      (trainingHoursByParticipant.get(log.participantId) ?? 0) + log.attendHours,
+    );
+  }
 
-  return toCsvResponse(csvRows, `급여대장_${month}.csv`);
+  const monthStart = `${month}-01`;
+  const daysInMonth = new Date(
+    Number(month.slice(0, 4)),
+    Number(month.slice(5, 7)),
+    0,
+  ).getDate();
+  const monthEnd = `${month}-${String(daysInMonth).padStart(2, "0")}`;
+  const clipLeaveDaysToMonth = (leaveStart: string, leaveEnd: string): number => {
+    const start = leaveStart > monthStart ? leaveStart : monthStart;
+    const end = leaveEnd < monthEnd ? leaveEnd : monthEnd;
+    if (start > end) return 0;
+    const diffDays =
+      (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime()) /
+      86400000;
+    return diffDays + 1;
+  };
+
+  const leaveRows = await db
+    .select({ leave: participantLeaves })
+    .from(participantLeaves)
+    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
+    .where(and(eq(participants.programId, programId), eq(participantLeaves.leaveType, "PAID")))
+    .then((rows) => rows.map((row) => row.leave));
+  const paidLeaveDaysByParticipant = new Map<number, number>();
+  for (const leave of leaveRows) {
+    if (leave.leaveEnd < monthStart || leave.leaveStart > monthEnd) continue;
+    const days = clipLeaveDaysToMonth(leave.leaveStart, leave.leaveEnd);
+    paidLeaveDaysByParticipant.set(
+      leave.participantId,
+      (paidLeaveDaysByParticipant.get(leave.participantId) ?? 0) + days,
+    );
+  }
+
+  const annualLeaveRows = await db
+    .select({ leave: participantAnnualLeave })
+    .from(participantAnnualLeave)
+    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
+    .where(
+      and(
+        eq(participants.programId, programId),
+        eq(participantAnnualLeave.year, month.slice(0, 4)),
+      ),
+    )
+    .then((rows) => rows.map((row) => row.leave));
+  const remainingLeaveDaysByParticipant = new Map(
+    annualLeaveRows.map((leave) => [leave.participantId, leave.remainingDays]),
+  );
+
+  const participantsPayload = activeParticipants.map(({ participant, shiftStart, shiftEnd }) => {
+    const dailyHours =
+      shiftStart && shiftEnd
+        ? (() => {
+            const [sh, sm] = shiftStart.split(":").map(Number);
+            const [eh, em] = shiftEnd.split(":").map(Number);
+            return (eh * 60 + em - (sh * 60 + sm)) / 60;
+          })()
+        : 0;
+
+    return {
+      name: participant.name,
+      actualWorkHours: Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
+      trainingHours: trainingHoursByParticipant.get(participant.id) ?? 0,
+      paidLeaveHours: (paidLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
+      remainingLeaveHours: (remainingLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
+    };
+  });
+
+  return c.json({
+    programName: program.name,
+    month,
+    hourlyWage: program.hourlyWage,
+    healthInsuranceRate: program.healthInsuranceRate,
+    longtermCareRate: program.longtermCareRate,
+    employmentInsuranceRate: program.employmentInsuranceRate,
+    employmentInsuranceEmployerRate: program.employmentInsuranceEmployerRate,
+    industrialAccidentRate: program.industrialAccidentRate,
+    participants: participantsPayload,
+  });
 });
 
 export default app;

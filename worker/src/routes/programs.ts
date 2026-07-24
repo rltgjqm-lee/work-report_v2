@@ -37,6 +37,7 @@ type ProgramBody = {
   healthInsuranceRate?: number;
   longtermCareRate?: number;
   employmentInsuranceRate?: number;
+  employmentInsuranceEmployerRate?: number;
   industrialAccidentRate?: number;
   annualLeaveDailyWage?: number;
   isActive?: boolean;
@@ -155,6 +156,7 @@ app.post("/", async (c) => {
       healthInsuranceRate: body.healthInsuranceRate,
       longtermCareRate: body.longtermCareRate,
       employmentInsuranceRate: body.employmentInsuranceRate,
+      employmentInsuranceEmployerRate: body.employmentInsuranceEmployerRate,
       industrialAccidentRate: body.industrialAccidentRate,
       annualLeaveDailyWage: body.annualLeaveDailyWage,
     })

@@ -14,20 +14,12 @@ import {
   downloadPayslipWorkbook,
   type PayslipParticipant,
 } from "../../../utils/downloadPayslipExcel";
+import {
+  downloadPaymentLedgerWorkbook,
+  type PaymentLedgerParticipant,
+} from "../../../utils/downloadPaymentLedgerExcel";
 import type { ActivityLogItem } from "../../../types/form";
-import { BASE_URL, request } from "../client";
-
-const downloadFile = async (path: string, filename: string) => {
-  const res = await fetch(`${BASE_URL}${path}`, { credentials: "include" });
-  if (!res.ok) throw new Error(`다운로드 실패 (${res.status})`);
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
+import { request } from "../client";
 
 interface ActivityLogExportLog {
   actDate: string;
@@ -167,11 +159,37 @@ export const downloadAttendanceExcel = async (
   );
 };
 
-export const downloadPaymentExcel = (programId: number, month: string) =>
-  downloadFile(
+interface PaymentLedgerExportResponse {
+  programName: string;
+  month: string;
+  hourlyWage: number;
+  healthInsuranceRate: number;
+  longtermCareRate: number;
+  employmentInsuranceRate: number;
+  employmentInsuranceEmployerRate: number;
+  industrialAccidentRate: number;
+  participants: PaymentLedgerParticipant[];
+}
+
+export const downloadPaymentExcel = async (programId: number, month: string) => {
+  const data = await request<PaymentLedgerExportResponse>(
     `/api/programs/${programId}/export/payment?month=${month}`,
-    `급여대장_${month}.csv`,
   );
+
+  await downloadPaymentLedgerWorkbook(
+    {
+      programName: data.programName,
+      month: data.month,
+      hourlyWage: data.hourlyWage,
+      healthInsuranceRate: data.healthInsuranceRate,
+      longtermCareRate: data.longtermCareRate,
+      employmentInsuranceRate: data.employmentInsuranceRate,
+      employmentInsuranceEmployerRate: data.employmentInsuranceEmployerRate,
+      industrialAccidentRate: data.industrialAccidentRate,
+    },
+    data.participants,
+  );
+};
 
 interface WorkScheduleExportResponse {
   organizationName: string;

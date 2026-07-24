@@ -50,6 +50,7 @@ export type Program = {
   healthInsuranceRate: number;
   longtermCareRate: number;
   employmentInsuranceRate: number;
+  employmentInsuranceEmployerRate: number;
   industrialAccidentRate: number;
   annualLeaveDailyWage: number;
   isActive: boolean;

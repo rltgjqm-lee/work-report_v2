@@ -1,0 +1,1 @@
+ALTER TABLE `programs` ADD `employment_insurance_employer_rate` real DEFAULT 1.15 NOT NULL;

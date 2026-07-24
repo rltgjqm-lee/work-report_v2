@@ -55,6 +55,11 @@ export const programs = sqliteTable("programs", {
   employmentInsuranceRate: real("employment_insurance_rate")
     .notNull()
     .default(0.9),
+  // 고용보험은 근로자부담분(실업급여, employmentInsuranceRate)과 별개로 사업주가
+  // 고용안정·직업능력개발사업 부담금을 추가로 낸다 — 급여대장 기관부담 계산용.
+  employmentInsuranceEmployerRate: real("employment_insurance_employer_rate")
+    .notNull()
+    .default(1.15),
   industrialAccidentRate: real("industrial_accident_rate")
     .notNull()
     .default(1.5),
