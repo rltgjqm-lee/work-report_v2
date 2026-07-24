@@ -82,7 +82,7 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
 ];
 
 /**
- * 관리자 페이지 > 사업단 상세 페이지의 엑셀 출력 섹션입니다.
+ * 관리자 페이지 > 사업단 상세 페이지의 양식 출력 섹션입니다.
  * 서식별로 카드가 따로 있고, 월도 카드마다 독립적으로 고른다.
  */
 const ProgramExcelExportSection = ({

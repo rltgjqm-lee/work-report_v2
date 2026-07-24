@@ -204,7 +204,7 @@ const ProgramDetailPage = () => {
           ["groups", "조 관리"],
           ["demandSites", "수요처 관리"],
           ["participants", "참여자 명단"],
-          ["excel", "엑셀 출력"],
+          ["excel", "양식 출력"],
         ]}
         active={tab}
         onChange={setTab}

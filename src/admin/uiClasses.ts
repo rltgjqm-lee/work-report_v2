@@ -35,8 +35,8 @@ export const subTabBtnClass =
   "border border-[#e2e5eb] bg-white px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-[#6b7280] hover:border-[#c7cdd6] hover:text-[#1f2937]";
 export const subTabBtnActiveClass =
   "border border-[#1e3a5f] bg-[#1e3a5f] px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-white";
-// 엑셀 출력 카드(관리자 페이지.dc.html의 .export-grid/.export-card) — 사업단 상세 >
-// 엑셀 출력 탭에서 서식별로 카드 하나씩 보여줄 때 쓴다.
+// 양식 출력 카드(관리자 페이지.dc.html의 .export-grid/.export-card) — 사업단 상세 >
+// 양식 출력 탭에서 서식별로 카드 하나씩 보여줄 때 쓴다.
 export const exportGridClass =
   "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4";
 export const exportCardClass =
