@@ -230,7 +230,12 @@ const ProgramDetailPage = () => {
         />
       )}
 
-      {tab === "excel" && <ProgramExcelExportSection programId={programId} />}
+      {tab === "excel" && (
+        <ProgramExcelExportSection
+          programId={programId}
+          programType={program.programType}
+        />
+      )}
 
       {isModalOpen && (
         <ParticipantAddModal

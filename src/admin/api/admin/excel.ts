@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 
 import { addActivityLogSheet } from "../../../utils/downloadActivityLogExcel";
+import { buildActivityPaymentLedgerWorkbook } from "../../../utils/downloadActivityPaymentLedgerExcel";
 import type { ActivityLogItem } from "../../../types/form";
 import { BASE_URL, request } from "../client";
 
@@ -145,3 +146,43 @@ export const downloadPaymentExcel = (programId: number, month: string) =>
     `/api/programs/${programId}/export/payment?month=${month}`,
     `급여대장_${month}.csv`,
   );
+
+interface ActivityPaymentExportResponse {
+  programName: string;
+  organizationName: string;
+  hourlyWage: number;
+  participants: {
+    name: string;
+    demandName: string | null;
+    minutes: number;
+  }[];
+}
+
+export const downloadActivityPaymentLedgerExcel = async (
+  programId: number,
+  month: string,
+) => {
+  const data = await request<ActivityPaymentExportResponse>(
+    `/api/programs/${programId}/export/activity-payment?month=${month}`,
+  );
+
+  const buffer = await buildActivityPaymentLedgerWorkbook(
+    {
+      programName: data.programName,
+      organizationName: data.organizationName,
+      month,
+      hourlyWage: data.hourlyWage,
+    },
+    data.participants,
+  );
+
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `활동비지급대장_${month}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+};

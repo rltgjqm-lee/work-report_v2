@@ -116,6 +116,67 @@ app.get("/:id/export/activity-log", async (c) => {
   });
 });
 
+// 활동비 지급 대장 (공익활동) — 참여자별 시트가 아니라 사업단 전체 대장 1장이라
+// 원본 데이터만 JSON으로 내려주고, 실제 xlsx(병합 셀 서식)는 관리자 콘솔이
+// exceljs로 클라이언트에서 조립한다.
+app.get("/:id/export/activity-payment", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const month = c.req.query("month");
+  if (!month) return c.json({ error: "month is required" }, 400);
+
+  const program = await loadAccessibleProgram(db, programId);
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "Forbidden" }, 403);
+
+  const organizationRows = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, program.organizationId));
+  const organizationName = organizationRows[0]?.name ?? "";
+
+  const activeParticipants = await db
+    .select()
+    .from(participants)
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+
+  const logRows = await db
+    .select({ log: activityLogs })
+    .from(activityLogs)
+    .innerJoin(participants, eq(activityLogs.participantId, participants.id))
+    .where(
+      and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)),
+    );
+
+  const minutesByParticipant = new Map<number, number>();
+  for (const { log } of logRows) {
+    const [startHour, startMinute] = log.startTime.split(":").map(Number);
+    const [endHour, endMinute] = log.endTime.split(":").map(Number);
+    const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+    minutesByParticipant.set(
+      log.participantId,
+      (minutesByParticipant.get(log.participantId) ?? 0) + minutes,
+    );
+  }
+
+  const sortedParticipants = [...activeParticipants].sort((a, b) => {
+    const demandCompare = (a.demandName ?? "").localeCompare(b.demandName ?? "");
+    return demandCompare !== 0 ? demandCompare : a.name.localeCompare(b.name);
+  });
+
+  return c.json({
+    programName: program.name,
+    organizationName,
+    hourlyWage: program.hourlyWage,
+    participants: sortedParticipants.map((participant) => ({
+      name: participant.name,
+      demandName: participant.demandName,
+      minutes: minutesByParticipant.get(participant.id) ?? 0,
+    })),
+  });
+});
+
 // 출근부 (역량활동) CSV — 참여자별 월간 캘린더, 출석일은 조의 근무시간 표시
 app.get("/:id/export/attendance", async (c) => {
   const auth = getAuth(c);
