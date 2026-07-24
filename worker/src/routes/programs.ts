@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, inArray, isNull, like, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray, isNull, like, sql } from "drizzle-orm";
 
 import {
   programs,
@@ -84,12 +84,26 @@ app.get("/:id", async (c) => {
     return c.json({ error: "Forbidden" }, 403);
   }
 
+  // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
+  // 참여자는 있을 수 있어서, 그 경우 수요처명을 채워서 내려준다.
   const participantRows = await db
-    .select()
+    .select({
+      ...getTableColumns(participants),
+      demandSiteName: demandSites.name,
+    })
     .from(participants)
+    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
     .where(eq(participants.programId, id));
 
-  return c.json({ ...program, participants: participantRows });
+  const resolvedParticipants = participantRows.map((row) => {
+    const { demandSiteName, ...participant } = row;
+    return {
+      ...participant,
+      demandName: participant.demandName ?? demandSiteName ?? null,
+    };
+  });
+
+  return c.json({ ...program, participants: resolvedParticipants });
 });
 
 app.post("/", async (c) => {
@@ -314,7 +328,6 @@ app.post("/:id/participants", async (c) => {
 
   const body = await c.req.json<{
     name?: string;
-    demandName?: string;
     demandSiteId?: number;
     phoneLast4?: string;
     groupId?: number;
@@ -342,7 +355,6 @@ app.post("/:id/participants", async (c) => {
     .values({
       programId,
       name: body.name,
-      demandName: body.demandName,
       demandSiteId: body.demandSiteId,
       phoneLast4: body.phoneLast4,
       groupId: body.groupId,
@@ -371,7 +383,6 @@ app.post("/:id/participants/bulk", async (c) => {
   const body = await c.req.json<{
     participants?: {
       name?: string;
-      demandName?: string;
       demandSiteId?: number;
       phoneLast4?: string;
       groupId?: number;
@@ -403,7 +414,6 @@ app.post("/:id/participants/bulk", async (c) => {
       rows.map((row) => ({
         programId,
         name: row.name!,
-        demandName: row.demandName,
         demandSiteId: row.demandSiteId,
         phoneLast4: row.phoneLast4!,
         groupId: row.groupId,

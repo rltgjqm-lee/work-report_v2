@@ -1,6 +1,5 @@
 export type ParsedParticipantRow = {
   name: string;
-  demandName?: string;
   demandSiteId?: number;
   phoneLast4: string;
   groupId?: number;
@@ -59,21 +58,21 @@ const parseXlsx = async (
   const rows: ParsedParticipantRow[] = [];
 
   // 1행: 헤더, 2행: 주의사항 (downloadAddParticipantsTemplate 양식과 동일한 구조) → 3행부터 데이터
+  // 열 순서: 순번(1), 이름(2), 전화번호 뒷자리(3), 수요처(4), 조(5)
   for (let rowNumber = 3; rowNumber <= worksheet.rowCount; rowNumber++) {
     const row = worksheet.getRow(rowNumber);
     const name = toText(row.getCell(2).value);
     if (!name) continue;
 
+    const demandSiteName = toText(row.getCell(4).value);
     const groupName = toText(row.getCell(5).value);
-    const demandSiteName = toText(row.getCell(6).value);
 
     rows.push({
       name,
-      demandName: toText(row.getCell(3).value) || undefined,
       demandSiteId: demandSiteName
         ? resolveDemandSiteId(demandSiteName, demandSites)
         : undefined,
-      phoneLast4: toPhoneLast4(row.getCell(4).value),
+      phoneLast4: toPhoneLast4(row.getCell(3).value),
       groupId: groupName ? resolveGroupId(groupName, groups) : undefined,
     });
   }
@@ -92,12 +91,11 @@ const parseCsv = async (
 
   for (const line of lines) {
     const cells = line.split(",").map((cell) => cell.trim());
-    const [, name, demandName, phone, groupName, demandSiteName] = cells;
+    const [, name, phone, demandSiteName, groupName] = cells;
     if (!name || name === "이름") continue;
 
     rows.push({
       name,
-      demandName: demandName || undefined,
       demandSiteId: demandSiteName
         ? resolveDemandSiteId(demandSiteName, demandSites)
         : undefined,

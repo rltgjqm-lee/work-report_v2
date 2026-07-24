@@ -46,6 +46,7 @@ const ProgramDetailPage = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
+  const [demandFilter, setDemandFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("groups");
 
@@ -83,19 +84,31 @@ const ProgramDetailPage = () => {
     [demandSites],
   );
 
+  const demandOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (program?.participants ?? [])
+            .map((participant) => participant.demandName)
+            .filter((demandName): demandName is string => Boolean(demandName)),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [program],
+  );
+
   const filtered = useMemo(
     () =>
       (program?.participants ?? []).filter((participant) => {
-        const matchesSearch =
-          participant.name.includes(search) ||
-          (participant.demandName ?? "").includes(search);
+        const matchesSearch = participant.name.includes(search);
         const matchesStatus =
           statusFilter === "all" || participant.status === statusFilter;
         const matchesGroup =
           groupFilter === "all" || participant.groupId === Number(groupFilter);
-        return matchesSearch && matchesStatus && matchesGroup;
+        const matchesDemand =
+          demandFilter === "all" || participant.demandName === demandFilter;
+        return matchesSearch && matchesStatus && matchesGroup && matchesDemand;
       }),
-    [program, search, statusFilter, groupFilter],
+    [program, search, statusFilter, groupFilter, demandFilter],
   );
 
   if (!program) return null;
@@ -222,6 +235,9 @@ const ProgramDetailPage = () => {
           groups={groups}
           search={search}
           onSearchChange={setSearch}
+          demandOptions={demandOptions}
+          demandFilter={demandFilter}
+          onDemandFilterChange={setDemandFilter}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
           groupFilter={groupFilter}

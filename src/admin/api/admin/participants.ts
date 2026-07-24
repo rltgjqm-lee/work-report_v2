@@ -23,7 +23,6 @@ export const addParticipant = (
   programId: number,
   data: {
     name: string;
-    demandName?: string;
     demandSiteId?: number;
     phoneLast4: string;
     groupId?: number;
@@ -46,7 +45,6 @@ export const bulkAddParticipants = (
   data: {
     participants: {
       name: string;
-      demandName?: string;
       demandSiteId?: number;
       phoneLast4: string;
       groupId?: number;

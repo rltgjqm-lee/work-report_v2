@@ -15,7 +15,6 @@ import { parseParticipantsFile } from "../../../utils/parseParticipantsFile";
 const emptyForm = {
   name: "",
   lastPhoneNumber: "",
-  demandName: "",
   demandSiteId: "",
   groupId: "",
 };
@@ -75,7 +74,6 @@ const ParticipantAddModal = ({
         }
         await addParticipant(programId, {
           name: form.name,
-          demandName: form.demandName || undefined,
           demandSiteId: form.demandSiteId
             ? Number(form.demandSiteId)
             : undefined,
@@ -165,15 +163,6 @@ const ParticipantAddModal = ({
           }
         />
       </FormField>
-      <FormField label="수요처명">
-        <input
-          className={inputClass}
-          value={form.demandName}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, demandName: event.target.value }))
-          }
-        />
-      </FormField>
       <FormField label="전화번호 뒷자리(4자리)">
         <input
           className={inputClass}
@@ -191,6 +180,20 @@ const ParticipantAddModal = ({
           }
         />
       </FormField>
+      <FormField label="수요처">
+        <FilterSelect
+          className="w-full"
+          value={form.demandSiteId}
+          onChange={(value) => setForm((f) => ({ ...f, demandSiteId: value }))}
+          options={[
+            { value: "", label: "미배정" },
+            ...activeDemandSites.map((demandSite) => ({
+              value: String(demandSite.id),
+              label: demandSite.name,
+            })),
+          ]}
+        />
+      </FormField>
       <FormField label="조">
         <FilterSelect
           className="w-full"
@@ -201,20 +204,6 @@ const ParticipantAddModal = ({
             ...activeGroups.map((group) => ({
               value: String(group.id),
               label: group.name,
-            })),
-          ]}
-        />
-      </FormField>
-      <FormField label="수요처 배정">
-        <FilterSelect
-          className="w-full"
-          value={form.demandSiteId}
-          onChange={(value) => setForm((f) => ({ ...f, demandSiteId: value }))}
-          options={[
-            { value: "", label: "미배정" },
-            ...activeDemandSites.map((demandSite) => ({
-              value: String(demandSite.id),
-              label: demandSite.name,
             })),
           ]}
         />

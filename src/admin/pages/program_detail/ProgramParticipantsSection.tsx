@@ -30,6 +30,9 @@ interface ProgramParticipantsSectionProps {
   groups: Group[];
   search: string;
   onSearchChange: (value: string) => void;
+  demandOptions: string[];
+  demandFilter: string;
+  onDemandFilterChange: (value: string) => void;
   statusFilter: string;
   onStatusFilterChange: (value: string) => void;
   groupFilter: string;
@@ -47,6 +50,9 @@ const ProgramParticipantsSection = ({
   groups,
   search,
   onSearchChange,
+  demandOptions,
+  demandFilter,
+  onDemandFilterChange,
   statusFilter,
   onStatusFilterChange,
   groupFilter,
@@ -200,16 +206,17 @@ const ProgramParticipantsSection = ({
           <SearchInput
             value={search}
             onChange={onSearchChange}
-            placeholder="이름 또는 수요처명 검색"
+            placeholder="이름 검색"
           />
           <FilterSelect
-            value={statusFilter}
-            onChange={onStatusFilterChange}
+            value={demandFilter}
+            onChange={onDemandFilterChange}
             options={[
-              { value: "all", label: "전체 상태" },
-              { value: "ACTIVE", label: "활동중" },
-              { value: "ON_LEAVE", label: "휴무중" },
-              { value: "DROPPED", label: "참여종료" },
+              { value: "all", label: "전체 수요처" },
+              ...demandOptions.map((demandName) => ({
+                value: demandName,
+                label: demandName,
+              })),
             ]}
           />
           <FilterSelect
@@ -221,6 +228,16 @@ const ProgramParticipantsSection = ({
                 value: String(group.id),
                 label: group.name,
               })),
+            ]}
+          />
+          <FilterSelect
+            value={statusFilter}
+            onChange={onStatusFilterChange}
+            options={[
+              { value: "all", label: "전체 상태" },
+              { value: "ACTIVE", label: "활동중" },
+              { value: "ON_LEAVE", label: "휴무중" },
+              { value: "DROPPED", label: "참여종료" },
             ]}
           />
         </div>
