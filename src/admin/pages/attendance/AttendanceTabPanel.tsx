@@ -6,6 +6,7 @@ import {
   invalidateAttendance,
 } from "../../api/admin/attendance";
 import MonthPicker from "../../components/MonthPicker";
+import FilterSelect from "../../components/FilterSelect";
 import StatusChip, { type StatusChipVariant } from "../../components/StatusChip";
 import {
   btnGhostClass,
@@ -55,6 +56,7 @@ interface AttendanceTabPanelProps {
  */
 const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [dayFilter, setDayFilter] = useState("all");
   const [logs, setLogs] = useState<AttendanceRow[]>([]);
   const [stats, setStats] = useState<AttendanceStats>(emptyStats);
 
@@ -75,6 +77,40 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
   };
 
   useEffect(refresh, [programId, month]);
+  // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다
+  useEffect(() => setDayFilter("all"), [month]);
+
+  const daysInMonth = new Date(
+    Number(month.slice(0, 4)),
+    Number(month.slice(5, 7)),
+    0,
+  ).getDate();
+
+  const filteredLogs =
+    dayFilter === "all"
+      ? logs
+      : logs.filter(
+          (row) => row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
+        );
+
+  const dayStatsTotals =
+    dayFilter === "all"
+      ? null
+      : filteredLogs.reduce(
+          (acc, row) => ({
+            total: acc.total + 1,
+            normal: acc.normal + (row.log.status === "NORMAL" ? 1 : 0),
+            late: acc.late + (row.log.status === "LATE" ? 1 : 0),
+            earlyLeave: acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
+            totalMinutes:
+              acc.totalMinutes +
+              (row.log.status !== "INVALID" ? (row.log.totalMinutes ?? 0) : 0),
+          }),
+          { total: 0, normal: 0, late: 0, earlyLeave: 0, totalMinutes: 0 },
+        );
+  const displayStats: AttendanceStats = dayStatsTotals
+    ? { ...dayStatsTotals, totalHours: Math.round((dayStatsTotals.totalMinutes / 60) * 10) / 10 }
+    : stats;
 
   const handleCorrectButtonClick = (row: AttendanceRow) => {
     setCorrectionTarget(row);
@@ -123,7 +159,18 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-3">
+      <div className="flex items-center justify-end gap-2.5 mb-3">
+        <FilterSelect
+          value={dayFilter}
+          onChange={setDayFilter}
+          options={[
+            { value: "all", label: "전체 일자" },
+            ...Array.from({ length: daysInMonth }, (_, i) => {
+              const day = String(i + 1);
+              return { value: day, label: `${day}일` };
+            }),
+          ]}
+        />
         <MonthPicker value={month} onChange={setMonth} />
       </div>
 
@@ -132,31 +179,31 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
             총 건수
           </div>
-          <div className="text-sm font-bold">{stats.total}건</div>
+          <div className="text-sm font-bold">{displayStats.total}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
             정상
           </div>
-          <div className="text-sm font-bold">{stats.normal}건</div>
+          <div className="text-sm font-bold">{displayStats.normal}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
             지각
           </div>
-          <div className="text-sm font-bold">{stats.late}건</div>
+          <div className="text-sm font-bold">{displayStats.late}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
             조퇴
           </div>
-          <div className="text-sm font-bold">{stats.earlyLeave}건</div>
+          <div className="text-sm font-bold">{displayStats.earlyLeave}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
             총 근무시간
           </div>
-          <div className="text-sm font-bold">{stats.totalHours}시간</div>
+          <div className="text-sm font-bold">{displayStats.totalHours}시간</div>
         </div>
       </div>
 
@@ -193,7 +240,7 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
               </tr>
             </thead>
             <tbody>
-              {logs.map((row) => (
+              {filteredLogs.map((row) => (
                 <tr
                   key={row.log.id}
                   className={
@@ -248,13 +295,15 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
                   </td>
                 </tr>
               ))}
-              {logs.length === 0 && (
+              {filteredLogs.length === 0 && (
                 <tr>
                   <td
                     colSpan={9}
                     className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
                   >
-                    해당 월에 근태 기록이 없습니다.
+                    {dayFilter === "all"
+                      ? "해당 월에 근태 기록이 없습니다."
+                      : "해당 일자에 근태 기록이 없습니다."}
                   </td>
                 </tr>
               )}
