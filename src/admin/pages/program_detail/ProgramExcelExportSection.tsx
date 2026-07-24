@@ -5,6 +5,7 @@ import {
   downloadActivityPaymentLedgerExcel,
   downloadAttendanceExcel,
   downloadPaymentExcel,
+  downloadPayslipExcel,
   downloadWorkScheduleExcel,
 } from "../../api/admin/excel";
 import {
@@ -78,7 +79,7 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
     icon: "🧾",
     name: "급여 명세서",
     desc: "참여자 개인별 급여 명세서입니다.",
-    download: null,
+    download: downloadPayslipExcel,
   },
 ];
 

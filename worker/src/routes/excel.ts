@@ -451,6 +451,61 @@ app.get("/:id/export/work-schedule", async (c) => {
   });
 });
 
+// 급여 명세서 (역량활동) — 4대보험만 자동 계산하고 나머지(주휴수당/연차수당/기타수당/
+// 팀장수당/소득세/지방세/생년월일/기관보조금)는 데이터가 없어서 빈 칸으로 남긴다.
+// 산재보험은 전액 사업주 부담이라 근로자 명세서엔 0으로 표시(계산 안 함).
+app.get("/:id/export/payslip", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const month = c.req.query("month");
+  if (!month) return c.json({ error: "month is required" }, 400);
+
+  const program = await loadAccessibleProgram(db, programId);
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "Forbidden" }, 403);
+
+  const orgRows = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, program.organizationId));
+  const org = orgRows[0];
+
+  const activeParticipants = await db
+    .select()
+    .from(participants)
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+
+  const attendanceRows = await db
+    .select()
+    .from(attendanceLogs)
+    .where(
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
+    );
+  const minutesByParticipant = new Map<number, number>();
+  for (const log of attendanceRows) {
+    if (!log.totalMinutes) continue;
+    minutesByParticipant.set(
+      log.participantId,
+      (minutesByParticipant.get(log.participantId) ?? 0) + log.totalMinutes,
+    );
+  }
+
+  return c.json({
+    organizationName: org?.name ?? "",
+    month,
+    hourlyWage: program.hourlyWage,
+    healthInsuranceRate: program.healthInsuranceRate,
+    longtermCareRate: program.longtermCareRate,
+    employmentInsuranceRate: program.employmentInsuranceRate,
+    participants: activeParticipants.map((participant) => ({
+      name: participant.name,
+      actualWorkHours:
+        Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
+    })),
+  });
+});
+
 // 급여대장 CSV — 계좌/주민번호는 담당자가 수기로 채우도록 빈 칸 (9장 결정)
 app.get("/:id/export/payment", async (c) => {
   const auth = getAuth(c);

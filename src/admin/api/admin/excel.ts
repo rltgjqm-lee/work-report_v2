@@ -10,6 +10,10 @@ import {
   downloadWorkScheduleWorkbook,
   type WorkScheduleParticipant,
 } from "../../../utils/downloadWorkScheduleExcel";
+import {
+  downloadPayslipWorkbook,
+  type PayslipParticipant,
+} from "../../../utils/downloadPayslipExcel";
 import type { ActivityLogItem } from "../../../types/form";
 import { BASE_URL, request } from "../client";
 
@@ -191,6 +195,34 @@ export const downloadWorkScheduleExcel = async (
       organizationRep: data.organizationRep,
       organizationAddress: data.organizationAddress,
       month: data.month,
+    },
+    data.participants,
+  );
+};
+
+interface PayslipExportResponse {
+  organizationName: string;
+  month: string;
+  hourlyWage: number;
+  healthInsuranceRate: number;
+  longtermCareRate: number;
+  employmentInsuranceRate: number;
+  participants: PayslipParticipant[];
+}
+
+export const downloadPayslipExcel = async (programId: number, month: string) => {
+  const data = await request<PayslipExportResponse>(
+    `/api/programs/${programId}/export/payslip?month=${month}`,
+  );
+
+  await downloadPayslipWorkbook(
+    {
+      organizationName: data.organizationName,
+      month: data.month,
+      hourlyWage: data.hourlyWage,
+      healthInsuranceRate: data.healthInsuranceRate,
+      longtermCareRate: data.longtermCareRate,
+      employmentInsuranceRate: data.employmentInsuranceRate,
     },
     data.participants,
   );
