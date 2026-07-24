@@ -9,11 +9,23 @@ import {
   activityLogs,
   attendanceLogs,
   organizations,
+  groupMonthlySchedule,
+  participantMonthlySchedule,
 } from "../db/schema";
 import { canAccessProgram, getAuth } from "../lib/authz";
+import { getHolidayName } from "../lib/koreanHolidays";
 import type { Env } from "../types";
 
 const app = new Hono<Env>();
+
+const base64FromArrayBuffer = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
 
 const toCsvResponse = (rows: (string | number | null | undefined)[][], filename: string) => {
   const csv =
@@ -177,7 +189,8 @@ app.get("/:id/export/activity-payment", async (c) => {
   });
 });
 
-// 출근부 (역량활동) CSV — 참여자별 월간 캘린더, 출석일은 조의 근무시간 표시
+// 출근부 (역량활동) — 참여자별 일자별 출근/결근/공휴일/주말 + 서명 이미지(base64).
+// 실제 xlsx(참여자별 시트, 2단 레이아웃)는 관리자 콘솔이 exceljs로 클라이언트에서 조립한다.
 app.get("/:id/export/attendance", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -189,26 +202,58 @@ app.get("/:id/export/attendance", async (c) => {
   if (!program) return c.json({ error: "Not found" }, 404);
   if (!canAccessProgram(auth, program)) return c.json({ error: "Forbidden" }, 403);
 
-  const rows = await db
+  const activeParticipants = await db
     .select({
-      log: attendanceLogs,
-      participantName: participants.name,
+      participant: participants,
+      groupName: groups.name,
       shiftStart: groups.shiftStart,
       shiftEnd: groups.shiftEnd,
     })
+    .from(participants)
+    .leftJoin(groups, eq(participants.groupId, groups.id))
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+
+  const groupScheduleRows = await db
+    .select()
+    .from(groupMonthlySchedule)
+    .where(eq(groupMonthlySchedule.yearMonth, month));
+  const groupScheduleByGroupId = new Map(
+    groupScheduleRows.map((row) => [row.groupId, JSON.parse(row.workDates) as string[]]),
+  );
+
+  const participantScheduleRows = await db
+    .select()
+    .from(participantMonthlySchedule)
+    .where(eq(participantMonthlySchedule.yearMonth, month));
+  const participantScheduleByParticipantId = new Map(
+    participantScheduleRows.map((row) => [
+      row.participantId,
+      JSON.parse(row.workDates) as string[],
+    ]),
+  );
+
+  const logRows = await db
+    .select()
     .from(attendanceLogs)
-    .innerJoin(participants, eq(attendanceLogs.participantId, participants.id))
-    .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
     .where(
       and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
+  const logByParticipantDate = new Map(
+    logRows.map((log) => [`${log.participantId}_${log.workDate}`, log]),
+  );
 
-  const byParticipant = new Map<string, typeof rows>();
-  for (const row of rows) {
-    const key = row.participantName;
-    if (!byParticipant.has(key)) byParticipant.set(key, []);
-    byParticipant.get(key)!.push(row);
-  }
+  // 서명 이미지는 R2에서 읽어 base64로 미리 변환해둔다 (클라이언트에서 exceljs로 삽입).
+  const signatureBase64ByKey = new Map<string, string>();
+  await Promise.all(
+    logRows
+      .filter((log) => log.signatureKey)
+      .map(async (log) => {
+        const object = await c.env.SIGNATURES_BUCKET.get(log.signatureKey!);
+        if (!object) return;
+        const buffer = await object.arrayBuffer();
+        signatureBase64ByKey.set(log.signatureKey!, base64FromArrayBuffer(buffer));
+      }),
+  );
 
   const daysInMonth = new Date(
     Number(month.slice(0, 4)),
@@ -216,33 +261,59 @@ app.get("/:id/export/attendance", async (c) => {
     0,
   ).getDate();
 
-  const header = ["참여자명", ...Array.from({ length: daysInMonth }, (_, i) => `${i + 1}일`), "출석일수"];
-  const csvRows: (string | number | null)[][] = [
-    [`출근부 (${month}) — ${program.name}`],
-    [],
-    header,
-  ];
+  const participantsPayload = activeParticipants.map(({ participant, groupName, shiftStart, shiftEnd }) => {
+    const scheduledDates =
+      participantScheduleByParticipantId.get(participant.id) ??
+      (participant.groupId ? groupScheduleByGroupId.get(participant.groupId) : undefined) ??
+      [];
 
-  for (const [name, logs] of byParticipant) {
-    const byDay = new Map(logs.map((l) => [Number(l.log.workDate.split("-")[2]), l]));
-    const row: (string | number | null)[] = [name];
-    let presentDays = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const log = byDay.get(d);
-      if (log && log.log.clockIn) {
-        presentDays++;
-        row.push(
-          log.shiftStart && log.shiftEnd ? `${log.shiftStart}~${log.shiftEnd}` : "출석",
-        );
-      } else {
-        row.push("");
+    const days = Array.from({ length: daysInMonth }, (_, index) => {
+      const day = index + 1;
+      const date = `${month}-${String(day).padStart(2, "0")}`;
+      const holidayName = getHolidayName(date);
+      const dayOfWeek = new Date(`${date}T00:00:00Z`).getUTCDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const log = logByParticipantDate.get(`${participant.id}_${date}`);
+
+      if (holidayName) {
+        return { day, date, marker: "HOLIDAY" as const, label: holidayName };
       }
-    }
-    row.push(presentDays);
-    csvRows.push(row);
-  }
+      if (isWeekend) {
+        return { day, date, marker: "WEEKEND" as const, label: "주말" };
+      }
+      if (log?.clockIn) {
+        return {
+          day,
+          date,
+          marker: "PRESENT" as const,
+          startTime: log.clockIn.slice(11, 16),
+          endTime: log.clockOut ? log.clockOut.slice(11, 16) : null,
+          totalMinutes: log.totalMinutes,
+          signatureBase64: log.signatureKey
+            ? (signatureBase64ByKey.get(log.signatureKey) ?? null)
+            : null,
+        };
+      }
+      if (scheduledDates.includes(date)) {
+        return { day, date, marker: "ABSENT" as const };
+      }
+      return { day, date, marker: "NONE" as const };
+    });
 
-  return toCsvResponse(csvRows, `출근부_${month}.csv`);
+    return {
+      name: participant.name,
+      groupName: groupName ?? "미배정",
+      shiftStart,
+      shiftEnd,
+      days,
+    };
+  });
+
+  return c.json({
+    programName: program.name,
+    month,
+    participants: participantsPayload,
+  });
 });
 
 // 급여대장 CSV — 계좌/주민번호는 담당자가 수기로 채우도록 빈 칸 (9장 결정)

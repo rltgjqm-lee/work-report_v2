@@ -13,7 +13,9 @@ export interface ActivityPaymentLedgerParticipant {
   minutes: number;
 }
 
-const THIN_BORDER = { style: "thin" as const };
+// color를 안 주면 스펙상 automatic(보통 검정)이지만, 구글 시트는 xlsx를 가져올 때
+// color가 없는 테두리를 안 그리는 경우가 있어서 명시적으로 검정을 지정한다.
+const THIN_BORDER = { style: "thin" as const, color: { argb: "FF000000" } };
 const HEADER_FILL: ExcelJS.Fill = {
   type: "pattern",
   pattern: "solid",
@@ -92,8 +94,8 @@ export const addActivityPaymentLedgerSheet = (
     };
     cell.fill = HEADER_FILL;
     cell.border = {
-      top: { style: "medium" },
-      bottom: { style: "medium" },
+      top: { style: "medium", color: { argb: "FF000000" } },
+      bottom: { style: "medium", color: { argb: "FF000000" } },
       left: THIN_BORDER,
       right: THIN_BORDER,
     };
@@ -187,7 +189,10 @@ export const addActivityPaymentLedgerSheet = (
     cell.font = { bold: true, size: 11, name: "맑은 고딕" };
     cell.alignment = { horizontal: "center", vertical: "middle" };
     cell.fill = SUBTOTAL_FILL;
-    cell.border = { top: { style: "medium" }, bottom: { style: "medium" } };
+    cell.border = {
+      top: { style: "medium", color: { argb: "FF000000" } },
+      bottom: { style: "medium", color: { argb: "FF000000" } },
+    };
   });
 
   // 6. 기관명
@@ -199,7 +204,9 @@ export const addActivityPaymentLedgerSheet = (
     horizontal: "center",
     vertical: "middle",
   };
-  sheet.getCell(`A${footerRow}`).border = { top: { style: "medium" } };
+  sheet.getCell(`A${footerRow}`).border = {
+    top: { style: "medium", color: { argb: "FF000000" } },
+  };
   sheet.getRow(footerRow).height = 26.25;
 
   sheet.pageSetup = {

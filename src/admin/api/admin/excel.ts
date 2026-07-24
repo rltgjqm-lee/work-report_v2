@@ -2,6 +2,10 @@ import ExcelJS from "exceljs";
 
 import { addActivityLogSheet } from "../../../utils/downloadActivityLogExcel";
 import { buildActivityPaymentLedgerWorkbook } from "../../../utils/downloadActivityPaymentLedgerExcel";
+import {
+  downloadCapacityAttendanceWorkbook,
+  type CapacityAttendanceParticipant,
+} from "../../../utils/downloadCapacityAttendanceExcel";
 import type { ActivityLogItem } from "../../../types/form";
 import { BASE_URL, request } from "../client";
 
@@ -135,11 +139,25 @@ export const downloadActivityLogExcel = async (
   URL.revokeObjectURL(url);
 };
 
-export const downloadAttendanceExcel = (programId: number, month: string) =>
-  downloadFile(
+interface CapacityAttendanceExportResponse {
+  programName: string;
+  month: string;
+  participants: CapacityAttendanceParticipant[];
+}
+
+export const downloadAttendanceExcel = async (
+  programId: number,
+  month: string,
+) => {
+  const data = await request<CapacityAttendanceExportResponse>(
     `/api/programs/${programId}/export/attendance?month=${month}`,
-    `출근부_${month}.csv`,
   );
+  await downloadCapacityAttendanceWorkbook(
+    data.programName,
+    data.month,
+    data.participants,
+  );
+};
 
 export const downloadPaymentExcel = (programId: number, month: string) =>
   downloadFile(
