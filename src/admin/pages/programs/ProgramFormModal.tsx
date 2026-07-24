@@ -17,9 +17,9 @@ const emptyForm = {
   programType: "",
   hourlyWage: "10320",
   educationAmount: "0",
-  educationType: "add" as "add" | "deduct",
+  educationType: "add" as "add" | "deduct" | "none",
   dementiaAmount: "0",
-  dementiaType: "deduct" as "add" | "deduct",
+  dementiaType: "deduct" as "add" | "deduct" | "none",
 };
 
 interface ProgramFormModalProps {
@@ -270,12 +270,13 @@ const ProgramFormModal = ({
               onChange={(value) =>
                 setForm((f) => ({
                   ...f,
-                  educationType: value as "add" | "deduct",
+                  educationType: value as "add" | "deduct" | "none",
                 }))
               }
               options={[
                 { value: "add", label: "가산" },
                 { value: "deduct", label: "차감" },
+                { value: "none", label: "없음" },
               ]}
             />
           </FormField>
@@ -306,12 +307,13 @@ const ProgramFormModal = ({
               onChange={(value) =>
                 setForm((f) => ({
                   ...f,
-                  dementiaType: value as "add" | "deduct",
+                  dementiaType: value as "add" | "deduct" | "none",
                 }))
               }
               options={[
                 { value: "add", label: "가산" },
                 { value: "deduct", label: "차감" },
+                { value: "none", label: "없음" },
               ]}
             />
           </FormField>

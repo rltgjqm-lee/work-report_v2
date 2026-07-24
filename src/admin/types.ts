@@ -44,9 +44,9 @@ export type Program = {
   programType: string | null;
   hourlyWage: number;
   educationAmount: number;
-  educationType: "add" | "deduct";
+  educationType: "add" | "deduct" | "none";
   dementiaAmount: number;
-  dementiaType: "add" | "deduct";
+  dementiaType: "add" | "deduct" | "none";
   healthInsuranceRate: number;
   longtermCareRate: number;
   employmentInsuranceRate: number;

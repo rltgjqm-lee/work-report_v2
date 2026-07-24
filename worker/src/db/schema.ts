@@ -42,12 +42,12 @@ export const programs = sqliteTable("programs", {
   hourlyWage: integer("hourly_wage").notNull().default(3000),
   educationAmount: integer("education_amount").notNull().default(0),
   educationType: text("education_type")
-    .$type<"add" | "deduct">()
+    .$type<"add" | "deduct" | "none">()
     .notNull()
     .default("add"),
   dementiaAmount: integer("dementia_amount").notNull().default(0),
   dementiaType: text("dementia_type")
-    .$type<"add" | "deduct">()
+    .$type<"add" | "deduct" | "none">()
     .notNull()
     .default("deduct"),
   healthInsuranceRate: real("health_insurance_rate").notNull().default(3.545),
