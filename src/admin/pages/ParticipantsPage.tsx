@@ -135,14 +135,14 @@ const ParticipantsPage = () => {
                 <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   이름
                 </th>
-                <th className="w-[220px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  수요처명
+                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  소속기관
                 </th>
                 <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   소속 사업단
                 </th>
-                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                  소속기관
+                <th className="w-[220px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  수요처명
                 </th>
                 <th className="w-[70px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
@@ -158,13 +158,13 @@ const ParticipantsPage = () => {
                     {row.name}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {row.demandName}
+                    {row.organizationName}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {row.programName}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {row.organizationName}
+                    {row.demandName}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     <button
