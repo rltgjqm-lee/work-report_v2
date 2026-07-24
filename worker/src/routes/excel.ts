@@ -11,6 +11,7 @@ import {
   organizations,
   groupMonthlySchedule,
   participantMonthlySchedule,
+  participantLeaves,
 } from "../db/schema";
 import { canAccessProgram, getAuth } from "../lib/authz";
 import { getHolidayName } from "../lib/koreanHolidays";
@@ -311,6 +312,140 @@ app.get("/:id/export/attendance", async (c) => {
 
   return c.json({
     programName: program.name,
+    month,
+    participants: participantsPayload,
+  });
+});
+
+// 근무 스케줄표 (역량활동) — 근로계약서에 첨부하는 월별 근무일/휴무일 캘린더.
+// 원본 데이터만 내려주고, 실제 xlsx(달력 격자)는 관리자 콘솔이 exceljs로 조립한다.
+app.get("/:id/export/work-schedule", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+  const month = c.req.query("month");
+  if (!month) return c.json({ error: "month is required" }, 400);
+
+  const program = await loadAccessibleProgram(db, programId);
+  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "Forbidden" }, 403);
+
+  const orgRows = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, program.organizationId));
+  const org = orgRows[0];
+
+  const activeParticipants = await db
+    .select({
+      participant: participants,
+      groupName: groups.name,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
+    })
+    .from(participants)
+    .leftJoin(groups, eq(participants.groupId, groups.id))
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+
+  const groupScheduleRows = await db
+    .select()
+    .from(groupMonthlySchedule)
+    .where(eq(groupMonthlySchedule.yearMonth, month));
+  const groupScheduleByGroupId = new Map(
+    groupScheduleRows.map((row) => [row.groupId, JSON.parse(row.workDates) as string[]]),
+  );
+
+  const participantScheduleRows = await db
+    .select()
+    .from(participantMonthlySchedule)
+    .where(eq(participantMonthlySchedule.yearMonth, month));
+  const participantScheduleByParticipantId = new Map(
+    participantScheduleRows.map((row) => [
+      row.participantId,
+      JSON.parse(row.workDates) as string[],
+    ]),
+  );
+
+  const monthStart = `${month}-01`;
+  const daysInMonth = new Date(
+    Number(month.slice(0, 4)),
+    Number(month.slice(5, 7)),
+    0,
+  ).getDate();
+  const monthEnd = `${month}-${String(daysInMonth).padStart(2, "0")}`;
+
+  const clipLeaveDaysToMonth = (leaveStart: string, leaveEnd: string): number => {
+    const start = leaveStart > monthStart ? leaveStart : monthStart;
+    const end = leaveEnd < monthEnd ? leaveEnd : monthEnd;
+    if (start > end) return 0;
+    const diffDays =
+      (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime()) /
+      86400000;
+    return diffDays + 1;
+  };
+
+  const leaveRows = await db
+    .select({ leave: participantLeaves })
+    .from(participantLeaves)
+    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
+    .where(eq(participants.programId, programId))
+    .then((rows) => rows.map((row) => row.leave));
+  const leavesByParticipant = new Map<number, typeof leaveRows>();
+  for (const leave of leaveRows) {
+    if (leave.leaveEnd < monthStart || leave.leaveStart > monthEnd) continue;
+    if (!leavesByParticipant.has(leave.participantId)) {
+      leavesByParticipant.set(leave.participantId, []);
+    }
+    leavesByParticipant.get(leave.participantId)!.push(leave);
+  }
+
+  const attendanceRows = await db
+    .select()
+    .from(attendanceLogs)
+    .where(
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
+    );
+  const presentDaysByParticipant = new Map<number, number>();
+  for (const log of attendanceRows) {
+    if (!log.clockIn) continue;
+    presentDaysByParticipant.set(
+      log.participantId,
+      (presentDaysByParticipant.get(log.participantId) ?? 0) + 1,
+    );
+  }
+
+  const participantsPayload = activeParticipants.map(({ participant, groupName, shiftStart, shiftEnd }) => {
+    const scheduledDates =
+      participantScheduleByParticipantId.get(participant.id) ??
+      (participant.groupId ? groupScheduleByGroupId.get(participant.groupId) : undefined) ??
+      [];
+
+    const leaves = leavesByParticipant.get(participant.id) ?? [];
+    let unpaidLeaveDays = 0;
+    let paidLeaveDays = 0;
+    for (const leave of leaves) {
+      const days = clipLeaveDaysToMonth(leave.leaveStart, leave.leaveEnd);
+      if (leave.leaveType === "UNPAID") unpaidLeaveDays += days;
+      else paidLeaveDays += days;
+    }
+
+    return {
+      name: participant.name,
+      groupName: groupName ?? "미배정",
+      shiftStart,
+      shiftEnd,
+      createdAt: participant.createdAt,
+      scheduledDates,
+      unpaidLeaveDays,
+      paidLeaveDays,
+      presentDays: presentDaysByParticipant.get(participant.id) ?? 0,
+    };
+  });
+
+  return c.json({
+    organizationName: org?.name ?? "",
+    organizationRep: org?.rep ?? "",
+    organizationAddress: org?.address ?? "",
     month,
     participants: participantsPayload,
   });

@@ -6,6 +6,10 @@ import {
   downloadCapacityAttendanceWorkbook,
   type CapacityAttendanceParticipant,
 } from "../../../utils/downloadCapacityAttendanceExcel";
+import {
+  downloadWorkScheduleWorkbook,
+  type WorkScheduleParticipant,
+} from "../../../utils/downloadWorkScheduleExcel";
 import type { ActivityLogItem } from "../../../types/form";
 import { BASE_URL, request } from "../client";
 
@@ -164,6 +168,33 @@ export const downloadPaymentExcel = (programId: number, month: string) =>
     `/api/programs/${programId}/export/payment?month=${month}`,
     `급여대장_${month}.csv`,
   );
+
+interface WorkScheduleExportResponse {
+  organizationName: string;
+  organizationRep: string;
+  organizationAddress: string;
+  month: string;
+  participants: WorkScheduleParticipant[];
+}
+
+export const downloadWorkScheduleExcel = async (
+  programId: number,
+  month: string,
+) => {
+  const data = await request<WorkScheduleExportResponse>(
+    `/api/programs/${programId}/export/work-schedule?month=${month}`,
+  );
+
+  await downloadWorkScheduleWorkbook(
+    {
+      organizationName: data.organizationName,
+      organizationRep: data.organizationRep,
+      organizationAddress: data.organizationAddress,
+      month: data.month,
+    },
+    data.participants,
+  );
+};
 
 interface ActivityPaymentExportResponse {
   programName: string;

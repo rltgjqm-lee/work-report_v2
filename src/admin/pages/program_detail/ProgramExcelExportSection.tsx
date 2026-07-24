@@ -5,6 +5,7 @@ import {
   downloadActivityPaymentLedgerExcel,
   downloadAttendanceExcel,
   downloadPaymentExcel,
+  downloadWorkScheduleExcel,
 } from "../../api/admin/excel";
 import {
   exportBtnClass,
@@ -63,7 +64,7 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
     icon: "📅",
     name: "근무 스케줄",
     desc: "참여자별 월간 근무 스케줄표입니다.",
-    download: null,
+    download: downloadWorkScheduleExcel,
   },
   {
     key: "payment",
