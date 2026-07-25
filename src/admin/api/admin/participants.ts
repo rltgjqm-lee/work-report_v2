@@ -67,6 +67,12 @@ export const updateParticipant = (
       | "phoneLast4"
       | "birthYear"
       | "groupId"
+      | "educationAmount"
+      | "educationType"
+      | "dementiaAmount"
+      | "dementiaType"
+      | "socialInsuranceEnrolled"
+      | "weeklyHolidayHours"
     >
   >,
 ) =>

@@ -43,10 +43,6 @@ export type Program = {
   endTime: string;
   programType: string | null;
   hourlyWage: number;
-  educationAmount: number;
-  educationType: "add" | "deduct" | "none";
-  dementiaAmount: number;
-  dementiaType: "add" | "deduct" | "none";
   healthInsuranceRate: number;
   longtermCareRate: number;
   employmentInsuranceRate: number;
@@ -108,6 +104,12 @@ export type Participant = {
   dropReason: string | null;
   leaveStart: string | null;
   leaveEnd: string | null;
+  educationAmount: number;
+  educationType: "add" | "deduct" | "none";
+  dementiaAmount: number;
+  dementiaType: "add" | "deduct" | "none";
+  socialInsuranceEnrolled: boolean;
+  weeklyHolidayHours: number;
   createdAt: string;
 };
 
@@ -210,6 +212,7 @@ export type ParticipantMonthlyAttendance = {
 
 export type ParticipantDetail = Participant & {
   programName: string;
+  programType: string | null;
   groupName: string | null;
   organizationName: string | null;
 };

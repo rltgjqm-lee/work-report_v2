@@ -71,6 +71,7 @@ app.get("/:id", async (c) => {
   return c.json({
     ...found.participant,
     programName: found.program.name,
+    programType: found.program.programType,
     groupName: groupRows[0]?.name ?? null,
     organizationName: organizationRows[0]?.name ?? null,
   });
@@ -160,6 +161,12 @@ app.put("/:id", async (c) => {
     phoneLast4?: string;
     birthYear?: number;
     groupId?: number;
+    educationAmount?: number;
+    educationType?: "add" | "deduct" | "none";
+    dementiaAmount?: number;
+    dementiaType?: "add" | "deduct" | "none";
+    socialInsuranceEnrolled?: boolean;
+    weeklyHolidayHours?: number;
   }>();
 
   if (body.demandSiteId) {

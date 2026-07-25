@@ -30,10 +30,6 @@ type ProgramBody = {
   endTime?: string;
   programType?: string;
   hourlyWage?: number;
-  educationAmount?: number;
-  educationType?: "add" | "deduct" | "none";
-  dementiaAmount?: number;
-  dementiaType?: "add" | "deduct" | "none";
   healthInsuranceRate?: number;
   longtermCareRate?: number;
   employmentInsuranceRate?: number;
@@ -149,10 +145,6 @@ app.post("/", async (c) => {
       endTime,
       programType: body.programType,
       hourlyWage: body.hourlyWage,
-      educationAmount: body.educationAmount,
-      educationType: body.educationType,
-      dementiaAmount: body.dementiaAmount,
-      dementiaType: body.dementiaType,
       healthInsuranceRate: body.healthInsuranceRate,
       longtermCareRate: body.longtermCareRate,
       employmentInsuranceRate: body.employmentInsuranceRate,

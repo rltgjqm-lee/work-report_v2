@@ -16,10 +16,6 @@ const emptyForm = {
   endTime: "",
   programType: "",
   hourlyWage: "10320",
-  educationAmount: "0",
-  educationType: "add" as "add" | "deduct" | "none",
-  dementiaAmount: "0",
-  dementiaType: "deduct" as "add" | "deduct" | "none",
 };
 
 interface ProgramFormModalProps {
@@ -54,10 +50,6 @@ const ProgramFormModal = ({
           endTime: editingProgram.endTime,
           programType: editingProgram.programType ?? "",
           hourlyWage: String(editingProgram.hourlyWage),
-          educationAmount: String(editingProgram.educationAmount),
-          educationType: editingProgram.educationType,
-          dementiaAmount: String(editingProgram.dementiaAmount),
-          dementiaType: editingProgram.dementiaType,
         }
       : emptyForm,
   );
@@ -84,10 +76,6 @@ const ProgramFormModal = ({
         endTime: form.endTime,
         programType: form.programType || undefined,
         hourlyWage: Number(form.hourlyWage),
-        educationAmount: Number(form.educationAmount),
-        educationType: form.educationType,
-        dementiaAmount: Number(form.dementiaAmount),
-        dementiaType: form.dementiaType,
         ...(currentRole === ROLES.SUPER_ADMIN && !editingProgram
           ? { organizationId: Number(form.organizationId) }
           : {}),
@@ -242,83 +230,6 @@ const ProgramFormModal = ({
           }
         />
       </FormField>
-
-      <div className="flex gap-3">
-        {/* 교육비 */}
-        <div className="flex-1">
-          <FormField label="교육비(원)">
-            <input
-              type="number"
-              className={inputClass}
-              value={form.educationAmount}
-              onChange={(event) =>
-                setForm((f) => ({
-                  ...f,
-                  educationAmount: event.target.value,
-                }))
-              }
-            />
-          </FormField>
-        </div>
-
-        {/* 교육비 처리 - 가산/차감 */}
-        <div className="flex-1">
-          <FormField label="교육비 처리">
-            <FilterSelect
-              className="w-full"
-              value={form.educationType}
-              onChange={(value) =>
-                setForm((f) => ({
-                  ...f,
-                  educationType: value as "add" | "deduct" | "none",
-                }))
-              }
-              options={[
-                { value: "add", label: "가산" },
-                { value: "deduct", label: "차감" },
-                { value: "none", label: "없음" },
-              ]}
-            />
-          </FormField>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        {/* 치매 검진비 */}
-        <div className="flex-1">
-          <FormField label="치매 검진비(원)">
-            <input
-              type="number"
-              className={inputClass}
-              value={form.dementiaAmount}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, dementiaAmount: event.target.value }))
-              }
-            />
-          </FormField>
-        </div>
-
-        {/* 치매 검진비 처리 - 가산/차감 */}
-        <div className="flex-1">
-          <FormField label="치매검진비 처리">
-            <FilterSelect
-              className="w-full"
-              value={form.dementiaType}
-              onChange={(value) =>
-                setForm((f) => ({
-                  ...f,
-                  dementiaType: value as "add" | "deduct" | "none",
-                }))
-              }
-              options={[
-                { value: "add", label: "가산" },
-                { value: "deduct", label: "차감" },
-                { value: "none", label: "없음" },
-              ]}
-            />
-          </FormField>
-        </div>
-      </div>
 
       {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
     </SlideModal>
