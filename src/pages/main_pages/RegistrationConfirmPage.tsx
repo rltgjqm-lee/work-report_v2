@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 import AppBar from "../../components/molecule/AppBar";
-import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
@@ -119,7 +118,6 @@ const RegistrationConfirmPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="등록 확인" onBack={onBack} />
-      <ProgressBar step={2} />
       <div className={bodyClass}>
         {exception === "loading" && (
           <Card>
@@ -153,7 +151,9 @@ const RegistrationConfirmPage = ({
               님 이십니다.
               <br />
               <br />
-              내용이 맞으면 '다음'을, 틀리면 '이전'을 눌러주세요.
+              내용이 맞으면 '다음'을,
+              <br />
+              틀리면 '이전'을 눌러주세요.
             </p>
           </Card>
         )}

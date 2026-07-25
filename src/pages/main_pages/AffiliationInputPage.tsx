@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import AppBar from "../../components/molecule/AppBar";
 import Dropdown from "../../components/molecule/Dropdown";
 import LabeledInput from "../../components/molecule/LabeledInput";
-import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar from "../../components/atoms/BottomBar";
@@ -237,6 +236,7 @@ const AffiliationInputPage = ({
     setProgramType(value);
     setSelectedProgramId("");
     onChange("programName", "");
+    onChange("programType", value as ActivityLogFormData["programType"]);
   };
 
   const handleProgramChange = (programId: string) => {
@@ -295,8 +295,6 @@ const AffiliationInputPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="기본 정보" />
-
-      <ProgressBar step={1} />
 
       <div className={bodyClass}>
         <Card>
