@@ -70,16 +70,17 @@ const HomePage = ({
 }: HomePageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
 
-  const todayLabel = useMemo(
-    () =>
-      new Date().toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "long",
-      }),
-    [],
-  );
+  const todayLabel = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}.${month}.${day}`;
+  }, []);
+
+  const programLabel = formData.programType
+    ? `${formData.programType.replace(/\s/g, "")}사업`
+    : "";
 
   const attendanceInDone = formData.startTime.hour !== "";
   const attendanceOutDone = formData.endTime.hour !== "";
@@ -93,12 +94,17 @@ const HomePage = ({
     <div className={pageClass}>
       <AppBar title="활동일지" />
       <div className={bodyClass}>
-        <div className="bg-white rounded-[20px] p-[22px] text-center shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
-          <div className="text-[13.5px] text-[#9ca3af] font-bold mb-2">
-            {todayLabel}
+        <div className="bg-white rounded-[20px] px-[22px] py-5 shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
+          <div className="text-[13px] text-[#9ca3af] font-bold mb-3.5">
+            {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
           </div>
-          <div className="text-[19px] font-extrabold text-[#1f2937]">
-            {formData.userName || "참여자"}님, 안녕하세요
+          <div className="flex items-center justify-between gap-2.5">
+            <span className="text-[19px] font-extrabold text-[#1f2937]">
+              {programLabel}
+            </span>
+          </div>
+          <div className="text-[15px] text-[#4e5968] font-semibold mt-1.5">
+            {formData.programName} 사업입니다.
           </div>
         </div>
 

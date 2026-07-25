@@ -91,6 +91,12 @@ const AffiliationInputPage = ({
 
           setProgramType(matchedProgram.programType ?? "");
           setSelectedProgramId(String(matchedProgram.id));
+          onChange(
+            "programType",
+            (matchedProgram.programType ??
+              "") as ActivityLogFormData["programType"],
+          );
+          onChange("programId", matchedProgram.id);
         },
       )
       .catch(() => {
