@@ -16,6 +16,7 @@ interface HomePageProps {
 
 type ModuleItemProps = {
   index: number;
+  category: string;
   title: string;
   status: string;
   done: boolean;
@@ -25,6 +26,7 @@ type ModuleItemProps = {
 
 const ModuleItem = ({
   index,
+  category,
   title,
   status,
   done,
@@ -38,7 +40,7 @@ const ModuleItem = ({
   >
     <div>
       <div className="text-[13px] font-extrabold text-[#3182f6] mb-1">
-        {index}.
+        {index}. {category}
       </div>
       <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
       <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">
@@ -110,6 +112,7 @@ const HomePage = ({
 
         <ModuleItem
           index={moduleIndex++}
+          category="출근"
           title="출근 등록"
           status={
             attendanceInDone
@@ -123,6 +126,7 @@ const HomePage = ({
         {!isCompetencyProgram && (
           <ModuleItem
             index={moduleIndex++}
+            category="업무"
             title="업무 일지 등록"
             status={
               workDone
@@ -137,6 +141,7 @@ const HomePage = ({
         {!isCompetencyProgram && (
           <ModuleItem
             index={moduleIndex++}
+            category="안전"
             title="안전 일지 등록"
             status={
               !safetyDone
@@ -152,6 +157,7 @@ const HomePage = ({
 
         <ModuleItem
           index={moduleIndex++}
+          category="퇴근"
           title="퇴근 등록"
           status={
             attendanceOutDone
@@ -164,6 +170,7 @@ const HomePage = ({
 
         <ModuleItem
           index={moduleIndex}
+          category="서명"
           title="전체확인·서명"
           status={signatureDone ? "서명 완료" : "최종 확인이 필요해요"}
           done={signatureDone}
