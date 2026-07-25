@@ -143,17 +143,16 @@ const RegistrationConfirmPage = ({
               의{" "}
               <strong className="text-[#3182f6] font-extrabold">
                 {formData.programName}
-              </strong>{" "}
-              사업이며,{" "}
+              </strong>
+              <br />
               <strong className="text-[#3182f6] font-extrabold">
                 {formData.userName}({formData.gender})
-              </strong>
-              님 이십니다.
+              </strong>{" "}
+              맞으신가요?
               <br />
               <br />
-              내용이 맞으면 '다음'을,
-              <br />
-              틀리면 '이전'을 눌러주세요.
+              맞으면 <strong className="font-extrabold">다음</strong>을, 틀리면{" "}
+              <strong className="font-extrabold">이전</strong>을 눌러주세요.
             </p>
           </Card>
         )}
