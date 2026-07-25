@@ -3,7 +3,6 @@ import React from "react";
 import type { ActivityLogFormData } from "../../types/form";
 import { downloadActivityLogPdf } from "../../utils/downloadActivityLogPdf";
 import AppBar from "../../components/molecule/AppBar";
-import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import SignatureCanvas from "../../components/atoms/SignatureCanvas";
@@ -69,8 +68,7 @@ const SignaturePage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="서명" onBack={onBack} />
-      <ProgressBar step={6} />
+      <AppBar title="서명" onBack={onBack} onHome={onHome} />
       <div className={bodyClass}>
         <Card>
           <label className={labelClass}>
@@ -134,9 +132,6 @@ const SignaturePage = ({
             onClick={handleExportReportsButtonClick}
           >
             보고서 출력
-          </button>
-          <button className={btnOutlineClass} onClick={onHome}>
-            처음으로
           </button>
         </BottomBarRow>
       </BottomBar>
