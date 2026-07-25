@@ -6,25 +6,17 @@ import {
   getParticipant,
   getParticipantAttendance,
   getParticipantLeaves,
-  updateParticipant,
-} from "../api/admin/participants";
-import MonthPicker from "../components/MonthPicker";
-import FormField from "../components/FormField";
-import FilterSelect from "../components/FilterSelect";
-import { btnPrimaryClass, inputClass } from "../uiClasses";
+} from "../../api/admin/participants";
+import MonthPicker from "../../components/MonthPicker";
+import { btnPrimaryClass } from "../../uiClasses";
 import type {
   AnnualLeave,
   AttendanceStats,
   ParticipantAttendanceRow,
   ParticipantDetail,
   ParticipantLeave,
-} from "../types";
-
-const FEE_TYPE_OPTIONS = [
-  { value: "add", label: "가산" },
-  { value: "deduct", label: "차감" },
-  { value: "none", label: "없음" },
-];
+} from "../../types";
+import ParticipantPayrollSettingsModal from "./ParticipantPayrollSettingsModal";
 
 const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",
@@ -71,60 +63,15 @@ const ParticipantDetailPage = () => {
     useState<AttendanceStats>(emptyStats);
   const [leaves, setLeaves] = useState<ParticipantLeave[]>([]);
   const [annualLeave, setAnnualLeave] = useState<AnnualLeave | null>(null);
-
-  const [settingsForm, setSettingsForm] = useState({
-    educationAmount: "0",
-    educationType: "none" as "add" | "deduct" | "none",
-    dementiaAmount: "0",
-    dementiaType: "none" as "add" | "deduct" | "none",
-    socialInsuranceEnrolled: false,
-    weeklyHolidayHours: "0",
-  });
-  const [savingSettings, setSavingSettings] = useState(false);
+  const [payrollModalOpen, setPayrollModalOpen] = useState(false);
 
   useEffect(() => {
-    getParticipant(participantId).then((result) => {
-      setParticipant(result);
-      setSettingsForm({
-        educationAmount: String(result.educationAmount),
-        educationType: result.educationType,
-        dementiaAmount: String(result.dementiaAmount),
-        dementiaType: result.dementiaType,
-        socialInsuranceEnrolled: result.socialInsuranceEnrolled,
-        weeklyHolidayHours: String(result.weeklyHolidayHours),
-      });
-    });
+    getParticipant(participantId).then(setParticipant);
     getParticipantLeaves(participantId).then(setLeaves);
     getAnnualLeave(participantId, new Date().getFullYear().toString()).then(
       setAnnualLeave,
     );
   }, [participantId]);
-
-  const isCompetencyProgram = participant?.programType === "역량 활동";
-
-  const handleSaveSettingsButtonClick = async () => {
-    setSavingSettings(true);
-    try {
-      const updated = await updateParticipant(participantId, {
-        educationAmount: Number(settingsForm.educationAmount),
-        educationType: settingsForm.educationType,
-        dementiaAmount: Number(settingsForm.dementiaAmount),
-        dementiaType: settingsForm.dementiaType,
-        ...(isCompetencyProgram
-          ? {
-              socialInsuranceEnrolled: settingsForm.socialInsuranceEnrolled,
-              weeklyHolidayHours: Number(settingsForm.weeklyHolidayHours),
-            }
-          : {}),
-      });
-      setParticipant((prev) => (prev ? { ...prev, ...updated } : prev));
-      alert("저장했습니다.");
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    } finally {
-      setSavingSettings(false);
-    }
-  };
 
   useEffect(() => {
     getParticipantAttendance(participantId, month).then((result) => {
@@ -163,152 +110,32 @@ const ParticipantDetailPage = () => {
         </div>
       </div>
 
-      {/* 급여 관련 설정 — 교육비/치매검진비는 항상, 4대보험 가입여부/주휴시간은 역량활동만 */}
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
-        <div className="px-5 py-4 border-b border-[#eceef1]">
+      {/* 급여 관련 설정 — 교육비/치매검진비는 항상, 4대보험/주휴수당은 역량활동만 모달에서 노출 */}
+      <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-4 mb-5">
+        <div className="flex items-center justify-between mb-1.5">
           <span className="text-sm font-bold">급여 관련 설정</span>
+          <button
+            className={btnPrimaryClass}
+            onClick={() => setPayrollModalOpen(true)}
+          >
+            설정 변경
+          </button>
         </div>
-        <div className="p-5 flex flex-col gap-3">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <FormField label="교육비(원)">
-                <input
-                  type="number"
-                  className={inputClass}
-                  value={settingsForm.educationAmount}
-                  onChange={(event) =>
-                    setSettingsForm((f) => ({
-                      ...f,
-                      educationAmount: event.target.value,
-                    }))
-                  }
-                />
-              </FormField>
-            </div>
-            <div className="flex-1">
-              <FormField label="교육비 처리">
-                <FilterSelect
-                  className="w-full"
-                  value={settingsForm.educationType}
-                  onChange={(value) =>
-                    setSettingsForm((f) => ({
-                      ...f,
-                      educationType: value as "add" | "deduct" | "none",
-                    }))
-                  }
-                  options={FEE_TYPE_OPTIONS}
-                />
-              </FormField>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <FormField label="치매 검진비(원)">
-                <input
-                  type="number"
-                  className={inputClass}
-                  value={settingsForm.dementiaAmount}
-                  onChange={(event) =>
-                    setSettingsForm((f) => ({
-                      ...f,
-                      dementiaAmount: event.target.value,
-                    }))
-                  }
-                />
-              </FormField>
-            </div>
-            <div className="flex-1">
-              <FormField label="치매검진비 처리">
-                <FilterSelect
-                  className="w-full"
-                  value={settingsForm.dementiaType}
-                  onChange={(value) =>
-                    setSettingsForm((f) => ({
-                      ...f,
-                      dementiaType: value as "add" | "deduct" | "none",
-                    }))
-                  }
-                  options={FEE_TYPE_OPTIONS}
-                />
-              </FormField>
-            </div>
-          </div>
-
-          {isCompetencyProgram && (
-            <div className="flex gap-3 items-end">
-              <div className="flex-1">
-                <FormField label="주휴시간(월, 시간)">
-                  <input
-                    type="number"
-                    className={inputClass}
-                    value={settingsForm.weeklyHolidayHours}
-                    onChange={(event) =>
-                      setSettingsForm((f) => ({
-                        ...f,
-                        weeklyHolidayHours: event.target.value,
-                      }))
-                    }
-                  />
-                </FormField>
-              </div>
-              <div className="flex-1 pb-2.5">
-                <label className="flex items-center gap-2 text-[13px]">
-                  <input
-                    type="checkbox"
-                    checked={settingsForm.socialInsuranceEnrolled}
-                    onChange={(event) =>
-                      setSettingsForm((f) => ({
-                        ...f,
-                        socialInsuranceEnrolled: event.target.checked,
-                      }))
-                    }
-                  />
-                  4대보험 가입
-                </label>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end">
-            <button
-              className={btnPrimaryClass}
-              disabled={savingSettings}
-              onClick={handleSaveSettingsButtonClick}
-            >
-              {savingSettings ? "저장 중..." : "저장"}
-            </button>
-          </div>
-        </div>
+        <p className="text-xs text-[#9aa1ab] m-0">
+          교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
+        </p>
       </div>
 
-      {/* 연차 현황 */}
-      <div className="grid grid-cols-3 mb-5">
-        <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            연차 총 부여일
-          </div>
-          <div className="text-sm font-bold">
-            {annualLeave?.totalDays ?? 0}일
-          </div>
-        </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            사용
-          </div>
-          <div className="text-sm font-bold">
-            {annualLeave?.usedDays ?? 0}일
-          </div>
-        </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            잔여
-          </div>
-          <div className="text-sm font-bold">
-            {annualLeave?.remainingDays ?? 0}일
-          </div>
-        </div>
-      </div>
+      {payrollModalOpen && (
+        <ParticipantPayrollSettingsModal
+          participant={participant}
+          onClose={() => setPayrollModalOpen(false)}
+          onSaved={(updated) => {
+            setParticipant((prev) => (prev ? { ...prev, ...updated } : prev));
+            setPayrollModalOpen(false);
+          }}
+        />
+      )}
 
       {/* 근태 이력 */}
       <div className="flex items-center justify-between mb-3 gap-3">
@@ -419,6 +246,33 @@ const ParticipantDetailPage = () => {
       {/* 휴가 이력 */}
       <div className="mb-3">
         <span className="text-sm font-bold">휴가 이력</span>
+      </div>
+
+      <div className="grid grid-cols-3 mb-5">
+        <div className="px-5 py-4 border border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            연차 총 부여일
+          </div>
+          <div className="text-sm font-bold">
+            {annualLeave?.totalDays ?? 0}일
+          </div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            사용
+          </div>
+          <div className="text-sm font-bold">
+            {annualLeave?.usedDays ?? 0}일
+          </div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+            잔여
+          </div>
+          <div className="text-sm font-bold">
+            {annualLeave?.remainingDays ?? 0}일
+          </div>
+        </div>
       </div>
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
