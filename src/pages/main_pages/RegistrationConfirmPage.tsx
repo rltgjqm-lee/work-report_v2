@@ -129,7 +129,6 @@ const RegistrationConfirmPage = ({
           <ExceptionCard variant={exception.variant}>
             <strong>{exception.title}</strong>
             <br />
-            <br />
             {exception.body}
           </ExceptionCard>
         )}
