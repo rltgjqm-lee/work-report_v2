@@ -28,7 +28,7 @@ const ConfirmModal = ({
 
         <div className="flex flex-row gap-2.5 justify-center">
           <button
-            className="flex-1 p-[14px] text-[16px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#00a0e9] text-white"
+            className="flex-1 p-[14px] text-[16px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#3182f6] text-white"
             onClick={onConfirm}
           >
             확인
