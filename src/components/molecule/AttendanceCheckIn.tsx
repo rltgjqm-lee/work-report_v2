@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { labelClass, labelSmallClass, selectClass } from "../atoms/classes";
+import { labelClass, labelSmallClass } from "../atoms/classes";
 import Button from "../atoms/Button";
 import LabeledInput from "./LabeledInput";
+import Dropdown from "./Dropdown";
 import SignatureCanvas from "../atoms/SignatureCanvas";
 import {
   clockIn,
@@ -190,22 +191,18 @@ const AttendanceCheckIn = ({
       ) : (
         <div className="flex flex-col gap-3.5">
           <div className="flex gap-2.5">
-            <div className="flex-1">
-              <label className={labelClass}>성별</label>
-              <select
-                className={selectClass + " w-full"}
-                value={gender}
-                onChange={(event) =>
-                  onGenderChange(
-                    event.target.value as ActivityLogFormData["gender"],
-                  )
-                }
-              >
-                <option value="">선택하세요</option>
-                <option value="남성">남성</option>
-                <option value="여성">여성</option>
-              </select>
-            </div>
+            <Dropdown
+              label="성별"
+              value={gender}
+              onChange={(value) =>
+                onGenderChange(value as ActivityLogFormData["gender"])
+              }
+              options={[
+                { value: "", label: "선택하세요" },
+                { value: "남성", label: "남성" },
+                { value: "여성", label: "여성" },
+              ]}
+            />
             <div className="flex-1">
               <LabeledInput
                 labelTitle="이름"

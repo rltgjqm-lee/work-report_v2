@@ -2,6 +2,7 @@ import { useMemo, useEffect } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
+import Dropdown from "../../components/molecule/Dropdown";
 import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
@@ -10,7 +11,6 @@ import {
   bodyClass,
   labelClass,
   inputClass,
-  selectClass,
   totalClass,
   btnPrimaryClass,
   btnOutlineClass,
@@ -198,96 +198,80 @@ const WorkHoursInputPage = ({
           <div>
             <label className={labelClass}>시작 시간</label>
             <div className="flex gap-2">
-              <select
-                className={selectClass}
+              <Dropdown
                 value={formData.startTime.ampm}
-                onChange={(event) =>
-                  handleTimeChange("startTime", "ampm", event.target.value)
+                onChange={(value) =>
+                  handleTimeChange("startTime", "ampm", value)
                 }
-              >
-                <option value="AM">오전</option>
-                <option value="PM">오후</option>
-              </select>
-              <select
-                className={selectClass}
+                options={[
+                  { value: "AM", label: "오전" },
+                  { value: "PM", label: "오후" },
+                ]}
+              />
+              <Dropdown
                 value={formData.startTime.hour}
-                onChange={(event) =>
-                  handleTimeChange("startTime", "hour", event.target.value)
+                onChange={(value) =>
+                  handleTimeChange("startTime", "hour", value)
                 }
-              >
-                <option value="" disabled>
-                  시
-                </option>
-                {hourOptions.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}시
-                  </option>
-                ))}
-              </select>
-              <select
-                className={selectClass}
+                options={[
+                  { value: "", label: "시", disabled: true },
+                  ...hourOptions.map((hour) => ({
+                    value: hour,
+                    label: `${hour}시`,
+                  })),
+                ]}
+              />
+              <Dropdown
                 value={formData.startTime.minute}
-                onChange={(event) =>
-                  handleTimeChange("startTime", "minute", event.target.value)
+                onChange={(value) =>
+                  handleTimeChange("startTime", "minute", value)
                 }
-              >
-                <option value="" disabled>
-                  분
-                </option>
-                {minuteOptions.map((minute) => (
-                  <option key={minute} value={minute}>
-                    {minute}분
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "분", disabled: true },
+                  ...minuteOptions.map((minute) => ({
+                    value: minute,
+                    label: `${minute}분`,
+                  })),
+                ]}
+              />
             </div>
           </div>
 
           <div>
             <label className={labelClass}>종료 시간</label>
             <div className="flex gap-2">
-              <select
-                className={selectClass}
+              <Dropdown
                 value={formData.endTime.ampm}
-                onChange={(event) =>
-                  handleTimeChange("endTime", "ampm", event.target.value)
-                }
-              >
-                <option value="AM">오전</option>
-                <option value="PM">오후</option>
-              </select>
-              <select
-                className={selectClass}
+                onChange={(value) => handleTimeChange("endTime", "ampm", value)}
+                options={[
+                  { value: "AM", label: "오전" },
+                  { value: "PM", label: "오후" },
+                ]}
+              />
+              <Dropdown
                 value={formData.endTime.hour}
-                onChange={(event) =>
-                  handleTimeChange("endTime", "hour", event.target.value)
-                }
-              >
-                <option value="" disabled>
-                  시
-                </option>
-                {hourOptions.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {hour}시
-                  </option>
-                ))}
-              </select>
-              <select
-                className={selectClass}
+                onChange={(value) => handleTimeChange("endTime", "hour", value)}
+                options={[
+                  { value: "", label: "시", disabled: true },
+                  ...hourOptions.map((hour) => ({
+                    value: hour,
+                    label: `${hour}시`,
+                  })),
+                ]}
+              />
+              <Dropdown
                 value={formData.endTime.minute}
-                onChange={(event) =>
-                  handleTimeChange("endTime", "minute", event.target.value)
+                onChange={(value) =>
+                  handleTimeChange("endTime", "minute", value)
                 }
-              >
-                <option value="" disabled>
-                  분
-                </option>
-                {minuteOptions.map((minute) => (
-                  <option key={minute} value={minute}>
-                    {minute}분
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "분", disabled: true },
+                  ...minuteOptions.map((minute) => ({
+                    value: minute,
+                    label: `${minute}분`,
+                  })),
+                ]}
+              />
             </div>
           </div>
         </Card>

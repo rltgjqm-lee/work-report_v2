@@ -2,16 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
 import AppBar from "../../components/molecule/AppBar";
+import Dropdown from "../../components/molecule/Dropdown";
 import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
-import {
-  pageClass,
-  bodyClass,
-  labelClass,
-  selectClass,
-} from "../../components/atoms/classes";
+import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
@@ -106,14 +102,13 @@ const AffiliationInputPage = ({
   // 💡 사업단을 바꾸면 이전 사업단의 수요처 선택이 남아있으면 안 되므로 목록을 다시
   // 불러오는 동안 선택값도 초기화한다.
   useEffect(() => {
-    if (!selectedProgramId) {
-      setDemandSites([]);
-      return;
-    }
+    if (!selectedProgramId) return;
     getDemandSites(Number(selectedProgramId))
       .then(setDemandSites)
       .catch(() => {
-        onAlert(["수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
+        onAlert([
+          "수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요.",
+        ]);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProgramId]);
@@ -286,142 +281,119 @@ const AffiliationInputPage = ({
       <div className={bodyClass}>
         <Card>
           <div className="flex gap-3.5">
-            <div className="flex-1">
-              {/* 시/도 */}
-              <label className={labelClass}>시·도</label>
-              <select
-                className={selectClass + " w-full"}
-                value={sido}
-                onChange={(event) => handleSidoChange(event.target.value)}
-              >
-                <option value="">선택하세요</option>
-                {sidoList.map((sido) => (
-                  <option key={sido} value={sido}>
-                    {sido}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* 시/도 */}
+            <Dropdown
+              label="시·도"
+              value={sido}
+              onChange={handleSidoChange}
+              options={[
+                { value: "", label: "선택하세요" },
+                ...sidoList.map((sidoOption) => ({
+                  value: sidoOption,
+                  label: sidoOption,
+                })),
+              ]}
+            />
 
             {/* 시/군/구 */}
-            <div className="flex-1">
-              <label className={labelClass}>시·군·구</label>
-              <select
-                className={selectClass + " w-full"}
-                value={sigungu}
-                disabled={!sido}
-                onChange={(event) => handleSigunguChange(event.target.value)}
-              >
-                <option value="">선택하세요</option>
-                {sigunguList.map((sigungu) => (
-                  <option key={sigungu} value={sigungu}>
-                    {sigungu}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Dropdown
+              label="시·군·구"
+              value={sigungu}
+              disabled={!sido}
+              onChange={handleSigunguChange}
+              options={[
+                { value: "", label: "선택하세요" },
+                ...sigunguList.map((sigunguOption) => ({
+                  value: sigunguOption,
+                  label: sigunguOption,
+                })),
+              ]}
+            />
           </div>
 
           {/* 기관 유형 */}
           <div className="flex gap-3.5">
-            <div className="flex-1">
-              <label className={labelClass}>기관 유형</label>
-              <select
-                className={selectClass + " w-full"}
-                value={organizationType}
-                disabled={!sigungu}
-                onChange={(event) =>
-                  handleOrganizationTypeChange(event.target.value)
-                }
-              >
-                <option value="">선택하세요</option>
-                {organizationTypeList.map((organizationType) => (
-                  <option key={organizationType} value={organizationType}>
-                    {organizationType}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Dropdown
+              label="기관 유형"
+              value={organizationType}
+              disabled={!sigungu}
+              onChange={handleOrganizationTypeChange}
+              options={[
+                { value: "", label: "선택하세요" },
+                ...organizationTypeList.map((organizationTypeOption) => ({
+                  value: organizationTypeOption,
+                  label: organizationTypeOption,
+                })),
+              ]}
+            />
 
             {/* 소속 기관 */}
-            <div className="flex-1">
-              <label className={labelClass}>소속 기관명</label>
-              <select
-                className={selectClass + " w-full"}
-                value={selectedOrganizationId}
-                disabled={!organizationType}
-                onChange={(event) =>
-                  handleOrganizationChange(event.target.value)
-                }
-              >
-                <option value="">선택하세요</option>
-                {organizationCandidates.map((organization) => (
-                  <option key={organization.id} value={organization.id}>
-                    {organization.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Dropdown
+              label="소속 기관명"
+              value={selectedOrganizationId}
+              disabled={!organizationType}
+              onChange={handleOrganizationChange}
+              options={[
+                { value: "", label: "선택하세요" },
+                ...organizationCandidates.map((organization) => ({
+                  value: String(organization.id),
+                  label: organization.name,
+                })),
+              ]}
+            />
           </div>
 
           {/* 사업 유형 */}
-          <div>
-            <label className={labelClass}>사업 유형</label>
-            <select
-              className={selectClass + " w-full"}
-              value={programType}
-              disabled={!selectedOrganizationId}
-              onChange={(event) => handleProgramTypeChange(event.target.value)}
-            >
-              <option value="">선택하세요</option>
-              {programTypeList.map((programType) => (
-                <option key={programType} value={programType}>
-                  {programType}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Dropdown
+            label="사업 유형"
+            value={programType}
+            disabled={!selectedOrganizationId}
+            onChange={handleProgramTypeChange}
+            options={[
+              { value: "", label: "선택하세요" },
+              ...programTypeList.map((programTypeOption) => ({
+                value: programTypeOption,
+                label: programTypeOption,
+              })),
+            ]}
+          />
 
           {/* 사업단 */}
-          <div>
-            <label className={labelClass}>사업단명</label>
-            <select
-              className={selectClass + " w-full"}
-              value={selectedProgramId}
-              disabled={!programType}
-              onChange={(event) => handleProgramChange(event.target.value)}
-            >
-              <option value="">선택하세요</option>
-              {programCandidates.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Dropdown
+            label="사업단명"
+            value={selectedProgramId}
+            disabled={!programType}
+            onChange={handleProgramChange}
+            options={[
+              { value: "", label: "선택하세요" },
+              ...programCandidates.map((program) => ({
+                value: String(program.id),
+                label: program.name,
+              })),
+            ]}
+          />
 
           {/* 수요처 */}
-          <div>
-            <label className={labelClass}>
-              수요처명
-              <small className="ml-1.5 text-[13px] font-semibold text-[#9ca3af]">
-                서비스 대상자 명
-              </small>
-            </label>
-            <select
-              className={selectClass + " w-full"}
-              value={formData.demandName}
-              disabled={!selectedProgramId}
-              onChange={(event) => onChange("demandName", event.target.value)}
-            >
-              <option value="">선택하세요</option>
-              {demandSites.map((demandSite) => (
-                <option key={demandSite.id} value={demandSite.name}>
-                  {demandSite.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Dropdown
+            label={
+              <>
+                수요처명
+                <small className="ml-1.5 text-[13px] font-semibold text-[#9ca3af]">
+                  서비스 대상자 명
+                </small>
+              </>
+            }
+            value={formData.demandName}
+            disabled={!selectedProgramId}
+            onChange={(value) => onChange("demandName", value)}
+            options={[
+              { value: "", label: "선택하세요" },
+              ...demandSites.map((demandSite) => ({
+                value: demandSite.name,
+                label: demandSite.name,
+              })),
+            ]}
+          />
         </Card>
 
         {selectedProgramId && (

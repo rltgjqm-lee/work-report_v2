@@ -17,8 +17,10 @@ export const inputClass =
 export const textareaClass =
   "w-full box-border border-[1.5px] border-[#e5e8eb] rounded-2xl p-4 text-[18px] font-sans text-[#1f2937] font-semibold bg-[#f9fafb] h-24 resize-none leading-relaxed";
 
+// 네이티브 select 화살표는 위치를 못 옮기므로(특히 Safari) appearance-none으로
+// 지우고 Dropdown 컴포넌트에서 lucide ChevronDown을 직접 얹어 위치를 제어한다.
 export const selectClass =
-  "flex-1 min-w-0 w-full box-border h-[54px] border-[1.5px] border-[#e5e8eb] rounded-2xl px-2.5 text-[17px] font-sans text-[#1f2937] font-semibold bg-[#f9fafb]";
+  "appearance-none w-full box-border h-[54px] border-[1.5px] border-[#e5e8eb] rounded-2xl pl-2.5 pr-9 text-[17px] font-sans text-[#1f2937] font-semibold bg-[#f9fafb]";
 
 export const totalClass =
   "bg-[#eef6ff] rounded-2xl p-4 text-center text-[18px] text-[#3182f6] font-extrabold";
