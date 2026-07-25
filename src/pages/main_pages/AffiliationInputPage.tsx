@@ -42,7 +42,6 @@ const AffiliationInputPage = ({
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
 
-  const [organizationType, setOrganizationType] = useState("");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
 
@@ -77,7 +76,6 @@ const AffiliationInputPage = ({
 
           setSido(matchedOrganization.regionSido ?? "");
           setSigungu(matchedOrganization.regionSigungu ?? "");
-          setOrganizationType(matchedOrganization.organizationType ?? "");
           setSelectedOrganizationId(String(matchedOrganization.id));
 
           if (!formData.programName) return;
@@ -146,32 +144,14 @@ const AffiliationInputPage = ({
     [organizations, sido],
   );
 
-  const organizationTypeList = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          organizations
-            .filter(
-              (organization) =>
-                organization.regionSido === sido &&
-                organization.regionSigungu === sigungu,
-            )
-            .map((organization) => organization.organizationType)
-            .filter(Boolean),
-        ),
-      ) as string[],
-    [organizations, sido, sigungu],
-  );
-
   const organizationCandidates = useMemo(
     () =>
       organizations.filter(
         (organization) =>
           organization.regionSido === sido &&
-          organization.regionSigungu === sigungu &&
-          organization.organizationType === organizationType,
+          organization.regionSigungu === sigungu,
       ),
-    [organizations, sido, sigungu, organizationType],
+    [organizations, sido, sigungu],
   );
 
   const organizationPrograms = useMemo(
@@ -205,7 +185,6 @@ const AffiliationInputPage = ({
   const handleSidoChange = (value: string) => {
     setSido(value);
     setSigungu("");
-    setOrganizationType("");
     setSelectedOrganizationId("");
     setProgramType("");
     setSelectedProgramId("");
@@ -213,14 +192,6 @@ const AffiliationInputPage = ({
 
   const handleSigunguChange = (value: string) => {
     setSigungu(value);
-    setOrganizationType("");
-    setSelectedOrganizationId("");
-    setProgramType("");
-    setSelectedProgramId("");
-  };
-
-  const handleOrganizationTypeChange = (value: string) => {
-    setOrganizationType(value);
     setSelectedOrganizationId("");
     setProgramType("");
     setSelectedProgramId("");
@@ -335,27 +306,12 @@ const AffiliationInputPage = ({
             />
           </div>
 
-          {/* 기관 유형 */}
+          {/* 소속 기관명 / 사업 유형 */}
           <div className="flex gap-3.5">
-            <Dropdown
-              label="기관 유형"
-              value={organizationType}
-              disabled={!sigungu}
-              onChange={handleOrganizationTypeChange}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...organizationTypeList.map((organizationTypeOption) => ({
-                  value: organizationTypeOption,
-                  label: organizationTypeOption,
-                })),
-              ]}
-            />
-
-            {/* 소속 기관 */}
             <Dropdown
               label="소속 기관명"
               value={selectedOrganizationId}
-              disabled={!organizationType}
+              disabled={!sigungu}
               onChange={handleOrganizationChange}
               options={[
                 { value: "", label: "선택하세요" },
@@ -365,22 +321,21 @@ const AffiliationInputPage = ({
                 })),
               ]}
             />
-          </div>
 
-          {/* 사업 유형 */}
-          <Dropdown
-            label="사업 유형"
-            value={programType}
-            disabled={!selectedOrganizationId}
-            onChange={handleProgramTypeChange}
-            options={[
-              { value: "", label: "선택하세요" },
-              ...programTypeList.map((programTypeOption) => ({
-                value: programTypeOption,
-                label: programTypeOption,
-              })),
-            ]}
-          />
+            <Dropdown
+              label="사업 유형"
+              value={programType}
+              disabled={!selectedOrganizationId}
+              onChange={handleProgramTypeChange}
+              options={[
+                { value: "", label: "선택하세요" },
+                ...programTypeList.map((programTypeOption) => ({
+                  value: programTypeOption,
+                  label: programTypeOption,
+                })),
+              ]}
+            />
+          </div>
 
           {/* 사업단 */}
           <Dropdown
