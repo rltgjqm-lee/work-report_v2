@@ -3,7 +3,7 @@ interface ProgressBarProps {
   total?: number;
 }
 
-const ProgressBar = ({ step, total = 5 }: ProgressBarProps) => (
+const ProgressBar = ({ step, total = 6 }: ProgressBarProps) => (
   <>
     <div className="h-1.5 bg-[#eef0f3] flex-none">
       <div

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import ConfirmModal from "../components/molecule/ConfirmModal";
 
 import AffiliationInputPage from "./main_pages/AffiliationInputPage";
+import RegistrationConfirmPage from "./main_pages/RegistrationConfirmPage";
 import HomePage from "./main_pages/HomePage";
 import ActivityLogPage from "./main_pages/ActivityLogPage";
 import WorkHoursInputPage from "./main_pages/WorkHoursInputPage";
@@ -20,6 +21,7 @@ import { syncPendingActivityLogs } from "../utils/activityLogSync";
 
 const VIEW_TYPE = {
   AFFILIATION: "affiliation",
+  REGISTRATION_CONFIRM: "registrationConfirm",
   HOME: "home",
   LOGS: "logs",
   WORK_HOURS: "workHours",
@@ -71,6 +73,7 @@ const initialFormData: ActivityLogFormData = {
   demandName: "",
   gender: "",
   userName: "",
+  phoneLast4: "",
   actDate: "",
   startTime: { ampm: "AM", hour: "09", minute: "00" },
   endTime: { ampm: "PM", hour: "01", minute: "00" },
@@ -279,8 +282,18 @@ const Main = () => {
           <AffiliationInputPage
             formData={formData}
             onChange={handleInputChange}
-            onNext={() => setView("home")}
+            onNext={() => setView(VIEW_TYPE.REGISTRATION_CONFIRM)}
             onAlert={handleAlertModalOpen}
+          />
+        )}
+
+        {/* 2. 등록 확인 페이지 */}
+        {view === VIEW_TYPE.REGISTRATION_CONFIRM && (
+          <RegistrationConfirmPage
+            formData={formData}
+            onChange={handleInputChange}
+            onBack={() => setView(VIEW_TYPE.AFFILIATION)}
+            onNext={() => setView(VIEW_TYPE.HOME)}
           />
         )}
 

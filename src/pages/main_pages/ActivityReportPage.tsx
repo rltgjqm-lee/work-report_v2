@@ -50,7 +50,7 @@ const ActivityReportPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="내용 및 장소" onBack={onBack} />
-      <ProgressBar step={3} />
+      <ProgressBar step={4} />
       <div className={bodyClass}>
         <Card>
           <div>

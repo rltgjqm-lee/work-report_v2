@@ -176,7 +176,7 @@ const WorkHoursInputPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="활동 일시" onBack={onBack} />
-      <ProgressBar step={2} />
+      <ProgressBar step={3} />
       <div className={bodyClass}>
         <Card>
           <div>

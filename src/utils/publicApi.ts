@@ -27,6 +27,11 @@ export type DemandSite = {
   name: string;
 };
 
+export type RegistrationStatus = {
+  status: "ACTIVE" | "ON_LEAVE" | "DROPPED";
+  leaveEnd: string | null;
+};
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const getAffiliations = async (): Promise<Affiliations> => {
@@ -45,6 +50,18 @@ export const getDemandSites = async (
   );
 
   if (!response.ok) throw new Error("수요처 목록을 불러오지 못했습니다.");
+
+  return response.json();
+};
+
+export const getRegistrationStatus = async (
+  participantId: number,
+): Promise<RegistrationStatus> => {
+  const response = await fetch(
+    `${BASE_URL}/public/participants/${participantId}/registration-status`,
+  );
+
+  if (!response.ok) throw new Error("등록 상태를 확인하지 못했습니다.");
 
   return response.json();
 };

@@ -51,7 +51,7 @@ const AccidentCheckPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="안전 확인" onBack={onBack} />
-      <ProgressBar step={4} />
+      <ProgressBar step={5} />
       <div className={bodyClass}>
         <label className={labelClass + " px-1"}>
           오늘 다치신 곳이 있으신가요?

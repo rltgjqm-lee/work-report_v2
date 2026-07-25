@@ -113,6 +113,23 @@ app.get("/affiliations", async (c) => {
   return c.json({ organizations: organizationRows, programs: programRows });
 });
 
+// 등록확인 페이지에서 참여자 상태(휴무/탈락)를 판단하기 위한 조회 — identify는
+// 이름+전화번호 매칭만 하고 상태는 안 보므로, participantId로 최신 상태를 다시 확인한다.
+app.get("/participants/:id/registration-status", async (c) => {
+  const db = drizzle(c.env.DB);
+  const participantId = Number(c.req.param("id"));
+
+  const rows = await db
+    .select({ status: participants.status, leaveEnd: participants.leaveEnd })
+    .from(participants)
+    .where(eq(participants.id, participantId));
+
+  const row = rows[0];
+  if (!row) return c.json({ error: "Not found" }, 404);
+
+  return c.json(row);
+});
+
 app.get("/programs/:id/demand-sites", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));

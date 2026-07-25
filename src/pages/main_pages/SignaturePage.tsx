@@ -70,7 +70,7 @@ const SignaturePage = ({
   return (
     <div className={pageClass}>
       <AppBar title="서명" onBack={onBack} />
-      <ProgressBar step={5} />
+      <ProgressBar step={6} />
       <div className={bodyClass}>
         <Card>
           <label className={labelClass}>

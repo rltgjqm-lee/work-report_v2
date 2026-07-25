@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
-import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
 import AppBar from "../../components/molecule/AppBar";
 import Dropdown from "../../components/molecule/Dropdown";
+import LabeledInput from "../../components/molecule/LabeledInput";
 import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
+import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
@@ -51,6 +52,7 @@ const AffiliationInputPage = ({
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
   const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
+  const [affiliationsLoaded, setAffiliationsLoaded] = useState(false);
 
   // 💡 사업단 수가 많지 않아 조직 선택을 기다리지 않고 전체 목록을 한 번의 API
   // 호출로 불러온 뒤 organizationId로 클라이언트에서 필터링한다
@@ -63,6 +65,7 @@ const AffiliationInputPage = ({
         }) => {
           setOrganizations(fetchedOrganizations);
           setPrograms(fetchedPrograms);
+          setAffiliationsLoaded(true);
 
           // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로
           // 매칭해 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다
@@ -242,6 +245,7 @@ const AffiliationInputPage = ({
       "programName",
       programs.find((program) => String(program.id) === programId)?.name ?? "",
     );
+    onChange("programId", programId ? Number(programId) : undefined);
     onChange("demandName", "");
   };
 
@@ -271,6 +275,22 @@ const AffiliationInputPage = ({
     handleSaveDraftButtonClick();
     onNext();
   };
+
+  if (affiliationsLoaded && organizations.length === 0) {
+    return (
+      <div className={pageClass}>
+        <AppBar title="기본 정보" />
+        <div className={bodyClass}>
+          <ExceptionCard variant="warn">
+            <strong>등록된 사업이 없습니다.</strong>
+            <br />
+            <br />
+            기관 혹은 사업 담당자에게 문의해 주세요.
+          </ExceptionCard>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={pageClass}>
@@ -394,29 +414,52 @@ const AffiliationInputPage = ({
               })),
             ]}
           />
-        </Card>
 
-        {selectedProgramId && (
-          <Card>
-            <AttendanceCheckIn
-              programId={Number(selectedProgramId)}
-              gender={formData.gender}
-              onGenderChange={(value) => onChange("gender", value)}
-              onIdentified={(participant) => {
-                onChange("participantId", participant.participantId);
-                onChange("userName", participant.name);
-              }}
+          {/* 성별/참여자 성함 */}
+          <div className="flex gap-3.5">
+            <Dropdown
+              label="성별"
+              value={formData.gender}
+              onChange={(value) =>
+                onChange("gender", value as ActivityLogFormData["gender"])
+              }
+              options={[
+                { value: "", label: "선택하세요" },
+                { value: "남성", label: "남성" },
+                { value: "여성", label: "여성" },
+              ]}
             />
-          </Card>
-        )}
+            <div className="flex-1">
+              <LabeledInput
+                labelTitle="참여자 성함"
+                id="userName"
+                placeholder="성함 입력"
+                value={formData.userName}
+                onChange={(event) => onChange("userName", event.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* 전화번호 뒷자리 (동명이인 구분용) */}
+          <div>
+            <LabeledInput
+              labelTitle="전화번호 뒷자리(4자리)"
+              id="phoneLast4"
+              placeholder="0000"
+              value={formData.phoneLast4}
+              onChange={(event) =>
+                onChange(
+                  "phoneLast4",
+                  event.target.value.replace(/\D/g, "").slice(0, 4),
+                )
+              }
+            />
+          </div>
+        </Card>
       </div>
 
       <BottomBar>
-        <Button
-          variant="primary"
-          disabled={!formData.participantId}
-          onClick={handleNextButtonClick}
-        >
+        <Button variant="primary" onClick={handleNextButtonClick}>
           다음
         </Button>
         <Button
