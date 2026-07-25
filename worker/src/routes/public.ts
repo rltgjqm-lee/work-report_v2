@@ -223,7 +223,7 @@ app.post("/attendance/clock-in", async (c) => {
     .select()
     .from(participants)
     .where(eq(participants.id, body.participantId));
-  const participant = rows[0];
+  let participant = rows[0];
   if (!participant) {
     return c.json(
       { error: "본인 확인이 만료되었습니다. 다시 확인해주세요." },
@@ -231,11 +231,25 @@ app.post("/attendance/clock-in", async (c) => {
     );
   }
 
+  const { date, time, iso } = getKstNow();
+
+  // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
+  if (
+    participant.status === "ON_LEAVE" &&
+    participant.leaveEnd &&
+    participant.leaveEnd < date
+  ) {
+    const updated = await db
+      .update(participants)
+      .set({ status: "ACTIVE", leaveStart: null, leaveEnd: null })
+      .where(eq(participants.id, participant.id))
+      .returning();
+    participant = updated[0];
+  }
+
   if (participant.status === "ON_LEAVE") {
     return c.json({ error: "휴가 중인 참여자는 출근할 수 없습니다." }, 400);
   }
-
-  const { date, time, iso } = getKstNow();
 
   // 배정된 조에 근무시간이 설정돼 있으면 그 시간 ±30분 범위에서만 출근을 허용한다.
   // 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한 사업단도 있어서).
