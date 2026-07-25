@@ -9,6 +9,7 @@ export interface ActivityLogFormData {
   gender: "남성" | "여성" | "";
   userName: string;
   phoneLast4: string; // 동명이인 구분용 — 등록확인 페이지에서 이름과 함께 본인확인에 씀
+  programType: "공익 활동" | "역량 활동" | ""; // 홈 대시보드 모듈 분기용
   // Page 3: 활동 일시
   actDate: string;
   startTime: {
@@ -29,6 +30,7 @@ export interface ActivityLogFormData {
 
   // Page 5: 안전사고 유무
   hasAccident: boolean;
+  accidentChecked: boolean; // 안전 모듈을 한 번이라도 확인했는지 (hasAccident 기본값 false와 구분용)
   accidentDetail: string;
   accidentAction: "귀가" | "업무수행";
 
@@ -50,6 +52,7 @@ export interface ActivityLogItem {
   content: string;
   place: string;
   accident: "유" | "무";
+  accidentChecked?: boolean; // 안전 모듈 확인 여부 — 서버엔 안 보내고 IndexedDB 왕복용으로만 씀
   accidentDetail?: string;
   accidentAction?: string;
   uSign: string;

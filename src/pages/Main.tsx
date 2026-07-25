@@ -5,42 +5,35 @@ import ConfirmModal from "../components/molecule/ConfirmModal";
 import AffiliationInputPage from "./main_pages/AffiliationInputPage";
 import RegistrationConfirmPage from "./main_pages/RegistrationConfirmPage";
 import HomePage from "./main_pages/HomePage";
-import ActivityLogPage from "./main_pages/ActivityLogPage";
-import WorkHoursInputPage from "./main_pages/WorkHoursInputPage";
+import AttendanceModulePage from "./main_pages/AttendanceModulePage";
 import ActivityReportPage from "./main_pages/ActivityReportPage";
 import AccidentCheckPage from "./main_pages/AccidentCheckPage";
+import ActivitySummaryPage from "./main_pages/ActivitySummaryPage";
 import SignaturePage from "./main_pages/SignaturePage";
 
 import { PdfTemplate } from "../components/organism/PdfTemplate";
-import type { TabKey } from "../components/molecule/TabBar";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 import { syncPendingActivityLogs } from "../utils/activityLogSync";
+import { formatTimeField, hhmmToTimeParts } from "../utils/timeFormat";
 
 const VIEW_TYPE = {
   AFFILIATION: "affiliation",
   REGISTRATION_CONFIRM: "registrationConfirm",
   HOME: "home",
-  LOGS: "logs",
-  WORK_HOURS: "workHours",
+  ATTENDANCE_IN: "attendanceIn",
+  ATTENDANCE_OUT: "attendanceOut",
   REPORT: "report",
   ACCIDENT: "accident",
+  SUMMARY: "summary",
   SIGNATURE: "signature",
 } as const;
 
 export type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
 
-// 💡 "AM 09:00" 같은 폼 표기를 "09:00" 24시간제 문자열로 변환
-const formatTimeField = (time: ActivityLogFormData["startTime"]): string => {
-  let hour24 = parseInt(time.hour, 10);
-  if (time.ampm === "PM" && hour24 !== 12) hour24 += 12;
-  if (time.ampm === "AM" && hour24 === 12) hour24 = 0;
-  return `${String(hour24).padStart(2, "0")}:${time.minute}`;
-};
-
-// 💡 폼 데이터를 ActivityLogPage/PdfTemplate이 쓰는 ActivityLogItem 한 건으로 변환.
+// 💡 폼 데이터를 PdfTemplate이 쓰는 ActivityLogItem 한 건으로 변환.
 // preserve로 기존 레코드의 serverId만 이어받는다(있으면 다음 동기화 때 수정 API를 씀).
 // synced는 매번 저장할 때마다 false로 찍어서 — 한 번 동기화된 뒤 다음 단계에서 내용이
 // 더 채워져도 다시 서버에 반영되도록 한다.
@@ -59,6 +52,7 @@ const buildLogItemFromFormData = (
   content: formData.actContent,
   place: formData.actPlace,
   accident: formData.hasAccident ? "유" : "무",
+  accidentChecked: formData.accidentChecked,
   accidentDetail: formData.accidentDetail,
   accidentAction: formData.accidentAction,
   uSign: formData.userSignature || "",
@@ -74,13 +68,16 @@ const initialFormData: ActivityLogFormData = {
   gender: "",
   userName: "",
   phoneLast4: "",
+  programType: "",
   actDate: "",
-  startTime: { ampm: "AM", hour: "09", minute: "00" },
-  endTime: { ampm: "PM", hour: "01", minute: "00" },
+  // 💡 출근/퇴근 버튼을 눌러야 채워짐 — hour가 비어있으면 "아직 출근 전"으로 판단한다.
+  startTime: { ampm: "AM", hour: "", minute: "" },
+  endTime: { ampm: "PM", hour: "", minute: "" },
   actTotalTime: "- 시간",
   actContent: "",
   actPlace: "",
   hasAccident: false,
+  accidentChecked: false,
   accidentDetail: "",
   accidentAction: "업무수행",
   userSignature: "", // ⚠️ 주의: 아래 저장 로직과 서명 필드명을 일치시켜야 합니다.
@@ -137,29 +134,6 @@ const Main = () => {
     }));
   };
 
-  // 💡 홈에서 "+ 오늘 활동 기록하기" 클릭 시 활동 관련 필드만 초기화하고 3단계로 진입.
-  // id를 반드시 비워야 한다 — 안 그러면 이번에 저장할 때 지난 번(오늘 이미 작성한) 글의
-  // IndexedDB 레코드를 그대로 덮어써서 이전 기록이 사라진다.
-  const handleNewLogButtonClick = () => {
-    setFormData((prev) => ({
-      ...prev,
-      id: undefined,
-      actDate: "",
-      startTime: { ampm: "AM", hour: "", minute: "" },
-      endTime: { ampm: "PM", hour: "", minute: "" },
-      actTotalTime: "- 시간",
-      actContent: "",
-      actPlace: "",
-      hasAccident: false,
-      accidentDetail: "",
-      accidentAction: "업무수행",
-    }));
-    setView(VIEW_TYPE.WORK_HOURS);
-  };
-
-  const handleTabChange = (tab: TabKey) =>
-    setView(tab === "list" ? VIEW_TYPE.LOGS : VIEW_TYPE.HOME);
-
   const handleStepDataSave = async () => {
     if (!db) {
       alert("데이터베이스가 연결되지 않았습니다.");
@@ -180,7 +154,7 @@ const Main = () => {
           })
         : undefined;
 
-    // 💡 데이터 포맷 조립 (ActivityLogPage가 읽는 ActivityLogItem 스키마와 동기화)
+    // 💡 데이터 포맷 조립 (IndexedDB의 ActivityLogItem 스키마와 동기화)
     const logItem = buildLogItemFromFormData(formData, existing);
 
     // 💡 서명 재사용을 위해 localStorage에도 보관 (참여자 서명은 항상, 확인자 서명은 동의 시에만)
@@ -274,9 +248,51 @@ const Main = () => {
     return () => window.removeEventListener("online", handleNetworkOnline);
   }, [db]);
 
+  // 💡 본인확인이 끝나고 db가 준비되면, 홈 대시보드가 "오늘 진행 상황"을 보여줄 수 있도록
+  // 오늘 날짜로 이미 저장된 레코드가 있는지 확인해서 formData에 반영한다(없으면 오늘 날짜만
+  // 채워서 새 레코드를 준비한다). id를 안 채우면 이후 저장 시 IndexedDB가 새로 발급한다.
+  useEffect(() => {
+    if (!db || !formData.participantId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (formData.actDate === today) return;
+
+    const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly");
+    const request = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME).getAll();
+    request.onsuccess = () => {
+      const items: ActivityLogItem[] = request.result || [];
+      const todayItem = items.find(
+        (item) =>
+          item.participantId === formData.participantId && item.date === today,
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        id: todayItem?.id,
+        actDate: today,
+        startTime: todayItem?.start
+          ? hhmmToTimeParts(todayItem.start)
+          : { ampm: "AM", hour: "", minute: "" },
+        endTime: todayItem?.end
+          ? hhmmToTimeParts(todayItem.end)
+          : { ampm: "PM", hour: "", minute: "" },
+        actTotalTime: todayItem?.totalTime || "- 시간",
+        actContent: todayItem?.content || "",
+        actPlace: todayItem?.place || "",
+        hasAccident: todayItem?.accident === "유",
+        accidentChecked: todayItem?.accidentChecked ?? false,
+        accidentDetail: todayItem?.accidentDetail || "",
+        accidentAction:
+          (todayItem?.accidentAction as "귀가" | "업무수행" | undefined) ||
+          "업무수행",
+        userSignature: todayItem?.uSign || prev.userSignature,
+        demandSignature: todayItem?.dSign || prev.demandSignature,
+      }));
+    };
+  }, [db, formData.participantId, formData.actDate]);
+
   return (
-    <div className="w-full h-full flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] p-0 min-[601px]:p-4 select-none">
-      <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border max-[600px]:w-[calc(100%-20px)] max-[600px]:shadow-md max-[600px]:m-[12px_10px_0_10px]">
+    <div className="w-full h-full flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] select-none">
+      <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border">
         {/* 1. 초기 설정 페이지 */}
         {view === VIEW_TYPE.AFFILIATION && (
           <AffiliationInputPage
@@ -297,72 +313,88 @@ const Main = () => {
           />
         )}
 
-        {/* 홈 */}
+        {/* 홈 대시보드 */}
         {view === VIEW_TYPE.HOME && (
           <HomePage
             formData={formData}
-            onStartNewLog={handleNewLogButtonClick}
-            onChangeTab={handleTabChange}
+            onOpenAttendanceIn={() => setView(VIEW_TYPE.ATTENDANCE_IN)}
+            onOpenAttendanceOut={() => setView(VIEW_TYPE.ATTENDANCE_OUT)}
+            onOpenWork={() => setView(VIEW_TYPE.REPORT)}
+            onOpenSafety={() => setView(VIEW_TYPE.ACCIDENT)}
+            onOpenSummary={() => setView(VIEW_TYPE.SUMMARY)}
           />
         )}
 
-        {/* 활동 일지 목록 */}
-        {view === VIEW_TYPE.LOGS && (
-          <ActivityLogPage
-            formData={formData}
-            db={db}
-            onChangeTab={handleTabChange}
-            onAlert={handleAlertModalOpen}
-          />
-        )}
-
-        {/* 3. 활동 일시 페이지 */}
-        {view === VIEW_TYPE.WORK_HOURS && (
-          <WorkHoursInputPage
+        {/* 출근 모듈 */}
+        {view === VIEW_TYPE.ATTENDANCE_IN && (
+          <AttendanceModulePage
+            mode="in"
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView("home")}
+            onBack={() => setView(VIEW_TYPE.HOME)}
             onSave={handleStepDataSave}
-            onNext={() => setView(VIEW_TYPE.REPORT)}
+            onHome={() => setView(VIEW_TYPE.HOME)}
             onAlert={handleAlertModalOpen}
           />
         )}
 
-        {/* 4. 활동 내용/장소 페이지 */}
+        {/* 퇴근 모듈 */}
+        {view === VIEW_TYPE.ATTENDANCE_OUT && (
+          <AttendanceModulePage
+            mode="out"
+            formData={formData}
+            setFormData={setFormData}
+            onBack={() => setView(VIEW_TYPE.HOME)}
+            onSave={handleStepDataSave}
+            onHome={() => setView(VIEW_TYPE.HOME)}
+            onAlert={handleAlertModalOpen}
+          />
+        )}
+
+        {/* 업무 등록 모듈 */}
         {view === VIEW_TYPE.REPORT && (
           <ActivityReportPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.WORK_HOURS)}
+            onBack={() => setView(VIEW_TYPE.HOME)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
-            onNext={() => setView(VIEW_TYPE.ACCIDENT)}
+            onNext={() => setView(VIEW_TYPE.HOME)}
           />
         )}
 
-        {/* 5. 안전사고 유무 페이지 */}
+        {/* 안전 등록 모듈 */}
         {view === VIEW_TYPE.ACCIDENT && (
           <AccidentCheckPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.REPORT)}
+            onBack={() => setView(VIEW_TYPE.HOME)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
+            onNext={() => setView(VIEW_TYPE.HOME)}
+          />
+        )}
+
+        {/* 전체확인(요약) 페이지 */}
+        {view === VIEW_TYPE.SUMMARY && (
+          <ActivitySummaryPage
+            formData={formData}
+            onBack={() => setView(VIEW_TYPE.HOME)}
             onNext={() => setView(VIEW_TYPE.SIGNATURE)}
           />
         )}
 
-        {/* 6. 서명하기 페이지 */}
+        {/* 서명하기 페이지 */}
         {view === VIEW_TYPE.SIGNATURE && (
           <>
             <SignaturePage
               formData={formData}
               setFormData={setFormData}
               printRef={printAreaRef}
-              onBack={() => setView(VIEW_TYPE.ACCIDENT)}
+              onBack={() => setView(VIEW_TYPE.SUMMARY)}
               onAlert={handleAlertModalOpen}
               onSave={handleStepDataSave}
-              onHome={() => setView("home")}
+              onHome={() => setView(VIEW_TYPE.HOME)}
             />
             {/* 💡 보고서 출력 버튼이 조준할 히든 인쇄용 템플릿 */}
             <PdfTemplate

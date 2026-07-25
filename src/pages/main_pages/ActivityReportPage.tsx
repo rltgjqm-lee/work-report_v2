@@ -1,7 +1,6 @@
 import type { ActivityLogFormData } from "../../types/form";
 
 import AppBar from "../../components/molecule/AppBar";
-import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import {
@@ -17,14 +16,14 @@ import {
 interface Page4Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
-  onBack: () => void;
+  onBack: () => void; // 💡 홈으로 돌아가기(취소)
   onSave: () => void; // 💡 IndexedDB 임시저장 브릿지
-  onNext: () => void; // 💡 Page 5(안전사고 페이지) 이동 브릿지
+  onNext: () => void; // 💡 저장 후 홈으로 돌아가기
   onAlert: (messages: string[]) => void;
 }
 
 /**
- * Page 4: 활동 내용 및 장소
+ * 업무 등록 모듈 — 홈 대시보드에서 진입, 저장하면 다시 홈으로 돌아간다.
  */
 const ActivityReportPage = ({
   formData,
@@ -34,8 +33,7 @@ const ActivityReportPage = ({
   onNext,
   onAlert,
 }: Page4Props) => {
-  // 💡 다음 단계 이동 전 유효성 검증 핸들러
-  const handleNextStepButtonClick = () => {
+  const handleSaveButtonClick = () => {
     if (!formData.actContent.trim()) {
       onAlert(["활동 내용을 입력해주세요."]);
       return;
@@ -44,13 +42,13 @@ const ActivityReportPage = ({
       onAlert(["활동 장소를 입력해주세요."]);
       return;
     }
+    onSave();
     onNext();
   };
 
   return (
     <div className={pageClass}>
-      <AppBar title="내용 및 장소" onBack={onBack} />
-      <ProgressBar step={4} />
+      <AppBar title="업무 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
         <Card>
           <div>
@@ -93,14 +91,14 @@ const ActivityReportPage = ({
 
       <BottomBar>
         <BottomBarRow>
-          <button className={btnOutlineClass} onClick={onSave}>
-            저장하기
+          <button className={btnOutlineClass} onClick={onBack}>
+            취소
           </button>
           <button
             className={btnPrimaryClass + " flex-1"}
-            onClick={handleNextStepButtonClick}
+            onClick={handleSaveButtonClick}
           >
-            다음
+            저장
           </button>
         </BottomBarRow>
       </BottomBar>

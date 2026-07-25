@@ -1,6 +1,5 @@
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
-import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import {
@@ -17,12 +16,15 @@ import {
 interface Page5Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
-  onBack: () => void;
+  onBack: () => void; // 💡 홈으로 돌아가기(취소)
   onSave: () => void; // 💡 IndexedDB 임시저장 브릿지
-  onNext: () => void; // 💡 Page 6(서명 페이지) 이동 브릿지
+  onNext: () => void; // 💡 저장 후 홈으로 돌아가기
   onAlert: (messages: string[]) => void;
 }
 
+/**
+ * 안전 등록 모듈 — 홈 대시보드에서 진입, 저장하면 다시 홈으로 돌아간다.
+ */
 const AccidentCheckPage = ({
   formData,
   setFormData,
@@ -35,23 +37,24 @@ const AccidentCheckPage = ({
     setFormData((prev) => ({
       ...prev,
       hasAccident,
+      accidentChecked: true,
       // '무'를 선택하면 기존에 입력했던 상세 정보들을 깔끔하게 초기화해줍니다.
       ...(!hasAccident && { accidentDetail: "", accidentAction: "업무수행" }),
     }));
   };
 
-  const handleNextStepButtonClick = () => {
+  const handleSaveButtonClick = () => {
     if (formData.hasAccident && !formData.accidentDetail.trim()) {
       onAlert(["사고내용 및 조치내용을 입력해주세요."]);
       return;
     }
+    onSave();
     onNext();
   };
 
   return (
     <div className={pageClass}>
-      <AppBar title="안전 확인" onBack={onBack} />
-      <ProgressBar step={5} />
+      <AppBar title="안전 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
         <label className={labelClass + " px-1"}>
           오늘 다치신 곳이 있으신가요?
@@ -137,14 +140,14 @@ const AccidentCheckPage = ({
 
       <BottomBar>
         <BottomBarRow>
-          <button className={btnOutlineClass} onClick={onSave}>
-            저장하기
+          <button className={btnOutlineClass} onClick={onBack}>
+            취소
           </button>
           <button
             className={btnPrimaryClass + " flex-1"}
-            onClick={handleNextStepButtonClick}
+            onClick={handleSaveButtonClick}
           >
-            다음
+            저장
           </button>
         </BottomBarRow>
       </BottomBar>

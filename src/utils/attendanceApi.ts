@@ -1,8 +1,12 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const request = async <T>(path: string, body: object): Promise<T> => {
+const request = async <T>(
+  path: string,
+  body: object,
+  method: "POST" | "PATCH" = "POST",
+): Promise<T> => {
   const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -32,6 +36,21 @@ export const clockOut = (participantId: number) =>
   request<{ id: number; clockOut: string; totalMinutes: number }>(
     "/public/attendance/clock-out",
     { participantId },
+  );
+
+// time은 "HH:MM"(24시간제) — 오늘 자동 기록된 출근/퇴근 시각을 본인이 직접 고칠 때 씀.
+export const updateClockIn = (participantId: number, time: string) =>
+  request<{ id: number; clockIn: string }>(
+    "/public/attendance/clock-in",
+    { participantId, time },
+    "PATCH",
+  );
+
+export const updateClockOut = (participantId: number, time: string) =>
+  request<{ id: number; clockOut: string; totalMinutes: number }>(
+    "/public/attendance/clock-out",
+    { participantId, time },
+    "PATCH",
   );
 
 // signatureDataUrl은 캔버스가 만든 base64 data URL이지만, 여기서 바로 바이너리로
