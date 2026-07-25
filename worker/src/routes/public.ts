@@ -113,6 +113,20 @@ app.get("/affiliations", async (c) => {
   return c.json({ organizations: organizationRows, programs: programRows });
 });
 
+app.get("/programs/:id/demand-sites", async (c) => {
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const rows = await db
+    .select({ id: demandSites.id, name: demandSites.name })
+    .from(demandSites)
+    .where(
+      and(eq(demandSites.programId, programId), eq(demandSites.isActive, true)),
+    );
+
+  return c.json(rows);
+});
+
 app.post("/push-subscriptions", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{

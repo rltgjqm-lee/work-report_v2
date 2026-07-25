@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { labelClass, labelSmallClass } from "../atoms/classes";
+import { labelClass, labelSmallClass, selectClass } from "../atoms/classes";
 import Button from "../atoms/Button";
 import LabeledInput from "./LabeledInput";
 import SignatureCanvas from "../atoms/SignatureCanvas";
@@ -11,6 +11,7 @@ import {
   signAttendance,
 } from "../../utils/attendanceApi";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
+import type { ActivityLogFormData } from "../../types/form";
 
 type CachedParticipant = { participantId: number; name: string };
 
@@ -32,9 +33,13 @@ const readCachedParticipant = (): CachedParticipant | null => {
  */
 const AttendanceCheckIn = ({
   programId,
+  gender,
+  onGenderChange,
   onIdentified,
 }: {
   programId: number | null;
+  gender: ActivityLogFormData["gender"];
+  onGenderChange: (value: ActivityLogFormData["gender"]) => void;
   onIdentified?: (participant: CachedParticipant) => void;
 }) => {
   const [participant, setParticipant] = useState<CachedParticipant | null>(
@@ -184,14 +189,32 @@ const AttendanceCheckIn = ({
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">
-          <div>
-            <LabeledInput
-              labelTitle="이름"
-              id="attendance-name"
-              placeholder="성함 입력"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
+          <div className="flex gap-2.5">
+            <div className="flex-1">
+              <label className={labelClass}>성별</label>
+              <select
+                className={selectClass + " w-full"}
+                value={gender}
+                onChange={(event) =>
+                  onGenderChange(
+                    event.target.value as ActivityLogFormData["gender"],
+                  )
+                }
+              >
+                <option value="">선택하세요</option>
+                <option value="남성">남성</option>
+                <option value="여성">여성</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <LabeledInput
+                labelTitle="이름"
+                id="attendance-name"
+                placeholder="성함 입력"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </div>
           </div>
           <div>
             <LabeledInput

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import AttendanceCheckIn from "../../components/molecule/AttendanceCheckIn";
 import AppBar from "../../components/molecule/AppBar";
-import LabeledInput from "../../components/molecule/LabeledInput";
 import ProgressBar from "../../components/atoms/ProgressBar";
 import Card from "../../components/atoms/Card";
 import BottomBar from "../../components/atoms/BottomBar";
@@ -18,6 +17,8 @@ import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
 import {
   getAffiliations,
+  getDemandSites,
+  type DemandSite,
   type Organization,
   type Program,
 } from "../../utils/publicApi";
@@ -52,6 +53,8 @@ const AffiliationInputPage = ({
   const [programType, setProgramType] = useState("");
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
+
+  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
 
   // 💡 사업단 수가 많지 않아 조직 선택을 기다리지 않고 전체 목록을 한 번의 API
   // 호출로 불러온 뒤 organizationId로 클라이언트에서 필터링한다
@@ -99,6 +102,21 @@ const AffiliationInputPage = ({
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 💡 사업단을 바꾸면 이전 사업단의 수요처 선택이 남아있으면 안 되므로 목록을 다시
+  // 불러오는 동안 선택값도 초기화한다.
+  useEffect(() => {
+    if (!selectedProgramId) {
+      setDemandSites([]);
+      return;
+    }
+    getDemandSites(Number(selectedProgramId))
+      .then(setDemandSites)
+      .catch(() => {
+        onAlert(["수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProgramId]);
 
   const sidoList = useMemo(
     () =>
@@ -229,6 +247,7 @@ const AffiliationInputPage = ({
       "programName",
       programs.find((program) => String(program.id) === programId)?.name ?? "",
     );
+    onChange("demandName", "");
   };
 
   const handleSaveDraftButtonClick = () => {
@@ -383,52 +402,25 @@ const AffiliationInputPage = ({
 
           {/* 수요처 */}
           <div>
-            <LabeledInput
-              labelTitle={
-                <>
-                  수요처명
-                  <small className="ml-1.5 text-[13px] font-semibold text-[#9ca3af]">
-                    서비스 대상자 명
-                  </small>
-                </>
-              }
-              id="demandName"
-              placeholder="예) 00주민센터"
+            <label className={labelClass}>
+              수요처명
+              <small className="ml-1.5 text-[13px] font-semibold text-[#9ca3af]">
+                서비스 대상자 명
+              </small>
+            </label>
+            <select
+              className={selectClass + " w-full"}
               value={formData.demandName}
+              disabled={!selectedProgramId}
               onChange={(event) => onChange("demandName", event.target.value)}
-            />
-          </div>
-
-          {/* 성별 */}
-          <div className="flex gap-3.5">
-            <div className="flex-1">
-              <label className={labelClass}>성별</label>
-              <select
-                className={selectClass + " w-full"}
-                value={formData.gender}
-                onChange={(event) =>
-                  onChange(
-                    "gender",
-                    event.target.value as ActivityLogFormData["gender"],
-                  )
-                }
-              >
-                <option value="">선택하세요</option>
-                <option value="남성">남성</option>
-                <option value="여성">여성</option>
-              </select>
-            </div>
-
-            {/* 참여자명 */}
-            <div className="flex-1">
-              <LabeledInput
-                labelTitle="참여자 성함"
-                id="userName"
-                placeholder="성함 입력"
-                value={formData.userName}
-                onChange={(event) => onChange("userName", event.target.value)}
-              />
-            </div>
+            >
+              <option value="">선택하세요</option>
+              {demandSites.map((demandSite) => (
+                <option key={demandSite.id} value={demandSite.name}>
+                  {demandSite.name}
+                </option>
+              ))}
+            </select>
           </div>
         </Card>
 
@@ -436,9 +428,12 @@ const AffiliationInputPage = ({
           <Card>
             <AttendanceCheckIn
               programId={Number(selectedProgramId)}
-              onIdentified={(program) =>
-                onChange("participantId", program.participantId)
-              }
+              gender={formData.gender}
+              onGenderChange={(value) => onChange("gender", value)}
+              onIdentified={(participant) => {
+                onChange("participantId", participant.participantId);
+                onChange("userName", participant.name);
+              }}
             />
           </Card>
         )}
