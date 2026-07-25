@@ -7,6 +7,7 @@ import { formatTimeField } from "../../utils/timeFormat";
 
 interface HomePageProps {
   formData: ActivityLogFormData;
+  onBack: () => void;
   onOpenAttendanceIn: () => void;
   onOpenAttendanceOut: () => void;
   onOpenWork: () => void;
@@ -64,6 +65,7 @@ const ModuleItem = ({
  */
 const HomePage = ({
   formData,
+  onBack,
   onOpenAttendanceIn,
   onOpenAttendanceOut,
   onOpenWork,
@@ -94,7 +96,7 @@ const HomePage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="활동일지" />
+      <AppBar title="활동일지" onBack={onBack} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[20px] px-[22px] py-5 shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
           <div className="text-[13px] text-[#9ca3af] font-bold mb-3.5">

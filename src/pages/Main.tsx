@@ -317,6 +317,7 @@ const Main = () => {
         {view === VIEW_TYPE.HOME && (
           <HomePage
             formData={formData}
+            onBack={() => setView(VIEW_TYPE.AFFILIATION)}
             onOpenAttendanceIn={() => setView(VIEW_TYPE.ATTENDANCE_IN)}
             onOpenAttendanceOut={() => setView(VIEW_TYPE.ATTENDANCE_OUT)}
             onOpenWork={() => setView(VIEW_TYPE.REPORT)}
