@@ -163,7 +163,7 @@ const AttendanceCheckIn = ({
             onClick={clearCachedParticipant}
             className="text-[13px] text-[#8b95a1] underline self-start"
           >
-            본인이 아닙니다 · 다시 확인
+            다른 분이신가요? 이름으로 다시 확인
           </button>
 
           {signing && (
