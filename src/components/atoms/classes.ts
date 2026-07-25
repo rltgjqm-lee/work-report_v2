@@ -1,7 +1,11 @@
 // Canvas.dc.html의 "1c 앱스럽게" 옵션 스타일 값을 그대로 이식한 공용 클래스.
-export const pageClass = "flex flex-col bg-[#f2f4f6] min-h-full flex-1";
+export const pageClass = "flex flex-col bg-[#f2f4f6] h-full min-h-0 flex-1";
 
-export const bodyClass = "px-5 pt-4 pb-5 flex-1 flex flex-col gap-3.5";
+// min-h-0이 없으면 flex 아이템은 내용만큼 늘어나 버려서(overflow 무시) 부모가 아무리
+// 높이를 고정해도 이 영역이 넘치고, 그러면 다음 버튼(BottomBar)까지 페이지 전체를
+// 스크롤해야 보인다 — min-h-0 + overflow-y-auto로 이 영역만 스스로 스크롤되게 한다.
+export const bodyClass =
+  "px-5 pt-4 pb-5 flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5";
 
 export const cardClass =
   "bg-white rounded-[20px] p-[22px] shadow-[0_1px_2px_rgba(20,30,50,0.04)] flex flex-col gap-5";
