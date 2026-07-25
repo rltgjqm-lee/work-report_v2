@@ -224,7 +224,12 @@ app.post("/attendance/clock-in", async (c) => {
     .from(participants)
     .where(eq(participants.id, body.participantId));
   const participant = rows[0];
-  if (!participant) return c.json({ error: "Not found" }, 404);
+  if (!participant) {
+    return c.json(
+      { error: "본인 확인이 만료되었습니다. 다시 확인해주세요." },
+      404,
+    );
+  }
 
   if (participant.status === "ON_LEAVE") {
     return c.json({ error: "휴가 중인 참여자는 출근할 수 없습니다." }, 400);

@@ -46,6 +46,15 @@ const AttendanceCheckIn = ({
   const [signing, setSigning] = useState(false);
   const [signature, setSignature] = useState("");
 
+  const clearCachedParticipant = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.ATTENDANCE_PARTICIPANT_ID);
+    setParticipant(null);
+    setName("");
+    setPhoneLast4("");
+    setSigning(false);
+    setSignature("");
+  };
+
   // 이미 캐시된 식별 결과가 있으면 마운트 시점에 상위로도 알려준다 (activityLogs 연결용)
   useEffect(() => {
     if (participant) onIdentified?.(participant);
@@ -85,9 +94,12 @@ const AttendanceCheckIn = ({
       await clockIn(participant.participantId);
       setStatus("출근 처리되었습니다.");
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "출근 처리에 실패했습니다.",
-      );
+      const message =
+        error instanceof Error ? error.message : "출근 처리에 실패했습니다.";
+      if (message.includes("본인 확인이 만료")) {
+        clearCachedParticipant();
+      }
+      setStatus(message);
     }
   };
 
@@ -98,9 +110,12 @@ const AttendanceCheckIn = ({
       setStatus(`퇴근 처리되었습니다. (근무 ${result.totalMinutes}분)`);
       setSigning(true);
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "퇴근 처리에 실패했습니다.",
-      );
+      const message =
+        error instanceof Error ? error.message : "퇴근 처리에 실패했습니다.";
+      if (message.includes("본인 확인이 만료")) {
+        clearCachedParticipant();
+      }
+      setStatus(message);
     }
   };
 
@@ -142,6 +157,14 @@ const AttendanceCheckIn = ({
               퇴근
             </Button>
           </div>
+
+          <button
+            type="button"
+            onClick={clearCachedParticipant}
+            className="text-[13px] text-[#8b95a1] underline self-start"
+          >
+            본인이 아닙니다 · 다시 확인
+          </button>
 
           {signing && (
             <div className="flex flex-col gap-3.5">
