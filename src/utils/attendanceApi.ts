@@ -27,30 +27,18 @@ export const identifyParticipant = (
     { programId, name, phoneLast4 },
   );
 
-export const clockIn = (participantId: number) =>
+// debugTime("HH:MM")은 로컬 개발에서 출퇴근 시간 검증을 테스트하기 위한 override —
+// 서버가 localhost 요청에서만 실제로 반영하고, 배포된 워커에서는 무시한다.
+export const clockIn = (participantId: number, debugTime?: string) =>
   request<{ id: number; clockIn: string }>("/public/attendance/clock-in", {
     participantId,
+    ...(debugTime && { debugTime }),
   });
 
-export const clockOut = (participantId: number) =>
+export const clockOut = (participantId: number, debugTime?: string) =>
   request<{ id: number; clockOut: string; totalMinutes: number }>(
     "/public/attendance/clock-out",
-    { participantId },
-  );
-
-// time은 "HH:MM"(24시간제) — 오늘 자동 기록된 출근/퇴근 시각을 본인이 직접 고칠 때 씀.
-export const updateClockIn = (participantId: number, time: string) =>
-  request<{ id: number; clockIn: string }>(
-    "/public/attendance/clock-in",
-    { participantId, time },
-    "PATCH",
-  );
-
-export const updateClockOut = (participantId: number, time: string) =>
-  request<{ id: number; clockOut: string; totalMinutes: number }>(
-    "/public/attendance/clock-out",
-    { participantId, time },
-    "PATCH",
+    { participantId, ...(debugTime && { debugTime }) },
   );
 
 // signatureDataUrl은 캔버스가 만든 base64 data URL이지만, 여기서 바로 바이너리로

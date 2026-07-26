@@ -5,7 +5,6 @@ import ConfirmModal from "../components/molecule/ConfirmModal";
 import AffiliationInputPage from "./main_pages/AffiliationInputPage";
 import RegistrationConfirmPage from "./main_pages/RegistrationConfirmPage";
 import HomePage from "./main_pages/HomePage";
-import AttendanceModulePage from "./main_pages/AttendanceModulePage";
 import ActivityReportPage from "./main_pages/ActivityReportPage";
 import AccidentCheckPage from "./main_pages/AccidentCheckPage";
 import ActivitySummaryPage from "./main_pages/ActivitySummaryPage";
@@ -21,7 +20,6 @@ const VIEW_TYPE = {
   AFFILIATION: "affiliation",
   REGISTRATION_CONFIRM: "registrationConfirm",
   HOME: "home",
-  ATTENDANCE_OUT: "attendanceOut",
   REPORT: "report",
   ACCIDENT: "accident",
   SUMMARY: "summary",
@@ -349,23 +347,9 @@ const Main = () => {
             onBack={() => setView(VIEW_TYPE.AFFILIATION)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
-            onOpenAttendanceOut={() => setView(VIEW_TYPE.ATTENDANCE_OUT)}
             onOpenWork={() => setView(VIEW_TYPE.REPORT)}
             onOpenSafety={() => setView(VIEW_TYPE.ACCIDENT)}
             onOpenSummary={() => setView(VIEW_TYPE.SUMMARY)}
-          />
-        )}
-
-        {/* 퇴근 모듈 */}
-        {view === VIEW_TYPE.ATTENDANCE_OUT && (
-          <AttendanceModulePage
-            mode="out"
-            formData={formData}
-            setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.HOME)}
-            onSave={handleStepDataSave}
-            onHome={() => setView(VIEW_TYPE.HOME)}
-            onAlert={handleAlertModalOpen}
           />
         )}
 

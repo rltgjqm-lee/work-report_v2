@@ -16,6 +16,7 @@ import {
   activityLogs,
 } from "../db/schema";
 import { getKstNow } from "../lib/kst";
+import { readDebugTime } from "../lib/debugTime";
 import { haversineKm, isPointInPolygon, polygonCentroid } from "../lib/geo";
 import { sendWebPush } from "../lib/webPush";
 import type { Env } from "../types";
@@ -245,7 +246,10 @@ app.post("/attendance/identify", async (c) => {
 
 app.post("/attendance/clock-in", async (c) => {
   const db = drizzle(c.env.DB);
-  const body = await c.req.json<{ participantId?: number }>();
+  const body = await c.req.json<{
+    participantId?: number;
+    debugTime?: string;
+  }>();
   if (!body.participantId) {
     return c.json({ error: "participantId is required" }, 400);
   }
@@ -262,7 +266,7 @@ app.post("/attendance/clock-in", async (c) => {
     );
   }
 
-  const { date, time, iso } = getKstNow();
+  const { date, time, iso } = getKstNow(readDebugTime(c, body));
 
   // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
   if (
@@ -340,12 +344,15 @@ app.post("/attendance/clock-in", async (c) => {
 
 app.post("/attendance/clock-out", async (c) => {
   const db = drizzle(c.env.DB);
-  const body = await c.req.json<{ participantId?: number }>();
+  const body = await c.req.json<{
+    participantId?: number;
+    debugTime?: string;
+  }>();
   if (!body.participantId) {
     return c.json({ error: "participantId is required" }, 400);
   }
 
-  const { date, time, iso } = getKstNow();
+  const { date, time, iso } = getKstNow(readDebugTime(c, body));
 
   const rows = await db
     .select()
