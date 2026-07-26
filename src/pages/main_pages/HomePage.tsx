@@ -83,7 +83,7 @@ const HomePage = ({
   }, []);
 
   const programLabel = formData.programType
-    ? `${formData.programType.replace(/\s/g, "")}사업`
+    ? `${formData.programType} 사업`
     : "";
 
   const attendanceInDone = formData.startTime.hour !== "";
@@ -173,7 +173,7 @@ const HomePage = ({
         <ModuleItem
           index={moduleIndex}
           category="서명"
-          title="전체확인·서명"
+          title="전체 확인·서명"
           status={signatureDone ? "서명 완료" : "최종 확인이 필요해요"}
           done={signatureDone}
           highlighted
