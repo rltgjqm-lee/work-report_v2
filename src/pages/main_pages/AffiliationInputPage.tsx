@@ -11,6 +11,7 @@ import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
+import { registerNativePush } from "../../utils/nativePushRegistration";
 import {
   getAffiliations,
   getDemandSites,
@@ -235,6 +236,7 @@ const AffiliationInputPage = ({
         selectedProgramId,
       );
       subscribeToPush(Number(selectedProgramId));
+      registerNativePush(Number(selectedProgramId));
     }
   };
 

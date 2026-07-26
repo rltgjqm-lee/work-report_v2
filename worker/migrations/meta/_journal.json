@@ -225,6 +225,13 @@
       "when": 1784902934948,
       "tag": "0031_little_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1785075837126,
+      "tag": "0032_perpetual_shadowcat",
+      "breakpoints": true
     }
   ]
 }

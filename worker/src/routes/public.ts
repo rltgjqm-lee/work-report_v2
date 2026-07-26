@@ -6,6 +6,7 @@ import {
   organizations,
   programs,
   pushSubscriptions,
+  pushDeviceTokens,
   participants,
   groups,
   demandSites,
@@ -242,6 +243,63 @@ app.post("/attendance/identify", async (c) => {
   }
 
   return c.json({ participantId: participant.id, name: participant.name });
+});
+
+// 하이브리드 앱(Capacitor)이 발급받은 네이티브 푸시 토큰(FCM/APNs) 등록.
+// push-subscriptions(Web Push)와 동일한 흐름 — 실제 FCM 발송 연동 전까지는 저장만 한다.
+app.post("/push-device-tokens", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{
+    programId?: number;
+    platform?: "android" | "ios";
+    token?: string;
+  }>();
+
+  if (!body.programId || !body.platform || !body.token) {
+    return c.json(
+      { error: "programId, platform, token are required" },
+      400,
+    );
+  }
+
+  const result = await db
+    .insert(pushDeviceTokens)
+    .values({
+      programId: body.programId,
+      platform: body.platform,
+      token: body.token,
+    })
+    .onConflictDoUpdate({
+      target: pushDeviceTokens.token,
+      set: { programId: body.programId, platform: body.platform },
+    })
+    .returning();
+
+  return c.json(result[0], 201);
+});
+
+// 최초 등록(위) 시점엔 아직 참여자가 특정되지 않아 programId로만 저장된다.
+// 출근 식별(identify) 이후 이 엔드포인트로 토큰을 참여자 한 명에 연결한다
+// (push-subscriptions/link-participant와 동일한 패턴).
+app.post("/push-device-tokens/link-participant", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{
+    token?: string;
+    participantId?: number;
+  }>();
+
+  if (!body.token || !body.participantId) {
+    return c.json({ error: "token, participantId are required" }, 400);
+  }
+
+  const result = await db
+    .update(pushDeviceTokens)
+    .set({ participantId: body.participantId })
+    .where(eq(pushDeviceTokens.token, body.token))
+    .returning();
+
+  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  return c.json(result[0]);
 });
 
 // 참여자용 앱의 홈 화면은 오늘 출퇴근 여부를 브라우저 로컬(IndexedDB) 캐시로만 판단하는데,
