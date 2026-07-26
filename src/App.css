@@ -40,5 +40,12 @@
     overflow-y: auto;
     overflow-x: hidden;
     user-select: none;
+
+    /* 노치/홈 인디케이터 영역 침범 방지 (viewport-fit=cover가 없는
+       웹 배포 index.html에서는 env()가 0이라 영향 없음) */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }

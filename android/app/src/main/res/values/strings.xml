@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">시니어 공익활동일지</string>
+    <string name="title_activity_main">시니어 공익활동일지</string>
+    <string name="package_name">com.workreport.senioractivity</string>
+    <string name="custom_url_scheme">com.workreport.senioractivity</string>
+</resources>
