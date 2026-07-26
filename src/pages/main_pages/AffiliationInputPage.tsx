@@ -417,13 +417,6 @@ const AffiliationInputPage = ({
         <Button variant="primary" onClick={handleNextButtonClick}>
           다음
         </Button>
-        <Button
-          variant="text"
-          className="self-center"
-          onClick={handleSaveDraftButtonClick}
-        >
-          나중에 이어서 작성하고 저장만 하기
-        </Button>
       </BottomBar>
     </div>
   );
