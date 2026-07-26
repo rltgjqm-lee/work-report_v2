@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 
 import { getLeaves, getLeaveStats } from "../../api/admin/programs";
 import MonthPicker from "../../components/MonthPicker";
-import StatusChip, { type StatusChipVariant } from "../../components/StatusChip";
+import StatusChip, {
+  type StatusChipVariant,
+} from "../../components/StatusChip";
 import type { LeaveRow, LeaveStats } from "../../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
@@ -130,7 +132,9 @@ const LeaveTabPanel = ({ programId }: LeaveTabPanelProps) => {
                     {row.leave.leaveDays}일
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    <StatusChip variant={LEAVE_TYPE_VARIANT[row.leave.leaveType]}>
+                    <StatusChip
+                      variant={LEAVE_TYPE_VARIANT[row.leave.leaveType]}
+                    >
                       {LEAVE_TYPE_LABEL[row.leave.leaveType]}
                     </StatusChip>
                   </td>

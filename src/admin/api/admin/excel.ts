@@ -171,7 +171,10 @@ interface PaymentLedgerExportResponse {
   participants: PaymentLedgerParticipant[];
 }
 
-export const downloadPaymentExcel = async (programId: number, month: string) => {
+export const downloadPaymentExcel = async (
+  programId: number,
+  month: string,
+) => {
   const data = await request<PaymentLedgerExportResponse>(
     `/api/programs/${programId}/export/payment?month=${month}`,
   );
@@ -228,7 +231,10 @@ interface PayslipExportResponse {
   participants: PayslipParticipant[];
 }
 
-export const downloadPayslipExcel = async (programId: number, month: string) => {
+export const downloadPayslipExcel = async (
+  programId: number,
+  month: string,
+) => {
   const data = await request<PayslipExportResponse>(
     `/api/programs/${programId}/export/payslip?month=${month}`,
   );

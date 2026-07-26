@@ -124,8 +124,7 @@ const TrainingTabPanel = ({
       isPaid: training.isPaid,
       payMode: training.payMode,
       hours: training.hours !== null ? String(training.hours) : "",
-      dailyWage:
-        training.dailyWage !== null ? String(training.dailyWage) : "",
+      dailyWage: training.dailyWage !== null ? String(training.dailyWage) : "",
       isRequired: training.isRequired,
     });
     setTrainingModalOpen(true);
@@ -376,9 +375,7 @@ const TrainingTabPanel = ({
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                       <StatusChip
-                        variant={
-                          row.log.status === "COMPLETED" ? "ok" : "bad"
-                        }
+                        variant={row.log.status === "COMPLETED" ? "ok" : "bad"}
                       >
                         {row.log.status === "COMPLETED" ? "완료" : "취소됨"}
                       </StatusChip>

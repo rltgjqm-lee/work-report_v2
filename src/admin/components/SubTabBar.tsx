@@ -1,4 +1,8 @@
-import { subTabBarClass, subTabBtnActiveClass, subTabBtnClass } from "../uiClasses";
+import {
+  subTabBarClass,
+  subTabBtnActiveClass,
+  subTabBtnClass,
+} from "../uiClasses";
 
 interface SubTabBarProps<T extends string> {
   tabs: [T, string][];

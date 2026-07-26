@@ -191,10 +191,7 @@ app.post("/:id/locations", async (c) => {
     );
   }
   if (body.shapeType === "POLYGON" && (body.polygon?.length ?? 0) < 3) {
-    return c.json(
-      { error: "POLYGON 거점은 좌표가 3개 이상 필요합니다." },
-      400,
-    );
+    return c.json({ error: "POLYGON 거점은 좌표가 3개 이상 필요합니다." }, 400);
   }
 
   const result = await db

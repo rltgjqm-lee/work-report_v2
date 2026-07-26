@@ -62,7 +62,8 @@ export const addActivityPaymentLedgerSheet = (
 
   // 1. 제목
   sheet.mergeCells("A1:L1");
-  sheet.getCell("A1").value = `${header.programName} ${monthNum}월 활동비 지급내역`;
+  sheet.getCell("A1").value =
+    `${header.programName} ${monthNum}월 활동비 지급내역`;
   sheet.getCell("A1").font = { size: 18, bold: true, name: "맑은 고딕" };
   sheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
   sheet.getRow(1).height = 29.25;
@@ -152,7 +153,8 @@ export const addActivityPaymentLedgerSheet = (
         if (row > groupStartRow) {
           sheet.mergeCells(`C${groupStartRow}:C${row}`);
         }
-        sheet.getCell(`C${groupStartRow}`).value = participant.demandName ?? "-";
+        sheet.getCell(`C${groupStartRow}`).value =
+          participant.demandName ?? "-";
         sheet.getCell(`C${groupStartRow}`).alignment = {
           horizontal: "center",
           vertical: "middle",
@@ -166,7 +168,11 @@ export const addActivityPaymentLedgerSheet = (
   // 4. 사업단명 세로 텍스트 (A열, 데이터 영역 전체 병합)
   sheet.mergeCells(`A${startRow}:A${lastRow}`);
   sheet.getCell(`A${startRow}`).value = header.programName.split("").join("\n");
-  sheet.getCell(`A${startRow}`).font = { bold: true, size: 16, name: "맑은 고딕" };
+  sheet.getCell(`A${startRow}`).font = {
+    bold: true,
+    size: 16,
+    name: "맑은 고딕",
+  };
   sheet.getCell(`A${startRow}`).alignment = {
     horizontal: "center",
     vertical: "middle",
@@ -184,22 +190,28 @@ export const addActivityPaymentLedgerSheet = (
   };
   sheet.getCell(`I${subtotalRow}`).numFmt =
     '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
-  sheet.getRow(subtotalRow).eachCell({ includeEmpty: true }, (cell, colNumber) => {
-    if (colNumber > 11) return; // L(비고)는 소계 서식 밖
-    cell.font = { bold: true, size: 11, name: "맑은 고딕" };
-    cell.alignment = { horizontal: "center", vertical: "middle" };
-    cell.fill = SUBTOTAL_FILL;
-    cell.border = {
-      top: { style: "medium", color: { argb: "FF000000" } },
-      bottom: { style: "medium", color: { argb: "FF000000" } },
-    };
-  });
+  sheet
+    .getRow(subtotalRow)
+    .eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      if (colNumber > 11) return; // L(비고)는 소계 서식 밖
+      cell.font = { bold: true, size: 11, name: "맑은 고딕" };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.fill = SUBTOTAL_FILL;
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF000000" } },
+        bottom: { style: "medium", color: { argb: "FF000000" } },
+      };
+    });
 
   // 6. 기관명
   const footerRow = subtotalRow + 1;
   sheet.mergeCells(`A${footerRow}:L${footerRow}`);
   sheet.getCell(`A${footerRow}`).value = header.organizationName;
-  sheet.getCell(`A${footerRow}`).font = { bold: true, size: 18, name: "맑은 고딕" };
+  sheet.getCell(`A${footerRow}`).font = {
+    bold: true,
+    size: 18,
+    name: "맑은 고딕",
+  };
   sheet.getCell(`A${footerRow}`).alignment = {
     horizontal: "center",
     vertical: "middle",
@@ -226,6 +238,11 @@ export const buildActivityPaymentLedgerWorkbook = async (
   participants: ActivityPaymentLedgerParticipant[],
 ): Promise<ArrayBuffer> => {
   const workbook = new ExcelJS.Workbook();
-  addActivityPaymentLedgerSheet(workbook, "활동비지급대장", header, participants);
+  addActivityPaymentLedgerSheet(
+    workbook,
+    "활동비지급대장",
+    header,
+    participants,
+  );
   return workbook.xlsx.writeBuffer();
 };

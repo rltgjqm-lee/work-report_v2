@@ -97,7 +97,10 @@ const AttendancePage = () => {
 
           {tab === "attendance" && <AttendanceTabPanel programId={programId} />}
           {tab === "training" && (
-            <TrainingTabPanel programId={programId} participants={participants} />
+            <TrainingTabPanel
+              programId={programId}
+              participants={participants}
+            />
           )}
           {tab === "leave" && <LeaveTabPanel programId={programId} />}
         </>

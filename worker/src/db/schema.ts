@@ -211,7 +211,9 @@ export const participants = sqliteTable("participants", {
     .default("none"),
   // 4대보험 가입여부/주휴시간은 역량활동 참여자만 의미가 있다 (공익활동은 UI에서 숨김).
   // 요율(%) 자체는 그대로 programs에 있고, 여기는 "이 참여자가 대상인지"만 켜고 끈다.
-  socialInsuranceEnrolled: integer("social_insurance_enrolled", { mode: "boolean" })
+  socialInsuranceEnrolled: integer("social_insurance_enrolled", {
+    mode: "boolean",
+  })
     .notNull()
     .default(false),
   weeklyHolidayHours: real("weekly_holiday_hours").notNull().default(0),

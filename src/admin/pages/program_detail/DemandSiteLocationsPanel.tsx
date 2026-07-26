@@ -265,8 +265,7 @@ const DemandSiteLocationsPanel = ({
         <div className="w-[240px] flex-none flex flex-col gap-2">
           {locations.length === 0 && (
             <span className="text-[12.5px] text-[#9aa1ab]">
-              지도 우측 툴바에서 원(반경) 또는 다각형을 그려 거점을
-              추가하세요.
+              지도 우측 툴바에서 원(반경) 또는 다각형을 그려 거점을 추가하세요.
             </span>
           )}
           {locations.map((location) => (

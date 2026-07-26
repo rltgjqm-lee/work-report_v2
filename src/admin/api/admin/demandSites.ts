@@ -97,7 +97,6 @@ export const updateDemandSiteLocation = (
   });
 
 export const deleteDemandSiteLocation = (locationId: number) =>
-  request<{ success: boolean }>(
-    `/api/demand-sites/locations/${locationId}`,
-    { method: "DELETE" },
-  );
+  request<{ success: boolean }>(`/api/demand-sites/locations/${locationId}`, {
+    method: "DELETE",
+  });

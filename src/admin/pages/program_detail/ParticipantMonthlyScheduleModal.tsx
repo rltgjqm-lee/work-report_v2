@@ -56,9 +56,10 @@ const ParticipantMonthlyScheduleModal = ({
     setLoading(true);
 
     const loadGroupDefault = participant.groupId
-      ? getGroupMonthlySchedule(participant.groupId, yearMonth).catch(
-          () => ({ workDates: [] as string[], maxMonthlyMinutes: 1800 }),
-        )
+      ? getGroupMonthlySchedule(participant.groupId, yearMonth).catch(() => ({
+          workDates: [] as string[],
+          maxMonthlyMinutes: 1800,
+        }))
       : Promise.resolve({ workDates: [] as string[], maxMonthlyMinutes: 1800 });
 
     Promise.all([
@@ -149,7 +150,9 @@ const ParticipantMonthlyScheduleModal = ({
 
   const handleSaveButtonClick = async () => {
     if (isOverCap) {
-      alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
+      alert(
+        "선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.",
+      );
       return;
     }
     try {
@@ -180,10 +183,7 @@ const ParticipantMonthlyScheduleModal = ({
             >
               조 스케줄로 되돌리기
             </button>
-            <button
-              className={btnPrimaryClass}
-              onClick={handleSaveButtonClick}
-            >
+            <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
               저장
             </button>
           </>
@@ -262,8 +262,8 @@ const ParticipantMonthlyScheduleModal = ({
             {shiftMinutesPerDay > 0 && (
               <>
                 {" "}
-                · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}시간 /
-                상한 {(effectiveMaxMinutes / 60).toFixed(1)}시간
+                · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}시간 / 상한{" "}
+                {(effectiveMaxMinutes / 60).toFixed(1)}시간
                 {isOverCap && " (상한 초과)"}
               </>
             )}

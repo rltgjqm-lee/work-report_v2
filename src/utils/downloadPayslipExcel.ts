@@ -37,12 +37,40 @@ const SECTION_FILL: ExcelJS.Fill = {
   fgColor: { argb: "FFCFF1D1" },
 };
 const MONEY_FMT = '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
-const COL_WIDTHS = [1.71, 13.14, 6.14, 4.86, 12.71, 2.29, 9.29, 9.57, 9.86, 4.57, 5.86, 2, 16.14];
+const COL_WIDTHS = [
+  1.71, 13.14, 6.14, 4.86, 12.71, 2.29, 9.29, 9.57, 9.86, 4.57, 5.86, 2, 16.14,
+];
 const ROW_HEIGHTS: Record<number, number> = {
-  1: 40.5, 2: 18, 3: 36, 4: 27.4, 5: 27.4, 6: 26.65, 7: 18, 8: 27.4,
-  9: 27.4, 10: 27.4, 11: 27.4, 12: 27.4, 13: 27.4, 14: 27.4, 15: 27.4,
-  16: 27.4, 17: 27.4, 18: 27.4, 19: 27.4, 20: 18, 21: 13.7, 22: 13.7,
-  23: 27.4, 24: 18, 25: 27.4, 26: 27.4, 27: 27.4, 28: 27.4, 29: 27.4, 30: 27.4,
+  1: 40.5,
+  2: 18,
+  3: 36,
+  4: 27.4,
+  5: 27.4,
+  6: 26.65,
+  7: 18,
+  8: 27.4,
+  9: 27.4,
+  10: 27.4,
+  11: 27.4,
+  12: 27.4,
+  13: 27.4,
+  14: 27.4,
+  15: 27.4,
+  16: 27.4,
+  17: 27.4,
+  18: 27.4,
+  19: 27.4,
+  20: 18,
+  21: 13.7,
+  22: 13.7,
+  23: 27.4,
+  24: 18,
+  25: 27.4,
+  26: 27.4,
+  27: 27.4,
+  28: 27.4,
+  29: 27.4,
+  30: 27.4,
 };
 
 const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
@@ -62,7 +90,11 @@ const setLabel = (
   sheet: ExcelJS.Worksheet,
   ref: string,
   value: string,
-  opts: { bold?: boolean; fill?: ExcelJS.Fill; align?: Partial<ExcelJS.Alignment> } = {},
+  opts: {
+    bold?: boolean;
+    fill?: ExcelJS.Fill;
+    align?: Partial<ExcelJS.Alignment>;
+  } = {},
 ) => {
   const cell = sheet.getCell(ref);
   cell.value = value;
@@ -215,7 +247,10 @@ const addPayslipSheet = (
 
   // 5. 산출식 안내
   sheet.mergeCells("B25:M25");
-  setLabel(sheet, "B25", "산출식 또는 산출방법", { bold: true, fill: SECTION_FILL });
+  setLabel(sheet, "B25", "산출식 또는 산출방법", {
+    bold: true,
+    fill: SECTION_FILL,
+  });
 
   const guideRows: [string, string][] = [
     ["기본급", "실제근무시간 × 시급"],
@@ -224,8 +259,14 @@ const addPayslipSheet = (
     ["기타수당", "(수기 입력 — 초과근무시간 기준 산정 필요)"],
     ["팀장수당", "근로계약서 제6조 제1항에 따른 월 정액"],
     ["건강보험", `지급액(a) × 건강보험료율(${header.healthInsuranceRate}%)`],
-    ["장기요양보험", `건강보험료 × 장기요양보험료율(${header.longtermCareRate}%)`],
-    ["고용보험", `지급액(a) × 고용보험료율(${header.employmentInsuranceRate}%)`],
+    [
+      "장기요양보험",
+      `건강보험료 × 장기요양보험료율(${header.longtermCareRate}%)`,
+    ],
+    [
+      "고용보험",
+      `지급액(a) × 고용보험료율(${header.employmentInsuranceRate}%)`,
+    ],
   ];
   guideRows.forEach(([label, desc], index) => {
     const row = 26 + index;
@@ -240,19 +281,21 @@ const addPayslipSheet = (
 
   const lastRow = 25 + guideRows.length;
   for (let rowNumber = 2; rowNumber <= lastRow; rowNumber++) {
-    sheet.getRow(rowNumber).eachCell({ includeEmpty: true }, (cell, colNumber) => {
-      if (!cell.fill || cell.fill.type !== "pattern") cell.fill = WHITE_FILL;
-      // A열(3행 이후)은 얇은 여백 칸이라 가로 테두리(위/아래)는 빼고 세로 테두리만 남긴다.
-      cell.border =
-        colNumber === 1 && rowNumber >= 3
-          ? { left: THIN_BORDER, right: THIN_BORDER }
-          : {
-              top: THIN_BORDER,
-              left: THIN_BORDER,
-              bottom: THIN_BORDER,
-              right: THIN_BORDER,
-            };
-    });
+    sheet
+      .getRow(rowNumber)
+      .eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        if (!cell.fill || cell.fill.type !== "pattern") cell.fill = WHITE_FILL;
+        // A열(3행 이후)은 얇은 여백 칸이라 가로 테두리(위/아래)는 빼고 세로 테두리만 남긴다.
+        cell.border =
+          colNumber === 1 && rowNumber >= 3
+            ? { left: THIN_BORDER, right: THIN_BORDER }
+            : {
+                top: THIN_BORDER,
+                left: THIN_BORDER,
+                bottom: THIN_BORDER,
+                right: THIN_BORDER,
+              };
+      });
   }
 
   // 지급일 줄(4행)은 제목과 바로 이어 붙게 경계선을 뺀다 — 제목 병합칸(B2:M3)의

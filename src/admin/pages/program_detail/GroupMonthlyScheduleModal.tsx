@@ -104,7 +104,9 @@ const GroupMonthlyScheduleModal = ({
 
   const handleSaveButtonClick = async () => {
     if (isOverCap) {
-      alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
+      alert(
+        "선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.",
+      );
       return;
     }
     try {

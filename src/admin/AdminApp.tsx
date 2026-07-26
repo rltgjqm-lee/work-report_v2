@@ -34,10 +34,7 @@ const AdminApp = () => (
           <Route path="programs/:id/escapes" element={<EscapesPage />} />
           <Route path="escapes" element={<EscapesPage />} />
           <Route path="participants" element={<ParticipantsPage />} />
-          <Route
-            path="participants/:id"
-            element={<ParticipantDetailPage />}
-          />
+          <Route path="participants/:id" element={<ParticipantDetailPage />} />
           <Route path="safety-alerts" element={<DisasterMessagesPage />} />
           <Route path="disaster-push-logs" element={<DisasterPushLogsPage />} />
           <Route path="admins" element={<AdminsPage />} />

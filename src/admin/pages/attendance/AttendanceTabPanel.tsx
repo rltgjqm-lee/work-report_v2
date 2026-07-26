@@ -7,7 +7,9 @@ import {
 } from "../../api/admin/attendance";
 import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
-import StatusChip, { type StatusChipVariant } from "../../components/StatusChip";
+import StatusChip, {
+  type StatusChipVariant,
+} from "../../components/StatusChip";
 import {
   btnGhostClass,
   btnPrimaryClass,
@@ -90,7 +92,8 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
     dayFilter === "all"
       ? logs
       : logs.filter(
-          (row) => row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
+          (row) =>
+            row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
         );
 
   const dayStatsTotals =
@@ -101,7 +104,8 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
             total: acc.total + 1,
             normal: acc.normal + (row.log.status === "NORMAL" ? 1 : 0),
             late: acc.late + (row.log.status === "LATE" ? 1 : 0),
-            earlyLeave: acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
+            earlyLeave:
+              acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
             totalMinutes:
               acc.totalMinutes +
               (row.log.status !== "INVALID" ? (row.log.totalMinutes ?? 0) : 0),
@@ -109,7 +113,10 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
           { total: 0, normal: 0, late: 0, earlyLeave: 0, totalMinutes: 0 },
         );
   const displayStats: AttendanceStats = dayStatsTotals
-    ? { ...dayStatsTotals, totalHours: Math.round((dayStatsTotals.totalMinutes / 60) * 10) / 10 }
+    ? {
+        ...dayStatsTotals,
+        totalHours: Math.round((dayStatsTotals.totalMinutes / 60) * 10) / 10,
+      }
     : stats;
 
   const handleCorrectButtonClick = (row: AttendanceRow) => {

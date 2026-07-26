@@ -75,10 +75,7 @@ app.post("/", async (c) => {
   }>();
 
   if (!body.programId || !body.name || !body.category) {
-    return c.json(
-      { error: "programId, name, category are required" },
-      400,
-    );
+    return c.json({ error: "programId, name, category are required" }, 400);
   }
 
   const db = drizzle(c.env.DB);
@@ -216,10 +213,7 @@ app.post("/logs", async (c) => {
   if (!training) return c.json({ error: "교육을 찾을 수 없습니다." }, 404);
 
   if (training.programId !== participant.programId) {
-    return c.json(
-      { error: "참여자와 교육이 같은 사업단이어야 합니다." },
-      400,
-    );
+    return c.json({ error: "참여자와 교육이 같은 사업단이어야 합니다." }, 400);
   }
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
@@ -380,8 +374,7 @@ app.get("/summary", async (c) => {
   const summary = activeParticipants
     .map((participant) => {
       const missingTrainings = requiredTrainings.filter(
-        (training) =>
-          !completedKeySet.has(`${participant.id}:${training.id}`),
+        (training) => !completedKeySet.has(`${participant.id}:${training.id}`),
       );
       return {
         participantId: participant.id,

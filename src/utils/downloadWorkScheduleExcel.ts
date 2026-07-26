@@ -87,7 +87,11 @@ const addWorkScheduleSheet = (
   sheet.getCell("A1").value =
     `${year}년 ${monthNum}월 근무스케줄표 ( 무급휴무 ${participant.unpaidLeaveDays}회, ` +
     `유급휴무 ${participant.paidLeaveDays}회, 실제근무 ${participant.presentDays}회 )`;
-  sheet.getCell("A1").font = { size: 14, bold: true, color: { argb: "FFFFFFFF" } };
+  sheet.getCell("A1").font = {
+    size: 14,
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
   sheet.getCell("A1").fill = HEADER_FILL;
   sheet.getCell("A1").alignment = CENTER;
   sheet.getRow(1).height = 24;
@@ -110,7 +114,8 @@ const addWorkScheduleSheet = (
   const totalWeeks = Math.ceil(totalCells / 7);
 
   const employedFrom = participant.createdAt.slice(0, 10);
-  const contractMarkDate = employedFrom.slice(0, 7) === header.month ? employedFrom : null;
+  const contractMarkDate =
+    employedFrom.slice(0, 7) === header.month ? employedFrom : null;
 
   let currentRow = 3;
   for (let week = 0; week < totalWeeks; week++) {
@@ -133,13 +138,16 @@ const addWorkScheduleSheet = (
 
       const date = `${header.month}-${String(dayNumber).padStart(2, "0")}`;
       const dateCell = sheet.getCell(`${workColLetter}${dateRow}`);
-      dateCell.value = date === contractMarkDate ? `${dayNumber} 근로계약` : dayNumber;
+      dateCell.value =
+        date === contractMarkDate ? `${dayNumber} 근로계약` : dayNumber;
       dateCell.font = { bold: true };
 
       if (date < employedFrom) continue; // 입사 전이라 근무/휴무 표시 없음
 
       const isWorkDay = participant.scheduledDates.includes(date);
-      sheet.getCell(`${isWorkDay ? workColLetter : offColLetter}${markRow}`).value = "○";
+      sheet.getCell(
+        `${isWorkDay ? workColLetter : offColLetter}${markRow}`,
+      ).value = "○";
     }
 
     currentRow += 3;
@@ -190,11 +198,14 @@ const addWorkScheduleSheet = (
   sheet.getCell(`${c(4)}${infoStartRow}`).value = "(사용자)";
   sheet.getCell(`${c(4)}${infoStartRow}`).font = { bold: true };
   sheet.mergeCells(`${c(4)}${infoStartRow + 1}:${c(8)}${infoStartRow + 1}`);
-  sheet.getCell(`${c(4)}${infoStartRow + 1}`).value = `기관명 : ${header.organizationName}`;
+  sheet.getCell(`${c(4)}${infoStartRow + 1}`).value =
+    `기관명 : ${header.organizationName}`;
   sheet.mergeCells(`${c(4)}${infoStartRow + 2}:${c(8)}${infoStartRow + 2}`);
-  sheet.getCell(`${c(4)}${infoStartRow + 2}`).value = `대표자 : ${header.organizationRep} (인)`;
+  sheet.getCell(`${c(4)}${infoStartRow + 2}`).value =
+    `대표자 : ${header.organizationRep} (인)`;
   sheet.mergeCells(`${c(4)}${infoStartRow + 3}:${c(8)}${infoStartRow + 3}`);
-  sheet.getCell(`${c(4)}${infoStartRow + 3}`).value = `소재지 : ${header.organizationAddress}`;
+  sheet.getCell(`${c(4)}${infoStartRow + 3}`).value =
+    `소재지 : ${header.organizationAddress}`;
   [0, 1, 2, 3].forEach((offset) => {
     sheet.getCell(`${c(4)}${infoStartRow + offset}`).alignment = {
       horizontal: "left",
@@ -206,7 +217,8 @@ const addWorkScheduleSheet = (
   sheet.getCell(`${c(9)}${infoStartRow}`).value = "(근로자)";
   sheet.getCell(`${c(9)}${infoStartRow}`).font = { bold: true };
   sheet.mergeCells(`${c(9)}${infoStartRow + 1}:${c(13)}${infoStartRow + 1}`);
-  sheet.getCell(`${c(9)}${infoStartRow + 1}`).value = `성 명 : ${participant.name} (인)`;
+  sheet.getCell(`${c(9)}${infoStartRow + 1}`).value =
+    `성 명 : ${participant.name} (인)`;
   sheet.mergeCells(`${c(9)}${infoStartRow + 2}:${c(13)}${infoStartRow + 2}`);
   sheet.getCell(`${c(9)}${infoStartRow + 2}`).value = "연락처 :";
   sheet.mergeCells(`${c(9)}${infoStartRow + 3}:${c(13)}${infoStartRow + 3}`);

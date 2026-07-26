@@ -139,12 +139,16 @@ export const addActivityLogSheet = (
 
   if (sortedLogs.length === 0) {
     sheet.mergeCells(`A${startRow}:J${startRow}`);
-    sheet.getCell(`A${startRow}`).value = "해당 기간에 등록된 활동일지가 없습니다.";
+    sheet.getCell(`A${startRow}`).value =
+      "해당 기간에 등록된 활동일지가 없습니다.";
     sheet.getCell(`A${startRow}`).alignment = {
       horizontal: "center",
       vertical: "middle",
     };
-    sheet.getCell(`A${startRow}`).font = { italic: true, color: { argb: "FF888888" } };
+    sheet.getCell(`A${startRow}`).font = {
+      italic: true,
+      color: { argb: "FF888888" },
+    };
   }
 
   sortedLogs.forEach((log, index) => {
