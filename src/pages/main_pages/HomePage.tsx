@@ -231,6 +231,10 @@ const HomePage = ({
       onAlert(["퇴근 등록을 먼저 완료해주세요."]);
       return;
     }
+    if (signatureDone) {
+      onAlert(["오늘 서명은 이미 완료했어요."]);
+      return;
+    }
     onOpenSummary();
   };
 
