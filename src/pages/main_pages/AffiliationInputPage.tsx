@@ -250,26 +250,19 @@ const AffiliationInputPage = ({
     onNext();
   };
 
-  if (affiliationsLoaded && organizations.length === 0) {
-    return (
-      <div className={pageClass}>
-        <AppBar title="기본 정보" />
-        <div className={bodyClass}>
-          <ExceptionCard variant="warn">
-            <strong>등록된 사업이 없습니다.</strong>
-            <br />
-            기관 혹은 사업 담당자에게 문의해 주세요.
-          </ExceptionCard>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={pageClass}>
       <AppBar title="기본 정보" />
 
       <div className={bodyClass}>
+        {affiliationsLoaded && organizations.length === 0 && (
+          <ExceptionCard variant="warn">
+            <strong>등록된 사업이 없습니다.</strong>
+            <br />
+            기관 혹은 사업 담당자에게 문의해 주세요.
+          </ExceptionCard>
+        )}
+
         <Card>
           <div className="flex gap-3.5">
             {/* 시/도 */}
