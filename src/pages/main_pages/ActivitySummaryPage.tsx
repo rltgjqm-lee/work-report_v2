@@ -79,7 +79,7 @@ const ActivitySummaryPage = ({
       <BottomBar>
         <BottomBarRow>
           <Button variant="outline" onClick={onBack}>
-            홈
+            이전
           </Button>
           <Button variant="primary" className="flex-1" onClick={onNext}>
             서명하러 가기

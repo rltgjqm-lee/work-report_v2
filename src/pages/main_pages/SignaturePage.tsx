@@ -48,7 +48,7 @@ const SignaturePage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="서명" onBack={onBack} onHome={onHome} />
+      <AppBar title="서명" onBack={onBack} />
       <div className={bodyClass}>
         <Card>
           <label className={labelClass}>
