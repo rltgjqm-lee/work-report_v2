@@ -102,12 +102,10 @@ const Main = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessages, setModalMessages] = useState<string[]>([]);
 
+  // 💡 서명은 매일 새로 받아야 하므로 이전 세션의 서명을 캐시에서 불러오지 않는다.
   const [formData, setFormData] = useState<ActivityLogFormData>(() => ({
     ...initialFormData,
     ...loadFormDraft(),
-    // 💡 서명은 별도 키로 관리되므로 초안보다 우선한다
-    userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
-    demandSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
   }));
 
   // functions
@@ -140,7 +138,12 @@ const Main = () => {
     }));
   };
 
-  const handleStepDataSave = async () => {
+  // 💡 syncNow가 true일 때만(서명 완료 시점) 서버 동기화를 시도한다 — 그 전 단계(업무/안전
+  // 등록, 출근/퇴근 직후)엔 activity_logs가 아직 필수값을 다 못 채운 상태라 매번 동기화를
+  // 시도해봐야 서버 검증에 걸려 실패만 반복된다. IndexedDB 로컬 저장은 매 단계 그대로 한다.
+  // (출근/퇴근 자체는 이 activity_logs 동기화와 별개로 attendanceApi의 clockIn/clockOut이
+  // 등록 시점에 즉시 서버로 보낸다.)
+  const handleStepDataSave = async (syncNow = false) => {
     if (!db) {
       await handleAlertModalOpen(["데이터베이스가 연결되지 않았습니다."]);
       return;
@@ -162,20 +165,6 @@ const Main = () => {
 
     // 💡 데이터 포맷 조립 (IndexedDB의 ActivityLogItem 스키마와 동기화)
     const logItem = buildLogItemFromFormData(formData, existing);
-
-    // 💡 서명 재사용을 위해 localStorage에도 보관
-    if (formData.userSignature) {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEYS.USER_SIGN,
-        formData.userSignature,
-      );
-    }
-    if (formData.demandSignature) {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEYS.DEMAND_SIGN,
-        formData.demandSignature,
-      );
-    }
 
     const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
     const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
@@ -207,12 +196,10 @@ const Main = () => {
       id: savedId,
     }));
 
-    await handleAlertModalOpen([
-      "📝 현재까지 입력된 내용이 안전하게 저장되었습니다.",
-    ]);
-
     // 💡 온라인이면 바로 서버 동기화 시도, 오프라인/실패 시 다음 기회(mount/online 이벤트)에 재시도
-    syncPendingActivityLogs(db);
+    if (syncNow) {
+      syncPendingActivityLogs(db);
+    }
   };
 
   // 💡 앱이 처음 구동될 때 IndexedDB를 최초 1회 연결하는 이펙트
@@ -262,8 +249,7 @@ const Main = () => {
   }, [db]);
 
   // 💡 formData가 바뀔 때마다 draft를 저장해서 새로고침해도 참여자 식별/오늘 진행
-  // 상황이 그대로 유지되도록 한다. 서명은 크기가 커서 별도 키(USER_SIGN/DEMAND_SIGN)로
-  // 이미 캐싱되고 있으니 여기서는 제외한다.
+  // 상황이 그대로 유지되도록 한다. 서명은 매일 새로 받아야 해서 draft에는 안 남긴다.
   useEffect(() => {
     const { userSignature, demandSignature, ...draftFields } = formData;
     void userSignature;
@@ -277,10 +263,18 @@ const Main = () => {
   // 💡 본인확인이 끝나고 db가 준비되면, 홈 대시보드가 "오늘 진행 상황"을 보여줄 수 있도록
   // 오늘 날짜로 이미 저장된 레코드가 있는지 확인해서 formData에 반영한다(없으면 오늘 날짜만
   // 채워서 새 레코드를 준비한다). id를 안 채우면 이후 저장 시 IndexedDB가 새로 발급한다.
+  // lastLoadedParticipantIdRef로 "같은 참여자의 날짜만 넘어간 경우"와 "같은 날 다른 참여자로
+  // 바뀐 경우"를 구분한다 — actDate만 보면 후자를 걸러내지 못해서, 오늘 이미 A가 쓴 기기에서
+  // B가 본인확인을 해도 A의 잔여 입력(서명 포함)이 그대로 남는 문제가 있었다.
+  const lastLoadedParticipantIdRef = useRef<number | undefined>(undefined);
+
   useEffect(() => {
     if (!db || !formData.participantId) return;
     const today = new Date().toISOString().slice(0, 10);
-    if (formData.actDate === today) return;
+    const isSameParticipant =
+      lastLoadedParticipantIdRef.current === formData.participantId;
+    if (formData.actDate === today && isSameParticipant) return;
+    lastLoadedParticipantIdRef.current = formData.participantId;
 
     const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly");
     const request = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME).getAll();
@@ -310,8 +304,10 @@ const Main = () => {
         accidentAction:
           (todayItem?.accidentAction as "귀가" | "업무수행" | undefined) ||
           "업무수행",
-        userSignature: todayItem?.uSign || prev.userSignature,
-        demandSignature: todayItem?.dSign || prev.demandSignature,
+        // 💡 서명은 매일 새로 받아야 하므로 오늘 저장된 게 없으면 이전 값을 절대
+        // 이어받지 않고 비운다(같은 참여자여도 예외 없음).
+        userSignature: todayItem?.uSign || "",
+        demandSignature: todayItem?.dSign || "",
       }));
     };
   }, [db, formData.participantId, formData.actDate]);
@@ -393,7 +389,7 @@ const Main = () => {
             setFormData={setFormData}
             onBack={() => setView(VIEW_TYPE.SUMMARY)}
             onAlert={handleAlertModalOpen}
-            onSave={handleStepDataSave}
+            onSave={() => handleStepDataSave(true)}
             onHome={() => setView(VIEW_TYPE.HOME)}
           />
         )}

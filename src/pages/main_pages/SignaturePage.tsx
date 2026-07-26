@@ -53,9 +53,7 @@ const SignaturePage = ({
         <Card>
           <label className={labelClass}>
             여기에 서명해 주세요 (필수)
-            <small className={labelSmallClass}>
-              최초 서명 시 이후 계속 사용됩니다
-            </small>
+            <small className={labelSmallClass}>매일 새로 서명해야 해요</small>
           </label>
           <SignatureCanvas
             value={formData.userSignature}
