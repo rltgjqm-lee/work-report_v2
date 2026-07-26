@@ -24,6 +24,7 @@
   // 콤마구분 목록에 있는 origin만 credentials 포함 요청을 허용한다. 민감정보가
   // 아니라 vars(평문)로 둔다.
   "vars": {
-    "ALLOWED_ORIGINS": "https://work-report-v3.pages.dev,http://localhost:5173",
+    // capacitor://localhost(iOS), https://localhost(Android)는 Capacitor 하이브리드 앱의 기본 오리진
+    "ALLOWED_ORIGINS": "https://work-report-v3.pages.dev,http://localhost:5173,capacitor://localhost,https://localhost",
   },
 }
