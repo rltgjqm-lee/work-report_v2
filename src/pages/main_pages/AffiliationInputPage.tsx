@@ -226,12 +226,9 @@ const AffiliationInputPage = ({
     onChange("demandName", "");
   };
 
+  // 💡 formData 자체는 Main.tsx가 바뀔 때마다 자동으로 draft 저장하므로, 여기서는
+  // 푸시 구독에 필요한 사업단 ID만 별도로 챙긴다.
   const handleSaveDraftButtonClick = () => {
-    localStorage.setItem(
-      LOCAL_STORAGE_KEYS.FORM_DRAFT,
-      JSON.stringify(formData),
-    );
-
     if (selectedProgramId) {
       localStorage.setItem(
         LOCAL_STORAGE_KEYS.SELECTED_PROGRAM_ID,

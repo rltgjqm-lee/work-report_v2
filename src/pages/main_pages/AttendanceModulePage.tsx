@@ -28,7 +28,7 @@ interface AttendanceModulePageProps {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
   onBack: () => void;
-  onSave: () => void; // 💡 IndexedDB 임시저장 브릿지
+  onSave: () => Promise<void>; // 💡 IndexedDB 임시저장 브릿지
   onHome: () => void;
   onAlert: (messages: string[]) => void;
 }
@@ -62,8 +62,11 @@ const AttendanceModulePage = ({
     // onHome()이 곧바로 이 화면을 언마운트시키므로 pendingSave를 다시 false로
     // 되돌릴 필요가 없다(되돌리면 setState-in-effect 린트 규칙에 걸린다).
     if (!pendingSave) return;
-    onSave();
-    onHome();
+    // 💡 저장 완료 알럿을 확인(OK)하기 전까지는 홈으로 넘어가지 않도록 await로 순서를 보장한다.
+    (async () => {
+      await onSave();
+      onHome();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingSave]);
 

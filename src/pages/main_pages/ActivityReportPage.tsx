@@ -17,7 +17,7 @@ interface Page4Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
   onBack: () => void; // 💡 홈으로 돌아가기(취소)
-  onSave: () => void; // 💡 IndexedDB 임시저장 브릿지
+  onSave: () => Promise<void>; // 💡 IndexedDB 임시저장 브릿지
   onNext: () => void; // 💡 저장 후 홈으로 돌아가기
   onAlert: (messages: string[]) => void;
 }
@@ -33,7 +33,7 @@ const ActivityReportPage = ({
   onNext,
   onAlert,
 }: Page4Props) => {
-  const handleSaveButtonClick = () => {
+  const handleSaveButtonClick = async () => {
     if (!formData.actContent.trim()) {
       onAlert(["활동 내용을 입력해주세요."]);
       return;
@@ -42,7 +42,8 @@ const ActivityReportPage = ({
       onAlert(["활동 장소를 입력해주세요."]);
       return;
     }
-    onSave();
+    // 💡 저장 완료 알럿을 확인(OK)하기 전까지는 홈으로 넘어가지 않도록 await로 순서를 보장한다.
+    await onSave();
     onNext();
   };
 

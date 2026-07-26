@@ -11,8 +11,6 @@ import AccidentCheckPage from "./main_pages/AccidentCheckPage";
 import ActivitySummaryPage from "./main_pages/ActivitySummaryPage";
 import SignaturePage from "./main_pages/SignaturePage";
 
-import { PdfTemplate } from "../components/organism/PdfTemplate";
-
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
@@ -23,7 +21,6 @@ const VIEW_TYPE = {
   AFFILIATION: "affiliation",
   REGISTRATION_CONFIRM: "registrationConfirm",
   HOME: "home",
-  ATTENDANCE_IN: "attendanceIn",
   ATTENDANCE_OUT: "attendanceOut",
   REPORT: "report",
   ACCIDENT: "accident",
@@ -33,7 +30,7 @@ const VIEW_TYPE = {
 
 export type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
 
-// 💡 폼 데이터를 PdfTemplate이 쓰는 ActivityLogItem 한 건으로 변환.
+// 💡 폼 데이터를 IndexedDB의 ActivityLogItem 한 건으로 변환.
 // preserve로 기존 레코드의 serverId만 이어받는다(있으면 다음 동기화 때 수정 API를 씀).
 // synced는 매번 저장할 때마다 false로 찍어서 — 한 번 동기화된 뒤 다음 단계에서 내용이
 // 더 채워져도 다시 서버에 반영되도록 한다.
@@ -82,46 +79,57 @@ const initialFormData: ActivityLogFormData = {
   accidentAction: "업무수행",
   userSignature: "", // ⚠️ 주의: 아래 저장 로직과 서명 필드명을 일치시켜야 합니다.
   demandSignature: "",
-  saveSignatureConsent: true,
+};
+
+// 💡 새로고침해도 등록 상태(참여자 식별, 오늘 진행 상황)가 유지되도록 formData
+// 변경마다 저장해두는 draft를 읽어온다. 서명은 크기가 커서 별도 키로 관리되니 여기엔 안 담는다.
+const loadFormDraft = (): Partial<ActivityLogFormData> => {
+  try {
+    const draftRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.FORM_DRAFT);
+    return draftRaw ? JSON.parse(draftRaw) : {};
+  } catch {
+    return {};
+  }
 };
 
 const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
-  const [view, setView] = useState<View>(VIEW_TYPE.AFFILIATION);
-  const printAreaRef = useRef<HTMLDivElement>(null);
+  // 💡 draft에 participantId가 남아있으면(이미 등록을 마쳤던 상태) 새로고침해도
+  // 기본정보 페이지부터 다시 밟지 않도록 곧장 홈으로 복귀시킨다.
+  const [view, setView] = useState<View>(() =>
+    loadFormDraft().participantId ? VIEW_TYPE.HOME : VIEW_TYPE.AFFILIATION,
+  );
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessages, setModalMessages] = useState<string[]>([]);
 
-  // 💡 이전에 "나중에 이어서 작성하기"로 저장해둔 폼 초안이 있다면 불러와 채운다
-  const [formData, setFormData] = useState<ActivityLogFormData>(() => {
-    let draft: Partial<ActivityLogFormData> = {};
-    try {
-      const draftRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.FORM_DRAFT);
-      if (draftRaw) draft = JSON.parse(draftRaw);
-    } catch {
-      draft = {};
-    }
-
-    return {
-      ...initialFormData,
-      ...draft,
-      // 💡 서명은 별도 키로 관리되므로 초안보다 우선한다
-      userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
-      demandSignature:
-        localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
-    };
-  });
+  const [formData, setFormData] = useState<ActivityLogFormData>(() => ({
+    ...initialFormData,
+    ...loadFormDraft(),
+    // 💡 서명은 별도 키로 관리되므로 초안보다 우선한다
+    userSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.USER_SIGN) || "",
+    demandSignature: localStorage.getItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN) || "",
+  }));
 
   // functions
-  const handleAlertModalOpen = (messages: string[]) => {
+  // 💡 "확인" 누를 때까지 기다렸다가 다음 동작(예: 저장 후 홈 이동)을 이어가야 하는
+  // 곳(handleStepDataSave)이 있어서, 모달을 네이티브 alert()처럼 await 가능하게
+  // Promise로 감싼다. resolve는 모달을 닫을 때(handleAlertModalClose) 호출한다.
+  const modalResolveRef = useRef<(() => void) | null>(null);
+
+  const handleAlertModalOpen = (messages: string[]): Promise<void> => {
     setModalMessages(messages);
     setModalOpen(true);
+    return new Promise((resolve) => {
+      modalResolveRef.current = resolve;
+    });
   };
 
   const handleAlertModalClose = () => {
     setModalOpen(false);
+    modalResolveRef.current?.();
+    modalResolveRef.current = null;
   };
 
   const handleInputChange = <T extends keyof ActivityLogFormData>(
@@ -136,7 +144,7 @@ const Main = () => {
 
   const handleStepDataSave = async () => {
     if (!db) {
-      alert("데이터베이스가 연결되지 않았습니다.");
+      await handleAlertModalOpen(["데이터베이스가 연결되지 않았습니다."]);
       return;
     }
 
@@ -157,7 +165,7 @@ const Main = () => {
     // 💡 데이터 포맷 조립 (IndexedDB의 ActivityLogItem 스키마와 동기화)
     const logItem = buildLogItemFromFormData(formData, existing);
 
-    // 💡 서명 재사용을 위해 localStorage에도 보관 (참여자 서명은 항상, 확인자 서명은 동의 시에만)
+    // 💡 서명 재사용을 위해 localStorage에도 보관
     if (formData.userSignature) {
       localStorage.setItem(
         LOCAL_STORAGE_KEYS.USER_SIGN,
@@ -165,41 +173,48 @@ const Main = () => {
       );
     }
     if (formData.demandSignature) {
-      if (formData.saveSignatureConsent) {
-        localStorage.setItem(
-          LOCAL_STORAGE_KEYS.DEMAND_SIGN,
-          formData.demandSignature,
-        );
-      } else {
-        localStorage.removeItem(LOCAL_STORAGE_KEYS.DEMAND_SIGN);
-      }
+      localStorage.setItem(
+        LOCAL_STORAGE_KEYS.DEMAND_SIGN,
+        formData.demandSignature,
+      );
     }
 
     const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
     const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
-    const request = store.put(logItem);
 
-    request.onsuccess = (event: Event) => {
-      const target = event.target as IDBRequest;
-      const savedId = target.result; // IndexedDB가 발급하거나 유지해 준 고유 ID
+    // 💡 request.onsuccess/onerror는 콜백이라 그냥 두면 이 함수가 실제 저장이 끝나기도
+    // 전에 반환돼 버린다 — 호출부에서 await onSave() 후 다음 화면으로 넘어가는 순서를
+    // 지키려면 저장이 끝날 때까지(그리고 alert을 닫을 때까지) 진짜로 기다려야 한다.
+    const savedId = await new Promise<number | undefined>((resolve) => {
+      const request = store.put(logItem);
+      request.onsuccess = (event: Event) => {
+        const target = event.target as IDBRequest;
+        resolve(target.result as number);
+      };
+      request.onerror = (err) => {
+        console.error("임시 저장 실패:", err);
+        resolve(undefined);
+      };
+    });
 
-      // 💡 중요: 새로 생성된 글이라면 발급된 고유 id를 리액트 상태창고에도 업데이트해 줍니다.
-      // 이렇게 해야 4페이지에서 또 저장하기를 눌러도 새로운 글로 복사되지 않고 수정 처리됩니다!
-      setFormData((prev) => ({
-        ...prev,
-        id: savedId,
-      }));
+    if (savedId === undefined) {
+      await handleAlertModalOpen(["저장 중 오류가 발생했습니다."]);
+      return;
+    }
 
-      alert("📝 현재까지 입력된 내용이 안전하게 저장되었습니다.");
+    // 💡 중요: 새로 생성된 글이라면 발급된 고유 id를 리액트 상태창고에도 업데이트해 줍니다.
+    // 이렇게 해야 4페이지에서 또 저장하기를 눌러도 새로운 글로 복사되지 않고 수정 처리됩니다!
+    setFormData((prev) => ({
+      ...prev,
+      id: savedId,
+    }));
 
-      // 💡 온라인이면 바로 서버 동기화 시도, 오프라인/실패 시 다음 기회(mount/online 이벤트)에 재시도
-      syncPendingActivityLogs(db);
-    };
+    await handleAlertModalOpen([
+      "📝 현재까지 입력된 내용이 안전하게 저장되었습니다.",
+    ]);
 
-    request.onerror = (err) => {
-      console.error("임시 저장 실패:", err);
-      alert("저장 중 오류가 발생했습니다.");
-    };
+    // 💡 온라인이면 바로 서버 동기화 시도, 오프라인/실패 시 다음 기회(mount/online 이벤트)에 재시도
+    syncPendingActivityLogs(db);
   };
 
   // 💡 앱이 처음 구동될 때 IndexedDB를 최초 1회 연결하는 이펙트
@@ -247,6 +262,19 @@ const Main = () => {
     window.addEventListener("online", handleNetworkOnline);
     return () => window.removeEventListener("online", handleNetworkOnline);
   }, [db]);
+
+  // 💡 formData가 바뀔 때마다 draft를 저장해서 새로고침해도 참여자 식별/오늘 진행
+  // 상황이 그대로 유지되도록 한다. 서명은 크기가 커서 별도 키(USER_SIGN/DEMAND_SIGN)로
+  // 이미 캐싱되고 있으니 여기서는 제외한다.
+  useEffect(() => {
+    const { userSignature, demandSignature, ...draftFields } = formData;
+    void userSignature;
+    void demandSignature;
+    localStorage.setItem(
+      LOCAL_STORAGE_KEYS.FORM_DRAFT,
+      JSON.stringify(draftFields),
+    );
+  }, [formData]);
 
   // 💡 본인확인이 끝나고 db가 준비되면, 홈 대시보드가 "오늘 진행 상황"을 보여줄 수 있도록
   // 오늘 날짜로 이미 저장된 레코드가 있는지 확인해서 formData에 반영한다(없으면 오늘 날짜만
@@ -317,25 +345,14 @@ const Main = () => {
         {view === VIEW_TYPE.HOME && (
           <HomePage
             formData={formData}
+            setFormData={setFormData}
             onBack={() => setView(VIEW_TYPE.AFFILIATION)}
-            onOpenAttendanceIn={() => setView(VIEW_TYPE.ATTENDANCE_IN)}
+            onAlert={handleAlertModalOpen}
+            onSave={handleStepDataSave}
             onOpenAttendanceOut={() => setView(VIEW_TYPE.ATTENDANCE_OUT)}
             onOpenWork={() => setView(VIEW_TYPE.REPORT)}
             onOpenSafety={() => setView(VIEW_TYPE.ACCIDENT)}
             onOpenSummary={() => setView(VIEW_TYPE.SUMMARY)}
-          />
-        )}
-
-        {/* 출근 모듈 */}
-        {view === VIEW_TYPE.ATTENDANCE_IN && (
-          <AttendanceModulePage
-            mode="in"
-            formData={formData}
-            setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.HOME)}
-            onSave={handleStepDataSave}
-            onHome={() => setView(VIEW_TYPE.HOME)}
-            onAlert={handleAlertModalOpen}
           />
         )}
 
@@ -387,23 +404,14 @@ const Main = () => {
 
         {/* 서명하기 페이지 */}
         {view === VIEW_TYPE.SIGNATURE && (
-          <>
-            <SignaturePage
-              formData={formData}
-              setFormData={setFormData}
-              printRef={printAreaRef}
-              onBack={() => setView(VIEW_TYPE.SUMMARY)}
-              onAlert={handleAlertModalOpen}
-              onSave={handleStepDataSave}
-              onHome={() => setView(VIEW_TYPE.HOME)}
-            />
-            {/* 💡 보고서 출력 버튼이 조준할 히든 인쇄용 템플릿 */}
-            <PdfTemplate
-              printRef={printAreaRef}
-              formData={formData}
-              filteredLogs={[buildLogItemFromFormData(formData)]}
-            />
-          </>
+          <SignaturePage
+            formData={formData}
+            setFormData={setFormData}
+            onBack={() => setView(VIEW_TYPE.SUMMARY)}
+            onAlert={handleAlertModalOpen}
+            onSave={handleStepDataSave}
+            onHome={() => setView(VIEW_TYPE.HOME)}
+          />
         )}
       </div>
 

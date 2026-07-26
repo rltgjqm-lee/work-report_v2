@@ -17,7 +17,7 @@ interface Page5Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
   onBack: () => void; // 💡 홈으로 돌아가기(취소)
-  onSave: () => void; // 💡 IndexedDB 임시저장 브릿지
+  onSave: () => Promise<void>; // 💡 IndexedDB 임시저장 브릿지
   onNext: () => void; // 💡 저장 후 홈으로 돌아가기
   onAlert: (messages: string[]) => void;
 }
@@ -43,12 +43,13 @@ const AccidentCheckPage = ({
     }));
   };
 
-  const handleSaveButtonClick = () => {
+  const handleSaveButtonClick = async () => {
     if (formData.hasAccident && !formData.accidentDetail.trim()) {
       onAlert(["사고내용 및 조치내용을 입력해주세요."]);
       return;
     }
-    onSave();
+    // 💡 저장 완료 알럿을 확인(OK)하기 전까지는 홈으로 넘어가지 않도록 await로 순서를 보장한다.
+    await onSave();
     onNext();
   };
 
