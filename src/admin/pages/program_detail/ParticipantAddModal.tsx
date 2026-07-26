@@ -133,7 +133,7 @@ const ParticipantAddModal = ({
         <input
           id="part-file-input"
           type="file"
-          accept=".xlsx,.xls,.csv"
+          accept=".xlsx,.xls"
           className="hidden"
           onChange={handleFileChange}
         />

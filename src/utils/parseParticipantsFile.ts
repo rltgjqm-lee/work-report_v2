@@ -80,40 +80,8 @@ const parseXlsx = async (
   return rows;
 };
 
-const parseCsv = async (
-  file: File,
-  groups: GroupOption[],
-  demandSites: DemandSiteOption[],
-): Promise<ParsedParticipantRow[]> => {
-  const text = await file.text();
-  const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
-  const rows: ParsedParticipantRow[] = [];
-
-  for (const line of lines) {
-    const cells = line.split(",").map((cell) => cell.trim());
-    const [, name, phone, demandSiteName, groupName] = cells;
-    if (!name || name === "이름") continue;
-
-    rows.push({
-      name,
-      demandSiteId: demandSiteName
-        ? resolveDemandSiteId(demandSiteName, demandSites)
-        : undefined,
-      phoneLast4: toPhoneLast4(phone),
-      groupId: groupName ? resolveGroupId(groupName, groups) : undefined,
-    });
-  }
-
-  return rows;
-};
-
 export const parseParticipantsFile = (
   file: File,
   groups: GroupOption[] = [],
   demandSites: DemandSiteOption[] = [],
-): Promise<ParsedParticipantRow[]> => {
-  const isCsv = file.name.toLowerCase().endsWith(".csv");
-  return isCsv
-    ? parseCsv(file, groups, demandSites)
-    : parseXlsx(file, groups, demandSites);
-};
+): Promise<ParsedParticipantRow[]> => parseXlsx(file, groups, demandSites);
