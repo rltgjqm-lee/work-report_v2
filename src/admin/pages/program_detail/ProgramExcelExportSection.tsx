@@ -93,9 +93,14 @@ const ProgramExcelExportSection = ({
 }: ProgramExcelExportSectionProps) => {
   const [months, setMonths] = useState<Record<string, string>>({});
 
-  // TODO: 테스트 끝나면 사업 유형별로 다시 분기하기 (공익 활동/역량 활동)
-  void programType;
-  const items = [...PUBLIC_INTEREST_ITEMS, ...COMPETENCY_ITEMS];
+  // 사업 유형이 없거나(null) 예상 못한 값이면 어느 서식이 필요한지 알 수 없으므로
+  // 다운로드를 막지 않도록 두 유형 서식을 모두 보여준다.
+  const items =
+    programType === "공익 활동"
+      ? PUBLIC_INTEREST_ITEMS
+      : programType === "역량 활동"
+        ? COMPETENCY_ITEMS
+        : [...PUBLIC_INTEREST_ITEMS, ...COMPETENCY_ITEMS];
 
   return (
     <div className={exportGridClass}>
