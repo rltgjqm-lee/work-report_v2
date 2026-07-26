@@ -345,7 +345,7 @@ app.post("/attendance/clock-out", async (c) => {
     return c.json({ error: "participantId is required" }, 400);
   }
 
-  const { date, iso } = getKstNow();
+  const { date, time, iso } = getKstNow();
 
   const rows = await db
     .select()
@@ -362,6 +362,23 @@ app.post("/attendance/clock-out", async (c) => {
     return c.json({ error: "출근 기록이 없습니다." }, 404);
   }
 
+  const group = log.groupId
+    ? (await db.select().from(groups).where(eq(groups.id, log.groupId)))[0]
+    : undefined;
+
+  // 배정된 조에 근무시간이 설정돼 있으면 종료시간 10분 전부터만 퇴근을 허용한다
+  // (조퇴 판정 기준과 동일한 여유). 그 전에는 아예 퇴근 등록을 막는다.
+  if (group) {
+    const nowMinutes = toMinutes(time);
+    const earliest = toMinutes(group.shiftEnd) - 10;
+    if (nowMinutes < earliest) {
+      return c.json(
+        { error: `아직 근무 종료 시간(${group.shiftEnd}) 전입니다.` },
+        400,
+      );
+    }
+  }
+
   const totalMinutes = Math.floor(
     (new Date(iso).getTime() - new Date(log.clockIn).getTime()) / 60000,
   );
@@ -370,26 +387,18 @@ app.post("/attendance/clock-out", async (c) => {
   let status: "NORMAL" | "LATE" | "EARLY_LEAVE" = "NORMAL";
   let note: string | undefined;
 
-  if (log.groupId) {
-    const groupRows = await db
-      .select()
-      .from(groups)
-      .where(eq(groups.id, log.groupId));
-    const group = groupRows[0];
+  if (group) {
+    const startMinutes = toMinutes(group.shiftStart);
+    const endMinutes = toMinutes(group.shiftEnd);
+    const expectedMinutes = endMinutes - startMinutes;
+    const clockInMinutes = toMinutes(log.clockIn.slice(11, 16));
 
-    if (group) {
-      const startMinutes = toMinutes(group.shiftStart);
-      const endMinutes = toMinutes(group.shiftEnd);
-      const expectedMinutes = endMinutes - startMinutes;
-      const clockInMinutes = toMinutes(log.clockIn.slice(11, 16));
-
-      if (totalMinutes < expectedMinutes - 10) {
-        status = "EARLY_LEAVE";
-        note = `조퇴 (예상: ${expectedMinutes}분, 실제: ${totalMinutes}분)`;
-      } else if (clockInMinutes > startMinutes + 10) {
-        status = "LATE";
-        note = `지각 (예상 시작: ${group.shiftStart})`;
-      }
+    if (totalMinutes < expectedMinutes - 10) {
+      status = "EARLY_LEAVE";
+      note = `조퇴 (예상: ${expectedMinutes}분, 실제: ${totalMinutes}분)`;
+    } else if (clockInMinutes > startMinutes + 10) {
+      status = "LATE";
+      note = `지각 (예상 시작: ${group.shiftStart})`;
     }
   }
 
@@ -674,11 +683,7 @@ app.post("/location", async (c) => {
   const isInside = locations.some((location) =>
     isInsideLocation(body.lat!, body.lng!, location),
   );
-  const distanceKm = distanceToNearestLocation(
-    body.lat!,
-    body.lng!,
-    locations,
-  );
+  const distanceKm = distanceToNearestLocation(body.lat!, body.lng!, locations);
   const currentAlertCount = meta?.alertCount ?? 0;
 
   if (!isInside) {
