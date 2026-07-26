@@ -1,14 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { formatTimeField } from "../../utils/timeFormat";
+import { clockIn } from "../../utils/attendanceApi";
+import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 
 interface HomePageProps {
   formData: ActivityLogFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
   onBack: () => void;
-  onOpenAttendanceIn: () => void;
+  onAlert: (messages: string[]) => Promise<void>;
+  onSave: () => Promise<void>;
   onOpenAttendanceOut: () => void;
   onOpenWork: () => void;
   onOpenSafety: () => void;
@@ -65,14 +68,36 @@ const ModuleItem = ({
  */
 const HomePage = ({
   formData,
+  setFormData,
   onBack,
-  onOpenAttendanceIn,
+  onAlert,
+  onSave,
   onOpenAttendanceOut,
   onOpenWork,
   onOpenSafety,
   onOpenSummary,
 }: HomePageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
+
+  // 💡 출근 등록은 별도 페이지 없이 즉시 서버에 기록하고 컨펌 모달로 결과만 보여준다.
+  // setFormData 직후 곧바로 onSave()를 부르면 onSave가 아직 갱신 전 formData를 클로저로
+  // 물고 있어서 방금 기록한 시각을 저장하지 못한다 — 상태 반영 → 재렌더까지 기다렸다가
+  // effect에서 저장한다(AttendanceModulePage의 pendingSave 패턴과 동일).
+  const [pendingAttendanceInTime, setPendingAttendanceInTime] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!pendingAttendanceInTime) return;
+    (async () => {
+      await onSave();
+      await onAlert([
+        `${pendingAttendanceInTime}에 정상적으로 출근 완료 됐어요`,
+        "오늘도 안전하게 활동을 진행해주세요",
+      ]);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAttendanceInTime]);
 
   const todayLabel = useMemo(() => {
     const now = new Date();
@@ -91,6 +116,81 @@ const HomePage = ({
   const workDone = !!formData.actContent && !!formData.actPlace;
   const safetyDone = formData.accidentChecked;
   const signatureDone = !!formData.userSignature;
+
+  const handleAttendanceInButtonClick = async () => {
+    if (attendanceInDone) {
+      await onAlert([
+        `${formatTimeField(formData.startTime)}에 정상적으로 출근 완료 됐어요`,
+        "오늘도 안전하게 활동을 진행해주세요",
+      ]);
+      return;
+    }
+    if (!formData.participantId) return;
+    try {
+      const result = await clockIn(formData.participantId);
+      const startTime = isoToTimeParts(result.clockIn);
+      setFormData((prev) => ({ ...prev, startTime }));
+      setPendingAttendanceInTime(formatTimeField(startTime));
+    } catch (error) {
+      onAlert([
+        error instanceof Error ? error.message : "출근 등록에 실패했습니다.",
+      ]);
+    }
+  };
+
+  // 💡 설계상 모듈은 순서대로 진행해야 한다 — 출근 전엔 업무/안전/퇴근/전체확인 모두
+  // 막고, 공익활동은 업무·안전을 마쳐야 퇴근·전체확인으로 넘어갈 수 있다.
+  const handleOpenWorkButtonClick = () => {
+    if (!attendanceInDone) {
+      onAlert(["출근 등록을 먼저 해주세요."]);
+      return;
+    }
+    onOpenWork();
+  };
+
+  const handleOpenSafetyButtonClick = () => {
+    if (!attendanceInDone) {
+      onAlert(["출근 등록을 먼저 해주세요."]);
+      return;
+    }
+    onOpenSafety();
+  };
+
+  const handleOpenAttendanceOutButtonClick = () => {
+    if (!attendanceInDone) {
+      onAlert(["출근 등록을 먼저 해주세요."]);
+      return;
+    }
+    if (!isCompetencyProgram && !workDone) {
+      onAlert(["업무 일지 등록을 먼저 완료해주세요."]);
+      return;
+    }
+    if (!isCompetencyProgram && !safetyDone) {
+      onAlert(["안전 일지 등록을 먼저 완료해주세요."]);
+      return;
+    }
+    onOpenAttendanceOut();
+  };
+
+  const handleOpenSummaryButtonClick = () => {
+    if (!attendanceInDone) {
+      onAlert(["출근 등록을 먼저 해주세요."]);
+      return;
+    }
+    if (!isCompetencyProgram && !workDone) {
+      onAlert(["업무 일지 등록을 먼저 완료해주세요."]);
+      return;
+    }
+    if (!isCompetencyProgram && !safetyDone) {
+      onAlert(["안전 일지 등록을 먼저 완료해주세요."]);
+      return;
+    }
+    if (!attendanceOutDone) {
+      onAlert(["퇴근 등록을 먼저 완료해주세요."]);
+      return;
+    }
+    onOpenSummary();
+  };
 
   let moduleIndex = 1;
 
@@ -122,7 +222,7 @@ const HomePage = ({
               : "출근 전이에요"
           }
           done={attendanceInDone}
-          onClick={onOpenAttendanceIn}
+          onClick={handleAttendanceInButtonClick}
         />
 
         {!isCompetencyProgram && (
@@ -136,7 +236,7 @@ const HomePage = ({
                 : "업무 일지 기록 전이에요"
             }
             done={workDone}
-            onClick={onOpenWork}
+            onClick={handleOpenWorkButtonClick}
           />
         )}
 
@@ -153,7 +253,7 @@ const HomePage = ({
                   : "이상 없었어요"
             }
             done={safetyDone}
-            onClick={onOpenSafety}
+            onClick={handleOpenSafetyButtonClick}
           />
         )}
 
@@ -167,7 +267,7 @@ const HomePage = ({
               : "퇴근 전이에요"
           }
           done={attendanceOutDone}
-          onClick={onOpenAttendanceOut}
+          onClick={handleOpenAttendanceOutButtonClick}
         />
 
         <ModuleItem
@@ -177,7 +277,7 @@ const HomePage = ({
           status={signatureDone ? "서명 완료" : "최종 확인이 필요해요"}
           done={signatureDone}
           highlighted
-          onClick={onOpenSummary}
+          onClick={handleOpenSummaryButtonClick}
         />
 
         {isCompetencyProgram && (
