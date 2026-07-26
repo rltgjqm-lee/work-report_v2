@@ -1,6 +1,9 @@
 // 관리자 비밀번호 해싱 — Workers 네이티브 crypto.subtle의 PBKDF2만 쓴다 (bcrypt/argon2는
 // Node 전용 네이티브 모듈이라 Workers에서 못 씀). 저장 형식은 "iterations:saltHex:hashHex".
-const PBKDF2_ITERATIONS = 210_000;
+// ⚠️ Cloudflare Workers의 PBKDF2는 반복 횟수 100,000이 상한이라(넘으면 런타임에서
+// NotSupportedError) 그 이하로 맞춰야 한다 — 로컬 wrangler dev(Miniflare)는 이 제한이
+// 없어서 로컬에서만 되고 실제 배포본에서는 로그인이 깨지는 걸로 뒤늦게 발견했다.
+const PBKDF2_ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const HASH_BITS = 256;
 
