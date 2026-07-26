@@ -32,7 +32,13 @@ const runSyncOnce = async (db: IDBDatabase): Promise<void> => {
     req.onerror = () => reject(req.error);
   });
 
-  const pending = items.filter((item) => !item.synced && item.participantId);
+  // 💡 서버가 participantId/actDate/start/end를 필수로 요구한다 — 아직 출근·퇴근을
+  // 다 안 마친 진행 중인 하루치 기록은 보내봐야 매번 검증 실패만 반복되니 건너뛴다.
+  // 서명 완료 시점엔 이 값들이 다 채워진 뒤에 syncNow=true로 다시 호출되니 그때 보내진다.
+  const pending = items.filter(
+    (item) =>
+      !item.synced && item.participantId && item.date && item.start && item.end,
+  );
 
   for (const item of pending) {
     try {
