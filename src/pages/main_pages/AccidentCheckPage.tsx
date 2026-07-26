@@ -44,6 +44,10 @@ const AccidentCheckPage = ({
   };
 
   const handleSaveButtonClick = async () => {
+    if (!formData.accidentChecked) {
+      onAlert(["사고 유무를 선택해주세요."]);
+      return;
+    }
     if (formData.hasAccident && !formData.accidentDetail.trim()) {
       onAlert(["사고내용 및 조치내용을 입력해주세요."]);
       return;
