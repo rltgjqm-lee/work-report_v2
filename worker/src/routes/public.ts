@@ -16,7 +16,7 @@ import {
   activityLogs,
 } from "../db/schema";
 import { getKstNow } from "../lib/kst";
-import { readDebugTime } from "../lib/debugTime";
+import { readDebugOverride } from "../lib/debugTime";
 import { haversineKm, isPointInPolygon, polygonCentroid } from "../lib/geo";
 import { sendWebPush } from "../lib/webPush";
 import type { Env } from "../types";
@@ -244,10 +244,44 @@ app.post("/attendance/identify", async (c) => {
   return c.json({ participantId: participant.id, name: participant.name });
 });
 
+// 참여자용 앱의 홈 화면은 오늘 출퇴근 여부를 브라우저 로컬(IndexedDB) 캐시로만 판단하는데,
+// 그 캐시가 없거나 다른 기기/새로고침으로 어긋나면 실제로는 출퇴근을 마쳤는데도 "출근 전"
+// 으로 잘못 보일 수 있다. 그래서 오늘 실제 출퇴근 기록(진짜 소스인 attendance_logs)을
+// 서버에서 다시 조회해 화면과 항상 맞출 수 있게 이 엔드포인트를 둔다.
+app.get("/attendance/today", async (c) => {
+  const db = drizzle(c.env.DB);
+  const participantId = Number(c.req.query("participantId"));
+  if (!participantId) {
+    return c.json({ error: "participantId is required" }, 400);
+  }
+
+  const { date } = getKstNow();
+
+  const rows = await db
+    .select({
+      clockIn: attendanceLogs.clockIn,
+      clockOut: attendanceLogs.clockOut,
+    })
+    .from(attendanceLogs)
+    .where(
+      and(
+        eq(attendanceLogs.participantId, participantId),
+        eq(attendanceLogs.workDate, date),
+      ),
+    );
+
+  const row = rows[0];
+  return c.json({
+    clockIn: row?.clockIn ?? null,
+    clockOut: row?.clockOut ?? null,
+  });
+});
+
 app.post("/attendance/clock-in", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     participantId?: number;
+    debugDate?: string;
     debugTime?: string;
   }>();
   if (!body.participantId) {
@@ -266,7 +300,8 @@ app.post("/attendance/clock-in", async (c) => {
     );
   }
 
-  const { date, time, iso } = getKstNow(readDebugTime(c, body));
+  const debugOverride = await readDebugOverride(c, body);
+  const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
 
   // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
   if (
@@ -346,13 +381,15 @@ app.post("/attendance/clock-out", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     participantId?: number;
+    debugDate?: string;
     debugTime?: string;
   }>();
   if (!body.participantId) {
     return c.json({ error: "participantId is required" }, 400);
   }
 
-  const { date, time, iso } = getKstNow(readDebugTime(c, body));
+  const debugOverride = await readDebugOverride(c, body);
+  const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
 
   const rows = await db
     .select()

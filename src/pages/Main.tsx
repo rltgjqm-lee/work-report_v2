@@ -14,7 +14,12 @@ import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 import { syncPendingActivityLogs } from "../utils/activityLogSync";
-import { formatTimeField, hhmmToTimeParts } from "../utils/timeFormat";
+import { getTodayAttendance } from "../utils/attendanceApi";
+import {
+  formatTimeField,
+  hhmmToTimeParts,
+  isoToTimeParts,
+} from "../utils/timeFormat";
 
 const VIEW_TYPE = {
   AFFILIATION: "affiliation",
@@ -309,6 +314,25 @@ const Main = () => {
         userSignature: todayItem?.uSign || "",
         demandSignature: todayItem?.dSign || "",
       }));
+
+      // 💡 출근/퇴근의 진짜 소스는 서버(attendance_logs)다 — 브라우저 로컬 캐시가
+      // 없거나(다른 기기, 캐시 유실 등) 어긋나도 화면이 항상 실제 출퇴근 상태와
+      // 맞도록, 위에서 로컬 값으로 채운 뒤 서버 조회 결과로 다시 덮어쓴다.
+      getTodayAttendance(formData.participantId!)
+        .then(({ clockIn, clockOut }) => {
+          setFormData((prev) => ({
+            ...prev,
+            startTime: clockIn
+              ? isoToTimeParts(clockIn)
+              : { ampm: "AM", hour: "", minute: "" },
+            endTime: clockOut
+              ? isoToTimeParts(clockOut)
+              : { ampm: "PM", hour: "", minute: "" },
+          }));
+        })
+        .catch(() => {
+          // 네트워크 오류 등은 조용히 무시하고 로컬 캐시 값을 그대로 쓴다.
+        });
     };
   }, [db, formData.participantId, formData.actDate]);
 

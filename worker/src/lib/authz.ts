@@ -74,6 +74,47 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
 
 export const getAuth = (c: Context<Env>): AdminSession => c.get("admin");
 
+// requireAdmin과 같은 쿠키 검증 로직이지만, /public/* 같은 미인증 라우트에서 "로그인한
+// 관리자면 그 정보를, 아니면 조용히 null"을 알고 싶을 때 쓴다(401로 막지 않는다).
+export const tryGetAdmin = async (
+  c: Context<Env>,
+): Promise<AdminSession | null> => {
+  const token = getCookie(c, SESSION_COOKIE_NAME);
+  if (!token) return null;
+
+  const db = drizzle(c.env.DB);
+  const tokenHash = await hashSessionToken(token);
+
+  const sessionRows = await db
+    .select({ adminId: adminSessions.adminId })
+    .from(adminSessions)
+    .where(
+      and(
+        eq(adminSessions.tokenHash, tokenHash),
+        gt(adminSessions.expiresAt, new Date().toISOString()),
+      ),
+    );
+  const sessionRow = sessionRows[0];
+  if (!sessionRow) return null;
+
+  const rows = await db
+    .select()
+    .from(admins)
+    .where(eq(admins.id, sessionRow.adminId));
+  const admin = rows[0];
+  if (!admin || !admin.isActive) return null;
+
+  return {
+    id: admin.id,
+    email: admin.email as string,
+    name: admin.name,
+    role: admin.role,
+    organizationId: admin.organizationId,
+    programIds: parseIdArray(admin.programIds),
+    groupIds: parseIdArray(admin.groupIds),
+  };
+};
+
 const ROLE_LEVELS: Record<AdminRole, number> = {
   [ROLES.SUPER_ADMIN]: 4,
   [ROLES.ORGANIZATION_ADMIN]: 3,

@@ -3,7 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { clockIn, clockOut } from "../../utils/attendanceApi";
+import {
+  clockIn,
+  clockOut,
+  getCurrentAdminRole,
+} from "../../utils/attendanceApi";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 
 interface HomePageProps {
@@ -77,10 +81,19 @@ const HomePage = ({
 }: HomePageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
 
-  // 💡 로컬 개발 전용 — 출퇴근 시간 검증(±30분/종료 10분 전 등)을 실제 시각을
-  // 기다리지 않고 테스트하기 위한 override. 서버가 localhost 요청에서만 실제로
-  // 반영하므로 배포된 워커에는 아무 영향이 없다.
+  // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 실제 날짜·시각을 기다리지
+  // 않고 테스트하기 위한 override. 개발 빌드에선 항상 보이고, 배포된 곳에서는
+  // 통합관리자(SUPER_ADMIN)로 로그인한 세션일 때만 패널을 보여준다 — 서버도
+  // localhost 요청이거나 통합관리자 세션일 때만 실제로 반영한다(readDebugOverride).
+  const [debugDate, setDebugDate] = useState("");
   const [debugTime, setDebugTime] = useState("");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    getCurrentAdminRole().then((role) =>
+      setIsSuperAdmin(role === "SUPER_ADMIN"),
+    );
+  }, []);
 
   // 💡 출근 등록은 별도 페이지 없이 즉시 서버에 기록하고 컨펌 모달로 결과만 보여준다.
   // setFormData 직후 곧바로 onSave()를 부르면 onSave가 아직 갱신 전 formData를 클로저로
@@ -146,10 +159,10 @@ const HomePage = ({
     }
     if (!formData.participantId) return;
     try {
-      const result = await clockIn(
-        formData.participantId,
-        debugTime || undefined,
-      );
+      const result = await clockIn(formData.participantId, {
+        date: debugDate || undefined,
+        time: debugTime || undefined,
+      });
       const startTime = isoToTimeParts(result.clockIn);
       setFormData((prev) => ({ ...prev, startTime }));
       setPendingAttendanceInTime(formatTimeField(startTime));
@@ -200,10 +213,10 @@ const HomePage = ({
     }
     if (!formData.participantId) return;
     try {
-      const result = await clockOut(
-        formData.participantId,
-        debugTime || undefined,
-      );
+      const result = await clockOut(formData.participantId, {
+        date: debugDate || undefined,
+        time: debugTime || undefined,
+      });
       const endTime = isoToTimeParts(result.clockOut);
       setFormData((prev) => ({ ...prev, endTime }));
       setPendingAttendanceOutTime(formatTimeField(endTime));
@@ -258,20 +271,29 @@ const HomePage = ({
           </div>
         </div>
 
-        {import.meta.env.DEV && (
+        {(import.meta.env.DEV || isSuperAdmin) && (
           <div className="bg-[#fff7e6] rounded-2xl px-[18px] py-3.5 flex items-center gap-3 border border-[#ffe1a8]">
             <span className="text-[13px] font-extrabold text-[#b45309] flex-none">
-              🧪 테스트용 시간
+              🧪 테스트용 날짜/시간
             </span>
+            <input
+              type="date"
+              value={debugDate}
+              onChange={(event) => setDebugDate(event.target.value)}
+              className="flex-1 h-9 px-2 rounded-lg border border-[#ffe1a8] text-[14px] font-semibold text-[#1f2937] bg-white"
+            />
             <input
               type="time"
               value={debugTime}
               onChange={(event) => setDebugTime(event.target.value)}
               className="flex-1 h-9 px-2 rounded-lg border border-[#ffe1a8] text-[14px] font-semibold text-[#1f2937] bg-white"
             />
-            {debugTime && (
+            {(debugDate || debugTime) && (
               <button
-                onClick={() => setDebugTime("")}
+                onClick={() => {
+                  setDebugDate("");
+                  setDebugTime("");
+                }}
                 className="flex-none h-9 px-3 rounded-lg border-none bg-white text-[13px] font-bold text-[#b45309] cursor-pointer"
               >
                 초기화
