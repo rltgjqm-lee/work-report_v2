@@ -34,10 +34,9 @@ export interface ActivityLogFormData {
   accidentDetail: string;
   accidentAction: "귀가" | "업무수행";
 
-  // Page 6: 서명 및 동의
+  // Page 6: 서명
   userSignature: string; // canvas에서 추출할 base64 이미지 스트링 등
   demandSignature: string; // canvas에서 추출할 base64 이미지 스트링 등
-  saveSignatureConsent: boolean;
 }
 
 export interface ActivityLogItem {

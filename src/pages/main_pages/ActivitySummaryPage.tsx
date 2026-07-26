@@ -1,7 +1,6 @@
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import Card from "../../components/atoms/Card";
-import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
@@ -75,12 +74,6 @@ const ActivitySummaryPage = ({
             }
           />
         </Card>
-
-        {!formData.userSignature && (
-          <ExceptionCard variant="caution">
-            월말 제출을 위해 <strong>서명</strong>이 필요해요.
-          </ExceptionCard>
-        )}
       </div>
 
       <BottomBar>
