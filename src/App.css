@@ -12,7 +12,6 @@
     margin: 0;
     padding: 0;
     background-color: #f0f0f0;
-    /* overflow: hidden; ⭕ 브라우저 바깥 기본 스크롤바가 생기는 것을 원천 차단 */
   }
 
   #root {
@@ -20,7 +19,7 @@
     height: 100%;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* 상단 정렬 */
+    align-items: flex-start;
     background-color: #f0f0f0;
   }
 
