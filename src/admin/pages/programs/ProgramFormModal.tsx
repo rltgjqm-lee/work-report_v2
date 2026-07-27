@@ -65,18 +65,15 @@ const ProgramFormModal = ({
   // 담당자는 사업단이 아니라 관리자 계정 쪽에 붙어있다 — MANAGER 계정의 programIds가
   // "이 사람이 담당하는 사업단" 목록이고, 서버 권한 판정(canAccessProgram)도 이 값을 본다.
   // 그래서 여기서 고른 담당자는 저장 후 해당 계정의 programIds를 갱신하는 방식으로 반영한다.
-  const [managerAdminIds, setManagerAdminIds] = useState(() =>
-    editingProgram
-      ? managerAdmins
-          .filter((managerAdmin) =>
-            managerAdmin.programIds.includes(editingProgram.id),
-          )
-          .map((managerAdmin) => managerAdmin.id)
-      : [],
-  );
-  // 처음 담긴 담당자를 따로 붙잡아 두고 바뀐 계정만 PUT한다. 목록이 아직 안 실려서
-  // 초기 선택이 비어있는 경우에도 멀쩡한 담당자를 해제해버리지 않게 하려는 것.
-  const [initialManagerAdminIds] = useState(managerAdminIds);
+  const [managerAdminId, setManagerAdminId] = useState(() => {
+    if (!editingProgram) return "";
+
+    const assignedManagerAdmin = managerAdmins.find((managerAdmin) =>
+      managerAdmin.programIds.includes(editingProgram.id),
+    );
+
+    return assignedManagerAdmin ? String(assignedManagerAdmin.id) : "";
+  });
   const [error, setError] = useState<string | null>(null);
 
   // 슈퍼 관리자는 전 기관 계정을 다 받아오므로 선택한 기관으로 좁힌다.
@@ -87,40 +84,28 @@ const ProgramFormModal = ({
       String(managerAdmin.organizationId) === form.organizationId,
   );
 
-  const handleManagerAdminCheckboxChange = (managerAdminId: number) => {
-    setManagerAdminIds((previousIds) =>
-      previousIds.includes(managerAdminId)
-        ? previousIds.filter((selectedId) => selectedId !== managerAdminId)
-        : [...previousIds, managerAdminId],
-    );
-  };
-
+  // 담당자는 한 명만 두므로, 고른 계정에는 이 사업단을 붙이고 예전에 들고 있던
+  // 다른 계정에서는 떼어낸다. 계정 목록이 아직 안 실렸으면 대상이 없어 아무 일도
+  // 일어나지 않는다 — 엉뚱하게 담당자가 해제되는 걸 막아준다.
   const syncManagerAdminPrograms = async (programId: number) => {
-    const changedManagerAdminIds = [
-      ...managerAdminIds.filter(
-        (managerAdminId) => !initialManagerAdminIds.includes(managerAdminId),
-      ),
-      ...initialManagerAdminIds.filter(
-        (managerAdminId) => !managerAdminIds.includes(managerAdminId),
-      ),
-    ];
+    const selectedManagerAdminId = Number(managerAdminId);
+
+    const changedManagerAdmins = managerAdmins.filter(
+      (managerAdmin) =>
+        managerAdmin.programIds.includes(programId) !==
+        (managerAdmin.id === selectedManagerAdminId),
+    );
 
     await Promise.all(
-      changedManagerAdminIds.map((managerAdminId) => {
-        const managerAdmin = managerAdmins.find(
-          (candidate) => candidate.id === managerAdminId,
-        );
-        if (!managerAdmin) return Promise.resolve();
+      changedManagerAdmins.map((managerAdmin) => {
+        const programIds =
+          managerAdmin.id === selectedManagerAdminId
+            ? [...new Set([...managerAdmin.programIds, programId])]
+            : managerAdmin.programIds.filter(
+                (assignedProgramId) => assignedProgramId !== programId,
+              );
 
-        const programIds = managerAdminIds.includes(managerAdminId)
-          ? [...managerAdmin.programIds, programId]
-          : managerAdmin.programIds.filter(
-              (assignedProgramId) => assignedProgramId !== programId,
-            );
-
-        return updateAdmin(managerAdminId, {
-          programIds: [...new Set(programIds)],
-        });
+        return updateAdmin(managerAdmin.id, { programIds });
       }),
     );
   };
@@ -138,8 +123,8 @@ const ProgramFormModal = ({
     }
     // 담당자는 신규 등록에서만 필수 — 담당자 없이 이미 만들어진 사업단의
     // 다른 항목을 고치는 것까지 막을 이유는 없다.
-    if (!editingProgram && managerAdminIds.length === 0) {
-      setError("담당자를 한 명 이상 선택해주세요.");
+    if (!editingProgram && !managerAdminId) {
+      setError("담당자를 선택해주세요.");
 
       return;
     }
@@ -196,7 +181,7 @@ const ProgramFormModal = ({
             onChange={(value) => {
               setForm((f) => ({ ...f, organizationId: value }));
               // 기관이 바뀌면 이전 기관 담당자 선택은 더 이상 유효하지 않다
-              setManagerAdminIds([]);
+              setManagerAdminId("");
             }}
             options={[
               { value: "", label: "선택하세요" },
@@ -220,23 +205,18 @@ const ProgramFormModal = ({
               : "지정할 수 있는 담당자 계정이 없습니다."}
           </p>
         ) : (
-          <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto border border-[#e2e5eb] rounded-[2px] px-3 py-2.5">
-            {assignableManagerAdmins.map((managerAdmin) => (
-              <label
-                key={managerAdmin.id}
-                className="flex items-center gap-2 text-[13px] text-[#374151] cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={managerAdminIds.includes(managerAdmin.id)}
-                  onChange={() =>
-                    handleManagerAdminCheckboxChange(managerAdmin.id)
-                  }
-                />
-                <span>{managerAdmin.name ?? managerAdmin.email}</span>
-              </label>
-            ))}
-          </div>
+          <FilterSelect
+            className="w-full"
+            value={managerAdminId}
+            onChange={setManagerAdminId}
+            options={[
+              { value: "", label: "선택하세요" },
+              ...assignableManagerAdmins.map((managerAdmin) => ({
+                value: String(managerAdmin.id),
+                label: managerAdmin.name ?? managerAdmin.email,
+              })),
+            ]}
+          />
         )}
       </FormField>
 
