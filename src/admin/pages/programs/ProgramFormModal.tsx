@@ -1,11 +1,18 @@
 import { useState } from "react";
 
+import { updateAdmin } from "../../api/admin/admins";
 import { createProgram, updateProgram } from "../../api/admin/programs";
 import SlideModal from "../../components/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
-import { ROLES, type Organization, type Program, type Role } from "../../types";
+import {
+  ROLES,
+  type Admin,
+  type Organization,
+  type Program,
+  type Role,
+} from "../../types";
 
 const emptyForm = {
   organizationId: "",
@@ -24,6 +31,7 @@ interface ProgramFormModalProps {
   editingProgram: Program | null;
   currentRole: Role;
   organizations: Organization[];
+  managerAdmins: Admin[];
 }
 
 /**
@@ -38,6 +46,7 @@ const ProgramFormModal = ({
   editingProgram,
   currentRole,
   organizations,
+  managerAdmins,
 }: ProgramFormModalProps) => {
   const [form, setForm] = useState(
     editingProgram
@@ -53,7 +62,68 @@ const ProgramFormModal = ({
         }
       : emptyForm,
   );
+  // 담당자는 사업단이 아니라 관리자 계정 쪽에 붙어있다 — MANAGER 계정의 programIds가
+  // "이 사람이 담당하는 사업단" 목록이고, 서버 권한 판정(canAccessProgram)도 이 값을 본다.
+  // 그래서 여기서 고른 담당자는 저장 후 해당 계정의 programIds를 갱신하는 방식으로 반영한다.
+  const [managerAdminIds, setManagerAdminIds] = useState(() =>
+    editingProgram
+      ? managerAdmins
+          .filter((managerAdmin) =>
+            managerAdmin.programIds.includes(editingProgram.id),
+          )
+          .map((managerAdmin) => managerAdmin.id)
+      : [],
+  );
+  // 처음 담긴 담당자를 따로 붙잡아 두고 바뀐 계정만 PUT한다. 목록이 아직 안 실려서
+  // 초기 선택이 비어있는 경우에도 멀쩡한 담당자를 해제해버리지 않게 하려는 것.
+  const [initialManagerAdminIds] = useState(managerAdminIds);
   const [error, setError] = useState<string | null>(null);
+
+  // 슈퍼 관리자는 전 기관 계정을 다 받아오므로 선택한 기관으로 좁힌다.
+  // 기관 관리자는 서버가 이미 자기 기관 계정만 내려준다.
+  const assignableManagerAdmins = managerAdmins.filter(
+    (managerAdmin) =>
+      currentRole !== ROLES.SUPER_ADMIN ||
+      String(managerAdmin.organizationId) === form.organizationId,
+  );
+
+  const handleManagerAdminCheckboxChange = (managerAdminId: number) => {
+    setManagerAdminIds((previousIds) =>
+      previousIds.includes(managerAdminId)
+        ? previousIds.filter((selectedId) => selectedId !== managerAdminId)
+        : [...previousIds, managerAdminId],
+    );
+  };
+
+  const syncManagerAdminPrograms = async (programId: number) => {
+    const changedManagerAdminIds = [
+      ...managerAdminIds.filter(
+        (managerAdminId) => !initialManagerAdminIds.includes(managerAdminId),
+      ),
+      ...initialManagerAdminIds.filter(
+        (managerAdminId) => !managerAdminIds.includes(managerAdminId),
+      ),
+    ];
+
+    await Promise.all(
+      changedManagerAdminIds.map((managerAdminId) => {
+        const managerAdmin = managerAdmins.find(
+          (candidate) => candidate.id === managerAdminId,
+        );
+        if (!managerAdmin) return Promise.resolve();
+
+        const programIds = managerAdminIds.includes(managerAdminId)
+          ? [...managerAdmin.programIds, programId]
+          : managerAdmin.programIds.filter(
+              (assignedProgramId) => assignedProgramId !== programId,
+            );
+
+        return updateAdmin(managerAdminId, {
+          programIds: [...new Set(programIds)],
+        });
+      }),
+    );
+  };
 
   const handleSaveButtonClick = async () => {
     if (form.endDate && form.startDate && form.endDate < form.startDate) {
@@ -63,6 +133,13 @@ const ProgramFormModal = ({
     }
     if (form.endTime && form.startTime && form.endTime < form.startTime) {
       setError("종료 시간은 시작 시간 이후여야 합니다.");
+
+      return;
+    }
+    // 담당자는 신규 등록에서만 필수 — 담당자 없이 이미 만들어진 사업단의
+    // 다른 항목을 고치는 것까지 막을 이유는 없다.
+    if (!editingProgram && managerAdminIds.length === 0) {
+      setError("담당자를 한 명 이상 선택해주세요.");
 
       return;
     }
@@ -83,8 +160,10 @@ const ProgramFormModal = ({
 
       if (editingProgram) {
         await updateProgram(editingProgram.id, payload);
+        await syncManagerAdminPrograms(editingProgram.id);
       } else {
-        await createProgram(payload);
+        const createdProgram = await createProgram(payload);
+        await syncManagerAdminPrograms(createdProgram.id);
       }
       onSaved();
     } catch (error) {
@@ -114,9 +193,11 @@ const ProgramFormModal = ({
           <FilterSelect
             className="w-full"
             value={form.organizationId}
-            onChange={(value) =>
-              setForm((f) => ({ ...f, organizationId: value }))
-            }
+            onChange={(value) => {
+              setForm((f) => ({ ...f, organizationId: value }));
+              // 기관이 바뀌면 이전 기관 담당자 선택은 더 이상 유효하지 않다
+              setManagerAdminIds([]);
+            }}
             options={[
               { value: "", label: "선택하세요" },
               ...organizations
@@ -129,6 +210,35 @@ const ProgramFormModal = ({
           />
         </FormField>
       )}
+
+      {/* 담당자 (담당자 역할 관리자 계정) */}
+      <FormField label={editingProgram ? "담당자" : "담당자 (필수)"}>
+        {assignableManagerAdmins.length === 0 ? (
+          <p className="text-[12.5px] text-[#9aa1ab]">
+            {currentRole === ROLES.SUPER_ADMIN && !form.organizationId
+              ? "기관을 먼저 선택하세요."
+              : "지정할 수 있는 담당자 계정이 없습니다."}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto border border-[#e2e5eb] rounded-[2px] px-3 py-2.5">
+            {assignableManagerAdmins.map((managerAdmin) => (
+              <label
+                key={managerAdmin.id}
+                className="flex items-center gap-2 text-[13px] text-[#374151] cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={managerAdminIds.includes(managerAdmin.id)}
+                  onChange={() =>
+                    handleManagerAdminCheckboxChange(managerAdmin.id)
+                  }
+                />
+                <span>{managerAdmin.name ?? managerAdmin.email}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </FormField>
 
       {/* 사업 유형 */}
       <FormField label="사업 유형">

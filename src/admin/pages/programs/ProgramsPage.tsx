@@ -6,6 +6,7 @@ import {
   listPrograms,
   updateProgram,
 } from "../../api/admin/programs";
+import { listAdmins } from "../../api/admin/admins";
 import { listOrganizations } from "../../api/admin/organizations";
 import Pagination from "../../components/Pagination";
 import ProgramFormModal from "./ProgramFormModal";
@@ -14,7 +15,12 @@ import FilterSelect from "../../components/FilterSelect";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
-import { ROLES, type Organization, type Program } from "../../types";
+import {
+  ROLES,
+  type Admin,
+  type Organization,
+  type Program,
+} from "../../types";
 
 /**
  * 관리자 페이지 > 사업단 관리 페이지입니다.
@@ -28,6 +34,7 @@ const ProgramsPage = () => {
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [managerAdmins, setManagerAdmins] = useState<Admin[]>([]);
   const [participantCounts, setParticipantCounts] = useState<
     Record<number, number>
   >({});
@@ -39,6 +46,23 @@ const ProgramsPage = () => {
   useEffect(() => {
     listOrganizations().then(setOrganizations);
   }, []);
+
+  // 사업단 담당자로 지정할 수 있는 계정 — 서버가 권한에 맞는 범위(슈퍼 관리자는 전체,
+  // 기관 관리자는 자기 기관)만 내려주므로 여기선 역할/활성 여부만 걸러낸다.
+  // 계정 목록 조회 권한이 없는 역할(부관리자/담당자)은 아예 호출하지 않는다 — 403이 난다.
+  const refreshManagerAdmins = () => {
+    if (role !== ROLES.SUPER_ADMIN && role !== ROLES.ORGANIZATION_ADMIN) return;
+
+    listAdmins().then((list) =>
+      setManagerAdmins(
+        list.filter(
+          (adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive,
+        ),
+      ),
+    );
+  };
+
+  useEffect(refreshManagerAdmins, [role]);
 
   const refreshPrograms = () => {
     const organizationId =
@@ -86,6 +110,7 @@ const ProgramsPage = () => {
   const handleProgramSaved = () => {
     setModalOpen(false);
     refreshPrograms();
+    refreshManagerAdmins();
   };
 
   const handleToggleActiveButtonClick = async (program: Program) => {
@@ -237,6 +262,7 @@ const ProgramsPage = () => {
           editingProgram={editingProgram}
           currentRole={role ?? ROLES.MANAGER}
           organizations={organizations}
+          managerAdmins={managerAdmins}
         />
       )}
     </div>
