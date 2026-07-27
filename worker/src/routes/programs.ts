@@ -84,9 +84,9 @@ app.get("/:id", async (c) => {
     .from(programs)
     .where(eq(programs.id, id));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
@@ -117,7 +117,7 @@ app.post("/", async (c) => {
   const body = await c.req.json<ProgramBody>();
 
   if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const organizationId =
@@ -136,7 +136,7 @@ app.post("/", async (c) => {
     return c.json(
       {
         error:
-          "organizationId, name, startDate, endDate, startTime, endTime are required",
+          "기관, 사업단명, 시작일, 종료일, 시작 시간, 종료 시간을 모두 입력해주세요.",
       },
       400,
     );
@@ -175,10 +175,10 @@ app.put("/:id", async (c) => {
     .from(programs)
     .where(eq(programs.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   // 사업단 수정은 SUB_ADMIN까지 허용 (등록/삭제는 ORGANIZATION_ADMIN 이상)
   if (!hasMinRole(auth, ROLES.SUB_ADMIN) || !canAccessProgram(auth, existing)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<ProgramBody>();
@@ -188,7 +188,7 @@ app.put("/:id", async (c) => {
     body.isActive !== undefined &&
     !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)
   ) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const result = await db
@@ -225,9 +225,9 @@ app.get("/:id/groups", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const rows = await db
@@ -260,9 +260,9 @@ app.post("/:id/groups", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -273,7 +273,10 @@ app.post("/:id/groups", async (c) => {
   }>();
 
   if (!body.name || !body.shiftStart || !body.shiftEnd) {
-    return c.json({ error: "name, shiftStart, shiftEnd are required" }, 400);
+    return c.json(
+      { error: "조 이름과 근무 시작 시간, 종료 시간을 모두 입력해주세요." },
+      400,
+    );
   }
 
   const result = await db
@@ -300,9 +303,9 @@ app.get("/:id/participants", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const rows = await db
@@ -323,9 +326,9 @@ app.post("/:id/participants", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -337,10 +340,13 @@ app.post("/:id/participants", async (c) => {
   }>();
 
   if (!body.name) {
-    return c.json({ error: "name is required" }, 400);
+    return c.json({ error: "이름을 입력해주세요." }, 400);
   }
   if (!body.phoneLast4 || !/^\d{4}$/.test(body.phoneLast4)) {
-    return c.json({ error: "phoneLast4 must be 4 digits" }, 400);
+    return c.json(
+      { error: "전화번호 뒷 4자리를 숫자 4자리로 입력해주세요." },
+      400,
+    );
   }
   if (body.demandSiteId) {
     const demandSiteRows = await db
@@ -377,9 +383,9 @@ app.post("/:id/participants/bulk", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -394,20 +400,23 @@ app.post("/:id/participants/bulk", async (c) => {
 
   const rows = body.participants ?? [];
   if (rows.length === 0) {
-    return c.json({ error: "participants must be a non-empty array" }, 400);
+    return c.json({ error: "등록할 참여자가 없습니다." }, 400);
   }
 
   const errors: { index: number; error: string }[] = [];
   rows.forEach((row, index) => {
     if (!row.name) {
-      errors.push({ index, error: "name is required" });
+      errors.push({ index, error: "이름을 입력해주세요." });
     } else if (!row.phoneLast4 || !/^\d{4}$/.test(row.phoneLast4)) {
-      errors.push({ index, error: "phoneLast4 must be 4 digits" });
+      errors.push({
+        index,
+        error: "전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.",
+      });
     }
   });
 
   if (errors.length > 0) {
-    return c.json({ error: "validation failed", details: errors }, 400);
+    return c.json({ error: "입력값을 확인해주세요.", details: errors }, 400);
   }
 
   const result = await db
@@ -438,9 +447,9 @@ app.delete("/:id/participants/:participantId", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   // 💡 참여자를 참조하는 자식 테이블을 먼저 지워야 FOREIGN KEY constraint failed 없이
@@ -479,7 +488,7 @@ app.delete("/:id/participants/:participantId", async (c) => {
     )
     .returning();
 
-  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  if (!result[0]) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   return c.json({ success: true });
 });
 
@@ -494,9 +503,9 @@ app.post("/:id/participants/bulk-status", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -506,7 +515,7 @@ app.post("/:id/participants/bulk-status", async (c) => {
   }>();
 
   if (!body.participantIds?.length || !body.status) {
-    return c.json({ error: "participantIds, status are required" }, 400);
+    return c.json({ error: "참여자와 변경할 상태를 지정해주세요." }, 400);
   }
 
   const targetRows = await db
@@ -556,16 +565,16 @@ app.get("/:id/attendance", async (c) => {
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month"); // "YYYY-MM"
 
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const programRows = await db
     .select()
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const rows = await db
@@ -610,9 +619,9 @@ app.get("/:id/leaves", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const conditions = [eq(participants.programId, programId)];
@@ -663,9 +672,9 @@ app.get("/:id/leaves/stats", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const leaveRows = await db
@@ -736,9 +745,9 @@ app.get("/:id/escapes", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const rows = await db
@@ -774,9 +783,9 @@ app.get("/:id/workers/live", async (c) => {
     .from(programs)
     .where(eq(programs.id, programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const { date } = getKstNow();

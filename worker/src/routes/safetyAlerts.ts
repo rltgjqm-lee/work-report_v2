@@ -20,7 +20,7 @@ const app = new Hono<Env>();
 app.get("/", async (c) => {
   const auth = getAuth(c);
   if (!hasMinRole(auth, ROLES.SUPER_ADMIN)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
@@ -53,13 +53,13 @@ app.get("/", async (c) => {
 app.post("/test", async (c) => {
   const auth = getAuth(c);
   if (!hasMinRole(auth, ROLES.SUPER_ADMIN)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{ message?: string; programId?: number }>();
   if (!body.message || !body.programId) {
-    return c.json({ error: "message, programId are required" }, 400);
+    return c.json({ error: "안내 문구와 사업단을 지정해주세요." }, 400);
   }
 
   const programRows = await db
@@ -67,9 +67,9 @@ app.post("/test", async (c) => {
     .from(programs)
     .where(eq(programs.id, body.programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const subscriptions = await db

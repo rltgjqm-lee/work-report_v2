@@ -26,7 +26,10 @@ app.put("/password", async (c) => {
   }>();
 
   if (!body.currentPassword || !body.newPassword) {
-    return c.json({ error: "currentPassword, newPassword are required" }, 400);
+    return c.json(
+      { error: "현재 비밀번호와 새 비밀번호를 입력해주세요." },
+      400,
+    );
   }
   if (body.newPassword.length < 8) {
     return c.json({ error: "새 비밀번호는 8자 이상이어야 합니다." }, 400);

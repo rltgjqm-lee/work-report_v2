@@ -38,9 +38,9 @@ app.put("/:logId", async (c) => {
   const logId = Number(c.req.param("logId"));
 
   const found = await loadAttendanceLogWithProgram(db, logId);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "출퇴근 기록을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -81,9 +81,9 @@ app.post("/:logId/invalidate", async (c) => {
   const logId = Number(c.req.param("logId"));
 
   const found = await loadAttendanceLogWithProgram(db, logId);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "출퇴근 기록을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
   if (found.log.status === "INVALID") {
     return c.json({ error: "이미 무효화된 기록입니다." }, 400);

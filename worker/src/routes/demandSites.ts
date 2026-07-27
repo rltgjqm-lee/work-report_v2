@@ -65,11 +65,12 @@ const loadAccessibleProgram = async (
 app.get("/", async (c) => {
   const auth = getAuth(c);
   const programId = Number(c.req.query("programId"));
-  if (!programId) return c.json({ error: "programId is required" }, 400);
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select()
@@ -84,12 +85,13 @@ app.post("/", async (c) => {
   const body = await c.req.json<DemandSiteBody>();
 
   if (!body.programId || !body.name) {
-    return c.json({ error: "programId, name are required" }, 400);
+    return c.json({ error: "사업단과 수요처명을 입력해주세요." }, 400);
   }
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, body.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const result = await db
     .insert(demandSites)
@@ -114,10 +116,11 @@ app.put("/:id", async (c) => {
     .from(demandSites)
     .where(eq(demandSites.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, existing.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<DemandSiteBody>();
 
@@ -147,10 +150,11 @@ app.get("/:id/locations", async (c) => {
     .from(demandSites)
     .where(eq(demandSites.id, id));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select()
@@ -170,14 +174,15 @@ app.post("/:id/locations", async (c) => {
     .from(demandSites)
     .where(eq(demandSites.id, id));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<LocationBody>();
   if (!body.name || !body.shapeType) {
-    return c.json({ error: "name, shapeType are required" }, 400);
+    return c.json({ error: "구역 이름과 구역 형태를 입력해주세요." }, 400);
   }
   if (
     body.shapeType === "RADIUS" &&
@@ -224,17 +229,18 @@ app.put("/locations/:locationId", async (c) => {
     .from(demandSiteLocations)
     .where(eq(demandSiteLocations.id, locationId));
   const location = locationRows[0];
-  if (!location) return c.json({ error: "Not found" }, 404);
+  if (!location) return c.json({ error: "위치 정보를 찾을 수 없습니다." }, 404);
 
   const siteRows = await db
     .select()
     .from(demandSites)
     .where(eq(demandSites.id, location.demandSiteId));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<LocationBody>();
   const shapeType = body.shapeType ?? location.shapeType;
@@ -273,17 +279,18 @@ app.delete("/locations/:locationId", async (c) => {
     .from(demandSiteLocations)
     .where(eq(demandSiteLocations.id, locationId));
   const location = locationRows[0];
-  if (!location) return c.json({ error: "Not found" }, 404);
+  if (!location) return c.json({ error: "위치 정보를 찾을 수 없습니다." }, 404);
 
   const siteRows = await db
     .select()
     .from(demandSites)
     .where(eq(demandSites.id, location.demandSiteId));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   await db
     .delete(demandSiteLocations)
@@ -302,10 +309,11 @@ app.get("/:id/schedules", async (c) => {
     .from(demandSites)
     .where(eq(demandSites.id, id));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select({
@@ -333,14 +341,18 @@ app.post("/:id/schedules", async (c) => {
     .from(demandSites)
     .where(eq(demandSites.id, id));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<ScheduleBody>();
   if (!body.groupId || !body.shiftStart || !body.shiftEnd) {
-    return c.json({ error: "groupId, shiftStart, shiftEnd are required" }, 400);
+    return c.json(
+      { error: "조와 근무 시작 시간, 종료 시간을 모두 지정해주세요." },
+      400,
+    );
   }
 
   const result = await db
@@ -366,17 +378,18 @@ app.put("/schedules/:scheduleId", async (c) => {
     .from(demandSiteSchedules)
     .where(eq(demandSiteSchedules.id, scheduleId));
   const schedule = scheduleRows[0];
-  if (!schedule) return c.json({ error: "Not found" }, 404);
+  if (!schedule) return c.json({ error: "근무 일정을 찾을 수 없습니다." }, 404);
 
   const siteRows = await db
     .select()
     .from(demandSites)
     .where(eq(demandSites.id, schedule.demandSiteId));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<ScheduleBody>();
 
@@ -402,17 +415,18 @@ app.delete("/schedules/:scheduleId", async (c) => {
     .from(demandSiteSchedules)
     .where(eq(demandSiteSchedules.id, scheduleId));
   const schedule = scheduleRows[0];
-  if (!schedule) return c.json({ error: "Not found" }, 404);
+  if (!schedule) return c.json({ error: "근무 일정을 찾을 수 없습니다." }, 404);
 
   const siteRows = await db
     .select()
     .from(demandSites)
     .where(eq(demandSites.id, schedule.demandSiteId));
   const site = siteRows[0];
-  if (!site) return c.json({ error: "Not found" }, 404);
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   await db
     .delete(demandSiteSchedules)

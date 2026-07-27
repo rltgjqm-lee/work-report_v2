@@ -29,7 +29,7 @@ const INVALID_CREDENTIALS_MESSAGE = "이메일 또는 비밀번호가 올바르�
 app.post("/login", async (c) => {
   const body = await c.req.json<{ email?: string; password?: string }>();
   if (!body.email || !body.password) {
-    return c.json({ error: "email, password are required" }, 400);
+    return c.json({ error: "이메일과 비밀번호를 입력해주세요." }, 400);
   }
   const email = body.email.trim().toLowerCase();
   const ipAddress = c.req.header("CF-Connecting-IP") ?? null;

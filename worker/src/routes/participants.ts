@@ -53,9 +53,9 @@ app.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const [groupRows, organizationRows] = await Promise.all([
@@ -84,13 +84,13 @@ app.get("/:id/attendance", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const rows = await db
     .select({
@@ -129,9 +129,9 @@ app.get("/:id/leaves", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const rows = await db
@@ -149,9 +149,9 @@ app.put("/:id", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -195,13 +195,13 @@ app.post("/:id/group", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{ groupId?: number }>();
-  if (!body.groupId) return c.json({ error: "groupId is required" }, 400);
+  if (!body.groupId) return c.json({ error: "조를 지정해주세요." }, 400);
 
   const groupRows = await db
     .select()
@@ -227,9 +227,9 @@ app.post("/:id/drop", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{ dropReason?: string }>();
@@ -253,9 +253,9 @@ app.post("/:id/leave", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -266,7 +266,7 @@ app.post("/:id/leave", async (c) => {
   }>();
 
   if (!body.leaveStart || !body.leaveEnd) {
-    return c.json({ error: "leaveStart, leaveEnd are required" }, 400);
+    return c.json({ error: "휴직 시작일과 종료일을 입력해주세요." }, 400);
   }
 
   const leaveType = body.leaveType ?? "PAID";
@@ -339,9 +339,9 @@ app.post("/:id/leave/end", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const result = await db
@@ -364,9 +364,9 @@ app.post("/:id/reactivate", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
   if (found.participant.status !== "DROPPED") {
     return c.json(
@@ -394,9 +394,9 @@ app.get("/:id/annual-leave", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
@@ -428,14 +428,14 @@ app.post("/:id/annual-leave", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{ year?: string; totalDays?: number }>();
   if (!body.year || body.totalDays === undefined) {
-    return c.json({ error: "year, totalDays are required" }, 400);
+    return c.json({ error: "연도와 총 일수를 입력해주세요." }, 400);
   }
 
   const existingRows = await db
@@ -484,13 +484,13 @@ app.get("/:id/monthly-schedule", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const yearMonth = c.req.query("month");
-  if (!yearMonth) return c.json({ error: "month is required" }, 400);
+  if (!yearMonth) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const rows = await db
     .select()
@@ -517,9 +517,9 @@ app.put("/:id/monthly-schedule", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -528,7 +528,7 @@ app.put("/:id/monthly-schedule", async (c) => {
     maxMonthlyMinutes?: number | null;
   }>();
   if (!body.yearMonth || !body.workDates) {
-    return c.json({ error: "yearMonth, workDates are required" }, 400);
+    return c.json({ error: "연월과 근무일을 지정해주세요." }, 400);
   }
 
   const existingRows = await db
@@ -582,13 +582,13 @@ app.delete("/:id/monthly-schedule", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadParticipantWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const yearMonth = c.req.query("month");
-  if (!yearMonth) return c.json({ error: "month is required" }, 400);
+  if (!yearMonth) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   await db
     .delete(participantMonthlySchedule)

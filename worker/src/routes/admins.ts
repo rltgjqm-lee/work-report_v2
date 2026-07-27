@@ -64,7 +64,7 @@ type AdminBody = {
 app.get("/", async (c) => {
   const auth = getAuth(c);
   if (ASSIGNABLE_ROLES[auth.role].length === 0) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
@@ -83,12 +83,15 @@ app.post("/", async (c) => {
   const auth = getAuth(c);
   const assignable = ASSIGNABLE_ROLES[auth.role];
   if (assignable.length === 0) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<AdminBody>();
   if (!body.email || !body.name || !body.role || !body.password) {
-    return c.json({ error: "email, name, role, password are required" }, 400);
+    return c.json(
+      { error: "이메일, 이름, 역할, 비밀번호를 모두 입력해주세요." },
+      400,
+    );
   }
   if (body.password.length < 8) {
     return c.json({ error: "비밀번호는 8자 이상이어야 합니다." }, 400);
@@ -102,7 +105,7 @@ app.post("/", async (c) => {
       ? (body.organizationId ?? null)
       : auth.organizationId;
   if (body.role !== ROLES.SUPER_ADMIN && !organizationId) {
-    return c.json({ error: "organizationId is required" }, 400);
+    return c.json({ error: "소속 기관을 선택해주세요." }, 400);
   }
 
   const passwordHash = await hashPassword(body.password);
@@ -131,19 +134,20 @@ app.put("/:id", async (c) => {
   const auth = getAuth(c);
   const assignable = ASSIGNABLE_ROLES[auth.role];
   if (assignable.length === 0) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
   const id = Number(c.req.param("id"));
   const existingRows = await db.select().from(admins).where(eq(admins.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing)
+    return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
   if (
     auth.role !== ROLES.SUPER_ADMIN &&
     existing.organizationId !== auth.organizationId
   ) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<AdminBody>();
@@ -184,7 +188,7 @@ app.put("/:id/password", async (c) => {
   const auth = getAuth(c);
   const assignable = ASSIGNABLE_ROLES[auth.role];
   if (assignable.length === 0) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
@@ -199,12 +203,13 @@ app.put("/:id/password", async (c) => {
   const id = Number(c.req.param("id"));
   const existingRows = await db.select().from(admins).where(eq(admins.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing)
+    return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
   if (
     auth.role !== ROLES.SUPER_ADMIN &&
     existing.organizationId !== auth.organizationId
   ) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{ newPassword?: string }>();
@@ -223,7 +228,7 @@ app.put("/:id/password", async (c) => {
 app.get("/login-history", async (c) => {
   const auth = getAuth(c);
   if (auth.role !== ROLES.SUPER_ADMIN) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);

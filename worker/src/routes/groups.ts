@@ -40,9 +40,9 @@ app.put("/:id", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadGroupWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
   if (!canAccessGroup(auth, found.group, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -88,13 +88,13 @@ app.get("/:id/monthly-schedule", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadGroupWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
   if (!canAccessGroup(auth, found.group, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const yearMonth = c.req.query("month");
-  if (!yearMonth) return c.json({ error: "month is required" }, 400);
+  if (!yearMonth) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const rows = await db
     .select()
@@ -121,9 +121,9 @@ app.put("/:id/monthly-schedule", async (c) => {
   const id = Number(c.req.param("id"));
 
   const found = await loadGroupWithProgram(db, id);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
   if (!canAccessGroup(auth, found.group, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{
@@ -132,7 +132,7 @@ app.put("/:id/monthly-schedule", async (c) => {
     maxMonthlyMinutes?: number;
   }>();
   if (!body.yearMonth || !body.workDates) {
-    return c.json({ error: "yearMonth, workDates are required" }, 400);
+    return c.json({ error: "연월과 근무일을 지정해주세요." }, 400);
   }
 
   const existingRows = await db
@@ -190,13 +190,13 @@ app.post("/bulk-assign", async (c) => {
   }>();
 
   if (!body.participantIds?.length || !body.groupId) {
-    return c.json({ error: "participantIds, groupId are required" }, 400);
+    return c.json({ error: "참여자와 조를 지정해주세요." }, 400);
   }
 
   const found = await loadGroupWithProgram(db, body.groupId);
-  if (!found) return c.json({ error: "Not found" }, 404);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
   if (!canAccessGroup(auth, found.group, found.program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const result = await db

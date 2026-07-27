@@ -41,7 +41,8 @@ app.get("/:id", async (c) => {
   const auth = getAuth(c);
   const id = Number(c.req.param("id"));
 
-  if (!canAccessOrg(auth, id)) return c.json({ error: "Forbidden" }, 403);
+  if (!canAccessOrg(auth, id))
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const db = drizzle(c.env.DB);
   const rows = await db
@@ -49,21 +50,21 @@ app.get("/:id", async (c) => {
     .from(organizations)
     .where(eq(organizations.id, id));
 
-  if (!rows[0]) return c.json({ error: "Not found" }, 404);
+  if (!rows[0]) return c.json({ error: "기관을 찾을 수 없습니다." }, 404);
   return c.json(rows[0]);
 });
 
 app.post("/", async (c) => {
   const auth = getAuth(c);
   if (auth.role !== ROLES.SUPER_ADMIN) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
   const body = await c.req.json<OrganizationBody>();
 
   if (!body.name) {
-    return c.json({ error: "name is required" }, 400);
+    return c.json({ error: "기관명을 입력해주세요." }, 400);
   }
 
   const result = await db
@@ -91,7 +92,7 @@ app.put("/:id", async (c) => {
 
   // 기관 정보 수정은 ORGANIZATION_ADMIN 이상만 가능 (SUB_ADMIN/MANAGER는 조회만)
   if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) || !canAccessOrg(auth, id)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);
@@ -99,7 +100,7 @@ app.put("/:id", async (c) => {
 
   // 활성/비활성 전환(소프트 삭제)은 SUPER_ADMIN만 — 나머지 필드 수정과는 별개 권한
   if (body.isActive !== undefined && auth.role !== ROLES.SUPER_ADMIN) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const result = await db
@@ -108,7 +109,7 @@ app.put("/:id", async (c) => {
     .where(eq(organizations.id, id))
     .returning();
 
-  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  if (!result[0]) return c.json({ error: "기관을 찾을 수 없습니다." }, 404);
   return c.json(result[0]);
 });
 

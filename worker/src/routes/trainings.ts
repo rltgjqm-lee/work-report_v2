@@ -47,11 +47,12 @@ const computePayAmount = (
 app.get("/", async (c) => {
   const auth = getAuth(c);
   const programId = Number(c.req.query("programId"));
-  if (!programId) return c.json({ error: "programId is required" }, 400);
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select()
@@ -75,12 +76,16 @@ app.post("/", async (c) => {
   }>();
 
   if (!body.programId || !body.name || !body.category) {
-    return c.json({ error: "programId, name, category are required" }, 400);
+    return c.json(
+      { error: "사업단, 교육명, 교육 구분을 모두 입력해주세요." },
+      400,
+    );
   }
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, body.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const result = await db
     .insert(projectTrainings)
@@ -109,10 +114,11 @@ app.put("/:id", async (c) => {
     .from(projectTrainings)
     .where(eq(projectTrainings.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing) return c.json({ error: "교육 정보를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, existing.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<{
     name?: string;
@@ -148,11 +154,12 @@ app.put("/:id", async (c) => {
 app.get("/logs", async (c) => {
   const auth = getAuth(c);
   const programId = Number(c.req.query("programId"));
-  if (!programId) return c.json({ error: "programId is required" }, 400);
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const trainingId = c.req.query("trainingId");
   const conditions = [eq(participants.programId, programId)];
@@ -190,10 +197,7 @@ app.post("/logs", async (c) => {
   }>();
 
   if (!body.participantId || !body.trainingId || !body.attendDate) {
-    return c.json(
-      { error: "participantId, trainingId, attendDate are required" },
-      400,
-    );
+    return c.json({ error: "참여자, 교육, 참석일을 모두 지정해주세요." }, 400);
   }
 
   const db = drizzle(c.env.DB);
@@ -217,7 +221,8 @@ app.post("/logs", async (c) => {
   }
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const attendHours = body.attendHours ?? training.hours ?? 0;
   const payAmount = computePayAmount(training, attendHours, program);
@@ -246,24 +251,26 @@ app.put("/logs/:id", async (c) => {
     .from(participantTrainingLogs)
     .where(eq(participantTrainingLogs.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing)
+    return c.json({ error: "교육 참석 기록을 찾을 수 없습니다." }, 404);
 
   const participantRows = await db
     .select()
     .from(participants)
     .where(eq(participants.id, existing.participantId));
   const participant = participantRows[0];
-  if (!participant) return c.json({ error: "Not found" }, 404);
+  if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const trainingRows = await db
     .select()
     .from(projectTrainings)
     .where(eq(projectTrainings.id, existing.trainingId));
   const training = trainingRows[0];
-  if (!training) return c.json({ error: "Not found" }, 404);
+  if (!training) return c.json({ error: "교육 정보를 찾을 수 없습니다." }, 404);
 
   const body = await c.req.json<{
     attendDate?: string;
@@ -297,17 +304,19 @@ app.delete("/logs/:id", async (c) => {
     .from(participantTrainingLogs)
     .where(eq(participantTrainingLogs.id, id));
   const existing = existingRows[0];
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing)
+    return c.json({ error: "교육 참석 기록을 찾을 수 없습니다." }, 404);
 
   const participantRows = await db
     .select()
     .from(participants)
     .where(eq(participants.id, existing.participantId));
   const participant = participantRows[0];
-  if (!participant) return c.json({ error: "Not found" }, 404);
+  if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const result = await db
     .update(participantTrainingLogs)
@@ -323,11 +332,12 @@ app.delete("/logs/:id", async (c) => {
 app.get("/summary", async (c) => {
   const auth = getAuth(c);
   const programId = Number(c.req.query("programId"));
-  if (!programId) return c.json({ error: "programId is required" }, 400);
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program) return c.json({ error: "Forbidden" }, 403);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const [activeParticipants, requiredTrainings, logs] = await Promise.all([
     db

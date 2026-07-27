@@ -13,7 +13,7 @@ const app = new Hono<Env>();
 app.get("/", async (c) => {
   const auth = getAuth(c);
   if (!hasMinRole(auth, ROLES.MANAGER)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const db = drizzle(c.env.DB);

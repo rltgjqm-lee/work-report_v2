@@ -20,16 +20,16 @@ app.post("/:id/resolve", async (c) => {
     .from(escapeLogs)
     .where(eq(escapeLogs.id, id));
   const escape = escapeRows[0];
-  if (!escape) return c.json({ error: "Not found" }, 404);
+  if (!escape) return c.json({ error: "이탈 기록을 찾을 수 없습니다." }, 404);
 
   const programRows = await db
     .select()
     .from(programs)
     .where(eq(programs.id, escape.programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<{ memo?: string }>();
@@ -64,16 +64,16 @@ app.post("/:id/alerted", async (c) => {
     .from(escapeLogs)
     .where(eq(escapeLogs.id, id));
   const escape = escapeRows[0];
-  if (!escape) return c.json({ error: "Not found" }, 404);
+  if (!escape) return c.json({ error: "이탈 기록을 찾을 수 없습니다." }, 404);
 
   const programRows = await db
     .select()
     .from(programs)
     .where(eq(programs.id, escape.programId));
   const program = programRows[0];
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const result = await db

@@ -127,7 +127,7 @@ app.get("/participants/:id/registration-status", async (c) => {
     .where(eq(participants.id, participantId));
 
   const row = rows[0];
-  if (!row) return c.json({ error: "Not found" }, 404);
+  if (!row) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   return c.json(row);
 });
@@ -160,10 +160,7 @@ app.post("/push-subscriptions", async (c) => {
     !body.keys?.p256dh ||
     !body.keys?.auth
   ) {
-    return c.json(
-      { error: "programId, endpoint, keys.p256dh, keys.auth are required" },
-      400,
-    );
+    return c.json({ error: "푸시 구독 정보가 올바르지 않습니다." }, 400);
   }
 
   const result = await db
@@ -198,7 +195,7 @@ app.post("/push-subscriptions/link-participant", async (c) => {
   }>();
 
   if (!body.endpoint || !body.participantId) {
-    return c.json({ error: "endpoint, participantId are required" }, 400);
+    return c.json({ error: "푸시 구독 정보와 참여자를 지정해주세요." }, 400);
   }
 
   const result = await db
@@ -207,7 +204,8 @@ app.post("/push-subscriptions/link-participant", async (c) => {
     .where(eq(pushSubscriptions.endpoint, body.endpoint))
     .returning();
 
-  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  if (!result[0])
+    return c.json({ error: "푸시 구독 정보를 찾을 수 없습니다." }, 404);
   return c.json(result[0]);
 });
 
@@ -223,7 +221,10 @@ app.post("/attendance/identify", async (c) => {
   }>();
 
   if (!body.programId || !body.name || !body.phoneLast4) {
-    return c.json({ error: "programId, name, phoneLast4 are required" }, 400);
+    return c.json(
+      { error: "사업단, 이름, 전화번호 뒷 4자리를 모두 입력해주세요." },
+      400,
+    );
   }
 
   const rows = await db
@@ -257,7 +258,7 @@ app.post("/push-device-tokens", async (c) => {
 
   if (!body.programId || !body.platform || !body.token) {
     return c.json(
-      { error: "programId, platform, token are required" },
+      { error: "사업단, 플랫폼, 푸시 토큰을 모두 지정해주세요." },
       400,
     );
   }
@@ -289,7 +290,7 @@ app.post("/push-device-tokens/link-participant", async (c) => {
   }>();
 
   if (!body.token || !body.participantId) {
-    return c.json({ error: "token, participantId are required" }, 400);
+    return c.json({ error: "푸시 토큰과 참여자를 지정해주세요." }, 400);
   }
 
   const result = await db
@@ -298,7 +299,8 @@ app.post("/push-device-tokens/link-participant", async (c) => {
     .where(eq(pushDeviceTokens.token, body.token))
     .returning();
 
-  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  if (!result[0])
+    return c.json({ error: "푸시 토큰을 찾을 수 없습니다." }, 404);
   return c.json(result[0]);
 });
 
@@ -310,7 +312,7 @@ app.get("/attendance/today", async (c) => {
   const db = drizzle(c.env.DB);
   const participantId = Number(c.req.query("participantId"));
   if (!participantId) {
-    return c.json({ error: "participantId is required" }, 400);
+    return c.json({ error: "참여자를 지정해주세요." }, 400);
   }
 
   const { date } = getKstNow();
@@ -343,7 +345,7 @@ app.post("/attendance/clock-in", async (c) => {
     debugTime?: string;
   }>();
   if (!body.participantId) {
-    return c.json({ error: "participantId is required" }, 400);
+    return c.json({ error: "참여자를 지정해주세요." }, 400);
   }
 
   const rows = await db
@@ -443,7 +445,7 @@ app.post("/attendance/clock-out", async (c) => {
     debugTime?: string;
   }>();
   if (!body.participantId) {
-    return c.json({ error: "participantId is required" }, 400);
+    return c.json({ error: "참여자를 지정해주세요." }, 400);
   }
 
   const debugOverride = await readDebugOverride(c, body);
@@ -520,7 +522,7 @@ app.patch("/attendance/clock-in", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{ participantId?: number; time?: string }>();
   if (!body.participantId || !body.time) {
-    return c.json({ error: "participantId, time are required" }, 400);
+    return c.json({ error: "참여자와 시각을 지정해주세요." }, 400);
   }
 
   const { date } = getKstNow();
@@ -575,7 +577,7 @@ app.patch("/attendance/clock-out", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{ participantId?: number; time?: string }>();
   if (!body.participantId || !body.time) {
-    return c.json({ error: "participantId, time are required" }, 400);
+    return c.json({ error: "참여자와 시각을 지정해주세요." }, 400);
   }
 
   const { date } = getKstNow();
@@ -641,7 +643,7 @@ app.post("/attendance/sign", async (c) => {
   const db = drizzle(c.env.DB);
   const participantId = Number(c.req.query("participantId"));
   if (!participantId) {
-    return c.json({ error: "participantId is required" }, 400);
+    return c.json({ error: "참여자를 지정해주세요." }, 400);
   }
 
   const contentType = c.req.header("Content-Type") || "image/png";
@@ -691,7 +693,7 @@ app.post("/location", async (c) => {
   }>();
 
   if (!body.participantId || body.lat === undefined || body.lng === undefined) {
-    return c.json({ error: "participantId, lat, lng are required" }, 400);
+    return c.json({ error: "참여자와 위치 정보를 지정해주세요." }, 400);
   }
 
   const participantRows = await db
@@ -699,7 +701,7 @@ app.post("/location", async (c) => {
     .from(participants)
     .where(eq(participants.id, body.participantId));
   const participant = participantRows[0];
-  if (!participant) return c.json({ error: "Not found" }, 404);
+  if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   const { date, iso } = getKstNow();
 
@@ -889,7 +891,7 @@ app.post("/activity-logs", async (c) => {
     !body.endTime
   ) {
     return c.json(
-      { error: "participantId, actDate, startTime, endTime are required" },
+      { error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." },
       400,
     );
   }
@@ -936,7 +938,7 @@ app.put("/activity-logs/:id", async (c) => {
     !body.endTime
   ) {
     return c.json(
-      { error: "participantId, actDate, startTime, endTime are required" },
+      { error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." },
       400,
     );
   }
@@ -963,7 +965,7 @@ app.put("/activity-logs/:id", async (c) => {
     )
     .returning();
 
-  if (!result[0]) return c.json({ error: "Not found" }, 404);
+  if (!result[0]) return c.json({ error: "활동일지를 찾을 수 없습니다." }, 404);
   return c.json(result[0]);
 });
 
@@ -974,7 +976,7 @@ app.get("/activity-logs", async (c) => {
   const month = c.req.query("month"); // "YYYY-MM"
 
   if (!participantId || !month) {
-    return c.json({ error: "participantId, month are required" }, 400);
+    return c.json({ error: "참여자와 조회할 월을 지정해주세요." }, 400);
   }
 
   const rows = await db

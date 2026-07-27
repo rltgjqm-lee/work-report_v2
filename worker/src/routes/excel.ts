@@ -48,12 +48,12 @@ app.get("/:id/export/activity-log", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const program = await loadAccessibleProgram(db, programId);
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program))
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const organizationRows = await db
     .select()
@@ -123,12 +123,12 @@ app.get("/:id/export/activity-payment", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const program = await loadAccessibleProgram(db, programId);
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program))
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const organizationRows = await db
     .select()
@@ -194,12 +194,12 @@ app.get("/:id/export/attendance", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const program = await loadAccessibleProgram(db, programId);
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program))
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const activeParticipants = await db
     .select({
@@ -340,12 +340,12 @@ app.get("/:id/export/work-schedule", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const program = await loadAccessibleProgram(db, programId);
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program))
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const orgRows = await db
     .select()
@@ -498,12 +498,12 @@ app.get("/:id/export/payslip", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const program = await loadAccessibleProgram(db, programId);
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program))
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const orgRows = await db
     .select()
@@ -565,12 +565,12 @@ app.get("/:id/export/payment", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month");
-  if (!month) return c.json({ error: "month is required" }, 400);
+  if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
   const program = await loadAccessibleProgram(db, programId);
-  if (!program) return c.json({ error: "Not found" }, 404);
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program))
-    return c.json({ error: "Forbidden" }, 403);
+    return c.json({ error: "권한이 없습니다." }, 403);
 
   const activeParticipants = await db
     .select({
