@@ -9,6 +9,7 @@ import {
 import { listAdmins } from "../../api/admin/admins";
 import { listOrganizations } from "../../api/admin/organizations";
 import Pagination from "../../components/Pagination";
+import ProgramTypeChip from "../../components/ProgramTypeChip";
 import ProgramFormModal from "./ProgramFormModal";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
@@ -230,7 +231,10 @@ const ProgramsPage = () => {
                   onClick={() => navigate(`/admin/programs/${program.id}`)}
                 >
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {program.name}
+                    <span className="inline-flex items-center gap-2">
+                      <ProgramTypeChip programType={program.programType} />
+                      {program.name}
+                    </span>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {orgName(program.organizationId)}
