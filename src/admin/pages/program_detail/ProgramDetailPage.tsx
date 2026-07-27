@@ -13,6 +13,7 @@ import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
 import ProgramExcelExportSection from "./ProgramExcelExportSection";
 import ProgramParticipantsSection from "./ProgramParticipantsSection";
 import ParticipantAddModal from "./ParticipantAddModal";
+import ProgramTypeChip from "../../components/ProgramTypeChip";
 import TabBar from "../../components/TabBar";
 
 import { btnPrimaryClass, btnGhostClass } from "../../uiClasses";
@@ -126,7 +127,10 @@ const ProgramDetailPage = () => {
               목록으로
             </a>
           </div>
-          <h1 className="text-[21px] font-bold m-0">{program.name}</h1>
+          <h1 className="text-[21px] font-bold m-0 flex items-center gap-2.5">
+            {program.name}
+            <ProgramTypeChip programType={program.programType} />
+          </h1>
           <p className="text-[13px] text-[#6b7280] mt-1.5">
             사업단에 참여하는 어르신 명단을 관리합니다.
           </p>
