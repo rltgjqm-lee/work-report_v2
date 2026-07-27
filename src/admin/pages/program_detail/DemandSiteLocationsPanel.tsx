@@ -46,8 +46,36 @@ const DemandSiteLocationsPanel = ({
   const drawnLayerRef = useRef<L.FeatureGroup | null>(null);
   const searchMarkerRef = useRef<L.Marker | null>(null);
 
+  // 수요처 주소 → 좌표. OpenStreetMap Nominatim, API 키 불필요.
+  // 도로명까지만 잡히는 경우가 많아서 건물 단위 정확도는 기대하지 않는다 —
+  // 어디쯤인지 지도를 옮겨주는 용도다.
+  const geocodeAddress = async (): Promise<[number, number] | null> => {
+    if (!demandSite.address) return null;
+
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(demandSite.address)}`,
+    );
+    const results = (await response.json()) as { lat: string; lon: string }[];
+    if (results.length === 0) return null;
+
+    return [Number(results[0].lat), Number(results[0].lon)];
+  };
+
+  // 거점이 하나도 없으면 지도가 기본 좌표(전국 한복판)에 머물러서 어디에 그려야 할지
+  // 알 수 없다. 등록된 주소가 있으면 그 근처로 옮겨준다 — 실패해도 조용히 넘어간다.
+  const centerOnAddress = () => {
+    geocodeAddress()
+      .then((point) => {
+        if (point && mapRef.current) mapRef.current.setView(point, 16);
+      })
+      .catch(() => {});
+  };
+
   const refresh = () =>
-    listDemandSiteLocations(demandSite.id).then(setLocations);
+    listDemandSiteLocations(demandSite.id).then((rows) => {
+      setLocations(rows);
+      if (rows.length === 0) centerOnAddress();
+    });
 
   useEffect(() => {
     refresh();
@@ -109,7 +137,6 @@ const DemandSiteLocationsPanel = ({
       map.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 기존 거점들을 지도에 렌더링 (직접 그린 도형과 별개 레이어)
@@ -201,23 +228,16 @@ const DemandSiteLocationsPanel = ({
   };
 
   // 수요처 주소로 지도를 옮겨준다 (거점을 자동으로 만들지는 않음 — 지오코딩이 부정확할 수 있어서
-  // 위치 확인은 관리자가 지도를 보고 직접 그리게 한다). OpenStreetMap Nominatim, API 키 불필요.
+  // 위치 확인은 관리자가 지도를 보고 직접 그리게 한다).
   const handleFindAddressButtonClick = async () => {
     if (!demandSite.address) return;
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(demandSite.address)}`,
-      );
-      const results = (await response.json()) as { lat: string; lon: string }[];
-      if (results.length === 0) {
+      const point = await geocodeAddress();
+      if (!point) {
         alert("주소를 찾을 수 없습니다.");
 
         return;
       }
-      const point: [number, number] = [
-        Number(results[0].lat),
-        Number(results[0].lon),
-      ];
 
       if (searchMarkerRef.current) {
         searchMarkerRef.current.remove();
@@ -244,9 +264,15 @@ const DemandSiteLocationsPanel = ({
   return (
     <div className="border border-[#e2e5eb] rounded-[2px] mt-2.5 bg-[#fafbfc]">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#eceef1]">
-        <span className="text-[13px] font-bold">
-          {demandSite.name} — 거점/관제구역 편집
-        </span>
+        <div>
+          <span className="text-[13px] font-bold">
+            {demandSite.name} — 거점/관제구역 편집
+          </span>
+          <div className="text-[12px] text-[#6b7280] mt-0.5">
+            {demandSite.address ||
+              "등록된 주소 없음 — 수요처 정보에서 주소를 넣으면 지도가 그 위치로 이동합니다."}
+          </div>
+        </div>
         <div className="flex gap-1.5">
           {demandSite.address && (
             <button
