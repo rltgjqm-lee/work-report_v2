@@ -40,6 +40,16 @@ const AdminFormModal = ({
   roleLabel,
   organizations,
 }: AdminFormModalProps) => {
+  // 총괄 관리자 계정은 소속 기관이 없어서, 기본 역할이 총괄이면 모달을 열자마자
+  // 기관 선택이 비활성으로 뜬다. 총괄 계정을 새로 만드는 일은 드물기 때문에
+  // 기본값은 기관을 고를 수 있는 역할로 잡는다.
+  const defaultRole =
+    assignableRoles.find(
+      (assignableRole) => assignableRole !== ROLES.SUPER_ADMIN,
+    ) ??
+    assignableRoles[0] ??
+    ROLES.MANAGER;
+
   const [form, setForm] = useState(
     editingAdmin
       ? {
@@ -51,7 +61,7 @@ const AdminFormModal = ({
             : "",
           password: "",
         }
-      : { ...emptyForm, role: assignableRoles[0] ?? ROLES.MANAGER },
+      : { ...emptyForm, role: defaultRole },
   );
   const [error, setError] = useState<string | null>(null);
 
