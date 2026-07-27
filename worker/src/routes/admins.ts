@@ -114,18 +114,39 @@ app.post("/", async (c) => {
   const email = body.email.trim().toLowerCase();
 
   const db = drizzle(c.env.DB);
-  const result = await db
-    .insert(admins)
-    .values({
-      email,
-      name: body.name,
-      role: body.role,
-      organizationId,
-      programIds: body.programIds ? JSON.stringify(body.programIds) : null,
-      groupIds: body.groupIds ? JSON.stringify(body.groupIds) : null,
-      passwordHash,
-    })
-    .returning();
+
+  // 이메일이 곧 로그인 아이디(unique 컬럼)라, 중복이면 D1이 UNIQUE 제약 오류를 던지고
+  // 그대로 두면 500이 나간다. 발급하는 사람이 바로 알아볼 수 있게 409로 돌려준다.
+  const duplicateRows = await db
+    .select({ id: admins.id })
+    .from(admins)
+    .where(eq(admins.email, email));
+  if (duplicateRows[0]) {
+    return c.json({ error: "이미 등록된 이메일입니다." }, 409);
+  }
+
+  let result;
+  try {
+    result = await db
+      .insert(admins)
+      .values({
+        email,
+        name: body.name,
+        role: body.role,
+        organizationId,
+        programIds: body.programIds ? JSON.stringify(body.programIds) : null,
+        groupIds: body.groupIds ? JSON.stringify(body.groupIds) : null,
+        passwordHash,
+      })
+      .returning();
+  } catch (error) {
+    // 위 조회와 insert 사이에 같은 이메일이 먼저 들어간 경우 — 제약 오류만 409로 바꾸고
+    // 나머지는 그대로 올려보낸다.
+    if (error instanceof Error && error.message.includes("UNIQUE constraint")) {
+      return c.json({ error: "이미 등록된 이메일입니다." }, 409);
+    }
+    throw error;
+  }
 
   return c.json(toAdminJson(result[0]), 201);
 });
