@@ -86,6 +86,18 @@ const ProgramsPage = () => {
 
   useEffect(refreshPrograms, [instFilter, role]);
 
+  // 담당자 목록을 못 받아오는 역할(부관리자/담당자)에겐 "-"만 늘어놓는 대신 열 자체를 숨긴다.
+  const canViewManagerColumn =
+    role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
+
+  const managerAdminName = (programId: number) => {
+    const managerAdmin = managerAdmins.find((candidate) =>
+      candidate.programIds.includes(programId),
+    );
+
+    return managerAdmin?.name ?? managerAdmin?.email ?? "-";
+  };
+
   const orgName = (organizationId: number) =>
     organizations.find((organization) => organization.id === organizationId)
       ?.name ?? "-";
@@ -177,7 +189,11 @@ const ProgramsPage = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] table-fixed border-collapse">
+          <table
+            className={`w-full table-fixed border-collapse ${
+              canViewManagerColumn ? "min-w-[1220px]" : "min-w-[1100px]"
+            }`}
+          >
             <thead>
               <tr>
                 <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -198,6 +214,11 @@ const ProgramsPage = () => {
                 <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   상태
                 </th>
+                {canViewManagerColumn && (
+                  <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                    담당자
+                  </th>
+                )}
                 <th className="w-[160px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
               </tr>
             </thead>
@@ -226,6 +247,11 @@ const ProgramsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {program.isActive ? "활성" : "비활성"}
                   </td>
+                  {canViewManagerColumn && (
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                      {managerAdminName(program.id)}
+                    </td>
+                  )}
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
