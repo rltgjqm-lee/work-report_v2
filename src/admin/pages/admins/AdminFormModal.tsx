@@ -78,14 +78,22 @@ const AdminFormModal = ({
 
           return;
         }
+        // 서비스 총괄 관리자는 특정 기관에 속하지 않는다(목록에서도 "전체"로 표시).
+        // 그 외 역할은 소속 기관이 반드시 있어야 하고, 서버도 400으로 막는다.
+        const needsOrganization =
+          currentRole === ROLES.SUPER_ADMIN && form.role !== ROLES.SUPER_ADMIN;
+        if (needsOrganization && !form.organizationId) {
+          setError("소속 기관을 선택해주세요.");
+
+          return;
+        }
         await createAdmin({
           email: form.email,
           name: form.name,
           role: form.role,
-          organizationId:
-            currentRole === ROLES.SUPER_ADMIN && form.organizationId
-              ? Number(form.organizationId)
-              : undefined,
+          organizationId: needsOrganization
+            ? Number(form.organizationId)
+            : undefined,
           password: form.password,
         });
       }
@@ -133,15 +141,33 @@ const AdminFormModal = ({
           />
         </FormField>
       )}
-      <FormField label="이름">
-        <input
-          className={inputClass}
-          value={form.name}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, name: event.target.value }))
-          }
-        />
-      </FormField>
+      {currentRole === ROLES.SUPER_ADMIN && !editingAdmin && (
+        <FormField label="소속 기관">
+          <FilterSelect
+            className="w-full"
+            disabled={form.role === ROLES.SUPER_ADMIN}
+            value={form.role === ROLES.SUPER_ADMIN ? "" : form.organizationId}
+            onChange={(value) =>
+              setForm((f) => ({ ...f, organizationId: value }))
+            }
+            options={[
+              {
+                value: "",
+                label:
+                  form.role === ROLES.SUPER_ADMIN
+                    ? "전체 (소속 기관 없음)"
+                    : "선택하세요",
+              },
+              ...organizations
+                .filter((organization) => organization.isActive)
+                .map((organization) => ({
+                  value: String(organization.id),
+                  label: organization.name,
+                })),
+            ]}
+          />
+        </FormField>
+      )}
       <FormField label="역할">
         <FilterSelect
           className="w-full"
@@ -153,28 +179,15 @@ const AdminFormModal = ({
           }))}
         />
       </FormField>
-      {currentRole === ROLES.SUPER_ADMIN &&
-        form.role !== ROLES.SUPER_ADMIN &&
-        !editingAdmin && (
-          <FormField label="소속 기관">
-            <FilterSelect
-              className="w-full"
-              value={form.organizationId}
-              onChange={(value) =>
-                setForm((f) => ({ ...f, organizationId: value }))
-              }
-              options={[
-                { value: "", label: "선택하세요" },
-                ...organizations
-                  .filter((organization) => organization.isActive)
-                  .map((organization) => ({
-                    value: String(organization.id),
-                    label: organization.name,
-                  })),
-              ]}
-            />
-          </FormField>
-        )}
+      <FormField label="이름">
+        <input
+          className={inputClass}
+          value={form.name}
+          onChange={(event) =>
+            setForm((f) => ({ ...f, name: event.target.value }))
+          }
+        />
+      </FormField>
       {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
     </SlideModal>
   );
