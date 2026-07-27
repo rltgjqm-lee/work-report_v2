@@ -310,6 +310,7 @@ export type LiveWorker = {
   participantId: number;
   name: string;
   groupName: string;
+  demandSiteId: number | null;
   demandSiteName: string;
   lat: number | null;
   lng: number | null;

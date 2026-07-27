@@ -16,7 +16,21 @@ import {
 } from "../api/admin/demandSites";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
-import type { EscapeRow, EscapeStatus, LiveWorker, Program } from "../types";
+import type {
+  DemandSite,
+  DemandSiteLocation,
+  EscapeRow,
+  EscapeStatus,
+  LiveWorker,
+  Program,
+} from "../types";
+
+// 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다
+interface DemandSiteGeofence {
+  demandSiteId: number;
+  demandSiteName: string;
+  location: DemandSiteLocation;
+}
 
 const POLL_INTERVAL_MS = 10000;
 
@@ -45,6 +59,9 @@ const EscapesPage = () => {
   const [workers, setWorkers] = useState<LiveWorker[]>([]);
   const [search, setSearch] = useState("");
   const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
+  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
+  const [geofences, setGeofences] = useState<DemandSiteGeofence[]>([]);
+  const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -100,9 +117,74 @@ const EscapesPage = () => {
   }, [programId, status]);
 
   const filteredWorkers = useMemo(
-    () => workers.filter((worker) => worker.name.includes(search)),
-    [workers, search],
+    () =>
+      workers.filter(
+        (worker) =>
+          worker.name.includes(search) &&
+          (!selectedDemandSiteId ||
+            String(worker.demandSiteId) === selectedDemandSiteId),
+      ),
+    [workers, search, selectedDemandSiteId],
   );
+
+  // 이탈 목록에는 수요처 id가 없고 이름만 내려온다 — 선택한 수요처 이름으로 맞춘다
+  const filteredRows = useMemo(() => {
+    if (!selectedDemandSiteId) return rows;
+
+    const selectedDemandSite = demandSites.find(
+      (demandSite) => String(demandSite.id) === selectedDemandSiteId,
+    );
+
+    return rows.filter(
+      (row) => row.demandSiteName === selectedDemandSite?.name,
+    );
+  }, [rows, demandSites, selectedDemandSiteId]);
+
+  const visibleGeofences = useMemo(
+    () =>
+      geofences.filter(
+        (geofence) =>
+          !selectedDemandSiteId ||
+          String(geofence.demandSiteId) === selectedDemandSiteId,
+      ),
+    [geofences, selectedDemandSiteId],
+  );
+
+  // 수요처 관제구역은 지도 초기화와 분리해서 받아둔다 — 지도 생성 시점에 한 번만
+  // 그리면, 사업단을 바꾸거나 응답이 늦게 도착했을 때 아무것도 안 그려진 채로 남는다.
+  useEffect(() => {
+    // 사업단 미선택 상태에서는 지도도 필터도 렌더링되지 않으므로, 남아있는 값을
+    // 굳이 비우지 않는다 — 다음 사업단을 고르면 아래 로딩이 통째로 갈아끼운다.
+    if (!programId) return;
+
+    let cancelled = false;
+
+    const loadGeofences = async () => {
+      const sites = await listDemandSites(programId);
+      const locationsPerSite = await Promise.all(
+        sites.map((demandSite) => listDemandSiteLocations(demandSite.id)),
+      );
+
+      if (cancelled) return;
+
+      setDemandSites(sites);
+      setGeofences(
+        sites.flatMap((demandSite, siteIndex) =>
+          locationsPerSite[siteIndex].map((location) => ({
+            demandSiteId: demandSite.id,
+            demandSiteName: demandSite.name,
+            location,
+          })),
+        ),
+      );
+    };
+
+    loadGeofences();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [programId]);
 
   // 지도 초기화 — 사이드바로 진입해 사업단 미선택 상태면 지도 컨테이너 자체가 아직
   // 렌더링 안 됐으므로, programId가 정해져 컨테이너가 나타난 뒤에 초기화한다
@@ -117,67 +199,70 @@ const EscapesPage = () => {
     geofenceLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // 사업단을 고르면 근무자 위치가 아직 없어도 그 사업단 수요처 거점(원형/다각형)들을
-    // 지도에 그리고 그쪽으로 먼저 포커스한다 (근무자가 위치를 보고하기 시작하면 아래
-    // 마커 렌더링 effect가 그쪽으로 다시 맞춘다). 거점 자체는 계속 보이는 별도 레이어.
-    if (programId) {
-      listDemandSites(programId).then(async (sites) => {
-        const points: [number, number][] = [];
-        const geofenceLayer = geofenceLayerRef.current;
-
-        for (const site of sites) {
-          const locations = await listDemandSiteLocations(site.id);
-          for (const location of locations) {
-            const tooltipLabel = `${site.name} · ${location.name}`;
-
-            if (
-              location.shapeType === "RADIUS" &&
-              location.baseLat !== null &&
-              location.baseLng !== null &&
-              location.radius !== null
-            ) {
-              points.push([location.baseLat, location.baseLng]);
-              const circle = L.circle([location.baseLat, location.baseLng], {
-                radius: location.radius,
-                color: "#3182f6",
-                weight: 2,
-                dashArray: "6 4",
-                fillOpacity: 0.06,
-              }).bindTooltip(tooltipLabel);
-              geofenceLayer?.addLayer(circle);
-            } else if (location.shapeType === "POLYGON" && location.polygon) {
-              location.polygon.forEach((point) =>
-                points.push([point.lat, point.lng]),
-              );
-              const polygon = L.polygon(
-                location.polygon.map(
-                  (point) => [point.lat, point.lng] as [number, number],
-                ),
-                {
-                  color: "#3182f6",
-                  weight: 2,
-                  dashArray: "6 4",
-                  fillOpacity: 0.06,
-                },
-              ).bindTooltip(tooltipLabel);
-              geofenceLayer?.addLayer(polygon);
-            }
-          }
-        }
-        if (points.length > 0 && mapRef.current) {
-          mapRef.current.fitBounds(L.latLngBounds(points), {
-            padding: [60, 60],
-            maxZoom: 16,
-          });
-        }
-      });
-    }
-
     return () => {
       map.remove();
       mapRef.current = null;
     };
   }, [programId]);
+
+  // 관제구역(원형/다각형) 그리기 — 수요처 필터가 바뀌면 다시 그린다.
+  // 근무자 위치가 아직 없을 때는 관제구역 쪽으로 지도를 맞춰준다.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = geofenceLayerRef.current;
+    if (!map || !layer) return;
+
+    layer.clearLayers();
+
+    const shapeStyle = {
+      color: "#3182f6",
+      weight: 2,
+      dashArray: "6 4",
+      fillOpacity: 0.06,
+    };
+    const points: [number, number][] = [];
+
+    visibleGeofences.forEach(({ demandSiteName, location }) => {
+      const tooltipLabel = `${demandSiteName} · ${location.name}`;
+
+      if (
+        location.shapeType === "RADIUS" &&
+        location.baseLat !== null &&
+        location.baseLng !== null &&
+        location.radius !== null
+      ) {
+        points.push([location.baseLat, location.baseLng]);
+        L.circle([location.baseLat, location.baseLng], {
+          ...shapeStyle,
+          radius: location.radius,
+        })
+          .bindTooltip(tooltipLabel)
+          .addTo(layer);
+      } else if (location.shapeType === "POLYGON" && location.polygon) {
+        location.polygon.forEach((point) =>
+          points.push([point.lat, point.lng]),
+        );
+        L.polygon(
+          location.polygon.map(
+            (point) => [point.lat, point.lng] as [number, number],
+          ),
+          shapeStyle,
+        )
+          .bindTooltip(tooltipLabel)
+          .addTo(layer);
+      }
+    });
+
+    const hasLocatedWorker = filteredWorkers.some(
+      (worker) => worker.lat !== null && worker.lng !== null,
+    );
+    if (points.length > 0 && !hasLocatedWorker) {
+      map.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 16 });
+    }
+    // filteredWorkers는 지도를 어디에 맞출지 판단할 때만 쓴다 — 근무자가 갱신될
+    // 때마다 관제구역을 다시 그릴 필요는 없어서 의존성에서 뺀다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleGeofences, programId]);
 
   // 근무자 목록이 바뀔 때마다 마커 다시 그리기
   useEffect(() => {
@@ -272,12 +357,29 @@ const EscapesPage = () => {
           {!preselectedProgramId && (
             <FilterSelect
               value={selectedProgramId}
-              onChange={setSelectedProgramId}
+              onChange={(value) => {
+                setSelectedProgramId(value);
+                // 사업단이 바뀌면 이전 사업단의 수요처 필터는 의미가 없다
+                setSelectedDemandSiteId("");
+              }}
               options={[
                 { value: "", label: "사업단을 선택하세요" },
                 ...programs.map((program) => ({
                   value: String(program.id),
                   label: program.name,
+                })),
+              ]}
+            />
+          )}
+          {programId > 0 && (
+            <FilterSelect
+              value={selectedDemandSiteId}
+              onChange={setSelectedDemandSiteId}
+              options={[
+                { value: "", label: "전체 수요처" },
+                ...demandSites.map((demandSite) => ({
+                  value: String(demandSite.id),
+                  label: demandSite.name,
                 })),
               ]}
             />
@@ -362,7 +464,7 @@ const EscapesPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row) => (
+                      {filteredRows.map((row) => (
                         <tr
                           key={row.escape.id}
                           className={
@@ -408,7 +510,7 @@ const EscapesPage = () => {
                           </td>
                         </tr>
                       ))}
-                      {rows.length === 0 && (
+                      {filteredRows.length === 0 && (
                         <tr>
                           <td
                             colSpan={5}
