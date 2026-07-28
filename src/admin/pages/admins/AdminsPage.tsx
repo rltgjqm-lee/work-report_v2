@@ -4,6 +4,7 @@ import { listAdmins, updateAdmin } from "../../api/admin/admins";
 import { listOrganizations } from "../../api/admin/organizations";
 import AdminFormModal from "./AdminFormModal";
 import ResetPasswordModal from "./ResetPasswordModal";
+import TransferProgramsModal from "./TransferProgramsModal";
 import SearchInput from "../../components/SearchInput";
 import { useAuth } from "../../context/useAuth";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
@@ -46,6 +47,7 @@ const AdminsPage = () => {
     id: number;
     name: string;
   } | null>(null);
+  const [transferTarget, setTransferTarget] = useState<Admin | null>(null);
 
   const refresh = () => {
     listAdmins().then(setAdmins);
@@ -86,6 +88,15 @@ const AdminsPage = () => {
   };
 
   const handleToggleActiveButtonClick = async (adminRow: Admin) => {
+    // 담당 사업단을 들고 있으면 서버가 400으로 막는다 — 왕복 없이 여기서 먼저 안내한다
+    if (adminRow.isActive && adminRow.programIds.length > 0) {
+      alert(
+        `담당 사업단 ${adminRow.programIds.length}개가 남아 있습니다. '담당 이관'을 먼저 진행해주세요.`,
+      );
+
+      return;
+    }
+
     const actionLabel = adminRow.isActive ? "비활성화" : "활성화";
     if (
       !confirm(
@@ -99,6 +110,15 @@ const AdminsPage = () => {
     } catch (error) {
       alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
     }
+  };
+
+  const handleTransferButtonClick = (adminRow: Admin) => {
+    setTransferTarget(adminRow);
+  };
+
+  const handleTransferred = () => {
+    setTransferTarget(null);
+    refresh();
   };
 
   const handleResetPasswordButtonClick = (adminRow: Admin) => {
@@ -191,6 +211,14 @@ const AdminsPage = () => {
                     >
                       수정
                     </button>
+                    {adminRow.programIds.length > 0 && (
+                      <button
+                        className={rowActionBtnClass}
+                        onClick={() => handleTransferButtonClick(adminRow)}
+                      >
+                        담당 이관
+                      </button>
+                    )}
                     <button
                       className={rowActionBtnClass}
                       onClick={() => handleToggleActiveButtonClick(adminRow)}
@@ -220,6 +248,21 @@ const AdminsPage = () => {
           assignableRoles={assignableRoles}
           roleLabel={ROLE_LABEL}
           organizations={organizations}
+        />
+      )}
+
+      {transferTarget && (
+        <TransferProgramsModal
+          onClose={() => setTransferTarget(null)}
+          onTransferred={handleTransferred}
+          target={transferTarget}
+          candidates={admins.filter(
+            (adminRow) =>
+              adminRow.id !== transferTarget.id &&
+              adminRow.role === ROLES.MANAGER &&
+              adminRow.isActive &&
+              adminRow.organizationId === transferTarget.organizationId,
+          )}
         />
       )}
 

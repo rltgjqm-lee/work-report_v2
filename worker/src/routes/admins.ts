@@ -1,8 +1,13 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 
-import { admins, adminLoginHistory, adminSessions } from "../db/schema";
+import {
+  admins,
+  adminLoginHistory,
+  adminSessions,
+  demandSites,
+} from "../db/schema";
 import { getAuth } from "../lib/authz";
 import { hashPassword } from "../lib/password";
 import { tryConsumePasswordResetBudget } from "../lib/passwordResetRateLimit";
@@ -151,6 +156,80 @@ app.post("/", async (c) => {
   return c.json(toAdminJson(result[0]), 201);
 });
 
+// 담당 이관 — 퇴사 등으로 담당자를 정리할 때, 담당 사업단을 다른 담당자에게 통째로 넘긴다.
+// 사업단(programIds)만 옮기면 그 사업단 수요처에는 떠난 사람이 담당자로 남으므로 함께 갱신한다.
+app.put("/:id/transfer-programs", async (c) => {
+  const auth = getAuth(c);
+  if (ASSIGNABLE_ROLES[auth.role].length === 0) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+  const fromRows = await db.select().from(admins).where(eq(admins.id, id));
+  const from = fromRows[0];
+  if (!from) return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
+  if (
+    auth.role !== ROLES.SUPER_ADMIN &&
+    from.organizationId !== auth.organizationId
+  ) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{ toAdminId?: number }>();
+  if (!body.toAdminId) {
+    return c.json({ error: "이관받을 담당자를 선택해주세요." }, 400);
+  }
+  if (body.toAdminId === id) {
+    return c.json({ error: "같은 계정으로는 이관할 수 없습니다." }, 400);
+  }
+
+  const toRows = await db
+    .select()
+    .from(admins)
+    .where(eq(admins.id, body.toAdminId));
+  const to = toRows[0];
+  if (!to) return c.json({ error: "이관받을 계정을 찾을 수 없습니다." }, 404);
+  if (to.organizationId !== from.organizationId) {
+    return c.json({ error: "같은 기관의 계정으로만 이관할 수 있습니다." }, 400);
+  }
+  if (!to.isActive) {
+    return c.json({ error: "비활성 계정으로는 이관할 수 없습니다." }, 400);
+  }
+
+  const programIds = parseIdArray(from.programIds);
+  if (programIds.length === 0) {
+    return c.json({ ok: true, programCount: 0, demandSiteCount: 0 });
+  }
+
+  await db
+    .update(admins)
+    .set({
+      programIds: JSON.stringify([
+        ...new Set([...parseIdArray(to.programIds), ...programIds]),
+      ]),
+    })
+    .where(eq(admins.id, to.id));
+
+  await db
+    .update(admins)
+    .set({ programIds: JSON.stringify([]) })
+    .where(eq(admins.id, from.id));
+
+  // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자는 사업단 담당자를 따라간다
+  const movedDemandSites = await db
+    .update(demandSites)
+    .set({ contactAdminId: to.id })
+    .where(inArray(demandSites.programId, programIds))
+    .returning({ id: demandSites.id });
+
+  return c.json({
+    ok: true,
+    programCount: programIds.length,
+    demandSiteCount: movedDemandSites.length,
+  });
+});
+
 app.put("/:id", async (c) => {
   const auth = getAuth(c);
   const assignable = ASSIGNABLE_ROLES[auth.role];
@@ -178,6 +257,22 @@ app.put("/:id", async (c) => {
     !assignable.includes(body.role)
   ) {
     return c.json({ error: "이 역할로 변경할 권한이 없습니다." }, 403);
+  }
+
+  // 담당 사업단을 들고 있는 계정을 그냥 비활성화하면, 그 사업단과 수요처에 떠난 사람이
+  // 담당자로 남는다 — 이관을 먼저 하도록 막는다.
+  if (
+    body.isActive === false &&
+    existing.isActive &&
+    parseIdArray(existing.programIds).length > 0
+  ) {
+    return c.json(
+      {
+        error:
+          "담당 사업단이 남아 있습니다. 담당 이관을 먼저 진행한 뒤 비활성화해주세요.",
+      },
+      400,
+    );
   }
 
   const result = await db
