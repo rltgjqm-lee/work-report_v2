@@ -50,13 +50,17 @@ const emptyStats: AttendanceStats = {
 
 interface AttendanceTabPanelProps {
   programId: number;
+  participantIds: Set<number> | null;
 }
 
 /**
  * 관리자 페이지 > 근태 관리 페이지의 "근태" 탭 내용입니다.
  *
  */
-const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
+const AttendanceTabPanel = ({
+  programId,
+  participantIds,
+}: AttendanceTabPanelProps) => {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [dayFilter, setDayFilter] = useState("all");
   const [logs, setLogs] = useState<AttendanceRow[]>([]);
@@ -88,16 +92,22 @@ const AttendanceTabPanel = ({ programId }: AttendanceTabPanelProps) => {
     0,
   ).getDate();
 
+  // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체)
+  const scopedLogs = participantIds
+    ? logs.filter((row) => participantIds.has(row.log.participantId))
+    : logs;
+
   const filteredLogs =
     dayFilter === "all"
-      ? logs
-      : logs.filter(
+      ? scopedLogs
+      : scopedLogs.filter(
           (row) =>
             row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
         );
 
+  // 서버가 준 stats는 사업단 전체 기준이라, 수요처나 날짜로 걸렀으면 직접 다시 센다
   const dayStatsTotals =
-    dayFilter === "all"
+    dayFilter === "all" && !participantIds
       ? null
       : filteredLogs.reduce(
           (acc, row) => ({

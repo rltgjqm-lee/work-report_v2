@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { getProgram, listPrograms } from "../../api/admin/programs";
+import { listDemandSites } from "../../api/admin/demandSites";
 import FilterSelect from "../../components/FilterSelect";
 import TabBar from "../../components/TabBar";
 import AttendanceTabPanel from "./AttendanceTabPanel";
 import LeaveTabPanel from "./LeaveTabPanel";
 import TrainingTabPanel from "./TrainingTabPanel";
-import type { Participant, Program } from "../../types";
+import type { DemandSite, Participant, Program } from "../../types";
 
 type Tab = "attendance" | "training" | "leave";
 
@@ -24,6 +25,8 @@ const AttendancePage = () => {
   const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
   const [programName, setProgramName] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
+  const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
   const [tab, setTab] = useState<Tab>("attendance");
 
   // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
@@ -39,7 +42,36 @@ const AttendancePage = () => {
       setProgramName(program.name);
       setParticipants(program.participants);
     });
+    listDemandSites(programId).then(setDemandSites);
   }, [programId]);
+
+  // 근태/교육/휴가 데이터에는 수요처 정보가 없고 참여자 id만 있다 —
+  // 선택한 수요처 소속 참여자 id 집합을 만들어 각 탭에서 그걸로 걸러낸다.
+  // 선택 안 했으면 null을 내려서 필터를 끈다.
+  const filteredParticipantIds = useMemo(() => {
+    if (!selectedDemandSiteId) return null;
+
+    return new Set(
+      participants
+        .filter(
+          (participant) =>
+            String(participant.demandSiteId) === selectedDemandSiteId,
+        )
+        .map((participant) => participant.id),
+    );
+  }, [participants, selectedDemandSiteId]);
+
+  // 교육 탭에는 걸러낸 참여자 목록을 그대로 넘긴다 — JSX 안에서 만들면 렌더마다
+  // 새 배열이 되어, 나중에 이 prop이 effect 의존성에 들어가는 순간 재요청이 돈다.
+  const filteredParticipants = useMemo(
+    () =>
+      filteredParticipantIds
+        ? participants.filter((participant) =>
+            filteredParticipantIds.has(participant.id),
+          )
+        : participants,
+    [participants, filteredParticipantIds],
+  );
 
   return (
     <div>
@@ -64,19 +96,39 @@ const AttendancePage = () => {
             참여자의 근태, 교육, 휴가 현황을 확인합니다.
           </p>
         </div>
-        {!preselectedProgramId && (
+        <div className="flex items-center gap-2.5">
+          {!preselectedProgramId && (
+            <FilterSelect
+              value={selectedProgramId}
+              onChange={(value) => {
+                setSelectedProgramId(value);
+                // 사업단이 바뀌면 이전 사업단의 수요처 선택은 더 이상 유효하지 않다
+                setSelectedDemandSiteId("");
+              }}
+              options={[
+                { value: "", label: "사업단을 선택하세요" },
+                ...programs.map((program) => ({
+                  value: String(program.id),
+                  label: program.name,
+                })),
+              ]}
+            />
+          )}
+          {/* 사업단을 고르기 전에도 자리를 지킨다 — 고를 수 있는 수요처가 없을 뿐이라
+              비활성 상태로 보여준다 (수요처 목록은 사업단에 딸려 있다) */}
           <FilterSelect
-            value={selectedProgramId}
-            onChange={setSelectedProgramId}
+            value={selectedDemandSiteId}
+            onChange={setSelectedDemandSiteId}
+            disabled={!programId}
             options={[
-              { value: "", label: "사업단을 선택하세요" },
-              ...programs.map((program) => ({
-                value: String(program.id),
-                label: program.name,
+              { value: "", label: "전체 수요처" },
+              ...demandSites.map((demandSite) => ({
+                value: String(demandSite.id),
+                label: demandSite.name,
               })),
             ]}
           />
-        )}
+        </div>
       </div>
 
       {!programId ? (
@@ -95,14 +147,25 @@ const AttendancePage = () => {
             onChange={setTab}
           />
 
-          {tab === "attendance" && <AttendanceTabPanel programId={programId} />}
+          {tab === "attendance" && (
+            <AttendanceTabPanel
+              programId={programId}
+              participantIds={filteredParticipantIds}
+            />
+          )}
           {tab === "training" && (
             <TrainingTabPanel
               programId={programId}
-              participants={participants}
+              participants={filteredParticipants}
+              participantIds={filteredParticipantIds}
             />
           )}
-          {tab === "leave" && <LeaveTabPanel programId={programId} />}
+          {tab === "leave" && (
+            <LeaveTabPanel
+              programId={programId}
+              participantIds={filteredParticipantIds}
+            />
+          )}
         </>
       )}
     </div>

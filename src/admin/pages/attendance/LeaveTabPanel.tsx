@@ -29,13 +29,14 @@ const emptyStats: LeaveStats = {
 
 interface LeaveTabPanelProps {
   programId: number;
+  participantIds: Set<number> | null;
 }
 
 /**
  * 관리자 페이지 > 근태 관리 페이지의 "휴가" 탭 내용입니다.
  *
  */
-const LeaveTabPanel = ({ programId }: LeaveTabPanelProps) => {
+const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [leaves, setLeaves] = useState<LeaveRow[]>([]);
   const [stats, setStats] = useState<LeaveStats>(emptyStats);
@@ -44,6 +45,12 @@ const LeaveTabPanel = ({ programId }: LeaveTabPanelProps) => {
     getLeaves(programId, month).then(setLeaves);
     getLeaveStats(programId, month.slice(0, 4)).then(setStats);
   }, [programId, month]);
+
+  // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체).
+  // 상단 통계는 사업단/연 단위 집계라 필터와 무관하게 그대로 둔다.
+  const filteredLeaves = participantIds
+    ? leaves.filter((row) => participantIds.has(row.leave.participantId))
+    : leaves;
 
   // month는 "2026-07" 형식이라, slice(5, 7)로 "-" 뒤 월 부분("07")만 꺼내서
   // stats.monthly[].month("01"~"12")와 비교한다
@@ -114,7 +121,7 @@ const LeaveTabPanel = ({ programId }: LeaveTabPanelProps) => {
               </tr>
             </thead>
             <tbody>
-              {leaves.map((row) => (
+              {filteredLeaves.map((row) => (
                 <tr key={row.leave.id} className="hover:bg-[#f8fafc]">
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {row.participantName}
@@ -148,7 +155,7 @@ const LeaveTabPanel = ({ programId }: LeaveTabPanelProps) => {
                   </td>
                 </tr>
               ))}
-              {leaves.length === 0 && (
+              {filteredLeaves.length === 0 && (
                 <tr>
                   <td
                     colSpan={8}

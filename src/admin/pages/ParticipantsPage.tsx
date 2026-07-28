@@ -25,6 +25,7 @@ const ParticipantsPage = () => {
   const [rows, setRows] = useState<ParticipantRow[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [programFilter, setProgramFilter] = useState("all");
+  const [demandSiteFilter, setDemandSiteFilter] = useState("all");
   const [search, setSearch] = useState("");
 
   const refresh = () => {
@@ -56,11 +57,38 @@ const ParticipantsPage = () => {
 
   useEffect(refresh, []);
 
+  // 수요처는 사업단마다 다르므로, 선택한 사업단에 실제로 있는 수요처만 후보로 올린다.
+  // 참여자 행이 들고 있는 이름(demandName)을 그대로 쓰므로 별도 조회가 필요 없다.
+  const demandSiteNames = useMemo(() => {
+    const scopedRows =
+      programFilter === "all"
+        ? rows
+        : rows.filter(
+            (participantRow) =>
+              participantRow.programId === Number(programFilter),
+          );
+
+    return [
+      ...new Set(
+        scopedRows
+          .map((participantRow) => participantRow.demandName)
+          .filter((demandName): demandName is string => !!demandName),
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+  }, [rows, programFilter]);
+
   const filtered = useMemo(() => {
     let list = rows;
     if (programFilter !== "all") {
       list = list.filter(
         (participantRow) => participantRow.programId === Number(programFilter),
+      );
+    }
+    if (demandSiteFilter === "unassigned") {
+      list = list.filter((participantRow) => !participantRow.demandName);
+    } else if (demandSiteFilter !== "all") {
+      list = list.filter(
+        (participantRow) => participantRow.demandName === demandSiteFilter,
       );
     }
     if (search) {
@@ -71,7 +99,7 @@ const ParticipantsPage = () => {
       );
     }
     return list;
-  }, [rows, programFilter, search]);
+  }, [rows, programFilter, demandSiteFilter, search]);
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
@@ -104,6 +132,8 @@ const ParticipantsPage = () => {
               value={programFilter}
               onChange={(value) => {
                 setProgramFilter(value);
+                // 사업단이 바뀌면 이전 사업단의 수요처 선택은 더 이상 유효하지 않다
+                setDemandSiteFilter("all");
                 setPage(1);
               }}
               options={[
@@ -111,6 +141,21 @@ const ParticipantsPage = () => {
                 ...programs.map((program) => ({
                   value: String(program.id),
                   label: program.name,
+                })),
+              ]}
+            />
+            <FilterSelect
+              value={demandSiteFilter}
+              onChange={(value) => {
+                setDemandSiteFilter(value);
+                setPage(1);
+              }}
+              options={[
+                { value: "all", label: "전체 수요처" },
+                { value: "unassigned", label: "수요처 미배정" },
+                ...demandSiteNames.map((demandSiteName) => ({
+                  value: demandSiteName,
+                  label: demandSiteName,
                 })),
               ]}
             />

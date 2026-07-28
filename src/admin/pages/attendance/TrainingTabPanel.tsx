@@ -65,6 +65,7 @@ const emptyLogForm = {
 interface TrainingTabPanelProps {
   programId: number;
   participants: Participant[];
+  participantIds: Set<number> | null;
 }
 
 /**
@@ -74,6 +75,7 @@ interface TrainingTabPanelProps {
 const TrainingTabPanel = ({
   programId,
   participants,
+  participantIds,
 }: TrainingTabPanelProps) => {
   const [subTab, setSubTab] = useState<SubTab>("definitions");
 
@@ -216,9 +218,16 @@ const TrainingTabPanel = ({
     }
   };
 
-  const filteredLogs = logs.filter((row) =>
-    row.participantName.includes(logSearch),
+  // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체)
+  const filteredLogs = logs.filter(
+    (row) =>
+      row.participantName.includes(logSearch) &&
+      (!participantIds || participantIds.has(row.log.participantId)),
   );
+
+  const filteredSummary = participantIds
+    ? summary.filter((row) => participantIds.has(row.participantId))
+    : summary;
 
   return (
     <div>
@@ -426,7 +435,7 @@ const TrainingTabPanel = ({
                 </tr>
               </thead>
               <tbody>
-                {summary.map((row) => (
+                {filteredSummary.map((row) => (
                   <tr key={row.participantId} className="hover:bg-[#f8fafc]">
                     <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                       {row.participantName}
@@ -438,7 +447,7 @@ const TrainingTabPanel = ({
                     </td>
                   </tr>
                 ))}
-                {summary.length === 0 && (
+                {filteredSummary.length === 0 && (
                   <tr>
                     <td
                       colSpan={2}
