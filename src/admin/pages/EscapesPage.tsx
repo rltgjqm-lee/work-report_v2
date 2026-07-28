@@ -409,19 +409,20 @@ const EscapesPage = () => {
               ]}
             />
           )}
-          {programId > 0 && (
-            <FilterSelect
-              value={selectedDemandSiteId}
-              onChange={setSelectedDemandSiteId}
-              options={[
-                { value: "", label: "전체 수요처" },
-                ...demandSites.map((demandSite) => ({
-                  value: String(demandSite.id),
-                  label: demandSite.name,
-                })),
-              ]}
-            />
-          )}
+          {/* 사업단을 고르기 전에도 자리를 지킨다 — 고를 수 있는 수요처가 없을 뿐이라
+              비활성 상태로 보여준다 (수요처 목록은 사업단에 딸려 있다) */}
+          <FilterSelect
+            value={selectedDemandSiteId}
+            onChange={setSelectedDemandSiteId}
+            disabled={!programId}
+            options={[
+              { value: "", label: "전체 수요처" },
+              ...demandSites.map((demandSite) => ({
+                value: String(demandSite.id),
+                label: demandSite.name,
+              })),
+            ]}
+          />
           <SearchInput
             value={search}
             onChange={setSearch}
