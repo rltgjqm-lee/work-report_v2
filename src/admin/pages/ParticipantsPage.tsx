@@ -92,7 +92,7 @@ const ParticipantsPage = () => {
         <div>
           <h1 className="text-[21px] font-bold m-0">참여자 관리</h1>
           <p className="text-[13px] text-[#6b7280] mt-1.5">
-            전체 사업단의 참여 어르신을 통합 조회합니다.
+            전체 사업단의 참여자를 통합 조회합니다.
           </p>
         </div>
       </div>

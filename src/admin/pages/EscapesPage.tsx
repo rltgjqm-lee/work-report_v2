@@ -387,7 +387,7 @@ const EscapesPage = () => {
           <SearchInput
             value={search}
             onChange={setSearch}
-            placeholder="🔍 어르신 이름 검색"
+            placeholder="🔍 참여자 이름 검색"
           />
           <FilterSelect
             value={status}
