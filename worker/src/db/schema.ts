@@ -134,6 +134,9 @@ export const demandSites = sqliteTable("demand_sites", {
     .references(() => programs.id),
   name: text("name").notNull(),
   address: text("address"),
+  // 담당자 — 예전엔 자유 입력 이름(contact_person)만 받았고, 지금은 관리자 계정을
+  // 직접 연결한다. contact_person은 연결 이전에 쌓인 값을 읽기용으로 남겨둔 것.
+  contactAdminId: integer("contact_admin_id").references(() => admins.id),
   contactPerson: text("contact_person"),
   // 수요처 단위 기본 관제구역 — 하위 거점(demand_site_locations)을 따로 그리지 않아도
   // 이 원 하나로 이탈 판정과 관제 지도 표시가 된다. 거점을 그리면 둘 다 유효 구역이 된다.

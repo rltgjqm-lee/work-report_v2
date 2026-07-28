@@ -35,6 +35,14 @@ export const updateProgram = (
     body: JSON.stringify(data),
   });
 
+// 사업단 담당자 지정 — 이전/새 담당자 계정의 담당 사업단 목록을 서버가 한 번에 정리하고,
+// 그 사업단 소속 수요처의 담당자까지 같이 갈아끼운다.
+export const setProgramManager = (programId: number, adminId: number | null) =>
+  request<{ ok: true; adminId: number | null }>(
+    `/api/programs/${programId}/manager`,
+    { method: "PUT", body: JSON.stringify({ adminId }) },
+  );
+
 export const getMonthlyAttendance = (programId: number, month: string) =>
   request<MonthlyAttendance>(
     `/api/programs/${programId}/attendance?month=${month}`,

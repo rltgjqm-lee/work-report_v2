@@ -10,11 +10,17 @@ import type {
 export const listDemandSites = (programId: number) =>
   request<DemandSite[]>(`/api/demand-sites?programId=${programId}`);
 
+// 수요처 담당자로 지정할 수 있는 계정(담당자 역할) — 계정 관리 화면과 달리
+// 부관리자/담당자도 조회할 수 있고 id/이름만 내려온다.
+export const listAssignableDemandSiteAdmins = (programId: number) =>
+  request<{ id: number; name: string | null }[]>(
+    `/api/demand-sites/assignable-admins?programId=${programId}`,
+  );
+
 export const createDemandSite = (data: {
   programId: number;
   name: string;
   address?: string;
-  contactPerson?: string;
   baseLat?: number | null;
   baseLng?: number | null;
   radius?: number | null;
@@ -29,7 +35,7 @@ export const updateDemandSite = (
   data: Partial<{
     name: string;
     address: string;
-    contactPerson: string;
+    contactAdminId: number | null;
     baseLat: number | null;
     baseLng: number | null;
     radius: number | null;

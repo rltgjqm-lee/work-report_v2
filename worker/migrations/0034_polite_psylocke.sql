@@ -1,0 +1,1 @@
+ALTER TABLE `demand_sites` ADD `contact_admin_id` integer REFERENCES admins(id);

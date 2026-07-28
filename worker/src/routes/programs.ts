@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm";
 
 import {
+  admins,
   programs,
   participants,
   participantLeaves,
@@ -163,6 +164,82 @@ app.post("/", async (c) => {
     .returning();
 
   return c.json(result[0], 201);
+});
+
+// 사업단 담당자 지정 — 담당자는 MANAGER 계정의 programIds로 표현되므로, 이전 담당자에게서
+// 떼어내고 새 담당자에게 붙이는 걸 한 번에 처리한다. 소속 수요처 담당자도 같이 갈아끼운다:
+// 사업단 담당자가 바뀌면 그 사업단 수요처 담당자도 따라가는 게 자연스럽다.
+app.put("/:id/manager", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
+  if (
+    !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) ||
+    !canAccessProgram(auth, program)
+  ) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{ adminId?: number | null }>();
+  const nextManagerId = body.adminId ?? null;
+
+  const managerCandidates = await db
+    .select({ id: admins.id, programIds: admins.programIds })
+    .from(admins)
+    .where(
+      and(
+        eq(admins.organizationId, program.organizationId),
+        eq(admins.role, ROLES.MANAGER),
+      ),
+    );
+
+  if (
+    nextManagerId !== null &&
+    !managerCandidates.some((candidate) => candidate.id === nextManagerId)
+  ) {
+    return c.json({ error: "이 기관의 담당자 계정이 아닙니다." }, 400);
+  }
+
+  for (const candidate of managerCandidates) {
+    let assignedProgramIds: number[] = [];
+    try {
+      assignedProgramIds = candidate.programIds
+        ? (JSON.parse(candidate.programIds) as number[])
+        : [];
+    } catch {
+      assignedProgramIds = [];
+    }
+
+    const shouldHave = candidate.id === nextManagerId;
+    const has = assignedProgramIds.includes(programId);
+    if (shouldHave === has) continue;
+
+    const nextProgramIds = shouldHave
+      ? [...assignedProgramIds, programId]
+      : assignedProgramIds.filter(
+          (assignedProgramId) => assignedProgramId !== programId,
+        );
+
+    await db
+      .update(admins)
+      .set({ programIds: JSON.stringify(nextProgramIds) })
+      .where(eq(admins.id, candidate.id));
+  }
+
+  // 수요처 담당자도 함께 갱신 — 이게 "전파"다
+  await db
+    .update(demandSites)
+    .set({ contactAdminId: nextManagerId })
+    .where(eq(demandSites.programId, programId));
+
+  return c.json({ ok: true, adminId: nextManagerId });
 });
 
 app.put("/:id", async (c) => {

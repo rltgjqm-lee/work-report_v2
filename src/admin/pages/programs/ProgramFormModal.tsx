@@ -1,7 +1,10 @@
 import { useState } from "react";
 
-import { updateAdmin } from "../../api/admin/admins";
-import { createProgram, updateProgram } from "../../api/admin/programs";
+import {
+  createProgram,
+  setProgramManager,
+  updateProgram,
+} from "../../api/admin/programs";
 import SlideModal from "../../components/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -64,7 +67,7 @@ const ProgramFormModal = ({
   );
   // 담당자는 사업단이 아니라 관리자 계정 쪽에 붙어있다 — MANAGER 계정의 programIds가
   // "이 사람이 담당하는 사업단" 목록이고, 서버 권한 판정(canAccessProgram)도 이 값을 본다.
-  // 그래서 여기서 고른 담당자는 저장 후 해당 계정의 programIds를 갱신하는 방식으로 반영한다.
+  // 그래서 지금 담당자가 누구인지도 그 목록에서 거꾸로 찾아낸다.
   const [managerAdminId, setManagerAdminId] = useState(() => {
     if (!editingProgram) return "";
 
@@ -74,6 +77,9 @@ const ProgramFormModal = ({
 
     return assignedManagerAdmin ? String(assignedManagerAdmin.id) : "";
   });
+  // 처음 담긴 값을 붙잡아 두고 바뀐 경우에만 서버에 보낸다 — 계정 목록이 아직 안 실려서
+  // 선택이 비어있는 상태로 저장해도 멀쩡한 담당자가 해제되지 않게 한다.
+  const [initialManagerAdminId] = useState(managerAdminId);
   const [error, setError] = useState<string | null>(null);
 
   // 슈퍼 관리자는 전 기관 계정을 다 받아오므로 선택한 기관으로 좁힌다.
@@ -84,29 +90,15 @@ const ProgramFormModal = ({
       String(managerAdmin.organizationId) === form.organizationId,
   );
 
-  // 담당자는 한 명만 두므로, 고른 계정에는 이 사업단을 붙이고 예전에 들고 있던
-  // 다른 계정에서는 떼어낸다. 계정 목록이 아직 안 실렸으면 대상이 없어 아무 일도
-  // 일어나지 않는다 — 엉뚱하게 담당자가 해제되는 걸 막아준다.
-  const syncManagerAdminPrograms = async (programId: number) => {
-    const selectedManagerAdminId = Number(managerAdminId);
+  // 담당자 지정은 서버에 맡긴다 — 이전/새 담당자 계정 정리와 소속 수요처 담당자 전파를
+  // 한 곳에서 처리해야 화면마다 제각각으로 어긋나지 않는다.
+  // 목록이 아직 안 실려서 아무것도 못 골랐다면 건드리지 않는다(멀쩡한 담당자 해제 방지).
+  const saveManagerAdmin = async (programId: number) => {
+    if (managerAdminId === initialManagerAdminId) return;
 
-    const changedManagerAdmins = managerAdmins.filter(
-      (managerAdmin) =>
-        managerAdmin.programIds.includes(programId) !==
-        (managerAdmin.id === selectedManagerAdminId),
-    );
-
-    await Promise.all(
-      changedManagerAdmins.map((managerAdmin) => {
-        const programIds =
-          managerAdmin.id === selectedManagerAdminId
-            ? [...new Set([...managerAdmin.programIds, programId])]
-            : managerAdmin.programIds.filter(
-                (assignedProgramId) => assignedProgramId !== programId,
-              );
-
-        return updateAdmin(managerAdmin.id, { programIds });
-      }),
+    await setProgramManager(
+      programId,
+      managerAdminId ? Number(managerAdminId) : null,
     );
   };
 
@@ -145,10 +137,10 @@ const ProgramFormModal = ({
 
       if (editingProgram) {
         await updateProgram(editingProgram.id, payload);
-        await syncManagerAdminPrograms(editingProgram.id);
+        await saveManagerAdmin(editingProgram.id);
       } else {
         const createdProgram = await createProgram(payload);
-        await syncManagerAdminPrograms(createdProgram.id);
+        await saveManagerAdmin(createdProgram.id);
       }
       onSaved();
     } catch (error) {

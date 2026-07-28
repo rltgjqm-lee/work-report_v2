@@ -140,8 +140,13 @@ const ProgramDemandSitesSection = ({
             </div>
             <div className="text-xs text-[#6b7280] mt-1">
               {demandSite.address && <span>{demandSite.address}</span>}
-              {demandSite.contactPerson && (
-                <span> · 담당자 {demandSite.contactPerson}</span>
+              {/* 계정 연결 이전에 자유 입력으로 쌓인 값(contactPerson)은 대체로 보여준다 */}
+              {(demandSite.contactAdminName ?? demandSite.contactPerson) && (
+                <span>
+                  {" "}
+                  · 담당자{" "}
+                  {demandSite.contactAdminName ?? demandSite.contactPerson}
+                </span>
               )}
             </div>
             <div className="flex items-center flex-wrap gap-1.5 mt-2.5">

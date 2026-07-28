@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   createDemandSite,
+  listAssignableDemandSiteAdmins,
   updateDemandSite,
 } from "../../api/admin/demandSites";
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 import SlideModal from "../../components/SlideModal";
 import FormField from "../../components/FormField";
+import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { DemandSite } from "../../types";
 
@@ -16,7 +18,7 @@ const MIN_RADIUS_METERS = 1500;
 const emptyForm = {
   name: "",
   address: "",
-  contactPerson: "",
+  contactAdminId: "",
   radius: String(MIN_RADIUS_METERS),
 };
 
@@ -45,11 +47,23 @@ const DemandSiteFormModal = ({
       ? {
           name: editingDemandSite.name,
           address: editingDemandSite.address ?? "",
-          contactPerson: editingDemandSite.contactPerson ?? "",
+          contactAdminId:
+            editingDemandSite.contactAdminId === null
+              ? ""
+              : String(editingDemandSite.contactAdminId),
           radius: String(editingDemandSite.radius ?? MIN_RADIUS_METERS),
         }
       : emptyForm,
   );
+  const [assignableAdmins, setAssignableAdmins] = useState<
+    { id: number; name: string | null }[]
+  >([]);
+
+  // 담당자는 신규 등록 때 서버가 사업단 담당자로 자동 지정하므로, 고를 일은 수정할 때뿐이다
+  useEffect(() => {
+    if (!editingDemandSite) return;
+    listAssignableDemandSiteAdmins(programId).then(setAssignableAdmins);
+  }, [editingDemandSite, programId]);
 
   const handleSearchAddressButtonClick = async () => {
     try {
@@ -80,11 +94,15 @@ const DemandSiteFormModal = ({
       const payload = {
         name: form.name,
         address: form.address || undefined,
-        contactPerson: form.contactPerson || undefined,
         radius: Number(form.radius),
       };
       if (editingDemandSite) {
-        await updateDemandSite(editingDemandSite.id, payload);
+        await updateDemandSite(editingDemandSite.id, {
+          ...payload,
+          contactAdminId: form.contactAdminId
+            ? Number(form.contactAdminId)
+            : null,
+        });
       } else {
         await createDemandSite({ programId, ...payload });
       }
@@ -137,15 +155,31 @@ const DemandSiteFormModal = ({
           </button>
         </div>
       </FormField>
-      <FormField label="담당자">
-        <input
-          className={inputClass}
-          value={form.contactPerson}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, contactPerson: event.target.value }))
-          }
-        />
-      </FormField>
+      {/* 담당자는 수정할 때만 고른다 — 새로 만들 땐 사업단 담당자를 그대로 물려받는다 */}
+      {editingDemandSite && (
+        <FormField label="담당자">
+          <FilterSelect
+            className="w-full"
+            value={form.contactAdminId}
+            onChange={(value) =>
+              setForm((f) => ({ ...f, contactAdminId: value }))
+            }
+            options={[
+              { value: "", label: "지정 안 함" },
+              ...assignableAdmins.map((assignableAdmin) => ({
+                value: String(assignableAdmin.id),
+                label: assignableAdmin.name ?? `계정 #${assignableAdmin.id}`,
+              })),
+            ]}
+          />
+          {editingDemandSite.contactAdminId === null &&
+            editingDemandSite.contactPerson && (
+              <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+                예전에 입력된 담당자: {editingDemandSite.contactPerson}
+              </p>
+            )}
+        </FormField>
+      )}
 
       {/* 수요처 단위 관제구역 — 거점을 따로 안 그려도 이 원으로 이탈 판정이 된다 */}
       <FormField label={`관제 반경(m, 최소 ${MIN_RADIUS_METERS})`}>

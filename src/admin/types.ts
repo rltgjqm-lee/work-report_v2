@@ -58,6 +58,9 @@ export type DemandSite = {
   programId: number;
   name: string;
   address: string | null;
+  // 담당자 계정. contactPerson은 계정 연결 이전에 자유 입력으로 쌓인 값(읽기용 대체값)
+  contactAdminId: number | null;
+  contactAdminName?: string | null;
   contactPerson: string | null;
   // 수요처 단위 기본 관제구역 — 하위 거점을 안 그려도 이 원으로 이탈 판정/지도 표시가 된다
   baseLat: number | null;

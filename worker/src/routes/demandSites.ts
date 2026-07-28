@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 
 import {
+  admins,
   demandSites,
   demandSiteLocations,
   demandSiteSchedules,
@@ -10,7 +11,7 @@ import {
   groups,
 } from "../db/schema";
 import { canAccessProgram, getAuth } from "../lib/authz";
-import type { Env } from "../types";
+import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
 
@@ -21,7 +22,7 @@ type DemandSiteBody = {
   programId?: number;
   name?: string;
   address?: string;
-  contactPerson?: string;
+  contactAdminId?: number | null;
   // 수요처 단위 기본 관제구역 — 셋 다 있어야 원이 성립한다
   baseLat?: number | null;
   baseLng?: number | null;
@@ -113,6 +114,37 @@ const loadAccessibleProgram = async (
   return program;
 };
 
+// 사업단 담당자 = 그 사업단을 담당(programIds)하는 MANAGER 계정. 수요처를 새로 만들 때
+// 담당자를 따로 고르지 않고 이 사람을 그대로 물려받는다. 사업단 담당자는 한 명이므로 첫 건만 쓴다.
+const findProgramManagerId = async (
+  db: ReturnType<typeof drizzle>,
+  program: typeof programs.$inferSelect,
+) => {
+  const candidates = await db
+    .select({ id: admins.id, programIds: admins.programIds })
+    .from(admins)
+    .where(
+      and(
+        eq(admins.organizationId, program.organizationId),
+        eq(admins.role, ROLES.MANAGER),
+        eq(admins.isActive, true),
+      ),
+    );
+
+  const manager = candidates.find((candidate) => {
+    if (!candidate.programIds) return false;
+    try {
+      return (JSON.parse(candidate.programIds) as number[]).includes(
+        program.id,
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  return manager?.id ?? null;
+};
+
 // 주소 → 좌표 조회. Nominatim이 CORS 헤더를 안 내려줘서 브라우저에서 직접 못 부른다 —
 // 거점 편집 지도의 "주소로 찾기"가 이 경로로 우회한다.
 app.get("/geocode", async (c) => {
@@ -135,10 +167,42 @@ app.get("/", async (c) => {
   if (!program)
     return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
+  // 담당자 이름은 계정 쪽에 있으니 조인해서 같이 내려준다. 계정 연결 이전에 자유 입력으로
+  // 쌓인 contactPerson은 표시할 이름이 없을 때의 대체값으로 남는다.
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(demandSites),
+      contactAdminName: admins.name,
+    })
     .from(demandSites)
+    .leftJoin(admins, eq(demandSites.contactAdminId, admins.id))
     .where(eq(demandSites.programId, programId));
+
+  return c.json(rows);
+});
+
+// 수요처 담당자로 지정할 수 있는 계정 목록. 계정 관리 화면(GET /api/admins)은 부관리자/
+// 담당자에게 막혀 있어서, 수요처를 다룰 수 있는 사람이면 누구나 쓸 수 있게 id/이름만 내려준다.
+app.get("/assignable-admins", async (c) => {
+  const auth = getAuth(c);
+  const programId = Number(c.req.query("programId"));
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
+
+  const db = drizzle(c.env.DB);
+  const program = await loadAccessibleProgram(db, auth, programId);
+  if (!program)
+    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+
+  const rows = await db
+    .select({ id: admins.id, name: admins.name })
+    .from(admins)
+    .where(
+      and(
+        eq(admins.organizationId, program.organizationId),
+        eq(admins.role, ROLES.MANAGER),
+        eq(admins.isActive, true),
+      ),
+    );
 
   return c.json(rows);
 });
@@ -168,7 +232,8 @@ app.post("/", async (c) => {
       programId: body.programId,
       name: body.name,
       address: body.address,
-      contactPerson: body.contactPerson,
+      contactAdminId:
+        body.contactAdminId ?? (await findProgramManagerId(db, program)),
       ...normalizeBaseArea(
         point ? point.lat : body.baseLat,
         point ? point.lng : body.baseLng,
@@ -221,7 +286,11 @@ app.put("/:id", async (c) => {
     .set({
       name: body.name ?? existing.name,
       address,
-      contactPerson: body.contactPerson ?? existing.contactPerson,
+      // 담당자는 명시적으로 null을 보내 비울 수 있어야 해서 undefined만 걸러낸다
+      contactAdminId:
+        body.contactAdminId === undefined
+          ? existing.contactAdminId
+          : body.contactAdminId,
       ...normalizeBaseArea(
         nextBaseArea.baseLat,
         nextBaseArea.baseLng,
