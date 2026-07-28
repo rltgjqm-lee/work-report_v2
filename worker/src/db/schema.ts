@@ -135,6 +135,11 @@ export const demandSites = sqliteTable("demand_sites", {
   name: text("name").notNull(),
   address: text("address"),
   contactPerson: text("contact_person"),
+  // 수요처 단위 기본 관제구역 — 하위 거점(demand_site_locations)을 따로 그리지 않아도
+  // 이 원 하나로 이탈 판정과 관제 지도 표시가 된다. 거점을 그리면 둘 다 유효 구역이 된다.
+  baseLat: real("base_lat"),
+  baseLng: real("base_lng"),
+  radius: integer("radius"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()

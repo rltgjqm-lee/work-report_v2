@@ -22,7 +22,58 @@ type DemandSiteBody = {
   name?: string;
   address?: string;
   contactPerson?: string;
+  // 수요처 단위 기본 관제구역 — 셋 다 있어야 원이 성립한다
+  baseLat?: number | null;
+  baseLng?: number | null;
+  radius?: number | null;
   isActive?: boolean;
+};
+
+// 주소 → 좌표. 브라우저에서 바로 부르면 CORS에 걸려서 서버에서 대신 조회한다.
+// OpenStreetMap Nominatim은 API 키가 없는 대신 앱을 식별하는 User-Agent를 요구한다.
+// 국내 주소는 도로 단위까지만 잡히는 경우가 많아 최소 반경으로 오차를 흡수한다.
+const geocodeAddress = async (address: string) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(address)}`,
+      { headers: { "User-Agent": "work-report-admin/1.0" } },
+    );
+    if (!response.ok) return null;
+
+    const results = (await response.json()) as { lat: string; lon: string }[];
+    if (results.length === 0) return null;
+
+    return { lat: Number(results[0].lat), lng: Number(results[0].lon) };
+  } catch {
+    // 지오코딩 실패로 수요처 저장 자체가 막히면 안 된다 — 좌표 없이 저장하고,
+    // 관리자는 거점 관리에서 구역을 직접 그리면 된다.
+    return null;
+  }
+};
+
+// 수요처 기본 관제구역도 거점과 같은 최소 반경 규칙을 따른다.
+// 셋 중 하나라도 비면 관제구역 없음(null)으로 정리한다.
+const normalizeBaseArea = (
+  baseLat: number | null | undefined,
+  baseLng: number | null | undefined,
+  radius: number | null | undefined,
+) => {
+  if (
+    baseLat === null ||
+    baseLat === undefined ||
+    baseLng === null ||
+    baseLng === undefined ||
+    radius === null ||
+    radius === undefined
+  ) {
+    return { baseLat: null, baseLng: null, radius: null };
+  }
+
+  return {
+    baseLat,
+    baseLng,
+    radius: Math.max(Math.round(radius), MIN_RADIUS_METERS),
+  };
 };
 
 type ScheduleBody = {
@@ -62,6 +113,18 @@ const loadAccessibleProgram = async (
   return program;
 };
 
+// 주소 → 좌표 조회. Nominatim이 CORS 헤더를 안 내려줘서 브라우저에서 직접 못 부른다 —
+// 거점 편집 지도의 "주소로 찾기"가 이 경로로 우회한다.
+app.get("/geocode", async (c) => {
+  const address = c.req.query("address");
+  if (!address) return c.json({ error: "주소를 입력해주세요." }, 400);
+
+  const point = await geocodeAddress(address);
+  if (!point) return c.json({ error: "주소를 찾을 수 없습니다." }, 404);
+
+  return c.json(point);
+});
+
 app.get("/", async (c) => {
   const auth = getAuth(c);
   const programId = Number(c.req.query("programId"));
@@ -93,6 +156,12 @@ app.post("/", async (c) => {
   if (!program)
     return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
+  // 좌표를 직접 보내지 않았으면 주소로 잡아준다
+  const point =
+    body.baseLat == null && body.baseLng == null && body.address
+      ? await geocodeAddress(body.address)
+      : null;
+
   const result = await db
     .insert(demandSites)
     .values({
@@ -100,6 +169,11 @@ app.post("/", async (c) => {
       name: body.name,
       address: body.address,
       contactPerson: body.contactPerson,
+      ...normalizeBaseArea(
+        point ? point.lat : body.baseLat,
+        point ? point.lng : body.baseLng,
+        body.radius,
+      ),
     })
     .returning();
 
@@ -124,12 +198,35 @@ app.put("/:id", async (c) => {
 
   const body = await c.req.json<DemandSiteBody>();
 
+  const address = body.address ?? existing.address;
+  // 관제 중심은 주소를 따라간다 — 주소가 바뀌었거나 아직 좌표가 없으면 다시 잡고,
+  // 주소를 지웠으면 관제구역도 함께 해제한다.
+  const shouldGeocode =
+    body.baseLat == null &&
+    body.baseLng == null &&
+    !!address &&
+    (address !== existing.address || existing.baseLat === null);
+  const point = shouldGeocode ? await geocodeAddress(address) : null;
+
+  const nextBaseArea = !address
+    ? { baseLat: null, baseLng: null, radius: null }
+    : {
+        baseLat: point ? point.lat : (body.baseLat ?? existing.baseLat),
+        baseLng: point ? point.lng : (body.baseLng ?? existing.baseLng),
+        radius: body.radius === undefined ? existing.radius : body.radius,
+      };
+
   const result = await db
     .update(demandSites)
     .set({
       name: body.name ?? existing.name,
-      address: body.address ?? existing.address,
+      address,
       contactPerson: body.contactPerson ?? existing.contactPerson,
+      ...normalizeBaseArea(
+        nextBaseArea.baseLat,
+        nextBaseArea.baseLng,
+        nextBaseArea.radius,
+      ),
       isActive: body.isActive ?? existing.isActive,
     })
     .where(eq(demandSites.id, id))

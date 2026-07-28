@@ -23,10 +23,20 @@ import { sendWebPush } from "../lib/webPush";
 import type { Env } from "../types";
 
 // 참여자 위치가 거점 하나(원형 or 다각형) 안에 있는지 판정
+// 이탈 판정 대상 구역 — 수요처 하위 거점(demand_site_locations)과, 거점 없이도 관제되도록
+// 수요처 자체에 잡아둔 기본 원(demand_sites.baseLat/baseLng/radius)을 같은 모양으로 다룬다.
+type GeofenceArea = {
+  shapeType: "RADIUS" | "POLYGON";
+  baseLat: number | null;
+  baseLng: number | null;
+  radius: number | null;
+  polygon: string | null;
+};
+
 const isInsideLocation = (
   lat: number,
   lng: number,
-  location: typeof demandSiteLocations.$inferSelect,
+  location: GeofenceArea,
 ): boolean => {
   if (location.shapeType === "RADIUS") {
     if (
@@ -49,11 +59,11 @@ const isInsideLocation = (
   return isPointInPolygon({ lat, lng }, polygon);
 };
 
-// 로그에 남길 "대략적인 이탈 거리" — 가장 가까운 거점까지의 거리(원형은 중심, 다각형은 중심점 기준)
+// 로그에 남길 "대략적인 이탈 거리" — 가장 가까운 구역까지의 거리(원형은 중심, 다각형은 중심점 기준)
 const distanceToNearestLocation = (
   lat: number,
   lng: number,
-  locations: (typeof demandSiteLocations.$inferSelect)[],
+  locations: GeofenceArea[],
 ): number => {
   const distances = locations.map((location) => {
     if (location.shapeType === "RADIUS") {
@@ -775,19 +785,36 @@ app.post("/location", async (c) => {
     .from(demandSiteLocations)
     .where(eq(demandSiteLocations.demandSiteId, demandSite.id));
 
-  if (locations.length === 0) {
+  // 거점을 따로 안 그렸어도 수요처 자체에 기본 관제구역이 잡혀 있으면 그걸로 판정한다.
+  // 둘 다 있으면 어느 한 곳 안에만 있어도 정상 근무로 본다.
+  const areas: GeofenceArea[] = [...locations];
+  if (
+    demandSite.baseLat !== null &&
+    demandSite.baseLng !== null &&
+    demandSite.radius !== null
+  ) {
+    areas.push({
+      shapeType: "RADIUS",
+      baseLat: demandSite.baseLat,
+      baseLng: demandSite.baseLng,
+      radius: demandSite.radius,
+      polygon: null,
+    });
+  }
+
+  if (areas.length === 0) {
     await saveMeta({});
     return c.json({
       ok: true,
       escaped: false,
-      message: "등록된 거점이 없습니다.",
+      message: "등록된 관제구역이 없습니다.",
     });
   }
 
-  const isInside = locations.some((location) =>
-    isInsideLocation(body.lat!, body.lng!, location),
+  const isInside = areas.some((area) =>
+    isInsideLocation(body.lat!, body.lng!, area),
   );
-  const distanceKm = distanceToNearestLocation(body.lat!, body.lng!, locations);
+  const distanceKm = distanceToNearestLocation(body.lat!, body.lng!, areas);
   const currentAlertCount = meta?.alertCount ?? 0;
 
   if (!isInside) {

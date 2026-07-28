@@ -59,6 +59,10 @@ export type DemandSite = {
   name: string;
   address: string | null;
   contactPerson: string | null;
+  // 수요처 단위 기본 관제구역 — 하위 거점을 안 그려도 이 원으로 이탈 판정/지도 표시가 된다
+  baseLat: number | null;
+  baseLng: number | null;
+  radius: number | null;
   isActive: boolean;
   createdAt: string;
 };

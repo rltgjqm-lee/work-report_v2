@@ -15,6 +15,7 @@ import {
   inputClass,
   rowActionBtnClass,
 } from "../../uiClasses";
+import { geocodeAddress } from "../../utils/geocodeAddress";
 import type { DemandSite, DemandSiteLocation } from "../../types";
 
 const DEFAULT_CENTER: [number, number] = [36.5, 127.8];
@@ -46,27 +47,19 @@ const DemandSiteLocationsPanel = ({
   const drawnLayerRef = useRef<L.FeatureGroup | null>(null);
   const searchMarkerRef = useRef<L.Marker | null>(null);
 
-  // 수요처 주소 → 좌표. OpenStreetMap Nominatim, API 키 불필요.
-  // 도로명까지만 잡히는 경우가 많아서 건물 단위 정확도는 기대하지 않는다 —
-  // 어디쯤인지 지도를 옮겨주는 용도다.
-  const geocodeAddress = async (): Promise<[number, number] | null> => {
-    if (!demandSite.address) return null;
-
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(demandSite.address)}`,
-    );
-    const results = (await response.json()) as { lat: string; lon: string }[];
-    if (results.length === 0) return null;
-
-    return [Number(results[0].lat), Number(results[0].lon)];
-  };
-
   // 거점이 하나도 없으면 지도가 기본 좌표(전국 한복판)에 머물러서 어디에 그려야 할지
-  // 알 수 없다. 등록된 주소가 있으면 그 근처로 옮겨준다 — 실패해도 조용히 넘어간다.
-  const centerOnAddress = () => {
-    geocodeAddress()
+  // 알 수 없다. 수요처 관제 좌표(없으면 주소)를 기준으로 옮겨준다 — 실패해도 조용히 넘어간다.
+  const centerOnDemandSite = () => {
+    if (demandSite.baseLat !== null && demandSite.baseLng !== null) {
+      mapRef.current?.setView([demandSite.baseLat, demandSite.baseLng], 14);
+
+      return;
+    }
+
+    geocodeAddress(demandSite.address ?? "")
       .then((point) => {
-        if (point && mapRef.current) mapRef.current.setView(point, 16);
+        if (point && mapRef.current)
+          mapRef.current.setView([point.lat, point.lng], 16);
       })
       .catch(() => {});
   };
@@ -74,7 +67,7 @@ const DemandSiteLocationsPanel = ({
   const refresh = () =>
     listDemandSiteLocations(demandSite.id).then((rows) => {
       setLocations(rows);
-      if (rows.length === 0) centerOnAddress();
+      if (rows.length === 0) centerOnDemandSite();
     });
 
   useEffect(() => {
@@ -147,6 +140,25 @@ const DemandSiteLocationsPanel = ({
 
     layerGroup.clearLayers();
 
+    // 수요처 자체에 잡아둔 기본 관제구역 — 거점과 구분되게 점선으로 깔아준다.
+    // 여기서 편집하진 않고(수요처 수정 모달에서 관리), 어디까지가 관제 범위인지 보여준다.
+    if (
+      demandSite.baseLat !== null &&
+      demandSite.baseLng !== null &&
+      demandSite.radius !== null
+    ) {
+      L.circle([demandSite.baseLat, demandSite.baseLng], {
+        radius: demandSite.radius,
+        // 안전 관제 지도의 관제구역과 같은 파란 점선으로 맞춘다
+        color: "#3182f6",
+        weight: 2,
+        dashArray: "6 4",
+        fillOpacity: 0.06,
+      })
+        .bindTooltip(`${demandSite.name} 기본 관제구역`)
+        .addTo(layerGroup);
+    }
+
     locations.forEach((location) => {
       if (
         location.shapeType === "RADIUS" &&
@@ -170,13 +182,11 @@ const DemandSiteLocationsPanel = ({
       }
     });
 
-    if (locations.length > 0) {
-      const bounds = layerGroup.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
-      }
+    const bounds = layerGroup.getBounds();
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
     }
-  }, [locations]);
+  }, [locations, demandSite]);
 
   const handleDeleteButtonClick = async (locationId: number) => {
     if (!confirm("이 거점을 삭제하시겠습니까?")) return;
@@ -232,12 +242,13 @@ const DemandSiteLocationsPanel = ({
   const handleFindAddressButtonClick = async () => {
     if (!demandSite.address) return;
     try {
-      const point = await geocodeAddress();
-      if (!point) {
+      const geocoded = await geocodeAddress(demandSite.address);
+      if (!geocoded) {
         alert("주소를 찾을 수 없습니다.");
 
         return;
       }
+      const point: [number, number] = [geocoded.lat, geocoded.lng];
 
       if (searchMarkerRef.current) {
         searchMarkerRef.current.remove();

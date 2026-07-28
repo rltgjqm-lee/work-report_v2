@@ -15,6 +15,9 @@ export const createDemandSite = (data: {
   name: string;
   address?: string;
   contactPerson?: string;
+  baseLat?: number | null;
+  baseLng?: number | null;
+  radius?: number | null;
 }) =>
   request<DemandSite>("/api/demand-sites", {
     method: "POST",
@@ -27,6 +30,9 @@ export const updateDemandSite = (
     name: string;
     address: string;
     contactPerson: string;
+    baseLat: number | null;
+    baseLng: number | null;
+    radius: number | null;
     isActive: boolean;
   }>,
 ) =>

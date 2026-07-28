@@ -25,11 +25,13 @@ import type {
   Program,
 } from "../types";
 
-// 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다
+// 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
+// location이 null이면 거점이 아니라 수요처 자체에 잡아둔 기본 원이다.
 interface DemandSiteGeofence {
   demandSiteId: number;
   demandSiteName: string;
-  location: DemandSiteLocation;
+  location: DemandSiteLocation | null;
+  baseArea: { lat: number; lng: number; radius: number } | null;
 }
 
 const POLL_INTERVAL_MS = 10000;
@@ -169,13 +171,36 @@ const EscapesPage = () => {
 
       setDemandSites(sites);
       setGeofences(
-        sites.flatMap((demandSite, siteIndex) =>
-          locationsPerSite[siteIndex].map((location) => ({
+        sites.flatMap((demandSite, siteIndex) => {
+          const siteGeofences: DemandSiteGeofence[] = locationsPerSite[
+            siteIndex
+          ].map((location) => ({
             demandSiteId: demandSite.id,
             demandSiteName: demandSite.name,
             location,
-          })),
-        ),
+            baseArea: null,
+          }));
+
+          // 거점을 안 그린 수요처도 기본 관제구역이 잡혀 있으면 지도에 나와야 한다
+          if (
+            demandSite.baseLat !== null &&
+            demandSite.baseLng !== null &&
+            demandSite.radius !== null
+          ) {
+            siteGeofences.push({
+              demandSiteId: demandSite.id,
+              demandSiteName: demandSite.name,
+              location: null,
+              baseArea: {
+                lat: demandSite.baseLat,
+                lng: demandSite.baseLng,
+                radius: demandSite.radius,
+              },
+            });
+          }
+
+          return siteGeofences;
+        }),
       );
     };
 
@@ -222,7 +247,20 @@ const EscapesPage = () => {
     };
     const points: [number, number][] = [];
 
-    visibleGeofences.forEach(({ demandSiteName, location }) => {
+    visibleGeofences.forEach(({ demandSiteName, location, baseArea }) => {
+      if (baseArea) {
+        points.push([baseArea.lat, baseArea.lng]);
+        L.circle([baseArea.lat, baseArea.lng], {
+          ...shapeStyle,
+          radius: baseArea.radius,
+        })
+          .bindTooltip(`${demandSiteName} 기본 관제구역`)
+          .addTo(layer);
+
+        return;
+      }
+      if (!location) return;
+
       const tooltipLabel = `${demandSiteName} · ${location.name}`;
 
       if (
