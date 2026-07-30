@@ -202,26 +202,28 @@ app.put("/:id/transfer-programs", async (c) => {
     return c.json({ ok: true, programCount: 0, demandSiteCount: 0 });
   }
 
-  await db
-    .update(admins)
-    .set({
-      programIds: JSON.stringify([
-        ...new Set([...parseIdArray(to.programIds), ...programIds]),
-      ]),
-    })
-    .where(eq(admins.id, to.id));
-
-  await db
-    .update(admins)
-    .set({ programIds: JSON.stringify([]) })
-    .where(eq(admins.id, from.id));
-
-  // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자는 사업단 담당자를 따라간다
-  const movedDemandSites = await db
-    .update(demandSites)
-    .set({ contactAdminId: to.id })
-    .where(inArray(demandSites.programId, programIds))
-    .returning({ id: demandSites.id });
+  // 세 갱신은 하나로 묶어서 보낸다(D1 batch = 단일 트랜잭션) — 중간에 실패해서 사업단만
+  // 넘어가고 수요처엔 떠난 사람이 남는 어긋난 상태가 생기면 관제까지 영향이 간다.
+  const [, , movedDemandSites] = await db.batch([
+    db
+      .update(admins)
+      .set({
+        programIds: JSON.stringify([
+          ...new Set([...parseIdArray(to.programIds), ...programIds]),
+        ]),
+      })
+      .where(eq(admins.id, to.id)),
+    db
+      .update(admins)
+      .set({ programIds: JSON.stringify([]) })
+      .where(eq(admins.id, from.id)),
+    // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자는 사업단 담당자를 따라간다
+    db
+      .update(demandSites)
+      .set({ contactAdminId: to.id })
+      .where(inArray(demandSites.programId, programIds))
+      .returning({ id: demandSites.id }),
+  ]);
 
   return c.json({
     ok: true,

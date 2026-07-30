@@ -207,7 +207,7 @@ app.put("/:id/manager", async (c) => {
     return c.json({ error: "이 기관의 담당자 계정이 아닙니다." }, 400);
   }
 
-  for (const candidate of managerCandidates) {
+  const managerUpdates = managerCandidates.flatMap((candidate) => {
     let assignedProgramIds: number[] = [];
     try {
       assignedProgramIds = candidate.programIds
@@ -219,7 +219,7 @@ app.put("/:id/manager", async (c) => {
 
     const shouldHave = candidate.id === nextManagerId;
     const has = assignedProgramIds.includes(programId);
-    if (shouldHave === has) continue;
+    if (shouldHave === has) return [];
 
     const nextProgramIds = shouldHave
       ? [...assignedProgramIds, programId]
@@ -227,17 +227,24 @@ app.put("/:id/manager", async (c) => {
           (assignedProgramId) => assignedProgramId !== programId,
         );
 
-    await db
-      .update(admins)
-      .set({ programIds: JSON.stringify(nextProgramIds) })
-      .where(eq(admins.id, candidate.id));
-  }
+    return [
+      db
+        .update(admins)
+        .set({ programIds: JSON.stringify(nextProgramIds) })
+        .where(eq(admins.id, candidate.id)),
+    ];
+  });
 
-  // 수요처 담당자도 함께 갱신 — 이게 "전파"다
-  await db
-    .update(demandSites)
-    .set({ contactAdminId: nextManagerId })
-    .where(eq(demandSites.programId, programId));
+  // 계정 정리와 수요처 전파를 하나로 묶어 보낸다(D1 batch = 단일 트랜잭션) — 중간에
+  // 실패해서 한쪽만 반영되면 사업단과 수요처의 담당자가 서로 어긋난다.
+  await db.batch([
+    // 수요처 담당자도 함께 갱신 — 이게 "전파"다
+    db
+      .update(demandSites)
+      .set({ contactAdminId: nextManagerId })
+      .where(eq(demandSites.programId, programId)),
+    ...managerUpdates,
+  ]);
 
   return c.json({ ok: true, adminId: nextManagerId });
 });
