@@ -8,6 +8,7 @@ import {
   getParticipantLeaves,
 } from "../../api/admin/participants";
 import MonthPicker from "../../components/MonthPicker";
+import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import { btnPrimaryClass } from "../../uiClasses";
 import type {
   AnnualLeave,
@@ -176,7 +177,7 @@ const ParticipantDetailPage = () => {
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] table-fixed border-collapse">
+          <table className="w-full min-w-[910px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -187,6 +188,9 @@ const ParticipantDetailPage = () => {
                 </th>
                 <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   퇴근
+                </th>
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  위치
                 </th>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   근무시간(분)
@@ -215,6 +219,9 @@ const ParticipantDetailPage = () => {
                     {row.log.clockOut?.slice(11, 16) ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <AttendanceLocationCell log={row.log} />
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {row.log.totalMinutes ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
@@ -231,7 +238,7 @@ const ParticipantDetailPage = () => {
               {attendanceLogs.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
                   >
                     해당 월에 근태 기록이 없습니다.

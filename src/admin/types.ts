@@ -182,6 +182,22 @@ export type AttendanceLog = {
   note: string | null;
   signatureKey: string | null;
   createdAt: string;
+  // 출퇴근 버튼을 누른 시점의 위치. 위치 권한을 거부했거나 GPS를 못 잡으면 전부 null이다.
+  // inside는 "구역 밖(false)"과 "판정 불가(null: 좌표·수요처·관제구역 없음)"가 다르다.
+  // 관제 반경이 최소 1.5km라 inside만으론 자택 출근을 못 걸러내므로 distanceM을 같이 본다.
+  clockInLat: number | null;
+  clockInLng: number | null;
+  clockInAccuracy: number | null;
+  clockInInside: boolean | null;
+  clockInDistanceM: number | null;
+  clockOutLat: number | null;
+  clockOutLng: number | null;
+  clockOutAccuracy: number | null;
+  clockOutInside: boolean | null;
+  clockOutDistanceM: number | null;
+  // 이 날 받은 좌표 중 위치 조작 앱이 주입한 것으로 표시된 건수(출퇴근 + 근무 중 보고).
+  // 하이브리드 앱에서만 채워지고 웹 사용자는 항상 0이므로, 0을 결백으로 읽으면 안 된다.
+  simulatedCount: number;
 };
 
 export type AttendanceRow = {
