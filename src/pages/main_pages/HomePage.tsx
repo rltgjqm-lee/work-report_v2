@@ -8,6 +8,7 @@ import {
   clockOut,
   getCurrentAdminRole,
 } from "../../utils/attendanceApi";
+import { readCurrentCoordinates } from "../../utils/geolocation";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 
 interface HomePageProps {
@@ -28,6 +29,10 @@ type ModuleItemProps = {
   status: string;
   done: boolean;
   highlighted?: boolean;
+  // 출퇴근은 위치 측위를 기다리는 동안 최대 10초까지 걸릴 수 있어서, 버튼을 잠그고
+  // 진행 중임을 보여줘야 참여자가 여러 번 누르지 않는다.
+  busy?: boolean;
+  busyLabel?: string;
   onClick: () => void;
 };
 
@@ -38,6 +43,8 @@ const ModuleItem = ({
   status,
   done,
   highlighted,
+  busy,
+  busyLabel,
   onClick,
 }: ModuleItemProps) => (
   <div
@@ -51,16 +58,21 @@ const ModuleItem = ({
       </div>
       <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
       <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">
-        {status}
+        {busy ? (busyLabel ?? status) : status}
       </div>
     </div>
     <button
       onClick={onClick}
-      className={`flex-none h-[42px] px-5 rounded-xl border-none text-[15px] font-extrabold cursor-pointer ${
-        done ? "bg-[#f2f4f6] text-[#4e5968]" : "bg-[#3182f6] text-white"
+      disabled={busy}
+      className={`flex-none h-[42px] px-5 rounded-xl border-none text-[15px] font-extrabold ${
+        busy
+          ? "bg-[#f2f4f6] text-[#9ca3af] cursor-default"
+          : `cursor-pointer ${
+              done ? "bg-[#f2f4f6] text-[#4e5968]" : "bg-[#3182f6] text-white"
+            }`
       }`}
     >
-      {done ? "확인" : "등록"}
+      {busy ? "확인 중" : done ? "확인" : "등록"}
     </button>
   </div>
 );
@@ -149,6 +161,13 @@ const HomePage = ({
   const safetyDone = formData.accidentChecked;
   const signatureDone = !!formData.userSignature;
 
+  // 💡 출퇴근 등록 시 현재 위치를 같이 보낸다. 측위에 최대 10초가 걸릴 수 있어서 그동안
+  // 버튼을 잠그고, 위치를 못 읽으면(권한 거부/실내) null로 그냥 진행한다 — 1단계는
+  // 기록만 하고 위치로 출퇴근을 막지 않는다.
+  const [attendanceSubmitting, setAttendanceSubmitting] = useState<
+    "in" | "out" | null
+  >(null);
+
   const handleAttendanceInButtonClick = async () => {
     if (attendanceInDone) {
       await onAlert([
@@ -158,11 +177,17 @@ const HomePage = ({
       return;
     }
     if (!formData.participantId) return;
+    setAttendanceSubmitting("in");
     try {
-      const result = await clockIn(formData.participantId, {
-        date: debugDate || undefined,
-        time: debugTime || undefined,
-      });
+      const coordinates = await readCurrentCoordinates();
+      const result = await clockIn(
+        formData.participantId,
+        {
+          date: debugDate || undefined,
+          time: debugTime || undefined,
+        },
+        coordinates,
+      );
       const startTime = isoToTimeParts(result.clockIn);
       setFormData((prev) => ({ ...prev, startTime }));
       setPendingAttendanceInTime(formatTimeField(startTime));
@@ -170,6 +195,8 @@ const HomePage = ({
       onAlert([
         error instanceof Error ? error.message : "출근 등록에 실패했습니다.",
       ]);
+    } finally {
+      setAttendanceSubmitting(null);
     }
   };
 
@@ -212,11 +239,17 @@ const HomePage = ({
       return;
     }
     if (!formData.participantId) return;
+    setAttendanceSubmitting("out");
     try {
-      const result = await clockOut(formData.participantId, {
-        date: debugDate || undefined,
-        time: debugTime || undefined,
-      });
+      const coordinates = await readCurrentCoordinates();
+      const result = await clockOut(
+        formData.participantId,
+        {
+          date: debugDate || undefined,
+          time: debugTime || undefined,
+        },
+        coordinates,
+      );
       const endTime = isoToTimeParts(result.clockOut);
       setFormData((prev) => ({ ...prev, endTime }));
       setPendingAttendanceOutTime(formatTimeField(endTime));
@@ -224,6 +257,8 @@ const HomePage = ({
       onAlert([
         error instanceof Error ? error.message : "퇴근 등록에 실패했습니다.",
       ]);
+    } finally {
+      setAttendanceSubmitting(null);
     }
   };
 
@@ -312,6 +347,8 @@ const HomePage = ({
               : "출근 전이에요"
           }
           done={attendanceInDone}
+          busy={attendanceSubmitting === "in"}
+          busyLabel="위치를 확인하고 있어요"
           onClick={handleAttendanceInButtonClick}
         />
 
@@ -357,6 +394,8 @@ const HomePage = ({
               : "퇴근 전이에요"
           }
           done={attendanceOutDone}
+          busy={attendanceSubmitting === "out"}
+          busyLabel="위치를 확인하고 있어요"
           onClick={handleAttendanceOutButtonClick}
         />
 

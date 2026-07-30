@@ -16,6 +16,11 @@ import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 import { syncPendingActivityLogs } from "../utils/activityLogSync";
 import { getTodayAttendance } from "../utils/attendanceApi";
 import {
+  IDLE_LOCATION_REPORT_STATE,
+  startLocationReporting,
+  type LocationReportState,
+} from "../utils/locationReporting";
+import {
   formatTimeField,
   hhmmToTimeParts,
   isoToTimeParts,
@@ -336,9 +341,50 @@ const Main = () => {
     };
   }, [db, formData.participantId, formData.actDate]);
 
+  // 💡 근무 중(출근 완료 ~ 퇴근 전) 위치를 주기적으로 서버에 보고해 관제구역 이탈을
+  // 판정받는다. 어느 화면에 있어도 계속 보고돼야 하므로 개별 페이지가 아니라 여기서 돌린다.
+  // 앱이 화면에 보이는 동안만 동작한다 — 자세한 제약은 locationReporting.ts 참고.
+  const isWorking =
+    formData.startTime.hour !== "" && formData.endTime.hour === "";
+
+  const [locationReportState, setLocationReportState] =
+    useState<LocationReportState>(IDLE_LOCATION_REPORT_STATE);
+
+  useEffect(() => {
+    if (!formData.participantId || !isWorking) return;
+
+    const stopReporting = startLocationReporting(
+      formData.participantId,
+      setLocationReportState,
+    );
+    // 보고를 멈출 때(퇴근/참여자 변경) 상태도 같이 비운다 — 안 그러면 다음에 출근할 때
+    // 첫 보고가 도착하기 전까지 지난번 이탈/전송실패 배너가 그대로 남는다.
+    return () => {
+      stopReporting();
+      setLocationReportState(IDLE_LOCATION_REPORT_STATE);
+    };
+  }, [formData.participantId, isWorking]);
+
   return (
     <div className="w-full h-full flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] select-none">
       <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border">
+        {/* 근무 중 위치 관제 상태 — 이탈이 더 급한 정보라 둘 다일 때는 이탈만 보여준다.
+            레이아웃을 밀지 않도록 화면 아래에 떠 있게 둔다. */}
+        {isWorking &&
+          (locationReportState.escapedDemandSiteName !== null ? (
+            <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[#fef2f2] border-t border-[#fecaca] text-[13.5px] font-bold text-[#b91c1c]">
+              ⚠️ {locationReportState.escapedDemandSiteName} 활동 구역을
+              벗어났어요 — 근무지로 돌아가주세요
+            </div>
+          ) : (
+            locationReportState.reportFailing && (
+              <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[#fffbeb] border-t border-[#fde68a] text-[13.5px] font-bold text-[#b45309]">
+                위치가 전송되지 않고 있어요 — 위치 권한과 네트워크를
+                확인해주세요
+              </div>
+            )
+          ))}
+
         {/* 1. 초기 설정 페이지 */}
         {view === VIEW_TYPE.AFFILIATION && (
           <AffiliationInputPage
