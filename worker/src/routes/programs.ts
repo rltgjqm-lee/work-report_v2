@@ -208,7 +208,7 @@ app.put("/:id/manager", async (c) => {
   }
 
   const managerUpdates = managerCandidates.flatMap((candidate) => {
-    let assignedProgramIds: number[] = [];
+    let assignedProgramIds: number[];
     try {
       assignedProgramIds = candidate.programIds
         ? (JSON.parse(candidate.programIds) as number[])
