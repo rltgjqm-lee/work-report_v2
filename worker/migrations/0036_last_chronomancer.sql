@@ -1,0 +1,1 @@
+ALTER TABLE `escape_logs` ADD `accuracy_m` real;

@@ -1,0 +1,1 @@
+ALTER TABLE `attendance_logs` ADD `simulated_count` integer DEFAULT 0 NOT NULL;

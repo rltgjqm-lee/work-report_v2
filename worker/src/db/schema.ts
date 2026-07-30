@@ -456,7 +456,9 @@ export const disasterPushLogs = sqliteTable("disaster_push_logs", {
     .default(sql`(current_timestamp)`),
 });
 
-// 참여자 셀프 체크인/아웃 근태 기록 (GPS 검증 없음 — 출석 여부만 기록, 시간은 조의 shiftStart/shiftEnd 기준으로 표시)
+// 참여자 셀프 체크인/아웃 근태 기록. 시간은 조의 shiftStart/shiftEnd 기준으로 판정한다.
+// 출퇴근 시점의 위치도 같이 남기지만 이걸로 출퇴근을 막지는 않는다 — 실제 분포를 먼저
+// 모아보고(GPS 미허용률, 구역 중심까지 거리) 차단 정책을 정하기 위한 기록용이다.
 export const attendanceLogs = sqliteTable("attendance_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   participantId: integer("participant_id")
@@ -487,6 +489,33 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
     () => admins.id,
   ),
   correctedAt: text("corrected_at"),
+  // 출근/퇴근 버튼을 누른 시점의 위치. 기기가 GPS를 안 주거나 참여자가 위치 권한을
+  // 거부하면 전부 null로 남고, 그래도 출퇴근은 정상 처리된다.
+  // accuracy: 브라우저가 알려주는 GPS 오차 반경(m) — 값이 크면 판정을 신뢰하면 안 된다.
+  // inside: 배정 수요처의 관제구역 안이었는지. 좌표가 없거나 수요처/관제구역이
+  //         없어서 판정 자체를 못 한 경우도 null이다 (false와 구분해야 한다).
+  // distanceM: 가장 가까운 관제구역 중심까지의 거리(m). 관제 반경이 넓어서(최소 1.5km)
+  //         inside만으론 자택 출근을 못 걸러내므로, 실제 판별은 이 거리로 한다.
+  clockInLat: real("clock_in_lat"),
+  clockInLng: real("clock_in_lng"),
+  clockInAccuracy: real("clock_in_accuracy"),
+  clockInInside: integer("clock_in_inside", { mode: "boolean" }),
+  clockInDistanceM: integer("clock_in_distance_m"),
+  clockOutLat: real("clock_out_lat"),
+  clockOutLng: real("clock_out_lng"),
+  clockOutAccuracy: real("clock_out_accuracy"),
+  clockOutInside: integer("clock_out_inside", { mode: "boolean" }),
+  clockOutDistanceM: integer("clock_out_distance_m"),
+  // 이 날 받은 좌표 중 "GPS가 아니라 위치 조작 앱이 주입한 값"으로 표시된 건수.
+  // 출근·퇴근·근무 중 보고를 모두 합산한다. 좌표를 근무지로 위조하면 구역 안으로만
+  // 찍혀서 이탈 기록이 아예 생기지 않기 때문에, 이탈 로그가 아니라 하루 근태 기록에
+  // 누적해야 드러난다.
+  //
+  // 하이브리드 앱(백그라운드 위치 플러그인)에서만 채워진다 — 브라우저 위치 API는
+  // 이 정보를 주지 않아서 웹으로 쓰는 참여자는 항상 0이다. 루팅한 기기는 표시 자체를
+  // 숨길 수 있으므로 "0이면 결백"이 아니라 "0보다 크면 확인 필요"로만 읽어야 한다.
+  // 개발자 옵션을 다른 목적으로 켜둔 기기도 있으니 자동 판정하지 않고 관리자가 확인한다.
+  simulatedCount: integer("simulated_count").notNull().default(0),
 });
 
 // 교육 마스터 — 사전/기간중 교육 정의. payMode에 따라 이수 등록 시 지급액 계산 방식이 달라진다.
@@ -556,6 +585,10 @@ export const escapeLogs = sqliteTable("escape_logs", {
   lat: real("lat").notNull(),
   lng: real("lng").notNull(),
   distanceKm: real("distance_km").notNull(),
+  // 이탈을 판정한 좌표의 GPS 오차 반경(m). 이 값이 크면 이탈 기록 자체의 신뢰도가
+  // 낮다는 뜻이라, 나중에 참여자와 다툼이 생겼을 때 판단 근거로 남긴다.
+  // 오차 때문에 판정을 보류한 좌표는 애초에 이탈 기록을 만들지 않는다(/public/location).
+  accuracyM: real("accuracy_m"),
   alertCount: integer("alert_count").notNull().default(1),
   status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
   // 3단계(위급) 팝업을 관제 화면에서 한 번만 띄우기 위한 표시 — 팝업을 띄운 뒤 true로 바꾼다

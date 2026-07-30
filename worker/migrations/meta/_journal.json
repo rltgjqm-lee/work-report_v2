@@ -246,6 +246,27 @@
       "when": 1785220463621,
       "tag": "0034_polite_psylocke",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1785372762158,
+      "tag": "0035_modern_zarda",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1785374913870,
+      "tag": "0036_last_chronomancer",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1785376658676,
+      "tag": "0037_purple_black_knight",
+      "breakpoints": true
     }
   ]
 }
