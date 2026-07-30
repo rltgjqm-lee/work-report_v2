@@ -6,7 +6,6 @@ export const correctAttendance = (
   data: {
     clockIn?: string; // "HH:MM"
     clockOut?: string; // "HH:MM"
-    totalMinutes?: number;
     status?: "NORMAL" | "LATE" | "EARLY_LEAVE";
     reason: string;
   },

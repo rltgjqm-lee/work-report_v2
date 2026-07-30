@@ -230,7 +230,7 @@ const ParticipantDetailPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {row.log.signatureKey ? "✓" : "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-pre-wrap break-words">
                     {row.log.note ?? "-"}
                   </td>
                 </tr>

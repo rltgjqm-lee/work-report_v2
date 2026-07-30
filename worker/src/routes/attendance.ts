@@ -46,7 +46,6 @@ app.put("/:logId", async (c) => {
   const body = await c.req.json<{
     clockIn?: string; // "HH:MM"
     clockOut?: string; // "HH:MM"
-    totalMinutes?: number;
     status?: "NORMAL" | "LATE" | "EARLY_LEAVE";
     reason?: string;
   }>();
@@ -57,14 +56,33 @@ app.put("/:logId", async (c) => {
 
   const toIso = (time: string) => `${found.log.workDate}T${time}:00.000Z`;
 
+  const finalClockIn = body.clockIn ? toIso(body.clockIn) : found.log.clockIn;
+  const finalClockOut = body.clockOut
+    ? toIso(body.clockOut)
+    : found.log.clockOut;
+  // 출근/퇴근 시간을 고치면 총 근무시간(분)도 항상 그 시간 기준으로 다시 계산한다 —
+  // 관리자가 분 값을 직접 입력하게 두면 시간과 분이 어긋날 수 있다.
+  const totalMinutes =
+    finalClockIn && finalClockOut
+      ? Math.floor(
+          (new Date(finalClockOut).getTime() -
+            new Date(finalClockIn).getTime()) /
+            60000,
+        )
+      : found.log.totalMinutes;
+
   const result = await db
     .update(attendanceLogs)
     .set({
-      clockIn: body.clockIn ? toIso(body.clockIn) : found.log.clockIn,
-      clockOut: body.clockOut ? toIso(body.clockOut) : found.log.clockOut,
-      totalMinutes: body.totalMinutes ?? found.log.totalMinutes,
+      clockIn: finalClockIn,
+      clockOut: finalClockOut,
+      totalMinutes,
       status: body.status ?? found.log.status,
-      note: `[수동수정] ${body.reason}`,
+      // 이전 수정 사유를 지우지 않고 줄바꿈으로 이어붙인다 — 여러 번 수정하면 사유가
+      // 계속 쌓여야 마지막 수정이 이전 수정 내역을 덮어쓰지 않는다.
+      note: found.log.note
+        ? `${found.log.note}\n[수동수정] ${body.reason}`
+        : `[수동수정] ${body.reason}`,
       correctedByAdminId: auth.id,
       correctedAt: new Date().toISOString(),
     })
