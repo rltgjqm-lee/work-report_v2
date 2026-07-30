@@ -10,8 +10,10 @@ import { sendWebPush } from "../lib/webPush";
 import { getKstNow } from "../lib/kst";
 import type { Env } from "../types";
 
-// 이 시간 이상 위치 신호가 없으면 통신 끊김으로 본다
-const SIGNAL_LOSS_MINUTES = 15;
+// 이 시간 이상 위치 신호가 없으면 통신 끊김으로 본다.
+// 참여자 앱의 위치 보고 주기(10분, locationReporting.ts)의 2배 이상으로 잡아야 한다 —
+// 그렇지 않으면 전송이 한 번 실패하는 것만으로 허위 통신 끊김 알림이 간다.
+const SIGNAL_LOSS_MINUTES = 25;
 
 // 출근 중인데 위치 신호가 끊긴 참여자에게 알림을 보낸다. 이미 알림을 보낸 상태(signalLossAlertedAt)면
 // 반복 발송하지 않고, 새 위치가 들어오면(/public/location) 그 표시가 풀려서 다시 알릴 수 있게 된다.

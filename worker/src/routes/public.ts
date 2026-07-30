@@ -18,70 +18,15 @@ import {
 } from "../db/schema";
 import { getKstNow } from "../lib/kst";
 import { readDebugOverride } from "../lib/debugTime";
-import { haversineKm, isPointInPolygon, polygonCentroid } from "../lib/geo";
+import {
+  buildDemandSiteAreas,
+  checkPositionAgainstDemandSite,
+  distanceOutsideAreasM,
+  distanceToNearestArea,
+  isInsideArea,
+} from "../lib/geofence";
 import { sendWebPush } from "../lib/webPush";
 import type { Env } from "../types";
-
-// 참여자 위치가 거점 하나(원형 or 다각형) 안에 있는지 판정
-// 이탈 판정 대상 구역 — 수요처 하위 거점(demand_site_locations)과, 거점 없이도 관제되도록
-// 수요처 자체에 잡아둔 기본 원(demand_sites.baseLat/baseLng/radius)을 같은 모양으로 다룬다.
-type GeofenceArea = {
-  shapeType: "RADIUS" | "POLYGON";
-  baseLat: number | null;
-  baseLng: number | null;
-  radius: number | null;
-  polygon: string | null;
-};
-
-const isInsideLocation = (
-  lat: number,
-  lng: number,
-  location: GeofenceArea,
-): boolean => {
-  if (location.shapeType === "RADIUS") {
-    if (
-      location.baseLat === null ||
-      location.baseLng === null ||
-      location.radius === null
-    ) {
-      return false;
-    }
-    return (
-      haversineKm(lat, lng, location.baseLat, location.baseLng) <=
-      location.radius / 1000
-    );
-  }
-  if (!location.polygon) return false;
-  const polygon = JSON.parse(location.polygon) as {
-    lat: number;
-    lng: number;
-  }[];
-  return isPointInPolygon({ lat, lng }, polygon);
-};
-
-// 로그에 남길 "대략적인 이탈 거리" — 가장 가까운 구역까지의 거리(원형은 중심, 다각형은 중심점 기준)
-const distanceToNearestLocation = (
-  lat: number,
-  lng: number,
-  locations: GeofenceArea[],
-): number => {
-  const distances = locations.map((location) => {
-    if (location.shapeType === "RADIUS") {
-      if (location.baseLat === null || location.baseLng === null) {
-        return Infinity;
-      }
-      return haversineKm(lat, lng, location.baseLat, location.baseLng);
-    }
-    if (!location.polygon) return Infinity;
-    const polygon = JSON.parse(location.polygon) as {
-      lat: number;
-      lng: number;
-    }[];
-    const centroid = polygonCentroid(polygon);
-    return haversineKm(lat, lng, centroid.lat, centroid.lng);
-  });
-  return Math.min(...distances);
-};
 
 const app = new Hono<Env>();
 
@@ -347,10 +292,17 @@ app.get("/attendance/today", async (c) => {
   });
 });
 
+// lat/lng/accuracy는 있으면 기록하고 없으면 그냥 넘어간다 — 위치로 출근을 막지 않는다.
+// 위치 권한을 거부하는 참여자나 실내에서 GPS를 못 잡는 기기가 적지 않아서, 먼저 기록만
+// 쌓아 실제 분포를 보고 나서 차단 정책을 정한다.
 app.post("/attendance/clock-in", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     participantId?: number;
+    lat?: number;
+    lng?: number;
+    accuracy?: number;
+    simulated?: boolean;
     debugDate?: string;
     debugTime?: string;
   }>();
@@ -433,6 +385,13 @@ app.post("/attendance/clock-in", async (c) => {
     return c.json({ error: "이미 출근 처리되었습니다." }, 400);
   }
 
+  const position = await checkPositionAgainstDemandSite(
+    db,
+    participant.demandSiteId,
+    body.lat,
+    body.lng,
+  );
+
   const result = await db
     .insert(attendanceLogs)
     .values({
@@ -441,6 +400,12 @@ app.post("/attendance/clock-in", async (c) => {
       programId: participant.programId,
       workDate: date,
       clockIn: iso,
+      clockInLat: body.lat ?? null,
+      clockInLng: body.lng ?? null,
+      clockInAccuracy: body.accuracy ?? null,
+      clockInInside: position.inside,
+      clockInDistanceM: position.distanceM,
+      simulatedCount: body.simulated ? 1 : 0,
     })
     .returning();
 
@@ -451,6 +416,10 @@ app.post("/attendance/clock-out", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     participantId?: number;
+    lat?: number;
+    lng?: number;
+    accuracy?: number;
+    simulated?: boolean;
     debugDate?: string;
     debugTime?: string;
   }>();
@@ -516,9 +485,36 @@ app.post("/attendance/clock-out", async (c) => {
     }
   }
 
+  // 퇴근 위치도 출근과 같은 기준으로 기록만 한다. 좌표를 못 받았으면 배정 수요처를
+  // 조회할 필요조차 없으니 D1 왕복을 건너뛴다.
+  const hasCoordinates = body.lat !== undefined && body.lng !== undefined;
+  const demandSiteRows = hasCoordinates
+    ? await db
+        .select({ demandSiteId: participants.demandSiteId })
+        .from(participants)
+        .where(eq(participants.id, log.participantId))
+    : [];
+  const position = await checkPositionAgainstDemandSite(
+    db,
+    demandSiteRows[0]?.demandSiteId ?? null,
+    body.lat,
+    body.lng,
+  );
+
   const result = await db
     .update(attendanceLogs)
-    .set({ clockOut: iso, totalMinutes, status, note })
+    .set({
+      clockOut: iso,
+      totalMinutes,
+      status,
+      note,
+      clockOutLat: body.lat ?? null,
+      clockOutLng: body.lng ?? null,
+      clockOutAccuracy: body.accuracy ?? null,
+      clockOutInside: position.inside,
+      clockOutDistanceM: position.distanceM,
+      simulatedCount: log.simulatedCount + (body.simulated ? 1 : 0),
+    })
     .where(eq(attendanceLogs.id, log.id))
     .returning();
 
@@ -700,6 +696,8 @@ app.post("/location", async (c) => {
     participantId?: number;
     lat?: number;
     lng?: number;
+    accuracy?: number;
+    simulated?: boolean;
   }>();
 
   if (!body.participantId || body.lat === undefined || body.lng === undefined) {
@@ -727,6 +725,15 @@ app.post("/location", async (c) => {
     );
   if (openAttendance.length === 0) {
     return c.json({ ok: true, escaped: false, message: "출근 중이 아닙니다." });
+  }
+
+  // 좌표를 근무지로 위조하면 계속 "구역 안"으로만 찍혀서 이탈 기록이 아예 안 생긴다.
+  // 그래서 조작 표시는 이탈 로그가 아니라 그 날 근태 기록에 누적해 드러나게 한다.
+  if (body.simulated) {
+    await db
+      .update(attendanceLogs)
+      .set({ simulatedCount: openAttendance[0].simulatedCount + 1 })
+      .where(eq(attendanceLogs.id, openAttendance[0].id));
   }
 
   const metaRows = await db
@@ -786,21 +793,7 @@ app.post("/location", async (c) => {
     .where(eq(demandSiteLocations.demandSiteId, demandSite.id));
 
   // 거점을 따로 안 그렸어도 수요처 자체에 기본 관제구역이 잡혀 있으면 그걸로 판정한다.
-  // 둘 다 있으면 어느 한 곳 안에만 있어도 정상 근무로 본다.
-  const areas: GeofenceArea[] = [...locations];
-  if (
-    demandSite.baseLat !== null &&
-    demandSite.baseLng !== null &&
-    demandSite.radius !== null
-  ) {
-    areas.push({
-      shapeType: "RADIUS",
-      baseLat: demandSite.baseLat,
-      baseLng: demandSite.baseLng,
-      radius: demandSite.radius,
-      polygon: null,
-    });
-  }
+  const areas = buildDemandSiteAreas(demandSite, locations);
 
   if (areas.length === 0) {
     await saveMeta({});
@@ -812,10 +805,38 @@ app.post("/location", async (c) => {
   }
 
   const isInside = areas.some((area) =>
-    isInsideLocation(body.lat!, body.lng!, area),
+    isInsideArea(body.lat!, body.lng!, area),
   );
-  const distanceKm = distanceToNearestLocation(body.lat!, body.lng!, areas);
+  const distanceKm = distanceToNearestArea(body.lat!, body.lng!, areas);
   const currentAlertCount = meta?.alertCount ?? 0;
+
+  // GPS 오차보다 덜 벗어난 좌표로는 "구역 밖에 있다"고 단정할 수 없다. 실내 측위는
+  // 오차가 수백 m~수 km까지 나오는데, 관제 반경이 최소 1.5km라서 그런 좌표를 그대로
+  // 믿으면 실제로는 근무지에 있는 참여자에게 이탈 경고 푸시가 가고 관리자 화면에도
+  // 허위 이탈이 쌓인다. 이럴 땐 판정을 보류하되 위치 수신 시각은 갱신해서
+  // 통신 끊김(checkSignalLoss)으로 잘못 잡히지 않게 한다.
+  const outsideMarginM = distanceOutsideAreasM(body.lat!, body.lng!, areas);
+  const isTooInaccurateToJudge =
+    !isInside && body.accuracy !== undefined && body.accuracy >= outsideMarginM;
+
+  if (isTooInaccurateToJudge) {
+    // 이미 이탈 중이었다면 그 상태를 끝내지 않고 그대로 둔다 — 오차가 큰 좌표 한 건이
+    // 진행 중인 이탈을 "복귀"로 지워버리면 안 된다.
+    await saveMeta({
+      alertCount: currentAlertCount,
+      outsideStart: meta?.outsideStart ?? null,
+    });
+
+    return c.json({
+      ok: true,
+      escaped: false,
+      uncertain: true,
+      distanceKm,
+      accuracyM: body.accuracy,
+      demandSiteName: demandSite.name,
+      message: "위치 정확도가 낮아 이탈 판정을 보류했습니다.",
+    });
+  }
 
   if (!isInside) {
     const isNewEscape = !meta?.outsideStart;
@@ -832,6 +853,7 @@ app.post("/location", async (c) => {
         lat: body.lat,
         lng: body.lng,
         distanceKm,
+        accuracyM: body.accuracy ?? null,
         alertCount: newAlertCount,
       });
 
