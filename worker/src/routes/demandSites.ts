@@ -10,7 +10,7 @@ import {
   programs,
   groups,
 } from "../db/schema";
-import { canAccessProgram, getAuth } from "../lib/authz";
+import { canAccessProgram, getAuth, parseIdArray } from "../lib/authz";
 import { ROLES, type Env } from "../types";
 
 const app = new Hono<Env>();
@@ -131,16 +131,9 @@ const findProgramManagerId = async (
       ),
     );
 
-  const manager = candidates.find((candidate) => {
-    if (!candidate.programIds) return false;
-    try {
-      return (JSON.parse(candidate.programIds) as number[]).includes(
-        program.id,
-      );
-    } catch {
-      return false;
-    }
-  });
+  const manager = candidates.find((candidate) =>
+    parseIdArray(candidate.programIds).includes(program.id),
+  );
 
   return manager?.id ?? null;
 };

@@ -7,7 +7,11 @@ import { admins, adminSessions } from "../db/schema";
 import { hashSessionToken, SESSION_COOKIE_NAME } from "./sessionToken";
 import { ROLES, type AdminRole, type AdminSession, type Env } from "../types";
 
-const parseIdArray = (raw: string | null): number[] => {
+// admins.programIds / groupIds는 JSON 배열 문자열로 저장된다. 깨진 값이나 예전 형식이
+// 섞여 있어도 권한 판정이 죽지 않도록 파싱 실패는 빈 배열로 흡수한다.
+// number 필터가 중요하다 — ["3"]처럼 문자열이 섞이면 includes(3)이 매칭에 실패해서
+// 담당 배정이 조용히 어긋난다.
+export const parseIdArray = (raw: string | null): number[] => {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);

@@ -24,7 +24,12 @@ import {
   participantEscapeMeta,
   pushSubscriptions,
 } from "../db/schema";
-import { canAccessProgram, getAuth, hasMinRole } from "../lib/authz";
+import {
+  canAccessProgram,
+  getAuth,
+  hasMinRole,
+  parseIdArray,
+} from "../lib/authz";
 import { getKstNow } from "../lib/kst";
 import { ROLES, type Env } from "../types";
 
@@ -208,14 +213,7 @@ app.put("/:id/manager", async (c) => {
   }
 
   const managerUpdates = managerCandidates.flatMap((candidate) => {
-    let assignedProgramIds: number[];
-    try {
-      assignedProgramIds = candidate.programIds
-        ? (JSON.parse(candidate.programIds) as number[])
-        : [];
-    } catch {
-      assignedProgramIds = [];
-    }
+    const assignedProgramIds = parseIdArray(candidate.programIds);
 
     const shouldHave = candidate.id === nextManagerId;
     const has = assignedProgramIds.includes(programId);

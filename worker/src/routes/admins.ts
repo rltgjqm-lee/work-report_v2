@@ -8,7 +8,7 @@ import {
   adminSessions,
   demandSites,
 } from "../db/schema";
-import { getAuth } from "../lib/authz";
+import { getAuth, parseIdArray } from "../lib/authz";
 import { hashPassword } from "../lib/password";
 import { tryConsumePasswordResetBudget } from "../lib/passwordResetRateLimit";
 import { ROLES, type AdminRole, type Env } from "../types";
@@ -27,18 +27,6 @@ const ASSIGNABLE_ROLES: Record<AdminRole, AdminRole[]> = {
   [ROLES.ORGANIZATION_ADMIN]: [ROLES.SUB_ADMIN, ROLES.MANAGER],
   [ROLES.SUB_ADMIN]: [],
   [ROLES.MANAGER]: [],
-};
-
-const parseIdArray = (raw: string | null): number[] => {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((v) => typeof v === "number")
-      : [];
-  } catch {
-    return [];
-  }
 };
 
 const toAdminJson = (admin: typeof admins.$inferSelect) => ({
