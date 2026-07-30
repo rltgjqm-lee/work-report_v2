@@ -329,7 +329,7 @@ const DemandSiteLocationsPanel = ({
         </div>
         <div
           ref={mapContainerRef}
-          className="flex-1 h-[420px] border border-[#e2e5eb] rounded-[2px]"
+          className="flex-1 h-[640px] border border-[#e2e5eb] rounded-[2px]"
         />
       </div>
 
