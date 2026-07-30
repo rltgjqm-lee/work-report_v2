@@ -4,4 +4,6 @@
     <string name="title_activity_main">활동 일지</string>
     <string name="package_name">com.workreport.senioractivity</string>
     <string name="custom_url_scheme">com.workreport.senioractivity</string>
+    <!-- 근무 중 위치 관제가 켜져 있는 동안 상단에 상주하는 알림의 채널 이름 -->
+    <string name="capacitor_background_geolocation_notification_channel_name">근무 중 위치 확인</string>
 </resources>

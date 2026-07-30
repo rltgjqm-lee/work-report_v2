@@ -22,6 +22,17 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- 출퇴근 등록 시점의 1회 측위용 -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>출근·퇴근을 등록한 위치를 근무지 확인용으로 기록하기 위해 위치 정보가 필요합니다.</string>
+	<!-- 근무 중 이탈 관제용. 출근~퇴근 사이에만 감시를 켜고 퇴근하면 즉시 끈다.
+	     App Store 심사에서 "왜 항상 필요한가"를 소명해야 하는 항목이다. -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>근무 중 활동 구역을 벗어났는지 확인하기 위해 출근부터 퇴근까지 위치 정보가 필요합니다. 퇴근하면 위치 확인이 중단됩니다.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

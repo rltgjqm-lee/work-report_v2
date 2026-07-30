@@ -32,4 +32,14 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 출퇴근 시점 위치 기록과 근무 중 이탈 관제에 쓴다.
+         근무 중 관제는 background-geolocation 플러그인의 포그라운드 서비스(상단 알림 상주)로
+         동작하므로 ACCESS_BACKGROUND_LOCATION은 필요하지 않다 — 포그라운드 서비스가 있으면
+         FINE_LOCATION만으로 백그라운드에서도 위치를 받을 수 있고, 플레이스토어의 백그라운드
+         위치 권한 심사(별도 신청서·시연 영상)도 피할 수 있다.
+         FOREGROUND_SERVICE / FOREGROUND_SERVICE_LOCATION / POST_NOTIFICATIONS와 서비스
+         선언은 플러그인 자체 매니페스트에 있어서 병합된다. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>
