@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { listDisasterPushLogs } from "../api/admin/disasterPushLogs";
-import type { SafetyAlert } from "../types";
+import { disasterPushLogsQueryOptions } from "../api/admin/disasterPushLogs";
 
 /**
  * 관리자 페이지 > 재난문자 발송이력 페이지입니다.
  *
  */
 const DisasterPushLogsPage = () => {
-  const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
-
-  useEffect(() => {
-    listDisasterPushLogs().then(setAlerts);
-  }, []);
+  const { data: alerts = [] } = useQuery(disasterPushLogsQueryOptions);
 
   return (
     <div>
