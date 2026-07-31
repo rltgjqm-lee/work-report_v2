@@ -7,12 +7,16 @@ import {
 import { request } from "../client";
 import type { Organization } from "../../types";
 
-export const listOrganizations = () =>
-  request<Organization[]>("/api/organizations");
-
 export const organizationKeys = {
   all: ["organizations"] as const,
 };
+export interface UpdateOrganizationVariables {
+  id: number;
+  data: Partial<Omit<Organization, "id" | "createdAt">>;
+}
+
+export const listOrganizations = () =>
+  request<Organization[]>("/api/organizations");
 
 export const organizationsQueryOptions = queryOptions({
   queryKey: organizationKeys.all,
@@ -22,7 +26,7 @@ export const organizationsQueryOptions = queryOptions({
 export const getOrganization = (id: number) =>
   request<Organization>(`/api/organizations/${id}`);
 
-export const createOrganization = (
+const createOrganization = (
   data: Partial<Omit<Organization, "id" | "createdAt">>,
 ) =>
   request<Organization>("/api/organizations", {
@@ -30,8 +34,6 @@ export const createOrganization = (
     body: JSON.stringify(data),
   });
 
-// critical: 생성/수정 성공 시 어느 화면에서 호출하든 기관 목록을 무효화해야 한다.
-// 모달 닫기/에러 표시 같은 UI 한정 동작은 호출부의 mutate(variables, { onSuccess, onError })에 둔다.
 export const createOrganizationMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: createOrganization,
@@ -40,7 +42,7 @@ export const createOrganizationMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-export const updateOrganization = (
+const updateOrganization = (
   id: number,
   data: Partial<Omit<Organization, "id" | "createdAt">>,
 ) =>
@@ -48,11 +50,6 @@ export const updateOrganization = (
     method: "PUT",
     body: JSON.stringify(data),
   });
-
-export interface UpdateOrganizationVariables {
-  id: number;
-  data: Partial<Omit<Organization, "id" | "createdAt">>;
-}
 
 export const updateOrganizationMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({

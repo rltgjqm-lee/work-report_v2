@@ -40,8 +40,6 @@ interface OrganizationFormModalProps {
  * 관리자 페이지 > 기관 관리 페이지에서 기관을 추가/수정하는 모달입니다.
  *
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const OrganizationFormModal = ({
   onClose,
   editingOrganization,
@@ -83,7 +81,6 @@ const OrganizationFormModal = ({
       return;
     }
 
-    // UI 한정: 저장 성공하면 이 모달을 닫고, 실패하면 폼에 에러 메시지를 보여준다.
     const saveCallbacks = {
       onSuccess: () => onClose(),
       onError: (error: unknown) =>
@@ -123,7 +120,7 @@ const OrganizationFormModal = ({
           className={inputClass}
           value={form.name}
           onChange={(event) =>
-            setForm((f) => ({ ...f, name: event.target.value }))
+            setForm((form) => ({ ...form, name: event.target.value }))
           }
         />
       </FormField>
@@ -132,7 +129,7 @@ const OrganizationFormModal = ({
           className={inputClass}
           value={form.address}
           onChange={(event) =>
-            setForm((f) => ({ ...f, address: event.target.value }))
+            setForm((form) => ({ ...form, address: event.target.value }))
           }
         />
       </FormField>
@@ -141,7 +138,7 @@ const OrganizationFormModal = ({
           className={inputClass}
           value={form.rep}
           onChange={(event) =>
-            setForm((f) => ({ ...f, rep: event.target.value }))
+            setForm((form) => ({ ...form, rep: event.target.value }))
           }
         />
       </FormField>
@@ -153,7 +150,7 @@ const OrganizationFormModal = ({
               placeholder="02-1234-5678"
               value={form.phone}
               onChange={(event) =>
-                setForm((f) => ({ ...f, phone: event.target.value }))
+                setForm((form) => ({ ...form, phone: event.target.value }))
               }
             />
           </FormField>
@@ -165,7 +162,7 @@ const OrganizationFormModal = ({
               placeholder="02-1234-5678"
               value={form.fax}
               onChange={(event) =>
-                setForm((f) => ({ ...f, fax: event.target.value }))
+                setForm((form) => ({ ...form, fax: event.target.value }))
               }
             />
           </FormField>
@@ -176,7 +173,7 @@ const OrganizationFormModal = ({
           className={inputClass}
           value={form.bizNo}
           onChange={(event) =>
-            setForm((f) => ({ ...f, bizNo: event.target.value }))
+            setForm((form) => ({ ...form, bizNo: event.target.value }))
           }
         />
       </FormField>
@@ -187,8 +184,8 @@ const OrganizationFormModal = ({
               className="w-full"
               value={form.regionSido}
               onChange={(value) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   regionSido: value,
                   regionSigungu: "",
                 }))
@@ -207,7 +204,7 @@ const OrganizationFormModal = ({
               value={form.regionSigungu}
               disabled={!form.regionSido}
               onChange={(value) =>
-                setForm((f) => ({ ...f, regionSigungu: value }))
+                setForm((form) => ({ ...form, regionSigungu: value }))
               }
               options={[
                 { value: "", label: "선택하세요" },
@@ -228,8 +225,8 @@ const OrganizationFormModal = ({
               placeholder="예: 시니어클럽, 노인복지관"
               value={form.organizationType}
               onChange={(event) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   organizationType: event.target.value,
                 }))
               }
@@ -243,7 +240,7 @@ const OrganizationFormModal = ({
               placeholder="예: 2026"
               value={form.prjYear}
               onChange={(event) =>
-                setForm((f) => ({ ...f, prjYear: event.target.value }))
+                setForm((form) => ({ ...form, prjYear: event.target.value }))
               }
             />
           </FormField>
