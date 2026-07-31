@@ -19,8 +19,6 @@ interface FilterSelectProps {
  * 여러 페이지의 필터/폼에서 공통으로 쓰는 select 드롭다운입니다.
  *
  */
-// 목록 툴바의 필터 드롭다운 전용 — "전체"/"선택하세요" 같은 옵션도
-// 호출하는 쪽에서 options 배열에 그대로 포함시켜서 넘긴다.
 // className은 폭 지정용(예: "w-full")으로 바깥 wrapper에 적용하고, select 자체는
 // 항상 w-full로 wrapper를 꽉 채운다 — 화살표 아이콘을 얹으려면 wrapper가 필요하다.
 const FilterSelect = ({
@@ -43,6 +41,7 @@ const FilterSelect = ({
         </option>
       ))}
     </select>
+
     <ChevronDown
       size={14}
       className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280]"

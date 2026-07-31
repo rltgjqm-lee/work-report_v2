@@ -4,9 +4,8 @@ interface MonthPickerProps {
 }
 
 /**
- * "YYYY-MM" 월 선택 인풋. flex-none이라 어떤 flex 컨테이너(justify-between 등)에
- * 넣어도 너비가 늘어나 옆 라벨을 밀어내지 않는다 — inputClass(w-full)를 직접
- * 쓰면 이 문제가 생겨서 별도 컴포넌트로 뺐다.
+ * "YYYY-MM" 월 선택 인풋 영역입니다.
+ *
  */
 const MonthPicker = ({ value, onChange }: MonthPickerProps) => (
   <input

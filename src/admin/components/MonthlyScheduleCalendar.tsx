@@ -35,10 +35,13 @@ const MonthlyScheduleCalendar = ({
           {weekdayLabel}
         </div>
       ))}
+
       {cells.map((day, index) => {
         if (day === null) return <div key={`empty-${index}`} />;
+
         const dateString = `${yearMonth}-${String(day).padStart(2, "0")}`;
         const isSelected = selectedDateSet.has(dateString);
+
         return (
           <button
             key={dateString}
