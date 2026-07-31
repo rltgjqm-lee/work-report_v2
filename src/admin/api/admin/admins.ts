@@ -1,9 +1,13 @@
+import {
+  mutationOptions,
+  queryOptions,
+  type QueryClient,
+} from "@tanstack/react-query";
+
 import { request } from "../client";
 import type { Admin, Role } from "../../types";
 
-export const listAdmins = () => request<Admin[]>("/api/admins");
-
-export const createAdmin = (data: {
+interface CreateAdminVariables {
   email: string;
   name: string;
   role: Role;
@@ -11,33 +15,79 @@ export const createAdmin = (data: {
   programIds?: number[];
   groupIds?: number[];
   password: string;
-}) =>
-  request<Admin>("/api/admins", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-
-export const updateAdmin = (
-  id: number,
+}
+interface UpdateAdminVariables {
+  id: number;
   data: Partial<{
     name: string;
     role: Role;
     programIds: number[];
     groupIds: number[];
     isActive: boolean;
-  }>,
-) =>
+  }>;
+}
+interface TransferAdminProgramsVariables {
+  id: number;
+  toAdminId: number;
+}
+
+const adminKeys = {
+  all: ["admins"] as const,
+};
+
+export const listAdmins = () => request<Admin[]>("/api/admins");
+
+export const adminsQueryOptions = queryOptions({
+  queryKey: adminKeys.all,
+  queryFn: listAdmins,
+});
+
+const createAdmin = (data: CreateAdminVariables) =>
+  request<Admin>("/api/admins", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+// critical: 계정 생성/수정/이관에서 호출시 계정 목록을 무효화해야 한다.
+export const createAdminMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: createAdmin,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.all });
+    },
+  });
+
+const updateAdmin = (id: number, data: UpdateAdminVariables["data"]) =>
   request<Admin>(`/api/admins/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 
+export const updateAdminMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ id, data }: UpdateAdminVariables) => updateAdmin(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.all });
+    },
+  });
+
 // 담당 이관 — 담당 사업단 전부를 다른 담당자에게 넘기고, 그 사업단의 수요처 담당자도 함께 바꾼다
-export const transferAdminPrograms = (id: number, toAdminId: number) =>
+const transferAdminPrograms = (id: number, toAdminId: number) =>
   request<{ ok: true; programCount: number; demandSiteCount: number }>(
     `/api/admins/${id}/transfer-programs`,
     { method: "PUT", body: JSON.stringify({ toAdminId }) },
   );
+
+export const transferAdminProgramsMutationOptions = (
+  queryClient: QueryClient,
+) =>
+  mutationOptions({
+    mutationFn: ({ id, toAdminId }: TransferAdminProgramsVariables) =>
+      transferAdminPrograms(id, toAdminId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.all });
+    },
+  });
 
 export const resetAdminPassword = (id: number, newPassword: string) =>
   request<{ ok: true }>(`/api/admins/${id}/password`, {

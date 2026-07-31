@@ -1,6 +1,10 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { createAdmin, updateAdmin } from "../../api/admin/admins";
+import {
+  createAdminMutationOptions,
+  updateAdminMutationOptions,
+} from "../../api/admin/admins";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -17,7 +21,6 @@ const emptyForm = {
 
 interface AdminFormModalProps {
   onClose: () => void;
-  onSaved: () => void;
   editingAdmin: Admin | null;
   currentRole: Role;
   assignableRoles: Role[];
@@ -33,13 +36,19 @@ interface AdminFormModalProps {
 // 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const AdminFormModal = ({
   onClose,
-  onSaved,
   editingAdmin,
   currentRole,
   assignableRoles,
   roleLabel,
   organizations,
 }: AdminFormModalProps) => {
+  const queryClient = useQueryClient();
+  const createAdminMutation = useMutation(
+    createAdminMutationOptions(queryClient),
+  );
+  const updateAdminMutation = useMutation(
+    updateAdminMutationOptions(queryClient),
+  );
   // 총괄 관리자 계정은 소속 기관이 없어서, 기본 역할이 총괄이면 모달을 열자마자
   // 기관 선택이 비활성으로 뜬다. 총괄 계정을 새로 만드는 일은 드물기 때문에
   // 기본값은 기관을 고를 수 있는 역할로 잡는다.
@@ -65,52 +74,63 @@ const AdminFormModal = ({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const handleSaveButtonClick = async () => {
+  const handleSaveButtonClick = () => {
     if (!form.name) {
       setError("이름을 입력해주세요.");
 
       return;
     }
-    try {
-      if (editingAdmin) {
-        await updateAdmin(editingAdmin.id, {
-          name: form.name,
-          role: form.role,
-        });
-      } else {
-        if (!form.email) {
-          setError("이메일을 입력해주세요.");
 
-          return;
-        }
-        if (form.password.length < 8) {
-          setError("임시 비밀번호는 8자 이상이어야 합니다.");
+    // UI 한정: 저장 성공하면 이 모달을 닫고, 실패하면 폼에 에러 메시지를 보여준다.
+    const saveCallbacks = {
+      onSuccess: () => onClose(),
+      onError: (error: unknown) =>
+        setError(
+          error instanceof Error ? error.message : "저장에 실패했습니다.",
+        ),
+    };
 
-          return;
-        }
-        // 서비스 총괄 관리자는 특정 기관에 속하지 않는다(목록에서도 "전체"로 표시).
-        // 그 외 역할은 소속 기관이 반드시 있어야 하고, 서버도 400으로 막는다.
-        const needsOrganization =
-          currentRole === ROLES.SUPER_ADMIN && form.role !== ROLES.SUPER_ADMIN;
-        if (needsOrganization && !form.organizationId) {
-          setError("소속 기관을 선택해주세요.");
+    if (editingAdmin) {
+      updateAdminMutation.mutate(
+        { id: editingAdmin.id, data: { name: form.name, role: form.role } },
+        saveCallbacks,
+      );
 
-          return;
-        }
-        await createAdmin({
-          email: form.email,
-          name: form.name,
-          role: form.role,
-          organizationId: needsOrganization
-            ? Number(form.organizationId)
-            : undefined,
-          password: form.password,
-        });
-      }
-      onSaved();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
+      return;
     }
+
+    if (!form.email) {
+      setError("이메일을 입력해주세요.");
+
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("임시 비밀번호는 8자 이상이어야 합니다.");
+
+      return;
+    }
+    // 서비스 총괄 관리자는 특정 기관에 속하지 않는다(목록에서도 "전체"로 표시).
+    // 그 외 역할은 소속 기관이 반드시 있어야 하고, 서버도 400으로 막는다.
+    const needsOrganization =
+      currentRole === ROLES.SUPER_ADMIN && form.role !== ROLES.SUPER_ADMIN;
+    if (needsOrganization && !form.organizationId) {
+      setError("소속 기관을 선택해주세요.");
+
+      return;
+    }
+
+    createAdminMutation.mutate(
+      {
+        email: form.email,
+        name: form.name,
+        role: form.role,
+        organizationId: needsOrganization
+          ? Number(form.organizationId)
+          : undefined,
+        password: form.password,
+      },
+      saveCallbacks,
+    );
   };
 
   return (

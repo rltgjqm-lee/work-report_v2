@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { listAdmins, updateAdmin } from "../../api/admin/admins";
-import { listOrganizations } from "../../api/admin/organizations";
+import {
+  adminsQueryOptions,
+  updateAdminMutationOptions,
+} from "../../api/admin/admins";
+import { organizationsQueryOptions } from "../../api/admin/organizations";
 import AdminFormModal from "./AdminFormModal";
 import ResetPasswordModal from "./ResetPasswordModal";
 import TransferProgramsModal from "./TransferProgramsModal";
 import SearchInput from "../../components/SearchInput";
 import { useAuth } from "../../context/useAuth";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
-import { ROLES, type Admin, type Organization, type Role } from "../../types";
+import { ROLES, type Admin, type Role } from "../../types";
 
 const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",
@@ -37,9 +41,14 @@ const AdminsPage = () => {
   const { admin } = useAuth();
   const role = admin?.role;
   const assignableRoles = role ? ASSIGNABLE_ROLES[role] : [];
+  const queryClient = useQueryClient();
 
-  const [admins, setAdmins] = useState<Admin[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const { data: admins = [] } = useQuery(adminsQueryOptions);
+  const { data: organizations = [] } = useQuery({
+    ...organizationsQueryOptions,
+    enabled: role === ROLES.SUPER_ADMIN,
+  });
+
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
@@ -49,16 +58,7 @@ const AdminsPage = () => {
   } | null>(null);
   const [transferTarget, setTransferTarget] = useState<Admin | null>(null);
 
-  const refresh = () => {
-    listAdmins().then(setAdmins);
-  };
-
-  useEffect(refresh, []);
-  useEffect(() => {
-    if (role === ROLES.SUPER_ADMIN) listOrganizations().then(setOrganizations);
-  }, [role]);
-
-  const orgName = (organizationId: number | null) =>
+  const OrganizationNameById = (organizationId: number | null) =>
     organizations.find((organization) => organization.id === organizationId)
       ?.name ?? "-";
 
@@ -82,13 +82,11 @@ const AdminsPage = () => {
     setModalOpen(true);
   };
 
-  const handleAdminSaved = () => {
-    setModalOpen(false);
-    refresh();
-  };
+  const updateAdminMutation = useMutation(
+    updateAdminMutationOptions(queryClient),
+  );
 
-  const handleToggleActiveButtonClick = async (adminRow: Admin) => {
-    // 담당 사업단을 들고 있으면 서버가 400으로 막는다 — 왕복 없이 여기서 먼저 안내한다
+  const handleToggleActiveButtonClick = (adminRow: Admin) => {
     if (adminRow.isActive && adminRow.programIds.length > 0) {
       alert(
         `담당 사업단 ${adminRow.programIds.length}개가 남아 있습니다. '담당 이관'을 먼저 진행해주세요.`,
@@ -104,21 +102,20 @@ const AdminsPage = () => {
       )
     )
       return;
-    try {
-      await updateAdmin(adminRow.id, { isActive: !adminRow.isActive });
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+
+    updateAdminMutation.mutate(
+      { id: adminRow.id, data: { isActive: !adminRow.isActive } },
+      {
+        onError: (error) =>
+          alert(
+            error instanceof Error ? error.message : "처리에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   const handleTransferButtonClick = (adminRow: Admin) => {
     setTransferTarget(adminRow);
-  };
-
-  const handleTransferred = () => {
-    setTransferTarget(null);
-    refresh();
   };
 
   const handleResetPasswordButtonClick = (adminRow: Admin) => {
@@ -199,7 +196,7 @@ const AdminsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                     {adminRow.role === ROLES.SUPER_ADMIN
                       ? "전체"
-                      : orgName(adminRow.organizationId)}
+                      : OrganizationNameById(adminRow.organizationId)}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     {adminRow.isActive ? "활성" : "비활성"}
@@ -242,7 +239,6 @@ const AdminsPage = () => {
       {modalOpen && (
         <AdminFormModal
           onClose={() => setModalOpen(false)}
-          onSaved={handleAdminSaved}
           editingAdmin={editingAdmin}
           currentRole={role}
           assignableRoles={assignableRoles}
@@ -254,7 +250,6 @@ const AdminsPage = () => {
       {transferTarget && (
         <TransferProgramsModal
           onClose={() => setTransferTarget(null)}
-          onTransferred={handleTransferred}
           target={transferTarget}
           candidates={admins.filter(
             (adminRow) =>

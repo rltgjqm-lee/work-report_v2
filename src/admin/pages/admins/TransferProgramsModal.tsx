@@ -1,6 +1,7 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { transferAdminPrograms } from "../../api/admin/admins";
+import { transferAdminProgramsMutationOptions } from "../../api/admin/admins";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -9,7 +10,6 @@ import type { Admin } from "../../types";
 
 interface TransferProgramsModalProps {
   onClose: () => void;
-  onTransferred: () => void;
   target: Admin;
   candidates: Admin[];
 }
@@ -23,30 +23,41 @@ interface TransferProgramsModalProps {
 // 새로 마운트되면서 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const TransferProgramsModal = ({
   onClose,
-  onTransferred,
   target,
   candidates,
 }: TransferProgramsModalProps) => {
+  const queryClient = useQueryClient();
+  const transferAdminProgramsMutation = useMutation(
+    transferAdminProgramsMutationOptions(queryClient),
+  );
   const [toAdminId, setToAdminId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const targetName = target.name ?? target.email;
 
-  const handleTransferButtonClick = async () => {
+  const handleTransferButtonClick = () => {
     if (!toAdminId) {
       setError("이관받을 담당자를 선택해주세요.");
 
       return;
     }
-    try {
-      const result = await transferAdminPrograms(target.id, Number(toAdminId));
-      alert(
-        `사업단 ${result.programCount}개, 수요처 ${result.demandSiteCount}곳의 담당자를 변경했습니다.`,
-      );
-      onTransferred();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "이관에 실패했습니다.");
-    }
+
+    transferAdminProgramsMutation.mutate(
+      { id: target.id, toAdminId: Number(toAdminId) },
+      {
+        // UI 한정: 이관 결과 안내와 모달 닫기는 이 화면에서만 의미 있다.
+        onSuccess: (result) => {
+          alert(
+            `사업단 ${result.programCount}개, 수요처 ${result.demandSiteCount}곳의 담당자를 변경했습니다.`,
+          );
+          onClose();
+        },
+        onError: (error) =>
+          setError(
+            error instanceof Error ? error.message : "이관에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   return (

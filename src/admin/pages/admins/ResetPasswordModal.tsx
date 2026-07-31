@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { resetAdminPassword } from "../../api/admin/admins";
@@ -10,14 +11,28 @@ interface ResetPasswordModalProps {
   target: { id: number; name: string } | null;
 }
 
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
+interface ResetAdminPasswordVariables {
+  id: number;
+  newPassword: string;
+}
+
+/**
+ * 관리자 페이지 > 관리자 계정의 비밀번호 재설정 모달입니다.
+ *
+ */
 const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const handleSaveButtonClick = async () => {
+  // 비밀번호 재설정은 admins 목록에 표시되는 데이터를 바꾸지 않아서(무효화할 캐시가 없음)
+  // 다른 뮤테이션처럼 API 파일에 mutationOptions를 따로 만들지 않고 여기서 바로 쓴다.
+  const resetAdminPasswordMutation = useMutation({
+    mutationFn: ({ id, newPassword }: ResetAdminPasswordVariables) =>
+      resetAdminPassword(id, newPassword),
+  });
+
+  const handleSaveButtonClick = () => {
     if (!target) return;
     if (newPassword.length < 8) {
       setError("새 비밀번호는 8자 이상이어야 합니다.");
@@ -29,14 +44,17 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
 
       return;
     }
-    try {
-      await resetAdminPassword(target.id, newPassword);
-      onClose();
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "재설정에 실패했습니다.",
-      );
-    }
+
+    resetAdminPasswordMutation.mutate(
+      { id: target.id, newPassword },
+      {
+        onSuccess: () => onClose(),
+        onError: (error) =>
+          setError(
+            error instanceof Error ? error.message : "재설정에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   return (
