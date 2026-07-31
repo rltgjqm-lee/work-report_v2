@@ -2,9 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import {
-  safetyAlertsKeys,
   safetyAlertsQueryOptions,
-  sendTestSafetyAlert,
+  sendTestSafetyAlertMutationOptions,
 } from "../api/admin/safetyAlerts";
 import { programsQueryOptions } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
@@ -28,21 +27,9 @@ const DisasterMessagesPage = () => {
   const [testMessage, setTestMessage] = useState("");
   const [testResult, setTestResult] = useState<string | null>(null);
 
-  const sendTestMutation = useMutation({
-    mutationFn: sendTestSafetyAlert,
-    onSuccess: (result) => {
-      setTestResult(
-        `발송 완료 — 대상 ${result.targetCount}건 중 ${result.successCount}건 성공`,
-      );
-      setTestMessage("");
-      queryClient.invalidateQueries({ queryKey: safetyAlertsKeys.all });
-    },
-    onError: (error) => {
-      alert(
-        error instanceof Error ? error.message : "테스트 발송에 실패했습니다.",
-      );
-    },
-  });
+  const sendTestMutation = useMutation(
+    sendTestSafetyAlertMutationOptions(queryClient),
+  );
 
   const handleSendTestButtonClick = () => {
     if (!testProgramId || !testMessage) {
@@ -50,10 +37,24 @@ const DisasterMessagesPage = () => {
 
       return;
     }
-    sendTestMutation.mutate({
-      message: testMessage,
-      programId: Number(testProgramId),
-    });
+    sendTestMutation.mutate(
+      { message: testMessage, programId: Number(testProgramId) },
+      {
+        onSuccess: (result) => {
+          setTestResult(
+            `발송 완료 — 대상 ${result.targetCount}건 중 ${result.successCount}건 성공`,
+          );
+          setTestMessage("");
+        },
+        onError: (error) => {
+          alert(
+            error instanceof Error
+              ? error.message
+              : "테스트 발송에 실패했습니다.",
+          );
+        },
+      },
+    );
   };
 
   return (
