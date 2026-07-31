@@ -1,4 +1,8 @@
-import { mutationOptions, type QueryClient } from "@tanstack/react-query";
+import {
+  mutationOptions,
+  queryOptions,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import { request } from "../client";
 import { programKeys } from "./programs";
@@ -11,16 +15,44 @@ import type {
   ParticipantMonthlyAttendance,
 } from "../../types";
 
+export const participantKeys = {
+  all: ["participants"] as const,
+  detail: (id: number) => [...participantKeys.all, id] as const,
+  attendance: (id: number, month: string) =>
+    [...participantKeys.detail(id), "attendance", month] as const,
+  leaves: (id: number) => [...participantKeys.detail(id), "leaves"] as const,
+  annualLeave: (id: number, year: string) =>
+    [...participantKeys.detail(id), "annual-leave", year] as const,
+};
+
 export const getParticipant = (id: number) =>
   request<ParticipantDetail>(`/api/participants/${id}`);
+
+export const participantQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: participantKeys.detail(id),
+    queryFn: () => getParticipant(id),
+  });
 
 export const getParticipantAttendance = (id: number, month: string) =>
   request<ParticipantMonthlyAttendance>(
     `/api/participants/${id}/attendance?month=${month}`,
   );
 
+export const participantAttendanceQueryOptions = (id: number, month: string) =>
+  queryOptions({
+    queryKey: participantKeys.attendance(id, month),
+    queryFn: () => getParticipantAttendance(id, month),
+  });
+
 export const getParticipantLeaves = (id: number) =>
   request<ParticipantLeave[]>(`/api/participants/${id}/leaves`);
+
+export const participantLeavesQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: participantKeys.leaves(id),
+    queryFn: () => getParticipantLeaves(id),
+  });
 
 export const addParticipant = (
   programId: number,
@@ -80,8 +112,8 @@ export const bulkAddParticipants = (
     body: JSON.stringify(data),
   });
 
-export const updateParticipant = (
-  id: number,
+export interface UpdateParticipantVariables {
+  id: number;
   data: Partial<
     Pick<
       Participant,
@@ -98,11 +130,32 @@ export const updateParticipant = (
       | "socialInsuranceEnrolled"
       | "weeklyHolidayHours"
     >
-  >,
+  >;
+}
+
+export const updateParticipant = (
+  id: number,
+  data: UpdateParticipantVariables["data"],
 ) =>
   request<Participant>(`/api/participants/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
+  });
+
+// critical: 방금 수정한 필드를 참여자 상세 쿼리 캐시에 바로 반영한다 — 다시 불러오지
+// 않아도 상세 화면이 최신 상태를 보여준다. 모달 닫기 같은 UI 한정 동작은 호출부의
+// mutate(variables, { onSuccess, onError })에 둔다.
+export const updateParticipantMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ id, data }: UpdateParticipantVariables) =>
+      updateParticipant(id, data),
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData(
+        participantKeys.detail(variables.id),
+        (previous: ParticipantDetail | undefined) =>
+          previous ? { ...previous, ...updated } : previous,
+      );
+    },
   });
 
 export const moveParticipantToGroup = (id: number, groupId: number) =>
@@ -143,6 +196,12 @@ export const reactivateParticipant = (id: number) =>
 
 export const getAnnualLeave = (id: number, year: string) =>
   request<AnnualLeave>(`/api/participants/${id}/annual-leave?year=${year}`);
+
+export const participantAnnualLeaveQueryOptions = (id: number, year: string) =>
+  queryOptions({
+    queryKey: participantKeys.annualLeave(id, year),
+    queryFn: () => getAnnualLeave(id, year),
+  });
 
 export const setAnnualLeave = (
   id: number,

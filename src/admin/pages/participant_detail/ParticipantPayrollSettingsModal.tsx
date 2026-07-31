@@ -1,11 +1,12 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { updateParticipant } from "../../api/admin/participants";
+import { updateParticipantMutationOptions } from "../../api/admin/participants";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
-import type { Participant, ParticipantDetail } from "../../types";
+import type { ParticipantDetail } from "../../types";
 
 const FEE_TYPE_OPTIONS = [
   { value: "add", label: "가산" },
@@ -15,23 +16,22 @@ const FEE_TYPE_OPTIONS = [
 
 interface ParticipantPayrollSettingsModalProps {
   onClose: () => void;
-  onSaved: (updated: Participant) => void;
   participant: ParticipantDetail;
 }
 
 /**
  * 관리자 페이지 > 참여자 상세 페이지에서 참여자별 급여 관련 설정(교육비/치매검진비/
- * 4대보험/주휴수당)을 편집하는 모달입니다. 4대보험·주휴수당은 역량 활동 사업단
- * 참여자에게만 의미가 있어 공익 활동 사업단이면 아예 노출하지 않습니다.
+ * 4대보험/주휴수당)을 편집하는 모달입니다. 4대보험·주휴수당은 역량 활동에만 노출됩니다.
  *
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const ParticipantPayrollSettingsModal = ({
   onClose,
-  onSaved,
   participant,
 }: ParticipantPayrollSettingsModalProps) => {
+  const queryClient = useQueryClient();
+  const updateParticipantMutation = useMutation(
+    updateParticipantMutationOptions(queryClient),
+  );
   const [form, setForm] = useState({
     educationAmount: String(participant.educationAmount),
     educationType: participant.educationType,
@@ -40,31 +40,34 @@ const ParticipantPayrollSettingsModal = ({
     socialInsuranceEnrolled: participant.socialInsuranceEnrolled,
     weeklyHolidayHours: String(participant.weeklyHolidayHours),
   });
-  const [saving, setSaving] = useState(false);
 
   const isCompetencyProgram = participant.programType === "역량 활동";
 
-  const handleSaveButtonClick = async () => {
-    setSaving(true);
-    try {
-      const updated = await updateParticipant(participant.id, {
-        educationAmount: Number(form.educationAmount),
-        educationType: form.educationType,
-        dementiaAmount: Number(form.dementiaAmount),
-        dementiaType: form.dementiaType,
-        ...(isCompetencyProgram
-          ? {
-              socialInsuranceEnrolled: form.socialInsuranceEnrolled,
-              weeklyHolidayHours: Number(form.weeklyHolidayHours),
-            }
-          : {}),
-      });
-      onSaved(updated);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    } finally {
-      setSaving(false);
-    }
+  const handleSaveButtonClick = () => {
+    updateParticipantMutation.mutate(
+      {
+        id: participant.id,
+        data: {
+          educationAmount: Number(form.educationAmount),
+          educationType: form.educationType,
+          dementiaAmount: Number(form.dementiaAmount),
+          dementiaType: form.dementiaType,
+          ...(isCompetencyProgram
+            ? {
+                socialInsuranceEnrolled: form.socialInsuranceEnrolled,
+                weeklyHolidayHours: Number(form.weeklyHolidayHours),
+              }
+            : {}),
+        },
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (error) =>
+          alert(
+            error instanceof Error ? error.message : "저장에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   return (
@@ -79,10 +82,10 @@ const ParticipantPayrollSettingsModal = ({
           </button>
           <button
             className={btnPrimaryClass}
-            disabled={saving}
+            disabled={updateParticipantMutation.isPending}
             onClick={handleSaveButtonClick}
           >
-            {saving ? "저장 중..." : "저장"}
+            {updateParticipantMutation.isPending ? "저장 중..." : "저장"}
           </button>
         </>
       }
