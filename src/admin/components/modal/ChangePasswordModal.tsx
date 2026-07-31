@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-import { changeMyPassword } from "../api/admin/me";
+import { changeMyPassword } from "../../api/admin/me";
 import SlideModal from "./SlideModal";
-import FormField from "./FormField";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../uiClasses";
+import FormField from "../FormField";
+import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 
 interface ChangePasswordModalProps {
   onClose: () => void;
@@ -68,6 +68,7 @@ const ChangePasswordModal = ({ onClose }: ChangePasswordModalProps) => {
           onChange={(event) => setCurrentPassword(event.target.value)}
         />
       </FormField>
+
       <FormField label="새 비밀번호 (8자 이상)">
         <input
           type="password"
@@ -76,6 +77,7 @@ const ChangePasswordModal = ({ onClose }: ChangePasswordModalProps) => {
           onChange={(event) => setNewPassword(event.target.value)}
         />
       </FormField>
+
       <FormField label="새 비밀번호 확인">
         <input
           type="password"
@@ -84,6 +86,7 @@ const ChangePasswordModal = ({ onClose }: ChangePasswordModalProps) => {
           onChange={(event) => setNewPasswordConfirm(event.target.value)}
         />
       </FormField>
+
       {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
     </SlideModal>
   );

@@ -5,7 +5,7 @@ import {
   updateGroupMonthlySchedule,
 } from "../../api/admin/monthlySchedule";
 import { generateWorkPattern } from "../../utils/generateWorkPattern";
-import SlideModal from "../../components/SlideModal";
+import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import {

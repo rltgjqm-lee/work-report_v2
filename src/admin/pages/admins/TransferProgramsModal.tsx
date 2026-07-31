@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { transferAdminPrograms } from "../../api/admin/admins";
-import SlideModal from "../../components/SlideModal";
+import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";

@@ -2,7 +2,7 @@ import {
   subTabBarClass,
   subTabBtnActiveClass,
   subTabBtnClass,
-} from "../uiClasses";
+} from "../../uiClasses";
 
 interface SubTabBarProps<T extends string> {
   tabs: [T, string][];

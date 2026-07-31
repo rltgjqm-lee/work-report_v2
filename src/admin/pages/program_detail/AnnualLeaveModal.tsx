@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { getAnnualLeave, setAnnualLeave } from "../../api/admin/participants";
-import SlideModal from "../../components/SlideModal";
+import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { AnnualLeave } from "../../types";

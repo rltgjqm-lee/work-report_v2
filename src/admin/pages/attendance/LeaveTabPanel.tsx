@@ -4,7 +4,7 @@ import { getLeaves, getLeaveStats } from "../../api/admin/programs";
 import MonthPicker from "../../components/MonthPicker";
 import StatusChip, {
   type StatusChipVariant,
-} from "../../components/StatusChip";
+} from "../../components/chip/StatusChip";
 import type { LeaveRow, LeaveStats } from "../../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { logout } from "../api/auth";
-import ChangePasswordModal from "./ChangePasswordModal";
+import ChangePasswordModal from "./modal/ChangePasswordModal";
 import { useAuth } from "../context/useAuth";
 import { ROLES } from "../types";
 
@@ -15,7 +15,7 @@ const BASE_NAV_ITEMS = [
   { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
 ];
 
-// 실제 발송 안 된 원본 수신내역까지 다 보이는 진단용 화면이라 SUPER_ADMIN에게만 노출
+// SUPER_ADMIN에게만 노출
 const SAFETY_ALERT_TEST_NAV_ITEM = {
   to: "/admin/safety-alerts",
   label: "재난문자 테스트",
@@ -28,14 +28,13 @@ const ADMIN_ACCOUNTS_NAV_ITEM = {
   badge: "8",
 };
 
-// IP 등 민감정보가 보이는 화면이라 SUPER_ADMIN에게만 노출
+// SUPER_ADMIN에게만 노출
 const LOGIN_HISTORY_NAV_ITEM = {
   to: "/admin/login-history",
   label: "로그인 이력",
   badge: "9",
 };
 
-// 근태 관리 페이지 안에 근태/휴가/교육이 탭으로 합쳐져 있음 — 상단바 제목은 그대로 "근태 관리"
 const getTopbarTitle = (pathname: string) => {
   if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근태 관리";
   if (/^\/admin\/programs\/\d+\/escapes/.test(pathname)) return "안전 관제";

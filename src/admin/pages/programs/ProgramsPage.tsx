@@ -9,7 +9,7 @@ import {
 import { listAdmins } from "../../api/admin/admins";
 import { listOrganizations } from "../../api/admin/organizations";
 import Pagination from "../../components/Pagination";
-import ProgramTypeChip from "../../components/ProgramTypeChip";
+import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
 import ProgramFormModal from "./ProgramFormModal";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";

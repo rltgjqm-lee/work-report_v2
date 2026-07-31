@@ -1,4 +1,4 @@
-import { tabBarClass, tabBtnActiveClass, tabBtnClass } from "../uiClasses";
+import { tabBarClass, tabBtnActiveClass, tabBtnClass } from "../../uiClasses";
 
 interface TabBarProps<T extends string> {
   tabs: [T, string][];

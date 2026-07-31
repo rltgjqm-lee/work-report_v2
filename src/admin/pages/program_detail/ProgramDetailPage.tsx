@@ -13,8 +13,8 @@ import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
 import ProgramExcelExportSection from "./ProgramExcelExportSection";
 import ProgramParticipantsSection from "./ProgramParticipantsSection";
 import ParticipantAddModal from "./ParticipantAddModal";
-import ProgramTypeChip from "../../components/ProgramTypeChip";
-import TabBar from "../../components/TabBar";
+import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
+import TabBar from "../../components/bar/TabBar";
 
 import { btnPrimaryClass, btnGhostClass } from "../../uiClasses";
 import type {

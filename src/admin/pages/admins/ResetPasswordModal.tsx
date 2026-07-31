@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { resetAdminPassword } from "../../api/admin/admins";
-import SlideModal from "../../components/SlideModal";
+import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 

@@ -16,10 +16,9 @@ interface StatusChipProps {
 }
 
 /**
- * 관리자 콘솔 전반에서 쓰는 상태 배지(pill) — 근태/교육/휴가 등 상태 표시가
- * 필요한 어느 페이지에서든 이 컴포넌트로 통일한다.
+ * 관리자 콘솔 전반에서 쓰는 상태 배지입니다. — 근태/교육/휴가
  * ok=정상/완료류, warn=지각 등 경미한 이상, bad=결근/취소/무효화류, pending=대기/비활성류.
- * info는 좋고 나쁨이 없는 분류 표시용(예: 사업 유형) — 상태로 읽히면 안 되는 자리에 쓴다.
+ * info는 좋고 나쁨이 없는 분류 표시용(예: 사업 유형)
  */
 const StatusChip = ({ variant, children }: StatusChipProps) => (
   <span

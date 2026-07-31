@@ -22,7 +22,6 @@ const SlideModal = ({
   if (!isOpen) return null;
 
   return (
-    // Leaflet 지도 컨트롤(z-index 최대 1000)보다 위에 떠야 하므로 z-50보다 훨씬 높게 잡는다
     <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] flex justify-end z-[2000]">
       <div className="w-[440px] max-w-[90vw] h-full bg-white flex flex-col shadow-[-4px_0_24px_rgba(0,0,0,0.14)]">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#eceef1]">

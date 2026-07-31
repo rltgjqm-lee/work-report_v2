@@ -10,7 +10,7 @@ import FilterSelect from "../../components/FilterSelect";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import StatusChip, {
   type StatusChipVariant,
-} from "../../components/StatusChip";
+} from "../../components/chip/StatusChip";
 import {
   btnGhostClass,
   btnPrimaryClass,

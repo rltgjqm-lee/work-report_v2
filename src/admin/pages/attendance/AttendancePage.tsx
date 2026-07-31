@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getProgram, listPrograms } from "../../api/admin/programs";
 import { listDemandSites } from "../../api/admin/demandSites";
 import FilterSelect from "../../components/FilterSelect";
-import TabBar from "../../components/TabBar";
+import TabBar from "../../components/bar/TabBar";
 import AttendanceTabPanel from "./AttendanceTabPanel";
 import LeaveTabPanel from "./LeaveTabPanel";
 import TrainingTabPanel from "./TrainingTabPanel";

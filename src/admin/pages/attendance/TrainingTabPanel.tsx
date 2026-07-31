@@ -11,10 +11,10 @@ import {
 } from "../../api/admin/trainings";
 import FilterSelect from "../../components/FilterSelect";
 import SearchInput from "../../components/SearchInput";
-import SlideModal from "../../components/SlideModal";
+import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
-import StatusChip from "../../components/StatusChip";
-import SubTabBar from "../../components/SubTabBar";
+import StatusChip from "../../components/chip/StatusChip";
+import SubTabBar from "../../components/bar/SubTabBar";
 import {
   btnGhostClass,
   btnPrimaryClass,

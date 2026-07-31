@@ -4,7 +4,7 @@ import {
   addParticipant,
   bulkAddParticipants,
 } from "../../api/admin/participants";
-import SlideModal from "../../components/SlideModal";
+import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
