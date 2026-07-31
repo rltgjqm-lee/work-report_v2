@@ -129,13 +129,49 @@ export const sendTestSafetyAlert = (data: { ... }) => request(...); // 뮤테이
 - **쿼리 옵션**: 페이지/컴포넌트에서는 `useQuery(safetyAlertsQueryOptions)`로 바로 씁니다.
   이 조회를 쓰는 곳이 하나뿐이어도 만들어 둡니다 — 나중에 다른 페이지가 같은 데이터를 쓸 때
   캐싱 옵션(`staleTime` 등)을 이 한 파일에서만 튜닝하면 되게 하기 위함입니다.
-- **뮤테이션(생성/수정/삭제)은 이 파일에서 fetch 함수만 export하고, `useMutation` 자체는
-  페이지 컴포넌트 안에서 직접 선언합니다.** `onSuccess`에서 그 페이지의 로컬 state(입력값
-  초기화, 결과 메시지 등)를 같이 건드리는 경우가 많아 재사용성이 낮으므로, 쿼리 옵션처럼
-  미리 만들어두지 않습니다:
-  `useMutation({ mutationFn, onSuccess: () => queryClient.invalidateQueries({ queryKey: xxxKeys.all }) })`.
-  커스텀 훅(`useXxx.ts`)으로 감싸지도 않습니다 — 페이지/컴포넌트가 `useQuery`/`useMutation`을
-  직접 호출하는 스타일을 유지합니다.
+- **뮤테이션(생성/수정/삭제)은 "critical"과 "UI 한정"을 분리합니다** (TkDodo,
+  [Mastering Mutations in React Query](https://tkdodo.eu/blog/mastering-mutations-in-react-query)).
+  `useMutation`은 정의 시점 콜백(`useMutation({ onSuccess })`)과 호출 시점 콜백
+  (`mutate(variables, { onSuccess })`)을 둘 다 실행합니다 — 정의 쪽이 먼저 실행됩니다.
+  - **critical** (이 뮤테이션이 성공하면 어느 화면에서 호출하든 항상 해야 하는 것 — 캐시
+    무효화)은 API 파일에 `mutationOptions()`로 만들어 export합니다. `queryClient`는
+    `useQueryClient()`로 컴포넌트 안에서만 얻을 수 있으므로, 이 export는
+    `(queryClient: QueryClient) => mutationOptions({...})` 형태의 팩토리 함수입니다.
+  - **UI 한정** (그 화면에서만 의미 있는 것 — alert 메시지, 폼 리셋, 리다이렉트)은
+    페이지 컴포넌트의 `mutate(variables, { onSuccess, onError })` 호출부에 둡니다.
+
+```ts
+// src/admin/api/admin/participants.ts
+export const deleteParticipantMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ programId, participantId }: DeleteParticipantVariables) =>
+      deleteParticipant(programId, participantId),
+    onSuccess: (_data, variables) => {
+      // critical: 이 참여자가 속한 사업단의 상세를 무효화 — 어디서 호출하든 항상 필요
+      queryClient.invalidateQueries({
+        queryKey: programKeys.detail(variables.programId),
+      });
+    },
+  });
+```
+
+```tsx
+// ParticipantsPage.tsx
+const deleteParticipantMutation = useMutation(
+  deleteParticipantMutationOptions(queryClient),
+);
+
+deleteParticipantMutation.mutate(variables, {
+  // UI 한정: 이 화면에서 삭제 성공을 어떻게 알릴지
+  onSuccess: () => alert(`'${row.name}' 님을 삭제했습니다.`),
+  onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
+});
+```
+
+커스텀 훅(`useXxx.ts`)으로 감싸지 않습니다 — 페이지/컴포넌트가 `useQuery`/`useMutation`을
+직접 호출하는 스타일을 유지합니다. mutationFn의 변수 타입은 그 뮤테이션과 같은 API 파일에
+인터페이스로 export합니다(예: `DeleteParticipantVariables`).
 
 레퍼런스: `src/admin/pages/LoginHistoryPage.tsx`, `src/admin/pages/DisasterMessagesPage.tsx`,
-`src/admin/AdminApp.tsx`의 `QueryClientProvider` 설정.
+`src/admin/pages/ParticipantsPage.tsx` + `src/admin/api/admin/participants.ts`
+(critical/UI 분리 예시), `src/admin/AdminApp.tsx`의 `QueryClientProvider` 설정.

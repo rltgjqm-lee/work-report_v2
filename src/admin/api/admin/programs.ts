@@ -21,6 +21,7 @@ export const programKeys = {
   all: ["programs"] as const,
   // organizationId로 좁혀서 조회하는 화면이 생기면 그때 추가한다:
   // list: (organizationId: number) => [...programKeys.all, organizationId] as const,
+  detail: (id: number) => [...programKeys.all, id] as const,
 };
 
 export const programsQueryOptions = queryOptions({
@@ -30,6 +31,12 @@ export const programsQueryOptions = queryOptions({
 
 export const getProgram = (id: number) =>
   request<ProgramWithParticipants>(`/api/programs/${id}`);
+
+export const programQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: programKeys.detail(id),
+    queryFn: () => getProgram(id),
+  });
 
 export const createProgram = (
   data: Partial<Omit<Program, "id" | "createdAt">>,

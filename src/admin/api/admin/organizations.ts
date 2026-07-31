@@ -1,8 +1,19 @@
+import { queryOptions } from "@tanstack/react-query";
+
 import { request } from "../client";
 import type { Organization } from "../../types";
 
 export const listOrganizations = () =>
   request<Organization[]>("/api/organizations");
+
+export const organizationKeys = {
+  all: ["organizations"] as const,
+};
+
+export const organizationsQueryOptions = queryOptions({
+  queryKey: organizationKeys.all,
+  queryFn: listOrganizations,
+});
 
 export const getOrganization = (id: number) =>
   request<Organization>(`/api/organizations/${id}`);

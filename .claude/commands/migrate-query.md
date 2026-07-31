@@ -7,9 +7,10 @@ description: admin 콘솔 페이지 하나를 TanStack Query로 마이그레이�
 
 **레퍼런스**: `src/admin/pages/LoginHistoryPage.tsx`, `src/admin/pages/DisasterMessagesPage.tsx`
 (이미 마이그레이션된 예시), `src/admin/AdminApp.tsx`의 `QueryClientProvider` 설정,
-`src/admin/api/admin/safetyAlerts.ts`(fetch 함수+쿼리 키+쿼리 옵션이 한 파일에 있는 예시).
-막히면 이 파일들을 먼저 읽고 그대로 따라간다. 자세한 레이어 설명은 CLAUDE.md의
-"admin 콘솔의 데이터 조회" 항목 참고.
+`src/admin/api/admin/safetyAlerts.ts`(fetch 함수+쿼리 키+쿼리 옵션이 한 파일에 있는 예시),
+`src/admin/api/admin/participants.ts` + `src/admin/pages/ParticipantsPage.tsx`
+(뮤테이션 critical/UI 분리 예시). 막히면 이 파일들을 먼저 읽고 그대로 따라간다. 자세한
+레이어 설명은 CLAUDE.md의 "admin 콘솔의 데이터 조회" 항목 참고.
 
 ## 진행 순서
 
@@ -24,13 +25,25 @@ description: admin 콘솔 페이지 하나를 TanStack Query로 마이그레이�
      소비자가 이 페이지 하나뿐이어도 만든다.
    - 페이지에서는 `useQuery(xxxQueryOptions)`로 쓴다. 커스텀 훅(`useXxx.ts`)으로 감싸지
      않는다 — 페이지/컴포넌트가 `useQuery`를 직접 호출하는 스타일이다.
-3. **변경(생성/수정/삭제)**: `useMutation({ mutationFn: fn })`으로 바꾼다. `useMutation` 자체는
-   페이지 컴포넌트 안에서 직접 선언한다(쿼리 옵션처럼 API 파일에 미리 만들어두지 않는다) —
-   `onSuccess`가 그 페이지의 로컬 state도 같이 건드리는 경우가 많아 재사용성이 낮다.
+3. **변경(생성/수정/삭제)**: "critical"과 "UI 한정"을 분리한다 (TkDodo,
+   [Mastering Mutations in React Query](https://tkdodo.eu/blog/mastering-mutations-in-react-query)).
+   `useMutation`은 정의 시점 콜백과 호출 시점 콜백(`mutate(variables, { onSuccess })`)을
+   둘 다 실행한다 — 정의 쪽이 먼저 실행된다.
+   - **critical**(이 뮤테이션이 성공하면 어느 화면에서 호출하든 항상 해야 하는 것 — 보통
+     캐시 무효화)은 같은 `api/admin/<도메인>.ts` 파일에 `mutationOptions()`로 만들어
+     export한다. `queryClient`는 컴포넌트 안에서만 얻을 수 있으므로
+     `(queryClient: QueryClient) => mutationOptions({...})` 팩토리 형태로 만든다.
+     mutationFn의 변수 타입은 같은 파일에 인터페이스로 export한다
+     (`export interface XxxMutationVariables { ... }`).
+   - **UI 한정**(그 화면에서만 의미 있는 것 — alert 메시지, 폼 리셋, 리다이렉트)은 페이지의
+     `mutate(variables, { onSuccess, onError })` 호출부에 그대로 둔다.
+   - 페이지에서는 `useMutation(xxxMutationOptions(queryClient))`로 훅을 만들고,
+     `.mutate(variables, { onSuccess, onError })`로 호출한다. 커스텀 훅(`useXxx.ts`)으로
+     감싸지 않는다.
    - **가장 중요한 부분**: 지금 코드는 자식 모달이 저장 성공 후
      `onSaved={() => { close(); onChanged(); }}` 식으로 부모의 `refresh()`를 호출하도록
-     콜백을 계속 위로 릴레이하는 구조다. 이 콜백 릴레이를 걷어내고,
-     mutation의 `onSuccess`에서 `queryClient.invalidateQueries({ queryKey: xxxKeys.all })`로
+     콜백을 계속 위로 릴레이하는 구조다. 이 콜백 릴레이를 걷어내고, mutationOptions의
+     critical `onSuccess`에서 `queryClient.invalidateQueries({ queryKey: xxxKeys.all })`로
      대체한다. 여러 컴포넌트를 거치는 `onChanged`/`onSaved` prop이 이 목적 하나만을 위해
      존재했다면 그 prop 자체를 지운다.
 4. **타입**: 이 API의 응답/요청 타입 소비자가 하나뿐이면(CLAUDE.md "타입 위치" 규칙),

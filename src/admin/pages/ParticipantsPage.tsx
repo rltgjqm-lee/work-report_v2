@@ -1,20 +1,38 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
-import { deleteParticipant } from "../api/admin/participants";
-import { getProgram, listPrograms } from "../api/admin/programs";
-import { listOrganizations } from "../api/admin/organizations";
+import { deleteParticipantMutationOptions } from "../api/admin/participants";
+import {
+  programQueryOptions,
+  programsQueryOptions,
+} from "../api/admin/programs";
+import { organizationsQueryOptions } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
 import { usePagination } from "../hooks/usePagination";
 import { rowActionBtnClass } from "../uiClasses";
-import type { Participant, Program } from "../types";
+import type { Participant } from "../types";
 
 type ParticipantRow = Participant & {
   programName: string;
   organizationName: string;
 };
+
+const DEMAND_SITE = {
+  ALL: "all",
+  UNASSIGNED: "unassigned",
+} as const;
+
+const PROGRAM_FILTER = {
+  ALL: "all",
+} as const;
 
 /**
  * 관리자 페이지 > 참여자 관리 페이지입니다.
@@ -22,46 +40,53 @@ type ParticipantRow = Participant & {
  */
 const ParticipantsPage = () => {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<ParticipantRow[]>([]);
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [programFilter, setProgramFilter] = useState("all");
-  const [demandSiteFilter, setDemandSiteFilter] = useState("all");
+  const queryClient = useQueryClient();
+  const [programFilter, setProgramFilter] = useState<string>(
+    PROGRAM_FILTER.ALL,
+  );
+  const [demandSiteFilter, setDemandSiteFilter] = useState<string>(
+    DEMAND_SITE.ALL,
+  );
   const [search, setSearch] = useState("");
 
-  const refresh = () => {
-    Promise.all([listPrograms(), listOrganizations()]).then(
-      ([programList, orgList]) => {
-        setPrograms(programList);
+  const { data: programs = [] } = useQuery(programsQueryOptions);
+  const { data: organizations = [] } = useQuery(organizationsQueryOptions);
+  const programQueries = useQueries({
+    queries: programs.map((program) => programQueryOptions(program.id)),
+  });
 
-        const orgNameById = new Map(
-          orgList.map((organization) => [organization.id, organization.name]),
-        );
+  const OrganizationNameById = useMemo(
+    () =>
+      new Map(
+        organizations.map((organization) => [
+          organization.id,
+          organization.name,
+        ]),
+      ),
+    [organizations],
+  );
 
-        Promise.all(programList.map((program) => getProgram(program.id))).then(
-          (fullPrograms) => {
-            const allRows: ParticipantRow[] = fullPrograms.flatMap(
-              (fullProgram) =>
-                fullProgram.participants.map((participant) => ({
-                  ...participant,
-                  programName: fullProgram.name,
-                  organizationName:
-                    orgNameById.get(fullProgram.organizationId) ?? "-",
-                })),
-            );
-            setRows(allRows);
-          },
-        );
-      },
-    );
-  };
+  const rows: ParticipantRow[] = useMemo(
+    () =>
+      programQueries.flatMap((programQuery) => {
+        const fullProgram = programQuery.data;
+        if (!fullProgram) return [];
 
-  useEffect(refresh, []);
+        return fullProgram.participants.map((participant) => ({
+          ...participant,
+          programName: fullProgram.name,
+          organizationName:
+            OrganizationNameById.get(fullProgram.organizationId) ?? "-",
+        }));
+      }),
+    [programQueries, OrganizationNameById],
+  );
 
   // 수요처는 사업단마다 다르므로, 선택한 사업단에 실제로 있는 수요처만 후보로 올린다.
   // 참여자 행이 들고 있는 이름(demandName)을 그대로 쓰므로 별도 조회가 필요 없다.
   const demandSiteNames = useMemo(() => {
     const scopedRows =
-      programFilter === "all"
+      programFilter === PROGRAM_FILTER.ALL
         ? rows
         : rows.filter(
             (participantRow) =>
@@ -79,18 +104,21 @@ const ParticipantsPage = () => {
 
   const filtered = useMemo(() => {
     let list = rows;
-    if (programFilter !== "all") {
+
+    if (programFilter !== PROGRAM_FILTER.ALL) {
       list = list.filter(
         (participantRow) => participantRow.programId === Number(programFilter),
       );
     }
-    if (demandSiteFilter === "unassigned") {
+
+    if (demandSiteFilter === DEMAND_SITE.UNASSIGNED) {
       list = list.filter((participantRow) => !participantRow.demandName);
-    } else if (demandSiteFilter !== "all") {
+    } else if (demandSiteFilter !== DEMAND_SITE.ALL) {
       list = list.filter(
         (participantRow) => participantRow.demandName === demandSiteFilter,
       );
     }
+
     if (search) {
       list = list.filter(
         (participantRow) =>
@@ -103,15 +131,23 @@ const ParticipantsPage = () => {
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
-  const handleDeleteButtonClick = async (row: ParticipantRow) => {
+  const deleteParticipantMutation = useMutation(
+    deleteParticipantMutationOptions(queryClient),
+  );
+
+  const handleDeleteButtonClick = (row: ParticipantRow) => {
     if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
-    try {
-      await deleteParticipant(row.programId, row.id);
-      alert(`'${row.name}' 님을 삭제했습니다.`);
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
-    }
+
+    deleteParticipantMutation.mutate(
+      { programId: row.programId, participantId: row.id, name: row.name },
+      {
+        onSuccess: () => alert(`'${row.name}' 님을 삭제했습니다.`),
+        onError: (error) =>
+          alert(
+            error instanceof Error ? error.message : "삭제에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   return (
@@ -132,12 +168,11 @@ const ParticipantsPage = () => {
               value={programFilter}
               onChange={(value) => {
                 setProgramFilter(value);
-                // 사업단이 바뀌면 이전 사업단의 수요처 선택은 더 이상 유효하지 않다
-                setDemandSiteFilter("all");
+                setDemandSiteFilter(DEMAND_SITE.ALL);
                 setPage(1);
               }}
               options={[
-                { value: "all", label: "전체 사업단" },
+                { value: PROGRAM_FILTER.ALL, label: "전체 사업단" },
                 ...programs.map((program) => ({
                   value: String(program.id),
                   label: program.name,
@@ -151,8 +186,11 @@ const ParticipantsPage = () => {
                 setPage(1);
               }}
               options={[
-                { value: "all", label: "전체 수요처" },
-                { value: "unassigned", label: "수요처 미배정" },
+                { value: DEMAND_SITE.ALL, label: "전체 수요처" },
+                {
+                  value: DEMAND_SITE.UNASSIGNED,
+                  label: "수요처 미배정",
+                },
                 ...demandSiteNames.map((demandSiteName) => ({
                   value: demandSiteName,
                   label: demandSiteName,

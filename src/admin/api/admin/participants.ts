@@ -1,4 +1,7 @@
+import { mutationOptions, type QueryClient } from "@tanstack/react-query";
+
 import { request } from "../client";
+import { programKeys } from "./programs";
 import type {
   AnnualLeave,
   LeaveType,
@@ -39,6 +42,27 @@ export const deleteParticipant = (programId: number, participantId: number) =>
     `/api/programs/${programId}/participants/${participantId}`,
     { method: "DELETE" },
   );
+
+export interface DeleteParticipantVariables {
+  programId: number;
+  participantId: number;
+  name: string;
+}
+
+// 삭제 성공 시 그 참여자가 속한 사업단의 상세(참여자 목록 포함)만 무효화한다 — 이건 어느
+// 화면에서 호출하든 항상 해야 하는 "critical" 부분이라 여기 둔다. 삭제 완료를 어떻게
+// 알려줄지(alert 문구 등)는 화면마다 다른 "UI 한정" 부분이라 호출부의 mutate(variables,
+// { onSuccess, onError })에서 처리한다.
+export const deleteParticipantMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ programId, participantId }: DeleteParticipantVariables) =>
+      deleteParticipant(programId, participantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: programKeys.detail(variables.programId),
+      });
+    },
+  });
 
 export const bulkAddParticipants = (
   programId: number,
