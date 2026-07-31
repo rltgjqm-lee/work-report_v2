@@ -12,7 +12,7 @@ import AttendancePage from "./pages/attendance/AttendancePage";
 import EscapesPage from "./pages/EscapesPage";
 import ParticipantsPage from "./pages/ParticipantsPage";
 import ParticipantDetailPage from "./pages/participant_detail/ParticipantDetailPage";
-import DisasterMessagesPage from "./pages/DisasterMessagesPage";
+import DisasterMessagesPage from "./pages/DisasterMessagesTestPage";
 import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
 import AdminsPage from "./pages/admins/AdminsPage";
 import LoginHistoryPage from "./pages/LoginHistoryPage";

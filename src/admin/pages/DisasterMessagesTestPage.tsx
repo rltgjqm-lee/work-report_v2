@@ -16,7 +16,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 /**
- * 관리자 페이지 > 재난 문자 페이지입니다.
+ * 관리자 페이지 > 재난 문자 테스트 페이지입니다.
  *
  */
 const DisasterMessagesPage = () => {
