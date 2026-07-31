@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getAnnualLeave, setAnnualLeave } from "../../api/admin/participants";
+import {
+  participantAnnualLeaveQueryOptions,
+  setAnnualLeaveMutationOptions,
+} from "../../api/admin/participants";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
-import type { AnnualLeave } from "../../types";
 
 const currentYear = new Date().getFullYear().toString();
 
@@ -15,7 +18,6 @@ const emptyForm = {
 
 interface AnnualLeaveModalProps {
   onClose: () => void;
-  onSaved: () => void;
   target: { id: number; name: string } | null;
 }
 
@@ -23,36 +25,29 @@ interface AnnualLeaveModalProps {
  * 관리자 페이지 > 사업단 상세 페이지에서 참여자 연차를 설정하는 모달입니다.
  *
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
-// 다만 연차 현황(balance)은 target에 대한 비동기 조회 결과라 effect가 남아있다.
-const AnnualLeaveModal = ({ onClose, onSaved, target }: AnnualLeaveModalProps) => {
+const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
   const [form, setForm] = useState(emptyForm);
-  const [balance, setBalance] = useState<AnnualLeave | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!target) return;
+  const { data: balance } = useQuery({
+    ...participantAnnualLeaveQueryOptions(target?.id ?? 0, currentYear),
+    enabled: !!target,
+  });
+  const setAnnualLeaveMutation = useMutation(setAnnualLeaveMutationOptions(queryClient));
 
-    getAnnualLeave(target.id, currentYear).then(setBalance);
-  }, [target]);
-
-  const handleSaveButtonClick = async () => {
+  const handleSaveButtonClick = () => {
     if (!target) return;
     if (!form.totalDays) {
       alert("총 연차 일수를 입력해주세요.");
 
       return;
     }
-    try {
-      const updated = await setAnnualLeave(target.id, {
-        year: form.year,
-        totalDays: Number(form.totalDays),
-      });
-      setBalance(updated);
-      onSaved();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    setAnnualLeaveMutation.mutate(
+      { participantId: target.id, year: form.year, totalDays: Number(form.totalDays) },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
   return (

@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  createDemandSite,
-  listAssignableDemandSiteAdmins,
-  updateDemandSite,
+  assignableDemandSiteAdminsQueryOptions,
+  createDemandSiteMutationOptions,
+  updateDemandSiteMutationOptions,
 } from "../../api/admin/demandSites";
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 import SlideModal from "../../components/modal/SlideModal";
@@ -24,21 +25,18 @@ const emptyForm = {
 
 interface DemandSiteFormModalProps {
   onClose: () => void;
-  onSaved: () => void;
   programId: number;
   editingDemandSite: DemandSite | null;
 }
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 수요처(마스터 정보)를 추가/수정하는 모달입니다.
- * 수요처 단위 기본 관제구역(중심 좌표 + 반경)까지 여기서 정합니다 — 이것만 있어도
- * 이탈 판정이 되고, 더 세밀한 원/다각형이 필요하면 "거점 관리" 편집기에서 추가합니다.
+ * 수요처 단위 기본 관제구역(중심 좌표 + 반경)까지 여기서 정합니다
+ * - 기본 관제구역 만으로도 이탈 판정이 되고, 더 세밀한 원/다각형이 필요하면 "거점 관리" 편집기에서 추가합니다.
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
+
 const DemandSiteFormModal = ({
   onClose,
-  onSaved,
   programId,
   editingDemandSite,
 }: DemandSiteFormModalProps) => {
@@ -55,15 +53,15 @@ const DemandSiteFormModal = ({
         }
       : emptyForm,
   );
-  const [assignableAdmins, setAssignableAdmins] = useState<{ id: number; name: string | null }[]>(
-    [],
-  );
+  const queryClient = useQueryClient();
+  const createDemandSiteMutation = useMutation(createDemandSiteMutationOptions(queryClient));
+  const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
 
-  // 담당자는 신규 등록 때 서버가 사업단 담당자로 자동 지정하므로, 고를 일은 수정할 때뿐이다
-  useEffect(() => {
-    if (!editingDemandSite) return;
-    listAssignableDemandSiteAdmins(programId).then(setAssignableAdmins);
-  }, [editingDemandSite, programId]);
+  // 담당자는 신규 등록 때 서버가 사업단 담당자로 자동 지정하므로, 수정할 때만 선택한다.
+  const { data: assignableAdmins = [] } = useQuery({
+    ...assignableDemandSiteAdminsQueryOptions(programId),
+    enabled: !!editingDemandSite,
+  });
 
   const handleSearchAddressButtonClick = async () => {
     try {
@@ -81,30 +79,38 @@ const DemandSiteFormModal = ({
     }
   };
 
-  const handleSaveButtonClick = async () => {
+  const handleSaveButtonClick = () => {
     if (!form.name) {
       alert("수요처명을 입력해주세요.");
 
       return;
     }
-    try {
-      // 관제 중심 좌표는 서버가 주소로 채운다 — 여기선 반경만 보낸다
-      const payload = {
-        name: form.name,
-        address: form.address || undefined,
-        radius: Number(form.radius),
-      };
-      if (editingDemandSite) {
-        await updateDemandSite(editingDemandSite.id, {
-          ...payload,
-          contactAdminId: form.contactAdminId ? Number(form.contactAdminId) : null,
-        });
-      } else {
-        await createDemandSite({ programId, ...payload });
-      }
-      onSaved();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    // 관제 중심 좌표는 서버가 주소로 채운다 — 여기선 반경만 보낸다
+    const payload = {
+      name: form.name,
+      address: form.address || undefined,
+      radius: Number(form.radius),
+    };
+    const onSettled = {
+      onSuccess: () => onClose(),
+      onError: (error: unknown) =>
+        alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
+    };
+
+    if (editingDemandSite) {
+      updateDemandSiteMutation.mutate(
+        {
+          id: editingDemandSite.id,
+          programId,
+          data: {
+            ...payload,
+            contactAdminId: form.contactAdminId ? Number(form.contactAdminId) : null,
+          },
+        },
+        onSettled,
+      );
+    } else {
+      createDemandSiteMutation.mutate({ programId, ...payload }, onSettled);
     }
   };
 
@@ -145,7 +151,7 @@ const DemandSiteFormModal = ({
           </button>
         </div>
       </FormField>
-      {/* 담당자는 수정할 때만 고른다 — 새로 만들 땐 사업단 담당자를 그대로 물려받는다 */}
+
       {editingDemandSite && (
         <FormField label="담당자">
           <FilterSelect

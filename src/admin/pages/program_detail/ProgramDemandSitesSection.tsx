@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { updateDemandSite, deleteDemandSiteSchedule } from "../../api/admin/demandSites";
+import {
+  updateDemandSiteMutationOptions,
+  deleteDemandSiteScheduleMutationOptions,
+} from "../../api/admin/demandSites";
 import DemandSiteFormModal from "./DemandSiteFormModal";
 import DemandSiteScheduleAddModal from "./DemandSiteScheduleAddModal";
 import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
@@ -12,7 +16,6 @@ interface ProgramDemandSitesSectionProps {
   demandSites: DemandSite[];
   demandSiteSchedules: Record<number, DemandSiteSchedule[]>;
   groups: Group[];
-  onChanged: () => void;
 }
 
 /**
@@ -24,13 +27,17 @@ const ProgramDemandSitesSection = ({
   demandSites,
   demandSiteSchedules,
   groups,
-  onChanged,
 }: ProgramDemandSitesSectionProps) => {
   const [demandSiteModalOpen, setDemandSiteModalOpen] = useState(false);
   const [editingDemandSite, setEditingDemandSite] = useState<DemandSite | null>(null);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleTargetSiteId, setScheduleTargetSiteId] = useState<number | null>(null);
   const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+  const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
+  const deleteDemandSiteScheduleMutation = useMutation(
+    deleteDemandSiteScheduleMutationOptions(queryClient),
+  );
 
   const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
 
@@ -44,16 +51,16 @@ const ProgramDemandSitesSection = ({
     setDemandSiteModalOpen(true);
   };
 
-  const handleToggleActiveButtonClick = async (demandSite: DemandSite) => {
+  const handleToggleActiveButtonClick = (demandSite: DemandSite) => {
     const actionLabel = demandSite.isActive ? "비활성화" : "활성화";
     if (!confirm(`'${demandSite.name}' 수요처를 ${actionLabel}하시겠습니까?`)) return;
 
-    try {
-      await updateDemandSite(demandSite.id, { isActive: !demandSite.isActive });
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    updateDemandSiteMutation.mutate(
+      { id: demandSite.id, programId, data: { isActive: !demandSite.isActive } },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
   const handleAddScheduleButtonClick = (siteId: number) => {
@@ -61,15 +68,15 @@ const ProgramDemandSitesSection = ({
     setScheduleModalOpen(true);
   };
 
-  const handleDeleteScheduleButtonClick = async (scheduleId: number) => {
+  const handleDeleteScheduleButtonClick = (scheduleId: number, demandSiteId: number) => {
     if (!confirm("이 근무시간을 삭제하시겠습니까?")) return;
 
-    try {
-      await deleteDemandSiteSchedule(scheduleId);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
-    }
+    deleteDemandSiteScheduleMutation.mutate(
+      { scheduleId, demandSiteId },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
+      },
+    );
   };
 
   return (
@@ -84,6 +91,7 @@ const ProgramDemandSitesSection = ({
         {demandSites.length === 0 && (
           <span className="text-[13px] text-[#9aa1ab]">등록된 수요처가 없습니다.</span>
         )}
+
         {demandSites.map((demandSite) => (
           <div key={demandSite.id} className="border border-[#e2e5eb] rounded-[2px] px-4 py-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -120,6 +128,7 @@ const ProgramDemandSitesSection = ({
             </div>
             <div className="text-xs text-[#6b7280] mt-1">
               {demandSite.address && <span>{demandSite.address}</span>}
+
               {/* 계정 연결 이전에 자유 입력으로 쌓인 값(contactPerson)은 대체로 보여준다 */}
               {(demandSite.contactAdminName ?? demandSite.contactPerson) && (
                 <span> · 담당자 {demandSite.contactAdminName ?? demandSite.contactPerson}</span>
@@ -134,7 +143,7 @@ const ProgramDemandSitesSection = ({
                   {schedule.groupName} {schedule.shiftStart}~{schedule.shiftEnd}
                   <button
                     className="bg-transparent border-none text-[#9aa1ab] cursor-pointer hover:text-[#b42318]"
-                    onClick={() => handleDeleteScheduleButtonClick(schedule.id)}
+                    onClick={() => handleDeleteScheduleButtonClick(schedule.id, demandSite.id)}
                   >
                     ×
                   </button>
@@ -161,10 +170,6 @@ const ProgramDemandSitesSection = ({
       {demandSiteModalOpen && (
         <DemandSiteFormModal
           onClose={() => setDemandSiteModalOpen(false)}
-          onSaved={() => {
-            setDemandSiteModalOpen(false);
-            onChanged();
-          }}
           programId={programId}
           editingDemandSite={editingDemandSite}
         />
@@ -173,10 +178,6 @@ const ProgramDemandSitesSection = ({
       {scheduleModalOpen && (
         <DemandSiteScheduleAddModal
           onClose={() => setScheduleModalOpen(false)}
-          onSaved={() => {
-            setScheduleModalOpen(false);
-            onChanged();
-          }}
           targetSiteId={scheduleTargetSiteId}
           activeGroups={activeGroups}
         />

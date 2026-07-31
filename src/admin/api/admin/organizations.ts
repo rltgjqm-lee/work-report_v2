@@ -5,6 +5,7 @@ import type { Organization } from "../../types";
 
 export const organizationKeys = {
   all: ["organizations"] as const,
+  detail: (id: number) => [...organizationKeys.all, id] as const,
 };
 export interface UpdateOrganizationVariables {
   id: number;
@@ -19,6 +20,12 @@ export const organizationsQueryOptions = queryOptions({
 });
 
 export const getOrganization = (id: number) => request<Organization>(`/api/organizations/${id}`);
+
+export const organizationQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: organizationKeys.detail(id),
+    queryFn: () => getOrganization(id),
+  });
 
 const createOrganization = (data: Partial<Omit<Organization, "id" | "createdAt">>) =>
   request<Organization>("/api/organizations", {

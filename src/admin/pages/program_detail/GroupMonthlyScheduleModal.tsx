@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  getGroupMonthlySchedule,
-  updateGroupMonthlySchedule,
+  groupMonthlyScheduleQueryOptions,
+  updateGroupMonthlyScheduleMutationOptions,
 } from "../../api/admin/monthlySchedule";
 import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
@@ -20,35 +21,41 @@ const toMinutes = (hhmm: string): number => {
 
 interface GroupMonthlyScheduleModalProps {
   onClose: () => void;
-  onSaved: () => void;
   group: Group;
 }
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 조의 월간 근무일 스케줄을 설정하는 모달입니다.
- * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정한다.
+ * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정합니다.
  */
-const GroupMonthlyScheduleModal = ({ onClose, onSaved, group }: GroupMonthlyScheduleModalProps) => {
+const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModalProps) => {
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
-  const [loading, setLoading] = useState(false);
   const [patternWorkDays, setPatternWorkDays] = useState("1");
   const [patternRestDays, setPatternRestDays] = useState("2");
+  const queryClient = useQueryClient();
+
+  const {
+    data: schedule,
+    isFetching,
+    isError,
+  } = useQuery(groupMonthlyScheduleQueryOptions(group.id, yearMonth));
 
   useEffect(() => {
-    setLoading(true);
-    getGroupMonthlySchedule(group.id, yearMonth)
-      .then((schedule) => {
-        setWorkDates(schedule.workDates);
-        setMaxMonthlyHours(String(schedule.maxMonthlyMinutes / 60));
-      })
-      .catch(() => {
-        setWorkDates([]);
-        setMaxMonthlyHours("30");
-      })
-      .finally(() => setLoading(false));
-  }, [group.id, yearMonth]);
+    if (schedule) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 조회된 초기값을 편집 가능한 로컬 상태로 동기화
+      setWorkDates(schedule.workDates);
+      setMaxMonthlyHours(String(schedule.maxMonthlyMinutes / 60));
+    } else if (isError) {
+      setWorkDates([]);
+      setMaxMonthlyHours("30");
+    }
+  }, [schedule, isError]);
+
+  const updateGroupMonthlyScheduleMutation = useMutation(
+    updateGroupMonthlyScheduleMutationOptions(queryClient),
+  );
 
   // 조 근무시간(shiftStart~shiftEnd) 기준 하루 근무분 — 근무일 수와 곱해서 월 상한 초과를 미리 막는다
   const shiftMinutesPerDay = Math.max(0, toMinutes(group.shiftEnd) - toMinutes(group.shiftStart));
@@ -89,21 +96,23 @@ const GroupMonthlyScheduleModal = ({ onClose, onSaved, group }: GroupMonthlySche
     setWorkDates(generateWorkPattern(yearMonth, workDays, restDays));
   };
 
-  const handleSaveButtonClick = async () => {
+  const handleSaveButtonClick = () => {
     if (isOverCap) {
       alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
     }
-    try {
-      await updateGroupMonthlySchedule(group.id, {
+    updateGroupMonthlyScheduleMutation.mutate(
+      {
+        groupId: group.id,
         yearMonth,
         workDates,
         maxMonthlyMinutes: Math.round(Number(maxMonthlyHours) * 60),
-      });
-      onSaved();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    }
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
+      },
+    );
   };
 
   return (
@@ -166,7 +175,7 @@ const GroupMonthlyScheduleModal = ({ onClose, onSaved, group }: GroupMonthlySche
       </FormField>
 
       <FormField label="근무일 (클릭해서 선택/해제)">
-        {loading ? (
+        {isFetching ? (
           <div className="text-[13px] text-[#9aa1ab] py-4 text-center">불러오는 중...</div>
         ) : (
           <MonthlyScheduleCalendar

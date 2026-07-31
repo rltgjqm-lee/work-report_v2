@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { addParticipant, bulkAddParticipants } from "../../api/admin/participants";
+import {
+  addParticipantMutationOptions,
+  bulkAddParticipantsMutationOptions,
+} from "../../api/admin/participants";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -18,7 +22,6 @@ const emptyForm = {
 
 interface ParticipantAddModalProps {
   onClose: () => void;
-  onSaved: () => void;
   programId: number;
   activeGroups: Group[];
   activeDemandSites: DemandSite[];
@@ -28,17 +31,18 @@ interface ParticipantAddModalProps {
  * 관리자 페이지 > 사업단 상세 페이지에서 참여자를 추가하는 모달입니다.
  *
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const ParticipantAddModal = ({
   onClose,
-  onSaved,
   programId,
   activeGroups,
   activeDemandSites,
 }: ParticipantAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const queryClient = useQueryClient();
+  const addParticipantMutation = useMutation(addParticipantMutationOptions(queryClient));
+  const bulkAddParticipantsMutation = useMutation(bulkAddParticipantsMutationOptions(queryClient));
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFile(event.target.files?.[0] ?? null);
@@ -53,7 +57,10 @@ const ParticipantAddModal = ({
 
           return;
         }
-        await bulkAddParticipants(programId, { participants: rows });
+        await bulkAddParticipantsMutation.mutateAsync({
+          programId,
+          data: { participants: rows },
+        });
       } else {
         if (!form.name) {
           alert("이름을 입력해주세요.");
@@ -65,14 +72,17 @@ const ParticipantAddModal = ({
 
           return;
         }
-        await addParticipant(programId, {
-          name: form.name,
-          demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
-          phoneLast4: form.lastPhoneNumber,
-          groupId: form.groupId ? Number(form.groupId) : undefined,
+        await addParticipantMutation.mutateAsync({
+          programId,
+          data: {
+            name: form.name,
+            demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
+            phoneLast4: form.lastPhoneNumber,
+            groupId: form.groupId ? Number(form.groupId) : undefined,
+          },
         });
       }
-      onSaved();
+      onClose();
     } catch (error) {
       alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
     }

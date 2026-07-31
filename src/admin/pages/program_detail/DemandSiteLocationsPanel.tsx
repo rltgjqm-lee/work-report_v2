@@ -1,20 +1,32 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 
 import {
-  createDemandSiteLocation,
-  deleteDemandSiteLocation,
-  listDemandSiteLocations,
+  createDemandSiteLocationMutationOptions,
+  deleteDemandSiteLocationMutationOptions,
+  demandSiteLocationsQueryOptions,
 } from "../../api/admin/demandSites";
 import { btnGhostClass, btnPrimaryClass, inputClass, rowActionBtnClass } from "../../uiClasses";
 import { geocodeAddress } from "../../utils/geocodeAddress";
-import type { DemandSite, DemandSiteLocation } from "../../types";
+import type { DemandSite, DemandSiteLocationShape } from "../../types";
 
 const DEFAULT_CENTER: [number, number] = [36.5, 127.8];
 const MIN_RADIUS_METERS = 1500;
+
+// leaflet-draw가 그리기 완료 이벤트에 실어 보내는 layerType 값
+const LAYER_TYPE = {
+  CIRCLE: "circle",
+  POLYGON: "polygon",
+} as const;
+
+const SHAPE_TYPE: Record<"RADIUS" | "POLYGON", DemandSiteLocationShape> = {
+  RADIUS: "RADIUS",
+  POLYGON: "POLYGON",
+};
 
 interface DemandSiteLocationsPanelProps {
   demandSite: DemandSite;
@@ -23,21 +35,31 @@ interface DemandSiteLocationsPanelProps {
 
 interface PendingShape {
   layer: L.Layer;
-  layerType: "circle" | "polygon";
+  layerType: (typeof LAYER_TYPE)[keyof typeof LAYER_TYPE];
 }
 
 /**
  * 수요처 하위 거점(원형/다각형 관제구역)을 지도에서 직접 그려 추가/삭제하는 편집기입니다.
- * Leaflet.draw 툴바로 원(반경)과 다각형을 그리면 그 자리에서 이름을 물어보고 저장합니다.
+ * L툴바로 원(반경)과 다각형을 그리면 그 자리에서 이름을 물어보고 저장합니다.
  */
 const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPanelProps) => {
-  const [locations, setLocations] = useState<DemandSiteLocation[]>([]);
   const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [pendingName, setPendingName] = useState("");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const drawnLayerRef = useRef<L.FeatureGroup | null>(null);
   const searchMarkerRef = useRef<L.Marker | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: locations = [], isSuccess: locationsLoaded } = useQuery(
+    demandSiteLocationsQueryOptions(demandSite.id),
+  );
+  const createDemandSiteLocationMutation = useMutation(
+    createDemandSiteLocationMutationOptions(queryClient),
+  );
+  const deleteDemandSiteLocationMutation = useMutation(
+    deleteDemandSiteLocationMutationOptions(queryClient),
+  );
 
   // 거점이 하나도 없으면 지도가 기본 좌표(전국 한복판)에 머물러서 어디에 그려야 할지
   // 알 수 없다. 수요처 관제 좌표(없으면 주소)를 기준으로 옮겨준다 — 실패해도 조용히 넘어간다.
@@ -55,16 +77,10 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
       .catch(() => {});
   };
 
-  const refresh = () =>
-    listDemandSiteLocations(demandSite.id).then((rows) => {
-      setLocations(rows);
-      if (rows.length === 0) centerOnDemandSite();
-    });
-
   useEffect(() => {
-    refresh();
+    if (locationsLoaded && locations.length === 0) centerOnDemandSite();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demandSite.id]);
+  }, [demandSite.id, locationsLoaded, locations.length]);
 
   // 지도+그리기 툴바 초기화 (마운트 1회)
   useEffect(() => {
@@ -81,11 +97,6 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
 
     const drawControl = new L.Control.Draw({
       draw: {
-        // showArea: true는 그리는 동안 넓이를 툴팁에 보여주지만, leaflet-draw 1.0.4의
-        // GeometryUtil.readableArea가 선언 없이 `type` 변수에 대입해서(비엄격 모드 전제) —
-        // Vite가 번들링하는 ES 모듈은 항상 엄격 모드라 그 대입에서 ReferenceError가 터진다.
-        // 다각형은 정점 3개부터 넓이가 생기므로 3번째 클릭에서 예외가 나며 이후 클릭까지
-        // 다 깨진다. 넓이 표시는 부가 기능이라 꺼서 이 버그를 피한다.
         polygon: { allowIntersection: false, showArea: false },
         circle: { showRadius: true } as L.DrawOptions.CircleOptions,
         rectangle: false,
@@ -104,10 +115,10 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
     map.on(L.Draw.Event.CREATED, (rawEvent: L.LeafletEvent) => {
       const event = rawEvent as L.DrawEvents.Created;
       const layer = event.layer;
-      const layerType = event.layerType as "circle" | "polygon";
+      const layerType = event.layerType as (typeof LAYER_TYPE)[keyof typeof LAYER_TYPE];
 
       // GPS 오차를 감안해 원형 거점은 최소 반경 1.5km를 보장한다 — 작게 그리면 자동으로 키운다
-      if (layerType === "circle") {
+      if (layerType === LAYER_TYPE.CIRCLE) {
         const circle = layer as L.Circle;
         if (circle.getRadius() < MIN_RADIUS_METERS) {
           circle.setRadius(MIN_RADIUS_METERS);
@@ -117,7 +128,7 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
       // 확인 모달에서 저장/취소를 누르기 전까지 그린 도형을 지도에 임시로 보여준다
       drawnLayerRef.current?.addLayer(layer);
       setPendingShape({ layer, layerType });
-      setPendingName(layerType === "circle" ? "원형 거점" : "다각형 거점");
+      setPendingName(layerType === LAYER_TYPE.CIRCLE ? "원형 거점" : "다각형 거점");
     });
 
     mapRef.current = map;
@@ -132,6 +143,7 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
   useEffect(() => {
     const layerGroup = drawnLayerRef.current;
     const map = mapRef.current;
+
     if (!layerGroup || !map) return;
 
     layerGroup.clearLayers();
@@ -141,7 +153,6 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
     if (demandSite.baseLat !== null && demandSite.baseLng !== null && demandSite.radius !== null) {
       L.circle([demandSite.baseLat, demandSite.baseLng], {
         radius: demandSite.radius,
-        // 안전 관제 지도의 관제구역과 같은 파란 점선으로 맞춘다
         color: "#3182f6",
         weight: 2,
         dashArray: "6 4",
@@ -153,7 +164,7 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
 
     locations.forEach((location) => {
       if (
-        location.shapeType === "RADIUS" &&
+        location.shapeType === SHAPE_TYPE.RADIUS &&
         location.baseLat !== null &&
         location.baseLng !== null &&
         location.radius !== null
@@ -163,7 +174,7 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
         })
           .bindTooltip(location.name)
           .addTo(layerGroup);
-      } else if (location.shapeType === "POLYGON" && location.polygon) {
+      } else if (location.shapeType === SHAPE_TYPE.POLYGON && location.polygon) {
         L.polygon(location.polygon.map((point) => [point.lat, point.lng] as [number, number]))
           .bindTooltip(location.name)
           .addTo(layerGroup);
@@ -176,60 +187,65 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
     }
   }, [locations, demandSite]);
 
-  const handleDeleteButtonClick = async (locationId: number) => {
+  const handleDeleteButtonClick = (locationId: number) => {
     if (!confirm("이 거점을 삭제하시겠습니까?")) return;
-    try {
-      await deleteDemandSiteLocation(locationId);
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
-    }
+
+    deleteDemandSiteLocationMutation.mutate(
+      { locationId, demandSiteId: demandSite.id },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
+      },
+    );
   };
 
   const handleCancelPendingShapeButtonClick = () => {
     if (pendingShape) drawnLayerRef.current?.removeLayer(pendingShape.layer);
+
     setPendingShape(null);
     setPendingName("");
   };
 
-  const handleSavePendingShapeButtonClick = async () => {
+  const handleSavePendingShapeButtonClick = () => {
     if (!pendingShape || !pendingName) return;
 
-    try {
-      if (pendingShape.layerType === "circle") {
-        const circle = pendingShape.layer as L.Circle;
-        const center = circle.getLatLng();
-        await createDemandSiteLocation(demandSite.id, {
-          name: pendingName,
-          shapeType: "RADIUS",
-          baseLat: center.lat,
-          baseLng: center.lng,
-          radius: Math.round(Math.max(circle.getRadius(), MIN_RADIUS_METERS)),
-        });
-      } else {
-        const polygon = pendingShape.layer as L.Polygon;
-        const latLngs = (polygon.getLatLngs()[0] as L.LatLng[]).map((point) => ({
-          lat: point.lat,
-          lng: point.lng,
-        }));
-        await createDemandSiteLocation(demandSite.id, {
-          name: pendingName,
-          shapeType: "POLYGON",
-          polygon: latLngs,
-        });
-      }
-      setPendingShape(null);
-      setPendingName("");
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    }
+    const data =
+      pendingShape.layerType === LAYER_TYPE.CIRCLE
+        ? (() => {
+            const circle = pendingShape.layer as L.Circle;
+            const center = circle.getLatLng();
+            return {
+              name: pendingName,
+              shapeType: SHAPE_TYPE.RADIUS,
+              baseLat: center.lat,
+              baseLng: center.lng,
+              radius: Math.round(Math.max(circle.getRadius(), MIN_RADIUS_METERS)),
+            };
+          })()
+        : (() => {
+            const polygon = pendingShape.layer as L.Polygon;
+            const latLngs = (polygon.getLatLngs()[0] as L.LatLng[]).map((point) => ({
+              lat: point.lat,
+              lng: point.lng,
+            }));
+            return { name: pendingName, shapeType: SHAPE_TYPE.POLYGON, polygon: latLngs };
+          })();
+
+    createDemandSiteLocationMutation.mutate(
+      { demandSiteId: demandSite.id, data },
+      {
+        onSuccess: () => {
+          setPendingShape(null);
+          setPendingName("");
+        },
+        onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
+      },
+    );
   };
 
-  // 수요처 주소로 지도를 옮겨준다 (거점을 자동으로 만들지는 않음 — 지오코딩이 부정확할 수 있어서
-  // 위치 확인은 관리자가 지도를 보고 직접 그리게 한다).
+  // 수요처 주소로 지도 이동
   const handleFindAddressButtonClick = async () => {
     if (!demandSite.address) return;
+
     try {
       const geocoded = await geocodeAddress(demandSite.address);
       if (!geocoded) {
@@ -302,7 +318,7 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
                 </button>
               </div>
               <div className="text-[#6b7280] mt-1">
-                {location.shapeType === "RADIUS"
+                {location.shapeType === SHAPE_TYPE.RADIUS
                   ? `원형 · 반경 ${location.radius}m`
                   : `다각형 · 좌표 ${location.polygon?.length ?? 0}개`}
               </div>

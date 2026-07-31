@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { updateGroup } from "../../api/admin/groups";
+import { updateGroupMutationOptions } from "../../api/admin/groups";
 import GroupAddModal from "./GroupAddModal";
 import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
 import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
@@ -9,27 +10,30 @@ import type { Group } from "../../types";
 interface ProgramGroupsSectionProps {
   programId: number;
   groups: Group[];
-  onChanged: () => void;
 }
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지의 조 관리 섹션입니다.
  *
  */
-const ProgramGroupsSection = ({ programId, groups, onChanged }: ProgramGroupsSectionProps) => {
+const ProgramGroupsSection = ({ programId, groups }: ProgramGroupsSectionProps) => {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [scheduleTarget, setScheduleTarget] = useState<Group | null>(null);
 
-  const handleToggleActiveButtonClick = async (group: Group) => {
+  const queryClient = useQueryClient();
+  const updateGroupMutation = useMutation(updateGroupMutationOptions(queryClient));
+
+  const handleToggleActiveButtonClick = (group: Group) => {
     const actionLabel = group.isActive ? "비활성화" : "활성화";
+
     if (!confirm(`'${group.name}' 조를 ${actionLabel}하시겠습니까?`)) return;
 
-    try {
-      await updateGroup(group.id, { isActive: !group.isActive });
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    updateGroupMutation.mutate(
+      { id: group.id, programId, data: { isActive: !group.isActive } },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
   return (
@@ -69,25 +73,11 @@ const ProgramGroupsSection = ({ programId, groups, onChanged }: ProgramGroupsSec
       </div>
 
       {groupModalOpen && (
-        <GroupAddModal
-          onClose={() => setGroupModalOpen(false)}
-          onSaved={() => {
-            setGroupModalOpen(false);
-            onChanged();
-          }}
-          programId={programId}
-        />
+        <GroupAddModal onClose={() => setGroupModalOpen(false)} programId={programId} />
       )}
 
       {scheduleTarget && (
-        <GroupMonthlyScheduleModal
-          group={scheduleTarget}
-          onClose={() => setScheduleTarget(null)}
-          onSaved={() => {
-            setScheduleTarget(null);
-            onChanged();
-          }}
-        />
+        <GroupMonthlyScheduleModal group={scheduleTarget} onClose={() => setScheduleTarget(null)} />
       )}
     </div>
   );

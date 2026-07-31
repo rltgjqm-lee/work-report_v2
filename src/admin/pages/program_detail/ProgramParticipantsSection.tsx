@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
-  deleteParticipant,
-  dropParticipant,
-  endParticipantLeave,
-  moveParticipantToGroup,
-  reactivateParticipant,
-  bulkUpdateParticipantStatus,
+  deleteParticipantMutationOptions,
+  dropParticipantMutationOptions,
+  endParticipantLeaveMutationOptions,
+  moveParticipantToGroupMutationOptions,
+  reactivateParticipantMutationOptions,
+  bulkUpdateParticipantStatusMutationOptions,
 } from "../../api/admin/participants";
+import { programKeys } from "../../api/admin/programs";
 import ParticipantLeaveAddModal from "./ParticipantLeaveAddModal";
 import AnnualLeaveModal from "./AnnualLeaveModal";
 import ParticipantMonthlyScheduleModal from "./ParticipantMonthlyScheduleModal";
@@ -37,7 +39,6 @@ interface ProgramParticipantsSectionProps {
   onStatusFilterChange: (value: string) => void;
   groupFilter: string;
   onGroupFilterChange: (value: string) => void;
-  onChanged: () => void;
 }
 
 /**
@@ -57,9 +58,9 @@ const ProgramParticipantsSection = ({
   onStatusFilterChange,
   groupFilter,
   onGroupFilterChange,
-  onChanged,
 }: ProgramParticipantsSectionProps) => {
   const { page, totalPages, pageItems, setPage } = usePagination(participants, 15);
+
   const [selectedParticipantIds, setSelectedParticipantIds] = useState<number[]>([]);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaveTarget, setLeaveTarget] = useState<{
@@ -73,6 +74,20 @@ const ProgramParticipantsSection = ({
   } | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(null);
 
+  const queryClient = useQueryClient();
+  const moveParticipantToGroupMutation = useMutation(
+    moveParticipantToGroupMutationOptions(queryClient),
+  );
+  const dropParticipantMutation = useMutation(dropParticipantMutationOptions(queryClient));
+  const endParticipantLeaveMutation = useMutation(endParticipantLeaveMutationOptions(queryClient));
+  const reactivateParticipantMutation = useMutation(
+    reactivateParticipantMutationOptions(queryClient),
+  );
+  const deleteParticipantMutation = useMutation(deleteParticipantMutationOptions(queryClient));
+  const bulkUpdateParticipantStatusMutation = useMutation(
+    bulkUpdateParticipantStatusMutationOptions(queryClient),
+  );
+
   const handleParticipantSelectionChange = (participantId: number) => {
     setSelectedParticipantIds((current) =>
       current.includes(participantId)
@@ -81,13 +96,20 @@ const ProgramParticipantsSection = ({
     );
   };
 
-  const handleGroupSelectChange = async (participantId: number, groupId: string) => {
-    try {
-      if (groupId) await moveParticipantToGroup(participantId, Number(groupId));
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "조 배정에 실패했습니다.");
+  const handleGroupSelectChange = (participantId: number, groupId: string) => {
+    if (!groupId) {
+      // 미배정으로 되돌리는 API는 없다 — 방금 브라우저가 반영한 선택을 원래 값으로
+      // 되돌리기 위해 참여자 목록을 다시 불러온다.
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(programId) });
+      return;
     }
+    moveParticipantToGroupMutation.mutate(
+      { participantId, programId, groupId: Number(groupId) },
+      {
+        onError: (error) =>
+          alert(error instanceof Error ? error.message : "조 배정에 실패했습니다."),
+      },
+    );
   };
 
   const handleLeaveButtonClick = (participantId: number, name: string) => {
@@ -100,79 +122,77 @@ const ProgramParticipantsSection = ({
     setAnnualModalOpen(true);
   };
 
-  const handleDropButtonClick = async (participantId: number, name: string) => {
+  const handleDropButtonClick = (participantId: number, name: string) => {
     const reason = prompt(`'${name}' 님의 참여종료 사유를 입력해주세요.`);
 
     if (reason === null) return;
 
-    try {
-      await dropParticipant(participantId, reason || undefined);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    dropParticipantMutation.mutate(
+      { participantId, programId, dropReason: reason || undefined },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
-  const handleEndLeaveButtonClick = async (participantId: number) => {
-    try {
-      await endParticipantLeave(participantId);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+  const handleEndLeaveButtonClick = (participantId: number) => {
+    endParticipantLeaveMutation.mutate(
+      { participantId, programId },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
-  const handleReactivateButtonClick = async (participantId: number, name: string) => {
+  const handleReactivateButtonClick = (participantId: number, name: string) => {
     if (!confirm(`'${name}' 님을 다시 활동중 상태로 되돌리시겠습니까?`)) return;
 
-    try {
-      await reactivateParticipant(participantId);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    reactivateParticipantMutation.mutate(
+      { participantId, programId },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
-  const handleDeleteButtonClick = async (participantId: number, name: string) => {
+  const handleDeleteButtonClick = (participantId: number, name: string) => {
     if (!confirm(`'${name}' 님을 참여자 명단에서 삭제하시겠습니까?`)) return;
-    try {
-      await deleteParticipant(programId, participantId);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "삭제에 실패했습니다.");
-    }
+    deleteParticipantMutation.mutate(
+      { programId, participantId, name },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
+      },
+    );
   };
 
-  const handleBulkDropButtonClick = async () => {
+  const handleBulkDropButtonClick = () => {
     const reason = prompt("일괄 참여종료 사유를 입력해주세요.");
     if (reason === null) return;
 
-    try {
-      await bulkUpdateParticipantStatus(programId, {
+    bulkUpdateParticipantStatusMutation.mutate(
+      {
+        programId,
         participantIds: selectedParticipantIds,
         status: "DROPPED",
         dropReason: reason || undefined,
-      });
-      setSelectedParticipantIds([]);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+      },
+      {
+        onSuccess: () => setSelectedParticipantIds([]),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
-  const handleBulkReactivateButtonClick = async () => {
+  const handleBulkReactivateButtonClick = () => {
     if (!confirm(`선택한 ${selectedParticipantIds.length}명을 재활성화하시겠습니까?`)) return;
 
-    try {
-      await bulkUpdateParticipantStatus(programId, {
-        participantIds: selectedParticipantIds,
-        status: "ACTIVE",
-      });
-      setSelectedParticipantIds([]);
-      onChanged();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    bulkUpdateParticipantStatusMutation.mutate(
+      { programId, participantIds: selectedParticipantIds, status: "ACTIVE" },
+      {
+        onSuccess: () => setSelectedParticipantIds([]),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
   return (
@@ -363,20 +383,13 @@ const ProgramParticipantsSection = ({
       {leaveModalOpen && (
         <ParticipantLeaveAddModal
           onClose={() => setLeaveModalOpen(false)}
-          onSaved={() => {
-            setLeaveModalOpen(false);
-            onChanged();
-          }}
+          programId={programId}
           target={leaveTarget}
         />
       )}
 
       {annualModalOpen && (
-        <AnnualLeaveModal
-          onClose={() => setAnnualModalOpen(false)}
-          onSaved={onChanged}
-          target={annualTarget}
-        />
+        <AnnualLeaveModal onClose={() => setAnnualModalOpen(false)} target={annualTarget} />
       )}
 
       {scheduleTarget && (
@@ -384,10 +397,6 @@ const ProgramParticipantsSection = ({
           participant={scheduleTarget}
           group={groups.find((group) => group.id === scheduleTarget.groupId)}
           onClose={() => setScheduleTarget(null)}
-          onSaved={() => {
-            setScheduleTarget(null);
-            onChanged();
-          }}
         />
       )}
     </div>

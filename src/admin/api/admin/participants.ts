@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 
 import { request } from "../client";
 import { programKeys } from "./programs";
+import { groupKeys } from "./groups";
 import type {
   AnnualLeave,
   LeaveType,
@@ -47,19 +48,32 @@ export const participantLeavesQueryOptions = (id: number) =>
     queryFn: () => getParticipantLeaves(id),
   });
 
-export const addParticipant = (
-  programId: number,
+export interface AddParticipantVariables {
+  programId: number;
   data: {
     name: string;
     demandSiteId?: number;
     phoneLast4: string;
     groupId?: number;
     birthYear?: number;
-  },
-) =>
+  };
+}
+
+export const addParticipant = (programId: number, data: AddParticipantVariables["data"]) =>
   request<Participant>(`/api/programs/${programId}/participants`, {
     method: "POST",
     body: JSON.stringify(data),
+  });
+
+// critical: 새 참여자가 사업단 참여자 목록(programKeys.detail)에 들어가고, 조에 배정됐다면
+// 그 조의 participantCount도 바뀐다.
+export const addParticipantMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ programId, data }: AddParticipantVariables) => addParticipant(programId, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
   });
 
 export const deleteParticipant = (programId: number, participantId: number) =>
@@ -85,11 +99,13 @@ export const deleteParticipantMutationOptions = (queryClient: QueryClient) =>
       queryClient.invalidateQueries({
         queryKey: programKeys.detail(variables.programId),
       });
+      // 삭제된 참여자가 조에 배정돼 있었다면 그 조의 participantCount도 바뀐다.
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
     },
   });
 
-export const bulkAddParticipants = (
-  programId: number,
+export interface BulkAddParticipantsVariables {
+  programId: number;
   data: {
     participants: {
       name: string;
@@ -97,11 +113,26 @@ export const bulkAddParticipants = (
       phoneLast4: string;
       groupId?: number;
     }[];
-  },
+  };
+}
+
+export const bulkAddParticipants = (
+  programId: number,
+  data: BulkAddParticipantsVariables["data"],
 ) =>
   request<Participant[]>(`/api/programs/${programId}/participants/bulk`, {
     method: "POST",
     body: JSON.stringify(data),
+  });
+
+export const bulkAddParticipantsMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ programId, data }: BulkAddParticipantsVariables) =>
+      bulkAddParticipants(programId, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
   });
 
 export interface UpdateParticipantVariables {
@@ -146,17 +177,62 @@ export const updateParticipantMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
+// 아래 참여자 상태/조 배정 뮤테이션들은 모두 조의 participantCount(활성 인원만 셈)에도
+// 영향을 줄 수 있어 programKeys.detail과 groupKeys.byProgram을 같이 무효화한다.
+// programId는 서버로 보내는 값이 아니라 이 무효화 대상을 찾기 위한 변수다.
+
+export interface MoveParticipantToGroupVariables {
+  participantId: number;
+  programId: number;
+  groupId: number;
+}
+
 export const moveParticipantToGroup = (id: number, groupId: number) =>
   request<Participant>(`/api/participants/${id}/group`, {
     method: "POST",
     body: JSON.stringify({ groupId }),
   });
 
+export const moveParticipantToGroupMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId, groupId }: MoveParticipantToGroupVariables) =>
+      moveParticipantToGroup(participantId, groupId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });
+
+export interface DropParticipantVariables {
+  participantId: number;
+  programId: number;
+  dropReason?: string;
+}
+
 export const dropParticipant = (id: number, dropReason?: string) =>
   request<Participant>(`/api/participants/${id}/drop`, {
     method: "POST",
     body: JSON.stringify({ dropReason }),
   });
+
+export const dropParticipantMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId, dropReason }: DropParticipantVariables) =>
+      dropParticipant(participantId, dropReason),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });
+
+export interface RegisterParticipantLeaveVariables {
+  participantId: number;
+  programId: number;
+  leaveStart: string;
+  leaveEnd: string;
+  leaveType: LeaveType;
+  reason?: string;
+}
 
 export const registerParticipantLeave = (
   id: number,
@@ -172,14 +248,60 @@ export const registerParticipantLeave = (
     body: JSON.stringify(data),
   });
 
+export const registerParticipantLeaveMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({
+      participantId,
+      leaveStart,
+      leaveEnd,
+      leaveType,
+      reason,
+    }: RegisterParticipantLeaveVariables) =>
+      registerParticipantLeave(participantId, { leaveStart, leaveEnd, leaveType, reason }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });
+
+export interface EndParticipantLeaveVariables {
+  participantId: number;
+  programId: number;
+}
+
 export const endParticipantLeave = (id: number) =>
   request<Participant>(`/api/participants/${id}/leave/end`, {
     method: "POST",
   });
 
+export const endParticipantLeaveMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId }: EndParticipantLeaveVariables) =>
+      endParticipantLeave(participantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });
+
+export interface ReactivateParticipantVariables {
+  participantId: number;
+  programId: number;
+}
+
 export const reactivateParticipant = (id: number) =>
   request<Participant>(`/api/participants/${id}/reactivate`, {
     method: "POST",
+  });
+
+export const reactivateParticipantMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId }: ReactivateParticipantVariables) =>
+      reactivateParticipant(participantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
   });
 
 export const getAnnualLeave = (id: number, year: string) =>
@@ -191,11 +313,37 @@ export const participantAnnualLeaveQueryOptions = (id: number, year: string) =>
     queryFn: () => getAnnualLeave(id, year),
   });
 
+export interface SetAnnualLeaveVariables {
+  participantId: number;
+  year: string;
+  totalDays: number;
+}
+
 export const setAnnualLeave = (id: number, data: { year: string; totalDays: number }) =>
   request<AnnualLeave>(`/api/participants/${id}/annual-leave`, {
     method: "POST",
     body: JSON.stringify(data),
   });
+
+// critical: 방금 저장한 연차 현황을 그 쿼리 캐시에 바로 반영한다 — 다시 불러오지 않아도 된다.
+export const setAnnualLeaveMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId, year, totalDays }: SetAnnualLeaveVariables) =>
+      setAnnualLeave(participantId, { year, totalDays }),
+    onSuccess: (updated, variables) => {
+      queryClient.setQueryData(
+        participantKeys.annualLeave(variables.participantId, variables.year),
+        updated,
+      );
+    },
+  });
+
+export interface BulkUpdateParticipantStatusVariables {
+  programId: number;
+  participantIds: number[];
+  status: "ACTIVE" | "DROPPED";
+  dropReason?: string;
+}
 
 export const bulkUpdateParticipantStatus = (
   programId: number,
@@ -208,4 +356,19 @@ export const bulkUpdateParticipantStatus = (
   request<Participant[]>(`/api/programs/${programId}/participants/bulk-status`, {
     method: "POST",
     body: JSON.stringify(data),
+  });
+
+export const bulkUpdateParticipantStatusMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({
+      programId,
+      participantIds,
+      status,
+      dropReason,
+    }: BulkUpdateParticipantStatusVariables) =>
+      bulkUpdateParticipantStatus(programId, { participantIds, status, dropReason }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
   });

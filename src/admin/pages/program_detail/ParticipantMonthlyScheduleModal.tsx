@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  deleteParticipantMonthlySchedule,
-  getGroupMonthlySchedule,
-  getParticipantMonthlySchedule,
-  updateParticipantMonthlySchedule,
+  deleteParticipantMonthlyScheduleMutationOptions,
+  groupMonthlyScheduleQueryOptions,
+  participantMonthlyScheduleQueryOptions,
+  updateParticipantMonthlyScheduleMutationOptions,
 } from "../../api/admin/monthlySchedule";
 import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
@@ -22,18 +23,16 @@ const toMinutes = (hhmm: string): number => {
 
 interface ParticipantMonthlyScheduleModalProps {
   onClose: () => void;
-  onSaved: () => void;
   participant: Participant;
   group?: Group;
 }
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 참여자 개인의 월간 근무 스케줄 예외를
- * 설정하는 모달입니다. 예외가 없으면 조 기본 스케줄을 그대로 따른다.
+ * 설정하는 모달입니다. 예외가 없으면 조 기본 스케줄을 그대로 따릅니다.
  */
 const ParticipantMonthlyScheduleModal = ({
   onClose,
-  onSaved,
   participant,
   group,
 }: ParticipantMonthlyScheduleModalProps) => {
@@ -41,42 +40,49 @@ const ParticipantMonthlyScheduleModal = ({
   const [hasOverride, setHasOverride] = useState(false);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("");
-  const [groupDefaultDates, setGroupDefaultDates] = useState<string[]>([]);
-  const [groupMaxMonthlyMinutes, setGroupMaxMonthlyMinutes] = useState(1800);
-  const [loading, setLoading] = useState(false);
   const [patternWorkDays, setPatternWorkDays] = useState("1");
   const [patternRestDays, setPatternRestDays] = useState("2");
+  const queryClient = useQueryClient();
+
+  const { data: participantSchedule, isFetching: isParticipantScheduleFetching } = useQuery(
+    participantMonthlyScheduleQueryOptions(participant.id, yearMonth),
+  );
+  const { data: groupSchedule, isFetching: isGroupScheduleFetching } = useQuery({
+    ...groupMonthlyScheduleQueryOptions(participant.groupId ?? 0, yearMonth),
+    enabled: !!participant.groupId,
+  });
+
+  const loading =
+    isParticipantScheduleFetching || (!!participant.groupId && isGroupScheduleFetching);
+
+  const groupDefaultDates = groupSchedule?.workDates ?? [];
+  const groupMaxMonthlyMinutes = groupSchedule?.maxMonthlyMinutes ?? 1800;
+
+  const updateParticipantMonthlyScheduleMutation = useMutation(
+    updateParticipantMonthlyScheduleMutationOptions(queryClient),
+  );
+  const deleteParticipantMonthlyScheduleMutation = useMutation(
+    deleteParticipantMonthlyScheduleMutationOptions(queryClient),
+  );
 
   useEffect(() => {
-    setLoading(true);
+    if (!participantSchedule) return;
 
-    const loadGroupDefault = participant.groupId
-      ? getGroupMonthlySchedule(participant.groupId, yearMonth).catch(() => ({
-          workDates: [] as string[],
-          maxMonthlyMinutes: 1800,
-        }))
-      : Promise.resolve({ workDates: [] as string[], maxMonthlyMinutes: 1800 });
-
-    Promise.all([getParticipantMonthlySchedule(participant.id, yearMonth), loadGroupDefault])
-      .then(([participantSchedule, groupSchedule]) => {
-        setGroupDefaultDates(groupSchedule.workDates);
-        setGroupMaxMonthlyMinutes(groupSchedule.maxMonthlyMinutes);
-        if (participantSchedule.workDates !== null) {
-          setHasOverride(true);
-          setWorkDates(participantSchedule.workDates);
-          setMaxMonthlyHours(
-            participantSchedule.maxMonthlyMinutes !== null
-              ? String(participantSchedule.maxMonthlyMinutes / 60)
-              : "",
-          );
-        } else {
-          setHasOverride(false);
-          setWorkDates([]);
-          setMaxMonthlyHours("");
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [participant.id, participant.groupId, yearMonth]);
+    if (participantSchedule.workDates !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 조회된 초기값을 편집 가능한 로컬 상태로 동기화
+      setHasOverride(true);
+      setWorkDates(participantSchedule.workDates);
+      setMaxMonthlyHours(
+        participantSchedule.maxMonthlyMinutes !== null
+          ? String(participantSchedule.maxMonthlyMinutes / 60)
+          : "",
+      );
+    } else {
+      setHasOverride(false);
+      setWorkDates([]);
+      setMaxMonthlyHours("");
+    }
+  }, [participantSchedule]);
 
   // group이 있으면 조 근무시간(shiftStart~shiftEnd) 기준 하루 근무분으로 월 상한 초과를 미리 막는다.
   // 개인 상한을 비워두면 조 기본 상한(groupMaxMonthlyMinutes)을 그대로 따른다.
@@ -95,14 +101,15 @@ const ParticipantMonthlyScheduleModal = ({
     setWorkDates(groupDefaultDates);
   };
 
-  const handleRevertToGroupButtonClick = async () => {
+  const handleRevertToGroupButtonClick = () => {
     if (!confirm("개인 예외를 삭제하고 조 스케줄을 따르게 할까요?")) return;
-    try {
-      await deleteParticipantMonthlySchedule(participant.id, yearMonth);
-      onSaved();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    deleteParticipantMonthlyScheduleMutation.mutate(
+      { participantId: participant.id, yearMonth },
+      {
+        onSuccess: () => onClose(),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
   const handleToggleDate = (date: string) => {
@@ -138,21 +145,23 @@ const ParticipantMonthlyScheduleModal = ({
     setWorkDates(generateWorkPattern(yearMonth, workDays, restDays));
   };
 
-  const handleSaveButtonClick = async () => {
+  const handleSaveButtonClick = () => {
     if (isOverCap) {
       alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
     }
-    try {
-      await updateParticipantMonthlySchedule(participant.id, {
+    updateParticipantMonthlyScheduleMutation.mutate(
+      {
+        participantId: participant.id,
         yearMonth,
         workDates,
         maxMonthlyMinutes: maxMonthlyHours ? Math.round(Number(maxMonthlyHours) * 60) : null,
-      });
-      onSaved();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    }
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
+      },
+    );
   };
 
   return (

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { createDemandSiteSchedule } from "../../api/admin/demandSites";
+import { createDemandSiteScheduleMutationOptions } from "../../api/admin/demandSites";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -15,7 +16,6 @@ const emptyForm = {
 
 interface DemandSiteScheduleAddModalProps {
   onClose: () => void;
-  onSaved: () => void;
   targetSiteId: number | null;
   activeGroups: Group[];
 }
@@ -24,32 +24,38 @@ interface DemandSiteScheduleAddModalProps {
  * 관리자 페이지 > 사업단 상세 페이지에서 수요처 근무시간을 추가하는 모달입니다.
  *
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const DemandSiteScheduleAddModal = ({
   onClose,
-  onSaved,
   targetSiteId,
   activeGroups,
 }: DemandSiteScheduleAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
 
-  const handleSaveButtonClick = async () => {
+  const queryClient = useQueryClient();
+  const createDemandSiteScheduleMutation = useMutation(
+    createDemandSiteScheduleMutationOptions(queryClient),
+  );
+
+  const handleSaveButtonClick = () => {
     if (!targetSiteId || !form.groupId || !form.shiftStart || !form.shiftEnd) {
       alert("조와 근무시간을 입력해주세요.");
 
       return;
     }
-    try {
-      await createDemandSiteSchedule(targetSiteId, {
-        groupId: Number(form.groupId),
-        shiftStart: form.shiftStart,
-        shiftEnd: form.shiftEnd,
-      });
-      onSaved();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "등록에 실패했습니다.");
-    }
+    createDemandSiteScheduleMutation.mutate(
+      {
+        demandSiteId: targetSiteId,
+        data: {
+          groupId: Number(form.groupId),
+          shiftStart: form.shiftStart,
+          shiftEnd: form.shiftEnd,
+        },
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
+      },
+    );
   };
 
   return (

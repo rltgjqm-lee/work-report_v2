@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueries, useQuery } from "@tanstack/react-query";
 
-import { listGroups } from "../../api/admin/groups";
-import { getOrganization } from "../../api/admin/organizations";
-import { getProgram, listPrograms } from "../../api/admin/programs";
-import { listDemandSites, listDemandSiteSchedules } from "../../api/admin/demandSites";
+import { groupsQueryOptions } from "../../api/admin/groups";
+import { organizationQueryOptions } from "../../api/admin/organizations";
+import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
+import {
+  demandSitesQueryOptions,
+  demandSiteSchedulesQueryOptions,
+} from "../../api/admin/demandSites";
 import ProgramGroupsSection from "./ProgramGroupsSection";
 import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
 import ProgramExcelExportSection from "./ProgramExcelExportSection";
@@ -14,15 +18,22 @@ import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
 import TabBar from "../../components/bar/TabBar";
 
 import { btnPrimaryClass, btnGhostClass } from "../../uiClasses";
-import type {
-  DemandSite,
-  DemandSiteSchedule,
-  Group,
-  Program,
-  ProgramWithParticipants,
-} from "../../types";
 
-type Tab = "groups" | "demandSites" | "participants" | "excel";
+const PROGRAM_DETAIL_TAB = {
+  GROUPS: "groups",
+  DEMAND_SITES: "demandSites",
+  PARTICIPANTS: "participants",
+  EXCEL: "excel",
+} as const;
+
+type Tab = (typeof PROGRAM_DETAIL_TAB)[keyof typeof PROGRAM_DETAIL_TAB];
+
+const PROGRAM_DETAIL_TABS: [Tab, string][] = [
+  [PROGRAM_DETAIL_TAB.GROUPS, "조 관리"],
+  [PROGRAM_DETAIL_TAB.DEMAND_SITES, "수요처 관리"],
+  [PROGRAM_DETAIL_TAB.PARTICIPANTS, "참여자 명단"],
+  [PROGRAM_DETAIL_TAB.EXCEL, "양식 출력"],
+];
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지입니다.
@@ -33,42 +44,37 @@ const ProgramDetailPage = () => {
   const navigate = useNavigate();
   const programId = Number(id);
 
-  const [program, setProgram] = useState<ProgramWithParticipants | null>(null);
-  const [orgName, setOrgName] = useState("-");
-  const [allPrograms, setAllPrograms] = useState<Program[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
-  const [demandSiteSchedules, setDemandSiteSchedules] = useState<
-    Record<number, DemandSiteSchedule[]>
-  >({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [demandFilter, setDemandFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("groups");
+  const [tab, setTab] = useState<Tab>(PROGRAM_DETAIL_TAB.GROUPS);
 
-  useEffect(() => {
-    listPrograms().then(setAllPrograms);
-  }, []);
+  const { data: allPrograms = [] } = useQuery(programsQueryOptions);
+  const { data: program } = useQuery(programQueryOptions(programId));
+  const { data: organization } = useQuery({
+    ...organizationQueryOptions(program?.organizationId ?? 0),
+    enabled: !!program,
+  });
+  const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
+  const { data: demandSites = [] } = useQuery(demandSitesQueryOptions(programId));
+  const demandSiteScheduleQueries = useQueries({
+    queries: demandSites.map((demandSite) => demandSiteSchedulesQueryOptions(demandSite.id)),
+  });
 
-  const refresh = () => {
-    getProgram(programId).then((full) => {
-      setProgram(full);
-      getOrganization(full.organizationId).then((org) => setOrgName(org.name));
-    });
-    listGroups(programId).then(setGroups);
-    listDemandSites(programId).then((sites) => {
-      setDemandSites(sites);
-      Promise.all(
-        sites.map((site) =>
-          listDemandSiteSchedules(site.id).then((schedules) => [site.id, schedules] as const),
-        ),
-      ).then((pairs) => setDemandSiteSchedules(Object.fromEntries(pairs)));
-    });
-  };
+  const organizationName = organization?.name ?? "-";
 
-  useEffect(refresh, [programId]);
+  const demandSiteSchedules = useMemo(
+    () =>
+      Object.fromEntries(
+        demandSites.map((demandSite, index) => [
+          demandSite.id,
+          demandSiteScheduleQueries[index]?.data ?? [],
+        ]),
+      ),
+    [demandSites, demandSiteScheduleQueries],
+  );
 
   const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
 
@@ -148,7 +154,7 @@ const ProgramDetailPage = () => {
           >
             안전 관제
           </button>
-          {tab === "participants" && (
+          {tab === PROGRAM_DETAIL_TAB.PARTICIPANTS && (
             <button className={btnPrimaryClass} onClick={() => setIsModalOpen(true)}>
               + 참여자 추가
             </button>
@@ -159,7 +165,7 @@ const ProgramDetailPage = () => {
       <div className="grid grid-cols-4 mb-5">
         <div className="px-5 py-4 border border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">소속기관</div>
-          <div className="text-sm font-bold">{orgName}</div>
+          <div className="text-sm font-bold">{organizationName}</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">사업기간</div>
@@ -179,32 +185,22 @@ const ProgramDetailPage = () => {
         </div>
       </div>
 
-      <TabBar
-        tabs={[
-          ["groups", "조 관리"],
-          ["demandSites", "수요처 관리"],
-          ["participants", "참여자 명단"],
-          ["excel", "양식 출력"],
-        ]}
-        active={tab}
-        onChange={setTab}
-      />
+      <TabBar tabs={PROGRAM_DETAIL_TABS} active={tab} onChange={setTab} />
 
-      {tab === "groups" && (
-        <ProgramGroupsSection programId={programId} groups={groups} onChanged={refresh} />
+      {tab === PROGRAM_DETAIL_TAB.GROUPS && (
+        <ProgramGroupsSection programId={programId} groups={groups} />
       )}
 
-      {tab === "demandSites" && (
+      {tab === PROGRAM_DETAIL_TAB.DEMAND_SITES && (
         <ProgramDemandSitesSection
           programId={programId}
           demandSites={demandSites}
           demandSiteSchedules={demandSiteSchedules}
           groups={groups}
-          onChanged={refresh}
         />
       )}
 
-      {tab === "participants" && (
+      {tab === PROGRAM_DETAIL_TAB.PARTICIPANTS && (
         <ProgramParticipantsSection
           programId={programId}
           participants={filtered}
@@ -218,21 +214,16 @@ const ProgramDetailPage = () => {
           onStatusFilterChange={setStatusFilter}
           groupFilter={groupFilter}
           onGroupFilterChange={setGroupFilter}
-          onChanged={refresh}
         />
       )}
 
-      {tab === "excel" && (
+      {tab === PROGRAM_DETAIL_TAB.EXCEL && (
         <ProgramExcelExportSection programId={programId} programType={program.programType} />
       )}
 
       {isModalOpen && (
         <ParticipantAddModal
           onClose={() => setIsModalOpen(false)}
-          onSaved={() => {
-            setIsModalOpen(false);
-            refresh();
-          }}
           programId={programId}
           activeGroups={activeGroups}
           activeDemandSites={activeDemandSites}
