@@ -1,8 +1,9 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import {
-  createOrganization,
-  updateOrganization,
+  createOrganizationMutationOptions,
+  updateOrganizationMutationOptions,
 } from "../../api/admin/organizations";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
@@ -32,7 +33,6 @@ const emptyForm = {
 
 interface OrganizationFormModalProps {
   onClose: () => void;
-  onSaved: () => void;
   editingOrganization: Organization | null;
 }
 
@@ -44,9 +44,15 @@ interface OrganizationFormModalProps {
 // 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const OrganizationFormModal = ({
   onClose,
-  onSaved,
   editingOrganization,
 }: OrganizationFormModalProps) => {
+  const queryClient = useQueryClient();
+  const createOrganizationMutation = useMutation(
+    createOrganizationMutationOptions(queryClient),
+  );
+  const updateOrganizationMutation = useMutation(
+    updateOrganizationMutationOptions(queryClient),
+  );
   const [form, setForm] = useState(
     editingOrganization
       ? {
@@ -65,7 +71,7 @@ const OrganizationFormModal = ({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const handleSaveButtonClick = async () => {
+  const handleSaveButtonClick = () => {
     if (form.phone && !PHONE_NUMBER_PATTERN.test(form.phone)) {
       setError("전화번호 형식이 올바르지 않습니다. 예: 02-1234-5678");
 
@@ -76,15 +82,23 @@ const OrganizationFormModal = ({
 
       return;
     }
-    try {
-      if (editingOrganization) {
-        await updateOrganization(editingOrganization.id, form);
-      } else {
-        await createOrganization(form);
-      }
-      onSaved();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
+
+    // UI 한정: 저장 성공하면 이 모달을 닫고, 실패하면 폼에 에러 메시지를 보여준다.
+    const saveCallbacks = {
+      onSuccess: () => onClose(),
+      onError: (error: unknown) =>
+        setError(
+          error instanceof Error ? error.message : "저장에 실패했습니다.",
+        ),
+    };
+
+    if (editingOrganization) {
+      updateOrganizationMutation.mutate(
+        { id: editingOrganization.id, data: form },
+        saveCallbacks,
+      );
+    } else {
+      createOrganizationMutation.mutate(form, saveCallbacks);
     }
   };
 

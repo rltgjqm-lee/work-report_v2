@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  listOrganizations,
-  updateOrganization,
+  organizationsQueryOptions,
+  updateOrganizationMutationOptions,
 } from "../../api/admin/organizations";
 import Pagination from "../../components/Pagination";
 import OrganizationFormModal from "./OrganizationFormModal";
@@ -19,17 +20,14 @@ import { ROLES, type Organization } from "../../types";
 const OrganizationsPage = () => {
   const { admin } = useAuth();
   const role = admin?.role;
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
+
+  const queryClient = useQueryClient();
+  const { data: organizations = [] } = useQuery(organizationsQueryOptions);
+
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<Organization | null>(null);
-
-  const refresh = () => {
-    listOrganizations().then(setOrganizations);
-  };
-
-  useEffect(refresh, []);
 
   const filtered = useMemo(
     () =>
@@ -53,20 +51,25 @@ const OrganizationsPage = () => {
     setModalOpen(true);
   };
 
-  const handleOrganizationSaved = () => {
-    setModalOpen(false);
-    refresh();
-  };
+  const updateOrganizationMutation = useMutation(
+    updateOrganizationMutationOptions(queryClient),
+  );
 
-  const handleToggleActiveButtonClick = async (org: Organization) => {
-    const actionLabel = org.isActive ? "비활성화" : "활성화";
-    if (!confirm(`'${org.name}' 기관을 ${actionLabel}하시겠습니까?`)) return;
-    try {
-      await updateOrganization(org.id, { isActive: !org.isActive });
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+  const handleToggleActiveButtonClick = (organization: Organization) => {
+    const actionLabel = organization.isActive ? "비활성화" : "활성화";
+
+    if (!confirm(`'${organization.name}' 기관을 ${actionLabel}하시겠습니까?`))
+      return;
+
+    updateOrganizationMutation.mutate(
+      { id: organization.id, data: { isActive: !organization.isActive } },
+      {
+        onError: (error) =>
+          alert(
+            error instanceof Error ? error.message : "처리에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   return (
@@ -186,7 +189,6 @@ const OrganizationsPage = () => {
       {modalOpen && (
         <OrganizationFormModal
           onClose={() => setModalOpen(false)}
-          onSaved={handleOrganizationSaved}
           editingOrganization={editingOrganization}
         />
       )}
