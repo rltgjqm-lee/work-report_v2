@@ -90,7 +90,12 @@ const DemandSiteLocationsPanel = ({
 
     const drawControl = new L.Control.Draw({
       draw: {
-        polygon: { allowIntersection: false, showArea: true },
+        // showArea: true는 그리는 동안 넓이를 툴팁에 보여주지만, leaflet-draw 1.0.4의
+        // GeometryUtil.readableArea가 선언 없이 `type` 변수에 대입해서(비엄격 모드 전제) —
+        // Vite가 번들링하는 ES 모듈은 항상 엄격 모드라 그 대입에서 ReferenceError가 터진다.
+        // 다각형은 정점 3개부터 넓이가 생기므로 3번째 클릭에서 예외가 나며 이후 클릭까지
+        // 다 깨진다. 넓이 표시는 부가 기능이라 꺼서 이 버그를 피한다.
+        polygon: { allowIntersection: false, showArea: false },
         circle: { showRadius: true } as L.DrawOptions.CircleOptions,
         rectangle: false,
         polyline: false,
