@@ -1,17 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { listLoginHistory } from "../api/admin/loginHistory";
-import { queryKeys } from "../queryKeys";
+import { loginHistoryQueryOptions } from "../api/admin/loginHistory";
 
 /**
  * 관리자 페이지 > 로그인 이력 페이지입니다. SUPER_ADMIN만 접근 가능합니다.
  *
  */
 const LoginHistoryPage = () => {
-  const { data: entries = [] } = useQuery({
-    queryKey: queryKeys.loginHistory,
-    queryFn: listLoginHistory,
-  });
+  const { data: entries = [] } = useQuery(loginHistoryQueryOptions);
 
   return (
     <div>

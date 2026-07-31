@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+
 import { request } from "../client";
 import type {
   EscapeRow,
@@ -14,6 +16,17 @@ export const listPrograms = (organizationId?: number) =>
   request<Program[]>(
     `/api/programs${organizationId ? `?organizationId=${organizationId}` : ""}`,
   );
+
+export const programKeys = {
+  all: ["programs"] as const,
+  // organizationId로 좁혀서 조회하는 화면이 생기면 그때 추가한다:
+  // list: (organizationId: number) => [...programKeys.all, organizationId] as const,
+};
+
+export const programsQueryOptions = queryOptions({
+  queryKey: programKeys.all,
+  queryFn: () => listPrograms(),
+});
 
 export const getProgram = (id: number) =>
   request<ProgramWithParticipants>(`/api/programs/${id}`);

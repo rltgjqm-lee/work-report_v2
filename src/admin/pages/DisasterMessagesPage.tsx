@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 import {
-  listSafetyAlerts,
+  safetyAlertsKeys,
+  safetyAlertsQueryOptions,
   sendTestSafetyAlert,
 } from "../api/admin/safetyAlerts";
-import { listPrograms } from "../api/admin/programs";
+import { programsQueryOptions } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
 import { btnPrimaryClass, inputClass } from "../uiClasses";
-import type { Program, SafetyAlert } from "../types";
 
 const SOURCE_LABEL: Record<string, string> = {
   MOIS: "행안부",
@@ -19,40 +20,40 @@ const SOURCE_LABEL: Record<string, string> = {
  *
  */
 const DisasterMessagesPage = () => {
-  const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const queryClient = useQueryClient();
+  const { data: alerts = [] } = useQuery(safetyAlertsQueryOptions);
+  const { data: programs = [] } = useQuery(programsQueryOptions);
+
   const [testProgramId, setTestProgramId] = useState("");
   const [testMessage, setTestMessage] = useState("");
   const [testResult, setTestResult] = useState<string | null>(null);
 
-  const refresh = () => listSafetyAlerts().then(setAlerts);
+  const sendTestMutation = useMutation({
+    mutationFn: sendTestSafetyAlert,
+    onSuccess: (result) => {
+      setTestResult(
+        `발송 완료 — 대상 ${result.targetCount}건 중 ${result.successCount}건 성공`,
+      );
+      setTestMessage("");
+      queryClient.invalidateQueries({ queryKey: safetyAlertsKeys.all });
+    },
+    onError: (error) => {
+      alert(
+        error instanceof Error ? error.message : "테스트 발송에 실패했습니다.",
+      );
+    },
+  });
 
-  useEffect(() => {
-    refresh();
-    listPrograms().then(setPrograms);
-  }, []);
-
-  const handleSendTestButtonClick = async () => {
+  const handleSendTestButtonClick = () => {
     if (!testProgramId || !testMessage) {
       alert("사업단과 메시지를 입력해주세요.");
 
       return;
     }
-    try {
-      const result = await sendTestSafetyAlert({
-        message: testMessage,
-        programId: Number(testProgramId),
-      });
-      setTestResult(
-        `발송 완료 — 대상 ${result.targetCount}건 중 ${result.successCount}건 성공`,
-      );
-      setTestMessage("");
-      refresh();
-    } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "테스트 발송에 실패했습니다.",
-      );
-    }
+    sendTestMutation.mutate({
+      message: testMessage,
+      programId: Number(testProgramId),
+    });
   };
 
   return (
@@ -80,12 +81,14 @@ const DisasterMessagesPage = () => {
               })),
             ]}
           />
+
           <input
             className={inputClass + " flex-1 min-w-[240px]"}
             placeholder="테스트 메시지를 입력하세요"
             value={testMessage}
             onChange={(event) => setTestMessage(event.target.value)}
           />
+
           <button
             className={btnPrimaryClass}
             onClick={handleSendTestButtonClick}
@@ -152,6 +155,7 @@ const DisasterMessagesPage = () => {
                   </td>
                 </tr>
               ))}
+
               {alerts.length === 0 && (
                 <tr>
                   <td
