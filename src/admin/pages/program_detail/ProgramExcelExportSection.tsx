@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
 import {
@@ -8,6 +9,7 @@ import {
   downloadPayslipExcel,
   downloadWorkScheduleExcel,
 } from "../../api/admin/excel";
+import ConfirmModal from "../../../components/molecule/ConfirmModal";
 import {
   exportBtnClass,
   exportCardClass,
@@ -33,8 +35,6 @@ type ExcelExportItem = {
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
-// 사업 유형별로 필요한 서식이 다르다 — 공익 활동은 활동/활동비 위주, 역량 활동은
-// 근태/급여 위주. download가 null인 항목은 아직 서식이 없어 "준비중"으로만 보여준다.
 const PUBLIC_INTEREST_ITEMS: ExcelExportItem[] = [
   {
     key: "activityLog",
@@ -85,13 +85,20 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지의 양식 출력 섹션입니다.
- * 서식별로 카드가 따로 있고, 월도 카드마다 독립적으로 고른다.
+ *
  */
 const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExportSectionProps) => {
   const [months, setMonths] = useState<Record<string, string>>({});
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  // 사업 유형이 없거나(null) 예상 못한 값이면 어느 서식이 필요한지 알 수 없으므로
-  // 다운로드를 막지 않도록 두 유형 서식을 모두 보여준다.
+  // 로딩/에러 상태 관리 용도로만 사용
+  const downloadMutation = useMutation({
+    mutationFn: async ({ item, month }: { item: ExcelExportItem; month: string }) => {
+      await item.download?.(programId, month);
+    },
+  });
+
+  // 사업 유형이 없거나(null) 예상 못한 값이면 두 유형 서식을 모두 노출
   const items =
     programType === "공익 활동"
       ? PUBLIC_INTEREST_ITEMS
@@ -99,11 +106,23 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
         ? COMPETENCY_ITEMS
         : [...PUBLIC_INTEREST_ITEMS, ...COMPETENCY_ITEMS];
 
+  const handleDownloadButtonClick = (item: ExcelExportItem, month: string) => {
+    downloadMutation.mutate(
+      { item, month },
+      {
+        onError: (error) =>
+          setDownloadError(error instanceof Error ? error.message : "다운로드에 실패했습니다."),
+      },
+    );
+  };
+
   return (
     <div className={exportGridClass}>
       {items.map((item) => {
         const ready = item.download !== null;
         const month = months[item.key] ?? currentMonth();
+        const isDownloading =
+          downloadMutation.isPending && downloadMutation.variables?.item.key === item.key;
 
         return (
           <div key={item.key} className={exportCardClass}>
@@ -125,15 +144,22 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
               />
               <button
                 className={`${exportBtnClass} disabled:opacity-40 disabled:cursor-not-allowed`}
-                disabled={!ready}
-                onClick={() => item.download?.(programId, month)}
+                disabled={!ready || isDownloading}
+                onClick={() => handleDownloadButtonClick(item, month)}
               >
-                {ready ? "엑셀 다운로드" : "준비중"}
+                {isDownloading ? "다운로드 중..." : ready ? "엑셀 다운로드" : "준비중"}
               </button>
             </div>
           </div>
         );
       })}
+
+      <ConfirmModal
+        isOpen={!!downloadError}
+        messages={downloadError ? [downloadError] : []}
+        onConfirm={() => setDownloadError(null)}
+        onClose={() => setDownloadError(null)}
+      />
     </div>
   );
 };
