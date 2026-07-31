@@ -86,3 +86,21 @@ const handleModalClose = () => setModalOpen(false);
 - `src/pages/`: 라우트 단위 페이지 컴포넌트
 
 새 파일을 어디에 둘지 애매하면 먼저 물어보고 진행합니다.
+
+### 타입 위치: 단일 소비자 타입은 API 파일로
+
+`src/admin/types.ts`에는 여러 곳(여러 API 파일·여러 페이지·여러 컴포넌트)에서 같이 쓰는
+진짜 공유 도메인 모델(`Participant`, `Program`, `DemandSite` 등)만 둡니다.
+
+소비자가 API 함수 하나뿐인 타입(예: 그 함수의 응답 타입)은 `types.ts`에 두지 않고
+그 API 파일(`src/admin/api/admin/*.ts`) 안에서 직접 `export`합니다 — 그 타입을 쓰려면
+그 API 함수도 같이 가져오게 되니, 타입과 그걸 만드는 함수를 한 파일에서 같이 보게 됩니다.
+
+```ts
+// src/admin/api/admin/loginHistory.ts
+export type LoginHistoryEntry = { ... };
+export const listLoginHistory = () => request<LoginHistoryEntry[]>(...);
+```
+
+기존에 `types.ts`에 있던 타입들은 점진적으로 이 기준에 맞춰 정리합니다 — 한 번에 다 옮기지
+않고, 그 타입/API를 만지는 김에 하나씩 옮깁니다.

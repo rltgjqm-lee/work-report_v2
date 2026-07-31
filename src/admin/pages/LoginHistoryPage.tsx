@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { listLoginHistory } from "../api/admin/loginHistory";
-import type { LoginHistoryEntry } from "../types";
+import { queryKeys } from "../queryKeys";
 
 /**
- * 관리자 페이지 > 로그인 이력 페이지입니다. SUPER_ADMIN만 접근합니다.
+ * 관리자 페이지 > 로그인 이력 페이지입니다. SUPER_ADMIN만 접근 가능합니다.
  *
  */
 const LoginHistoryPage = () => {
-  const [entries, setEntries] = useState<LoginHistoryEntry[]>([]);
-
-  useEffect(() => {
-    listLoginHistory().then(setEntries);
-  }, []);
+  const { data: entries = [] } = useQuery({
+    queryKey: queryKeys.loginHistory,
+    queryFn: listLoginHistory,
+  });
 
   return (
     <div>

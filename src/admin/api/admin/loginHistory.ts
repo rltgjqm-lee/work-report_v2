@@ -1,5 +1,13 @@
 import { request } from "../client";
-import type { LoginHistoryEntry } from "../../types";
+
+export type LoginHistoryEntry = {
+  id: number;
+  email: string;
+  adminName: string | null;
+  success: boolean;
+  ipAddress: string | null;
+  createdAt: string;
+};
 
 export const listLoginHistory = () =>
   request<LoginHistoryEntry[]>("/api/admins/login-history");
