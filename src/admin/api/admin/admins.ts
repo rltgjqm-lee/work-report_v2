@@ -31,7 +31,7 @@ interface TransferAdminProgramsVariables {
   toAdminId: number;
 }
 
-const adminKeys = {
+export const adminKeys = {
   all: ["admins"] as const,
 };
 

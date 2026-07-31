@@ -1,9 +1,10 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import {
-  createProgram,
-  setProgramManager,
-  updateProgram,
+  createProgramMutationOptions,
+  setProgramManagerMutationOptions,
+  updateProgramMutationOptions,
 } from "../../api/admin/programs";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
@@ -30,7 +31,6 @@ const emptyForm = {
 
 interface ProgramFormModalProps {
   onClose: () => void;
-  onSaved: () => void;
   editingProgram: Program | null;
   currentRole: Role;
   organizations: Organization[];
@@ -41,16 +41,23 @@ interface ProgramFormModalProps {
  * 관리자 페이지 > 사업단 관리 페이지에서 사업단을 추가/수정하는 모달입니다.
  *
  */
-// 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
-// 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const ProgramFormModal = ({
   onClose,
-  onSaved,
   editingProgram,
   currentRole,
   organizations,
   managerAdmins,
 }: ProgramFormModalProps) => {
+  const queryClient = useQueryClient();
+  const createProgramMutation = useMutation(
+    createProgramMutationOptions(queryClient),
+  );
+  const updateProgramMutation = useMutation(
+    updateProgramMutationOptions(queryClient),
+  );
+  const setProgramManagerMutation = useMutation(
+    setProgramManagerMutationOptions(queryClient),
+  );
   const [form, setForm] = useState(
     editingProgram
       ? {
@@ -65,9 +72,7 @@ const ProgramFormModal = ({
         }
       : emptyForm,
   );
-  // 담당자는 사업단이 아니라 관리자 계정 쪽에 붙어있다 — MANAGER 계정의 programIds가
-  // "이 사람이 담당하는 사업단" 목록이고, 서버 권한 판정(canAccessProgram)도 이 값을 본다.
-  // 그래서 지금 담당자가 누구인지도 그 목록에서 거꾸로 찾아낸다.
+  // 담당자는 사업단이 아니라 관리자 계정 쪽에 붙어있다
   const [managerAdminId, setManagerAdminId] = useState(() => {
     if (!editingProgram) return "";
 
@@ -96,10 +101,10 @@ const ProgramFormModal = ({
   const saveManagerAdmin = async (programId: number) => {
     if (managerAdminId === initialManagerAdminId) return;
 
-    await setProgramManager(
+    await setProgramManagerMutation.mutateAsync({
       programId,
-      managerAdminId ? Number(managerAdminId) : null,
-    );
+      adminId: managerAdminId ? Number(managerAdminId) : null,
+    });
   };
 
   const handleSaveButtonClick = async () => {
@@ -108,13 +113,13 @@ const ProgramFormModal = ({
 
       return;
     }
+
     if (form.endTime && form.startTime && form.endTime < form.startTime) {
       setError("종료 시간은 시작 시간 이후여야 합니다.");
 
       return;
     }
-    // 담당자는 신규 등록에서만 필수 — 담당자 없이 이미 만들어진 사업단의
-    // 다른 항목을 고치는 것까지 막을 이유는 없다.
+
     if (!editingProgram && !managerAdminId) {
       setError("담당자를 선택해주세요.");
 
@@ -136,13 +141,16 @@ const ProgramFormModal = ({
       };
 
       if (editingProgram) {
-        await updateProgram(editingProgram.id, payload);
+        await updateProgramMutation.mutateAsync({
+          id: editingProgram.id,
+          data: payload,
+        });
         await saveManagerAdmin(editingProgram.id);
       } else {
-        const createdProgram = await createProgram(payload);
+        const createdProgram = await createProgramMutation.mutateAsync(payload);
         await saveManagerAdmin(createdProgram.id);
       }
-      onSaved();
+      onClose();
     } catch (error) {
       setError(error instanceof Error ? error.message : "저장에 실패했습니다.");
     }
@@ -172,7 +180,6 @@ const ProgramFormModal = ({
             value={form.organizationId}
             onChange={(value) => {
               setForm((f) => ({ ...f, organizationId: value }));
-              // 기관이 바뀌면 이전 기관 담당자 선택은 더 이상 유효하지 않다
               setManagerAdminId("");
             }}
             options={[

@@ -1,13 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import {
-  getProgram,
-  listPrograms,
-  updateProgram,
+  programQueryOptions,
+  programsByOrganizationQueryOptions,
+  updateProgramMutationOptions,
 } from "../../api/admin/programs";
-import { listAdmins } from "../../api/admin/admins";
-import { listOrganizations } from "../../api/admin/organizations";
+import { adminsQueryOptions } from "../../api/admin/admins";
+import { organizationsQueryOptions } from "../../api/admin/organizations";
 import Pagination from "../../components/Pagination";
 import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
 import ProgramFormModal from "./ProgramFormModal";
@@ -16,12 +22,7 @@ import FilterSelect from "../../components/FilterSelect";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
-import {
-  ROLES,
-  type Admin,
-  type Organization,
-  type Program,
-} from "../../types";
+import { ROLES, type Program } from "../../types";
 
 /**
  * 관리자 페이지 > 사업단 관리 페이지입니다.
@@ -32,64 +33,63 @@ const ProgramsPage = () => {
   const role = admin?.role;
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [managerAdmins, setManagerAdmins] = useState<Admin[]>([]);
-  const [participantCounts, setParticipantCounts] = useState<
-    Record<number, number>
-  >({});
   const [instFilter, setInstFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
 
-  useEffect(() => {
-    listOrganizations().then(setOrganizations);
-  }, []);
-
-  // 사업단 담당자로 지정할 수 있는 계정 — 서버가 권한에 맞는 범위(슈퍼 관리자는 전체,
-  // 기관 관리자는 자기 기관)만 내려주므로 여기선 역할/활성 여부만 걸러낸다.
-  // 계정 목록 조회 권한이 없는 역할(부관리자/담당자)은 아예 호출하지 않는다 — 403이 난다.
-  const refreshManagerAdmins = () => {
-    if (role !== ROLES.SUPER_ADMIN && role !== ROLES.ORGANIZATION_ADMIN) return;
-
-    listAdmins().then((list) =>
-      setManagerAdmins(
-        list.filter(
-          (adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive,
-        ),
-      ),
-    );
-  };
-
-  useEffect(refreshManagerAdmins, [role]);
-
-  const refreshPrograms = () => {
-    const organizationId =
-      role === ROLES.SUPER_ADMIN
-        ? instFilter === "all"
-          ? undefined
-          : Number(instFilter)
-        : undefined;
-
-    listPrograms(organizationId).then((list) => {
-      setPrograms(list);
-      Promise.all(
-        list.map((program) =>
-          getProgram(program.id).then(
-            (full) => [program.id, full.participants.length] as const,
-          ),
-        ),
-      ).then((pairs) => setParticipantCounts(Object.fromEntries(pairs)));
-    });
-  };
-
-  useEffect(refreshPrograms, [instFilter, role]);
+  const { data: organizations = [] } = useQuery(organizationsQueryOptions);
 
   // 담당자 목록을 못 받아오는 역할(부관리자/담당자)에겐 "-"만 늘어놓는 대신 열 자체를 숨긴다.
   const canViewManagerColumn =
     role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
+
+  // 계정 목록 조회 권한이 없는 역할(부관리자/담당자)은 아예 호출하지 않는다 — 403이 난다.
+  const { data: admins = [] } = useQuery({
+    ...adminsQueryOptions,
+    enabled: canViewManagerColumn,
+  });
+  // 사업단 담당자로 지정할 수 있는 계정 — 서버가 권한에 맞는 범위(슈퍼 관리자는 전체,
+  // 기관 관리자는 자기 기관)만 내려주므로 여기선 역할/활성 여부만 걸러낸다.
+  const managerAdmins = useMemo(
+    () =>
+      admins.filter(
+        (adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive,
+      ),
+    [admins],
+  );
+
+  const selectedOrganizationId =
+    role === ROLES.SUPER_ADMIN
+      ? instFilter === "all"
+        ? undefined
+        : Number(instFilter)
+      : undefined;
+
+  const { data: programs = [] } = useQuery(
+    programsByOrganizationQueryOptions(selectedOrganizationId),
+  );
+  const programQueries = useQueries({
+    queries: programs.map((program) => programQueryOptions(program.id)),
+  });
+  const participantCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        programQueries
+          .map((programQuery) => programQuery.data)
+          .filter(
+            (fullProgram): fullProgram is NonNullable<typeof fullProgram> =>
+              !!fullProgram,
+          )
+          .map(
+            (fullProgram) =>
+              [fullProgram.id, fullProgram.participants.length] as const,
+          ),
+      ),
+    [programQueries],
+  );
 
   const managerAdminName = (programId: number) => {
     const managerAdmin = managerAdmins.find((candidate) =>
@@ -120,13 +120,11 @@ const ProgramsPage = () => {
     setModalOpen(true);
   };
 
-  const handleProgramSaved = () => {
-    setModalOpen(false);
-    refreshPrograms();
-    refreshManagerAdmins();
-  };
+  const updateProgramMutation = useMutation(
+    updateProgramMutationOptions(queryClient),
+  );
 
-  const handleToggleActiveButtonClick = async (program: Program) => {
+  const handleToggleActiveButtonClick = (program: Program) => {
     const actionLabel = program.isActive ? "비활성화" : "활성화";
     if (
       !confirm(
@@ -139,12 +137,15 @@ const ProgramsPage = () => {
     )
       return;
 
-    try {
-      await updateProgram(program.id, { isActive: !program.isActive });
-      refreshPrograms();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    updateProgramMutation.mutate(
+      { id: program.id, data: { isActive: !program.isActive } },
+      {
+        onError: (error) =>
+          alert(
+            error instanceof Error ? error.message : "처리에 실패했습니다.",
+          ),
+      },
+    );
   };
 
   return (
@@ -288,7 +289,6 @@ const ProgramsPage = () => {
       {modalOpen && (
         <ProgramFormModal
           onClose={() => setModalOpen(false)}
-          onSaved={handleProgramSaved}
           editingProgram={editingProgram}
           currentRole={role ?? ROLES.MANAGER}
           organizations={organizations}
