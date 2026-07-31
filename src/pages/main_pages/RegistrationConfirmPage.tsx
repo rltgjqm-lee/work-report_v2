@@ -29,16 +29,11 @@ const RegistrationConfirmPage = ({
   onNext,
 }: {
   formData: ActivityLogFormData;
-  onChange: <T extends keyof ActivityLogFormData>(
-    key: T,
-    value: ActivityLogFormData[T],
-  ) => void;
+  onChange: <T extends keyof ActivityLogFormData>(key: T, value: ActivityLogFormData[T]) => void;
   onBack: () => void;
   onNext: () => void;
 }) => {
-  const [exception, setException] = useState<ExceptionInfo | null | "loading">(
-    "loading",
-  );
+  const [exception, setException] = useState<ExceptionInfo | null | "loading">("loading");
 
   useEffect(() => {
     if (!formData.programId || !formData.userName || !formData.phoneLast4) {
@@ -46,19 +41,12 @@ const RegistrationConfirmPage = ({
     }
 
     // 1단계: 이름+전화번호로 실제 참여자를 조회(본인확인)한다 — 동명이인 구분용.
-    identifyParticipant(
-      formData.programId,
-      formData.userName,
-      formData.phoneLast4,
-    )
+    identifyParticipant(formData.programId, formData.userName, formData.phoneLast4)
       .then((identified) => {
         onChange("participantId", identified.participantId);
 
         // 2단계: 조회된 participantId로 현재 상태(휴무/탈락)와 사업 기간을 확인한다.
-        return Promise.all([
-          getRegistrationStatus(identified.participantId),
-          getAffiliations(),
-        ]);
+        return Promise.all([getRegistrationStatus(identified.participantId), getAffiliations()]);
       })
       .then(([registrationStatus, { programs }]) => {
         if (registrationStatus.status === "DROPPED") {
@@ -106,10 +94,7 @@ const RegistrationConfirmPage = ({
         setException({
           variant: "warn",
           title: "본인 확인에 실패했어요.",
-          body:
-            error instanceof Error
-              ? error.message
-              : "이름과 전화번호를 다시 확인해 주세요.",
+          body: error instanceof Error ? error.message : "이름과 전화번호를 다시 확인해 주세요.",
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,13 +121,8 @@ const RegistrationConfirmPage = ({
         {exception === null && (
           <Card>
             <p className="text-[16px] leading-relaxed font-medium text-[#1f2937]">
-              <strong className="text-[#3182f6] font-extrabold">
-                {formData.orgName}
-              </strong>
-              의{" "}
-              <strong className="text-[#3182f6] font-extrabold">
-                {formData.programName}
-              </strong>
+              <strong className="text-[#3182f6] font-extrabold">{formData.orgName}</strong>의{" "}
+              <strong className="text-[#3182f6] font-extrabold">{formData.programName}</strong>
               <br />
               <strong className="text-[#3182f6] font-extrabold">
                 {formData.userName}({formData.gender})

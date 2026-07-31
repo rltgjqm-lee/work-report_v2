@@ -25,5 +25,4 @@ export const login = async (email: string, password: string) => {
   return res.json() as Promise<{ ok: true }>;
 };
 
-export const logout = () =>
-  request<{ ok: true }>("/auth/logout", { method: "POST" });
+export const logout = () => request<{ ok: true }>("/auth/logout", { method: "POST" });

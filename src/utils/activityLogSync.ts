@@ -36,8 +36,7 @@ const runSyncOnce = async (db: IDBDatabase): Promise<void> => {
   // 다 안 마친 진행 중인 하루치 기록은 보내봐야 매번 검증 실패만 반복되니 건너뛴다.
   // 서명 완료 시점엔 이 값들이 다 채워진 뒤에 syncNow=true로 다시 호출되니 그때 보내진다.
   const pending = items.filter(
-    (item) =>
-      !item.synced && item.participantId && item.date && item.start && item.end,
+    (item) => !item.synced && item.participantId && item.date && item.start && item.end,
   );
 
   for (const item of pending) {
@@ -63,9 +62,7 @@ let rerunRequested = false;
  * 서버로 재전송한다. participantId가 없는 레코드(본인확인 이전 구버전 데이터)는 건너뛴다.
  * 네트워크 실패 시 그 레코드는 그대로 두고 다음 호출 때 다시 시도한다.
  */
-export const syncPendingActivityLogs = async (
-  db: IDBDatabase | null,
-): Promise<void> => {
+export const syncPendingActivityLogs = async (db: IDBDatabase | null): Promise<void> => {
   if (!db || !navigator.onLine) return;
 
   if (isSyncing) {

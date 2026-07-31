@@ -1,17 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { deleteParticipantMutationOptions } from "../api/admin/participants";
-import {
-  programQueryOptions,
-  programsQueryOptions,
-} from "../api/admin/programs";
+import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
 import { organizationsQueryOptions } from "../api/admin/organizations";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
@@ -41,12 +33,8 @@ const PROGRAM_FILTER = {
 const ParticipantsPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [programFilter, setProgramFilter] = useState<string>(
-    PROGRAM_FILTER.ALL,
-  );
-  const [demandSiteFilter, setDemandSiteFilter] = useState<string>(
-    DEMAND_SITE.ALL,
-  );
+  const [programFilter, setProgramFilter] = useState<string>(PROGRAM_FILTER.ALL);
+  const [demandSiteFilter, setDemandSiteFilter] = useState<string>(DEMAND_SITE.ALL);
   const [search, setSearch] = useState("");
 
   const { data: programs = [] } = useQuery(programsQueryOptions);
@@ -56,13 +44,7 @@ const ParticipantsPage = () => {
   });
 
   const OrganizationNameById = useMemo(
-    () =>
-      new Map(
-        organizations.map((organization) => [
-          organization.id,
-          organization.name,
-        ]),
-      ),
+    () => new Map(organizations.map((organization) => [organization.id, organization.name])),
     [organizations],
   );
 
@@ -75,8 +57,7 @@ const ParticipantsPage = () => {
         return fullProgram.participants.map((participant) => ({
           ...participant,
           programName: fullProgram.name,
-          organizationName:
-            OrganizationNameById.get(fullProgram.organizationId) ?? "-",
+          organizationName: OrganizationNameById.get(fullProgram.organizationId) ?? "-",
         }));
       }),
     [programQueries, OrganizationNameById],
@@ -88,10 +69,7 @@ const ParticipantsPage = () => {
     const scopedRows =
       programFilter === PROGRAM_FILTER.ALL
         ? rows
-        : rows.filter(
-            (participantRow) =>
-              participantRow.programId === Number(programFilter),
-          );
+        : rows.filter((participantRow) => participantRow.programId === Number(programFilter));
 
     return [
       ...new Set(
@@ -106,17 +84,13 @@ const ParticipantsPage = () => {
     let list = rows;
 
     if (programFilter !== PROGRAM_FILTER.ALL) {
-      list = list.filter(
-        (participantRow) => participantRow.programId === Number(programFilter),
-      );
+      list = list.filter((participantRow) => participantRow.programId === Number(programFilter));
     }
 
     if (demandSiteFilter === DEMAND_SITE.UNASSIGNED) {
       list = list.filter((participantRow) => !participantRow.demandName);
     } else if (demandSiteFilter !== DEMAND_SITE.ALL) {
-      list = list.filter(
-        (participantRow) => participantRow.demandName === demandSiteFilter,
-      );
+      list = list.filter((participantRow) => participantRow.demandName === demandSiteFilter);
     }
 
     if (search) {
@@ -131,9 +105,7 @@ const ParticipantsPage = () => {
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
-  const deleteParticipantMutation = useMutation(
-    deleteParticipantMutationOptions(queryClient),
-  );
+  const deleteParticipantMutation = useMutation(deleteParticipantMutationOptions(queryClient));
 
   const handleDeleteButtonClick = (row: ParticipantRow) => {
     if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
@@ -142,10 +114,7 @@ const ParticipantsPage = () => {
       { programId: row.programId, participantId: row.id, name: row.name },
       {
         onSuccess: () => alert(`'${row.name}' 님을 삭제했습니다.`),
-        onError: (error) =>
-          alert(
-            error instanceof Error ? error.message : "삭제에 실패했습니다.",
-          ),
+        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
       },
     );
   };

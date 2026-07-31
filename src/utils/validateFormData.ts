@@ -10,10 +10,7 @@ interface ValidationRule {
  * @param data 현재 formData 객체
  * @param rules 검사하고 싶은 필드와 메시지 배열
  */
-export function validateForm(
-  data: ActivityLogFormData,
-  rules: ValidationRule[],
-): string[] {
+export function validateForm(data: ActivityLogFormData, rules: ValidationRule[]): string[] {
   const errors: string[] = [];
 
   rules.forEach(({ field, message }) => {

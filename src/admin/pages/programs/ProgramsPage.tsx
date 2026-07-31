@@ -1,11 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   programQueryOptions,
@@ -43,8 +38,7 @@ const ProgramsPage = () => {
   const { data: organizations = [] } = useQuery(organizationsQueryOptions);
 
   // 담당자 목록을 못 받아오는 역할(부관리자/담당자)에겐 "-"만 늘어놓는 대신 열 자체를 숨긴다.
-  const canViewManagerColumn =
-    role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
+  const canViewManagerColumn = role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
 
   // 계정 목록 조회 권한이 없는 역할(부관리자/담당자)은 아예 호출하지 않는다 — 403이 난다.
   const { data: admins = [] } = useQuery({
@@ -54,10 +48,7 @@ const ProgramsPage = () => {
   // 사업단 담당자로 지정할 수 있는 계정 — 서버가 권한에 맞는 범위(슈퍼 관리자는 전체,
   // 기관 관리자는 자기 기관)만 내려주므로 여기선 역할/활성 여부만 걸러낸다.
   const managerAdmins = useMemo(
-    () =>
-      admins.filter(
-        (adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive,
-      ),
+    () => admins.filter((adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive),
     [admins],
   );
 
@@ -79,14 +70,8 @@ const ProgramsPage = () => {
       Object.fromEntries(
         programQueries
           .map((programQuery) => programQuery.data)
-          .filter(
-            (fullProgram): fullProgram is NonNullable<typeof fullProgram> =>
-              !!fullProgram,
-          )
-          .map(
-            (fullProgram) =>
-              [fullProgram.id, fullProgram.participants.length] as const,
-          ),
+          .filter((fullProgram): fullProgram is NonNullable<typeof fullProgram> => !!fullProgram)
+          .map((fullProgram) => [fullProgram.id, fullProgram.participants.length] as const),
       ),
     [programQueries],
   );
@@ -100,8 +85,7 @@ const ProgramsPage = () => {
   };
 
   const orgName = (organizationId: number) =>
-    organizations.find((organization) => organization.id === organizationId)
-      ?.name ?? "-";
+    organizations.find((organization) => organization.id === organizationId)?.name ?? "-";
 
   const filtered = useMemo(
     () => programs.filter((program) => program.name.includes(search)),
@@ -120,18 +104,14 @@ const ProgramsPage = () => {
     setModalOpen(true);
   };
 
-  const updateProgramMutation = useMutation(
-    updateProgramMutationOptions(queryClient),
-  );
+  const updateProgramMutation = useMutation(updateProgramMutationOptions(queryClient));
 
   const handleToggleActiveButtonClick = (program: Program) => {
     const actionLabel = program.isActive ? "비활성화" : "활성화";
     if (
       !confirm(
         `'${program.name}' 사업단을 ${actionLabel}하시겠습니까?${
-          program.isActive
-            ? " 소속된 활성 참여자는 모두 참여종료 처리됩니다."
-            : ""
+          program.isActive ? " 소속된 활성 참여자는 모두 참여종료 처리됩니다." : ""
         }`,
       )
     )
@@ -140,10 +120,7 @@ const ProgramsPage = () => {
     updateProgramMutation.mutate(
       { id: program.id, data: { isActive: !program.isActive } },
       {
-        onError: (error) =>
-          alert(
-            error instanceof Error ? error.message : "처리에 실패했습니다.",
-          ),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
   };
@@ -179,11 +156,7 @@ const ProgramsPage = () => {
               />
             )}
 
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="사업단명 검색"
-            />
+            <SearchInput value={search} onChange={setSearch} placeholder="사업단명 검색" />
           </div>
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}개 사업단

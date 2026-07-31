@@ -20,9 +20,7 @@ export const createGroup = (
 
 export const updateGroup = (
   id: number,
-  data: Partial<
-    Pick<Group, "name" | "description" | "shiftStart" | "shiftEnd" | "isActive">
-  >,
+  data: Partial<Pick<Group, "name" | "description" | "shiftStart" | "shiftEnd" | "isActive">>,
 ) =>
   request<Group>(`/api/groups/${id}`, {
     method: "PUT",

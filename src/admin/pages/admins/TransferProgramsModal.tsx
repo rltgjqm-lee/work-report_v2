@@ -21,11 +21,7 @@ interface TransferProgramsModalProps {
  */
 // 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
 // 새로 마운트되면서 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
-const TransferProgramsModal = ({
-  onClose,
-  target,
-  candidates,
-}: TransferProgramsModalProps) => {
+const TransferProgramsModal = ({ onClose, target, candidates }: TransferProgramsModalProps) => {
   const queryClient = useQueryClient();
   const transferAdminProgramsMutation = useMutation(
     transferAdminProgramsMutationOptions(queryClient),
@@ -53,9 +49,7 @@ const TransferProgramsModal = ({
           onClose();
         },
         onError: (error) =>
-          setError(
-            error instanceof Error ? error.message : "이관에 실패했습니다.",
-          ),
+          setError(error instanceof Error ? error.message : "이관에 실패했습니다."),
       },
     );
   };
@@ -70,24 +64,20 @@ const TransferProgramsModal = ({
           <button className={btnGhostClass} onClick={onClose}>
             취소
           </button>
-          <button
-            className={btnPrimaryClass}
-            onClick={handleTransferButtonClick}
-          >
+          <button className={btnPrimaryClass} onClick={handleTransferButtonClick}>
             이관
           </button>
         </>
       }
     >
       <p className="text-xs text-[#6b7280]">
-        담당 사업단 {target.programIds.length}개를 넘깁니다. 해당 사업단의
-        수요처 담당자도 함께 변경됩니다.
+        담당 사업단 {target.programIds.length}개를 넘깁니다. 해당 사업단의 수요처 담당자도 함께
+        변경됩니다.
       </p>
       <FormField label="이관받을 담당자">
         {candidates.length === 0 ? (
           <p className="text-[12.5px] text-[#9aa1ab]">
-            이관받을 수 있는 다른 담당자 계정이 없습니다. 담당자 계정을 먼저
-            발급해주세요.
+            이관받을 수 있는 다른 담당자 계정이 없습니다. 담당자 계정을 먼저 발급해주세요.
           </p>
         ) : (
           <FilterSelect

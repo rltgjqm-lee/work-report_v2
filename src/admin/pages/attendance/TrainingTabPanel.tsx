@@ -72,11 +72,7 @@ interface TrainingTabPanelProps {
  * 관리자 페이지 > 근태 관리 페이지의 "교육" 탭 내용입니다.
  * 교육 정의/이수 현황/필수교육 현황 하위 탭 3개.
  */
-const TrainingTabPanel = ({
-  programId,
-  participants,
-  participantIds,
-}: TrainingTabPanelProps) => {
+const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingTabPanelProps) => {
   const [subTab, setSubTab] = useState<SubTab>("definitions");
 
   const [trainings, setTrainings] = useState<ProjectTraining[]>([]);
@@ -86,8 +82,7 @@ const TrainingTabPanel = ({
   const [logSearch, setLogSearch] = useState("");
 
   const [trainingModalOpen, setTrainingModalOpen] = useState(false);
-  const [editingTraining, setEditingTraining] =
-    useState<ProjectTraining | null>(null);
+  const [editingTraining, setEditingTraining] = useState<ProjectTraining | null>(null);
   const [trainingForm, setTrainingForm] = useState(emptyTrainingForm);
 
   const [logModalOpen, setLogModalOpen] = useState(false);
@@ -132,12 +127,9 @@ const TrainingTabPanel = ({
     setTrainingModalOpen(true);
   };
 
-  const handleToggleTrainingActiveButtonClick = async (
-    training: ProjectTraining,
-  ) => {
+  const handleToggleTrainingActiveButtonClick = async (training: ProjectTraining) => {
     const actionLabel = training.isActive ? "비활성화" : "활성화";
-    if (!confirm(`'${training.name}' 교육을 ${actionLabel}하시겠습니까?`))
-      return;
+    if (!confirm(`'${training.name}' 교육을 ${actionLabel}하시겠습니까?`)) return;
     try {
       await updateTraining(training.id, { isActive: !training.isActive });
       refreshTrainings();
@@ -159,9 +151,7 @@ const TrainingTabPanel = ({
         isPaid: trainingForm.isPaid,
         payMode: trainingForm.payMode,
         hours: trainingForm.hours ? Number(trainingForm.hours) : undefined,
-        dailyWage: trainingForm.dailyWage
-          ? Number(trainingForm.dailyWage)
-          : undefined,
+        dailyWage: trainingForm.dailyWage ? Number(trainingForm.dailyWage) : undefined,
         isRequired: trainingForm.isRequired,
       };
       if (editingTraining) {
@@ -192,9 +182,7 @@ const TrainingTabPanel = ({
         participantId: Number(logForm.participantId),
         trainingId: Number(logForm.trainingId),
         attendDate: logForm.attendDate,
-        attendHours: logForm.attendHours
-          ? Number(logForm.attendHours)
-          : undefined,
+        attendHours: logForm.attendHours ? Number(logForm.attendHours) : undefined,
       });
       setLogModalOpen(false);
       refreshLogs();
@@ -205,9 +193,7 @@ const TrainingTabPanel = ({
 
   const handleCancelLogButtonClick = async (log: TrainingLogRow) => {
     if (
-      !confirm(
-        `'${log.participantName}' 님의 '${log.trainingName}' 이수 기록을 취소하시겠습니까?`,
-      )
+      !confirm(`'${log.participantName}' 님의 '${log.trainingName}' 이수 기록을 취소하시겠습니까?`)
     )
       return;
     try {
@@ -244,13 +230,8 @@ const TrainingTabPanel = ({
       {subTab === "definitions" && (
         <div>
           <div className="flex items-center justify-between gap-3 mb-4">
-            <span className="text-sm font-bold">
-              교육 목록 ({trainings.length}건)
-            </span>
-            <button
-              className={btnGhostClass}
-              onClick={handleAddTrainingButtonClick}
-            >
+            <span className="text-sm font-bold">교육 목록 ({trainings.length}건)</span>
+            <button className={btnGhostClass} onClick={handleAddTrainingButtonClick}>
               + 교육 추가
             </button>
           </div>
@@ -266,16 +247,13 @@ const TrainingTabPanel = ({
                   className="bg-white border border-[#e2e5eb] rounded-lg p-[18px] flex flex-col"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="text-[15px] font-bold">
-                      {training.name}
-                    </span>
+                    <span className="text-[15px] font-bold">{training.name}</span>
                     <StatusChip variant={training.isActive ? "ok" : "pending"}>
                       {training.isActive ? "활성" : "비활성"}
                     </StatusChip>
                   </div>
                   <div className="text-[13px] text-[#6b7280] leading-relaxed mb-3.5">
-                    {CATEGORY_LABEL[training.category]} ·{" "}
-                    {PAY_MODE_LABEL[training.payMode]}
+                    {CATEGORY_LABEL[training.category]} · {PAY_MODE_LABEL[training.payMode]}
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {training.isRequired && (
@@ -293,9 +271,7 @@ const TrainingTabPanel = ({
                     </button>
                     <button
                       className={rowActionBtnClass}
-                      onClick={() =>
-                        handleToggleTrainingActiveButtonClick(training)
-                      }
+                      onClick={() => handleToggleTrainingActiveButtonClick(training)}
                     >
                       {training.isActive ? "비활성화" : "활성화"}
                     </button>
@@ -322,11 +298,7 @@ const TrainingTabPanel = ({
                   })),
                 ]}
               />
-              <SearchInput
-                value={logSearch}
-                onChange={setLogSearch}
-                placeholder="참여자 검색"
-              />
+              <SearchInput value={logSearch} onChange={setLogSearch} placeholder="참여자 검색" />
             </div>
             <button className={btnGhostClass} onClick={handleAddLogButtonClick}>
               + 이수 등록
@@ -383,9 +355,7 @@ const TrainingTabPanel = ({
                       {row.log.payAmount.toLocaleString()}원
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                      <StatusChip
-                        variant={row.log.status === "COMPLETED" ? "ok" : "bad"}
-                      >
+                      <StatusChip variant={row.log.status === "COMPLETED" ? "ok" : "bad"}>
                         {row.log.status === "COMPLETED" ? "완료" : "취소됨"}
                       </StatusChip>
                     </td>
@@ -403,10 +373,7 @@ const TrainingTabPanel = ({
                 ))}
                 {filteredLogs.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                    >
+                    <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                       이수 기록이 없습니다.
                     </td>
                   </tr>
@@ -441,18 +408,13 @@ const TrainingTabPanel = ({
                       {row.participantName}
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                      {row.missingTrainings
-                        .map((training) => training.name)
-                        .join(", ")}
+                      {row.missingTrainings.map((training) => training.name).join(", ")}
                     </td>
                   </tr>
                 ))}
                 {filteredSummary.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={2}
-                      className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                    >
+                    <td colSpan={2} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                       미이수자가 없습니다.
                     </td>
                   </tr>
@@ -470,16 +432,10 @@ const TrainingTabPanel = ({
           onClose={() => setTrainingModalOpen(false)}
           footer={
             <>
-              <button
-                className={btnGhostClass}
-                onClick={() => setTrainingModalOpen(false)}
-              >
+              <button className={btnGhostClass} onClick={() => setTrainingModalOpen(false)}>
                 취소
               </button>
-              <button
-                className={btnPrimaryClass}
-                onClick={handleSaveTrainingButtonClick}
-              >
+              <button className={btnPrimaryClass} onClick={handleSaveTrainingButtonClick}>
                 저장
               </button>
             </>
@@ -580,16 +536,10 @@ const TrainingTabPanel = ({
           onClose={() => setLogModalOpen(false)}
           footer={
             <>
-              <button
-                className={btnGhostClass}
-                onClick={() => setLogModalOpen(false)}
-              >
+              <button className={btnGhostClass} onClick={() => setLogModalOpen(false)}>
                 취소
               </button>
-              <button
-                className={btnPrimaryClass}
-                onClick={handleSaveLogButtonClick}
-              >
+              <button className={btnPrimaryClass} onClick={handleSaveLogButtonClick}>
                 저장
               </button>
             </>

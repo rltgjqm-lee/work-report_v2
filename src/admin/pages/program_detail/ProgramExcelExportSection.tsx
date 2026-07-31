@@ -87,10 +87,7 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
  * 관리자 페이지 > 사업단 상세 페이지의 양식 출력 섹션입니다.
  * 서식별로 카드가 따로 있고, 월도 카드마다 독립적으로 고른다.
  */
-const ProgramExcelExportSection = ({
-  programId,
-  programType,
-}: ProgramExcelExportSectionProps) => {
+const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExportSectionProps) => {
   const [months, setMonths] = useState<Record<string, string>>({});
 
   // 사업 유형이 없거나(null) 예상 못한 값이면 어느 서식이 필요한지 알 수 없으므로

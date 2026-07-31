@@ -1,11 +1,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, isNull, lt, or } from "drizzle-orm";
 
-import {
-  attendanceLogs,
-  participantEscapeMeta,
-  pushSubscriptions,
-} from "../db/schema";
+import { attendanceLogs, participantEscapeMeta, pushSubscriptions } from "../db/schema";
 import { sendWebPush } from "../lib/webPush";
 import { getKstNow } from "../lib/kst";
 import type { Env } from "../types";
@@ -20,9 +16,7 @@ const SIGNAL_LOSS_MINUTES = 25;
 export const checkSignalLoss = async (env: Env["Bindings"]): Promise<void> => {
   const db = drizzle(env.DB);
   const { date, iso } = getKstNow();
-  const staleBefore = new Date(
-    Date.parse(iso) - SIGNAL_LOSS_MINUTES * 60 * 1000,
-  ).toISOString();
+  const staleBefore = new Date(Date.parse(iso) - SIGNAL_LOSS_MINUTES * 60 * 1000).toISOString();
 
   const rows = await db
     .select({

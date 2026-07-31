@@ -90,9 +90,7 @@ const DemandSiteScheduleAddModal = ({
               step={600}
               className={inputClass}
               value={form.shiftStart}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, shiftStart: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
             />
           </FormField>
         </div>
@@ -103,9 +101,7 @@ const DemandSiteScheduleAddModal = ({
               step={600}
               className={inputClass}
               value={form.shiftEnd}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, shiftEnd: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
             />
           </FormField>
         </div>

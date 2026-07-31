@@ -15,10 +15,7 @@ export const generateSessionToken = (): string => {
 };
 
 export const hashSessionToken = async (token: string): Promise<string> => {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(token),
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
   return toHex(digest);
 };
 

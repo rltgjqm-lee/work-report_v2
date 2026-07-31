@@ -10,12 +10,7 @@ import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  compactInputClass,
-  inputClass,
-} from "../../uiClasses";
+import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
 import type { Group, Participant } from "../../types";
 
 const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
@@ -62,10 +57,7 @@ const ParticipantMonthlyScheduleModal = ({
         }))
       : Promise.resolve({ workDates: [] as string[], maxMonthlyMinutes: 1800 });
 
-    Promise.all([
-      getParticipantMonthlySchedule(participant.id, yearMonth),
-      loadGroupDefault,
-    ])
+    Promise.all([getParticipantMonthlySchedule(participant.id, yearMonth), loadGroupDefault])
       .then(([participantSchedule, groupSchedule]) => {
         setGroupDefaultDates(groupSchedule.workDates);
         setGroupMaxMonthlyMinutes(groupSchedule.maxMonthlyMinutes);
@@ -96,9 +88,7 @@ const ParticipantMonthlyScheduleModal = ({
     : groupMaxMonthlyMinutes;
   const projectedMinutes = workDates.length * shiftMinutesPerDay;
   const isOverCap =
-    shiftMinutesPerDay > 0 &&
-    effectiveMaxMinutes > 0 &&
-    projectedMinutes > effectiveMaxMinutes;
+    shiftMinutesPerDay > 0 && effectiveMaxMinutes > 0 && projectedMinutes > effectiveMaxMinutes;
 
   const handleStartOverrideButtonClick = () => {
     setHasOverride(true);
@@ -150,18 +140,14 @@ const ParticipantMonthlyScheduleModal = ({
 
   const handleSaveButtonClick = async () => {
     if (isOverCap) {
-      alert(
-        "선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.",
-      );
+      alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
     }
     try {
       await updateParticipantMonthlySchedule(participant.id, {
         yearMonth,
         workDates,
-        maxMonthlyMinutes: maxMonthlyHours
-          ? Math.round(Number(maxMonthlyHours) * 60)
-          : null,
+        maxMonthlyMinutes: maxMonthlyHours ? Math.round(Number(maxMonthlyHours) * 60) : null,
       });
       onSaved();
     } catch (error) {
@@ -177,10 +163,7 @@ const ParticipantMonthlyScheduleModal = ({
       footer={
         hasOverride ? (
           <>
-            <button
-              className={btnGhostClass}
-              onClick={handleRevertToGroupButtonClick}
-            >
+            <button className={btnGhostClass} onClick={handleRevertToGroupButtonClick}>
               조 스케줄로 되돌리기
             </button>
             <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
@@ -204,9 +187,7 @@ const ParticipantMonthlyScheduleModal = ({
       </FormField>
 
       {loading ? (
-        <div className="text-[13px] text-[#9aa1ab] py-4 text-center">
-          불러오는 중...
-        </div>
+        <div className="text-[13px] text-[#9aa1ab] py-4 text-center">불러오는 중...</div>
       ) : hasOverride ? (
         <>
           <FormField label="월 근무시간 상한(시간, 비우면 조 기본값 따름)">
@@ -227,9 +208,7 @@ const ParticipantMonthlyScheduleModal = ({
                 value={patternWorkDays}
                 onChange={(event) => setPatternWorkDays(event.target.value)}
               />
-              <span className="text-[13px] text-[#6b7280] whitespace-nowrap">
-                일 근무 /
-              </span>
+              <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 근무 /</span>
               <input
                 type="number"
                 min={0}
@@ -237,13 +216,8 @@ const ParticipantMonthlyScheduleModal = ({
                 value={patternRestDays}
                 onChange={(event) => setPatternRestDays(event.target.value)}
               />
-              <span className="text-[13px] text-[#6b7280] whitespace-nowrap">
-                일 휴무
-              </span>
-              <button
-                className={btnGhostClass}
-                onClick={handleGeneratePatternButtonClick}
-              >
+              <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 휴무</span>
+              <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
                 자동 생성
               </button>
             </div>
@@ -272,8 +246,7 @@ const ParticipantMonthlyScheduleModal = ({
       ) : (
         <>
           <div className="text-[13px] text-[#6b7280]">
-            개인 예외가 없어 조 기본 스케줄({groupDefaultDates.length}일)을
-            그대로 따르고 있습니다.
+            개인 예외가 없어 조 기본 스케줄({groupDefaultDates.length}일)을 그대로 따르고 있습니다.
           </div>
           <FormField label="조 기본 근무일 (참고용, 편집 불가)">
             <MonthlyScheduleCalendar
@@ -282,10 +255,7 @@ const ParticipantMonthlyScheduleModal = ({
               onToggleDate={() => {}}
             />
           </FormField>
-          <button
-            className={btnGhostClass}
-            onClick={handleStartOverrideButtonClick}
-          >
+          <button className={btnGhostClass} onClick={handleStartOverrideButtonClick}>
             이 참여자만 다른 스케줄 설정하기
           </button>
         </>

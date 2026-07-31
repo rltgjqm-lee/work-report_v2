@@ -23,11 +23,7 @@ const SummaryRow = ({ label, value }: { label: string; value: string }) => (
  * Canvas "6. 전체 확인" — 오늘의 모듈별 기록을 요약해 보여주고 서명 페이지로 안내한다.
  * 공익활동은 업무/안전 항목도 같이 보여주고, 역량활동은 출근/퇴근만 보여준다.
  */
-const ActivitySummaryPage = ({
-  formData,
-  onBack,
-  onNext,
-}: ActivitySummaryPageProps) => {
+const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
 
   return (
@@ -38,21 +34,13 @@ const ActivitySummaryPage = ({
           <SummaryRow
             label="출근 시각"
             value={
-              formData.startTime.hour
-                ? `${formatTimeField(formData.startTime)} 완료`
-                : "아직이에요"
+              formData.startTime.hour ? `${formatTimeField(formData.startTime)} 완료` : "아직이에요"
             }
           />
           {!isCompetencyProgram && (
             <>
-              <SummaryRow
-                label="활동 내역"
-                value={formData.actContent || "미등록"}
-              />
-              <SummaryRow
-                label="활동 장소"
-                value={formData.actPlace || "미등록"}
-              />
+              <SummaryRow label="활동 내역" value={formData.actContent || "미등록"} />
+              <SummaryRow label="활동 장소" value={formData.actPlace || "미등록"} />
               <SummaryRow
                 label="사고 유무"
                 value={
@@ -68,9 +56,7 @@ const ActivitySummaryPage = ({
           <SummaryRow
             label="퇴근 시각"
             value={
-              formData.endTime.hour
-                ? `${formatTimeField(formData.endTime)} 완료`
-                : "아직이에요"
+              formData.endTime.hour ? `${formatTimeField(formData.endTime)} 완료` : "아직이에요"
             }
           />
         </Card>

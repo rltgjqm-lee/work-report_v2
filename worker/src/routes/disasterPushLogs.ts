@@ -31,10 +31,7 @@ app.get("/", async (c) => {
       failCount: sql<number>`COALESCE(SUM(CASE WHEN ${disasterPushLogs.success} = 0 THEN 1 ELSE 0 END), 0)`,
     })
     .from(safetyAlerts)
-    .innerJoin(
-      disasterPushLogs,
-      eq(safetyAlerts.alertId, disasterPushLogs.messageId),
-    )
+    .innerJoin(disasterPushLogs, eq(safetyAlerts.alertId, disasterPushLogs.messageId))
     .where(eq(safetyAlerts.source, "MOIS"))
     .groupBy(safetyAlerts.alertId)
     .orderBy(desc(safetyAlerts.sentAt));

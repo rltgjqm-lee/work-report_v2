@@ -11,9 +11,7 @@ interface FormFieldProps {
  */
 const FormField = ({ label, children }: FormFieldProps) => (
   <div>
-    <label className="block text-[12.5px] font-semibold text-[#374151] mb-1.5">
-      {label}
-    </label>
+    <label className="block text-[12.5px] font-semibold text-[#374151] mb-1.5">{label}</label>
     {children}
   </div>
 );

@@ -31,18 +31,12 @@ const AttendanceLocationCell = ({ log }: { log: AttendanceLog }) => {
   }
 
   const distanceLabel =
-    log.clockInDistanceM === null
-      ? null
-      : `중심 ${formatDistance(log.clockInDistanceM)}`;
+    log.clockInDistanceM === null ? null : `중심 ${formatDistance(log.clockInDistanceM)}`;
 
   return (
     <div>
       <div className={log.clockInInside === false ? "text-[#dc2626]" : ""}>
-        {log.clockInInside === null
-          ? "판정 불가"
-          : log.clockInInside
-            ? "구역 내"
-            : "구역 외"}
+        {log.clockInInside === null ? "판정 불가" : log.clockInInside ? "구역 내" : "구역 외"}
         {distanceLabel && ` · ${distanceLabel}`}
       </div>
       {log.clockInAccuracy !== null && (

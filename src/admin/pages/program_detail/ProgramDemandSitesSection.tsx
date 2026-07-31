@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 
-import {
-  updateDemandSite,
-  deleteDemandSiteSchedule,
-} from "../../api/admin/demandSites";
+import { updateDemandSite, deleteDemandSiteSchedule } from "../../api/admin/demandSites";
 import DemandSiteFormModal from "./DemandSiteFormModal";
 import DemandSiteScheduleAddModal from "./DemandSiteScheduleAddModal";
 import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
@@ -30,19 +27,12 @@ const ProgramDemandSitesSection = ({
   onChanged,
 }: ProgramDemandSitesSectionProps) => {
   const [demandSiteModalOpen, setDemandSiteModalOpen] = useState(false);
-  const [editingDemandSite, setEditingDemandSite] = useState<DemandSite | null>(
-    null,
-  );
+  const [editingDemandSite, setEditingDemandSite] = useState<DemandSite | null>(null);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [scheduleTargetSiteId, setScheduleTargetSiteId] = useState<
-    number | null
-  >(null);
+  const [scheduleTargetSiteId, setScheduleTargetSiteId] = useState<number | null>(null);
   const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
 
-  const activeGroups = useMemo(
-    () => groups.filter((group) => group.isActive),
-    [groups],
-  );
+  const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
 
   const handleAddButtonClick = () => {
     setEditingDemandSite(null);
@@ -56,8 +46,7 @@ const ProgramDemandSitesSection = ({
 
   const handleToggleActiveButtonClick = async (demandSite: DemandSite) => {
     const actionLabel = demandSite.isActive ? "비활성화" : "활성화";
-    if (!confirm(`'${demandSite.name}' 수요처를 ${actionLabel}하시겠습니까?`))
-      return;
+    if (!confirm(`'${demandSite.name}' 수요처를 ${actionLabel}하시겠습니까?`)) return;
 
     try {
       await updateDemandSite(demandSite.id, { isActive: !demandSite.isActive });
@@ -93,20 +82,13 @@ const ProgramDemandSitesSection = ({
       </div>
       <div className="flex flex-col gap-3 px-5 py-4">
         {demandSites.length === 0 && (
-          <span className="text-[13px] text-[#9aa1ab]">
-            등록된 수요처가 없습니다.
-          </span>
+          <span className="text-[13px] text-[#9aa1ab]">등록된 수요처가 없습니다.</span>
         )}
         {demandSites.map((demandSite) => (
-          <div
-            key={demandSite.id}
-            className="border border-[#e2e5eb] rounded-[2px] px-4 py-3"
-          >
+          <div key={demandSite.id} className="border border-[#e2e5eb] rounded-[2px] px-4 py-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <span className="font-semibold text-[13px]">
-                  {demandSite.name}
-                </span>
+                <span className="font-semibold text-[13px]">{demandSite.name}</span>
                 <span className="ml-2 text-xs text-[#6b7280]">
                   {demandSite.isActive ? "활성" : "비활성"}
                 </span>
@@ -120,9 +102,7 @@ const ProgramDemandSitesSection = ({
                     )
                   }
                 >
-                  {expandedSiteId === demandSite.id
-                    ? "거점 편집 닫기"
-                    : "거점 관리"}
+                  {expandedSiteId === demandSite.id ? "거점 편집 닫기" : "거점 관리"}
                 </button>
                 <button
                   className={rowActionBtnClass}
@@ -142,11 +122,7 @@ const ProgramDemandSitesSection = ({
               {demandSite.address && <span>{demandSite.address}</span>}
               {/* 계정 연결 이전에 자유 입력으로 쌓인 값(contactPerson)은 대체로 보여준다 */}
               {(demandSite.contactAdminName ?? demandSite.contactPerson) && (
-                <span>
-                  {" "}
-                  · 담당자{" "}
-                  {demandSite.contactAdminName ?? demandSite.contactPerson}
-                </span>
+                <span> · 담당자 {demandSite.contactAdminName ?? demandSite.contactPerson}</span>
               )}
             </div>
             <div className="flex items-center flex-wrap gap-1.5 mt-2.5">

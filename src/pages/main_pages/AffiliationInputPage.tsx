@@ -33,10 +33,7 @@ const AffiliationInputPage = ({
   onAlert,
 }: {
   formData: ActivityLogFormData;
-  onChange: <T extends keyof ActivityLogFormData>(
-    key: T,
-    value: ActivityLogFormData[T],
-  ) => void;
+  onChange: <T extends keyof ActivityLogFormData>(key: T, value: ActivityLogFormData[T]) => void;
   onNext: () => void;
   onAlert: (messages: string[]) => void;
 }) => {
@@ -57,51 +54,43 @@ const AffiliationInputPage = ({
   // 호출로 불러온 뒤 organizationId로 클라이언트에서 필터링한다
   useEffect(() => {
     getAffiliations()
-      .then(
-        ({
-          organizations: fetchedOrganizations,
-          programs: fetchedPrograms,
-        }) => {
-          setOrganizations(fetchedOrganizations);
-          setPrograms(fetchedPrograms);
-          setAffiliationsLoaded(true);
+      .then(({ organizations: fetchedOrganizations, programs: fetchedPrograms }) => {
+        setOrganizations(fetchedOrganizations);
+        setPrograms(fetchedPrograms);
+        setAffiliationsLoaded(true);
 
-          // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로
-          // 매칭해 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다
-          if (!formData.orgName) return;
+        // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로
+        // 매칭해 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다
+        if (!formData.orgName) return;
 
-          const matchedOrganization = fetchedOrganizations.find(
-            (organization) => organization.name === formData.orgName,
-          );
-          if (!matchedOrganization) return;
+        const matchedOrganization = fetchedOrganizations.find(
+          (organization) => organization.name === formData.orgName,
+        );
+        if (!matchedOrganization) return;
 
-          setSido(matchedOrganization.regionSido ?? "");
-          setSigungu(matchedOrganization.regionSigungu ?? "");
-          setSelectedOrganizationId(String(matchedOrganization.id));
+        setSido(matchedOrganization.regionSido ?? "");
+        setSigungu(matchedOrganization.regionSigungu ?? "");
+        setSelectedOrganizationId(String(matchedOrganization.id));
 
-          if (!formData.programName) return;
+        if (!formData.programName) return;
 
-          const matchedProgram = fetchedPrograms.find(
-            (program) =>
-              program.organizationId === matchedOrganization.id &&
-              program.name === formData.programName,
-          );
-          if (!matchedProgram) return;
+        const matchedProgram = fetchedPrograms.find(
+          (program) =>
+            program.organizationId === matchedOrganization.id &&
+            program.name === formData.programName,
+        );
+        if (!matchedProgram) return;
 
-          setProgramType(matchedProgram.programType ?? "");
-          setSelectedProgramId(String(matchedProgram.id));
-          onChange(
-            "programType",
-            (matchedProgram.programType ??
-              "") as ActivityLogFormData["programType"],
-          );
-          onChange("programId", matchedProgram.id);
-        },
-      )
+        setProgramType(matchedProgram.programType ?? "");
+        setSelectedProgramId(String(matchedProgram.id));
+        onChange(
+          "programType",
+          (matchedProgram.programType ?? "") as ActivityLogFormData["programType"],
+        );
+        onChange("programId", matchedProgram.id);
+      })
       .catch(() => {
-        onAlert([
-          "기관/사업단 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요.",
-        ]);
+        onAlert(["기관/사업단 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -113,9 +102,7 @@ const AffiliationInputPage = ({
     getDemandSites(Number(selectedProgramId))
       .then(setDemandSites)
       .catch(() => {
-        onAlert([
-          "수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요.",
-        ]);
+        onAlert(["수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProgramId]);
@@ -123,11 +110,7 @@ const AffiliationInputPage = ({
   const sidoList = useMemo(
     () =>
       Array.from(
-        new Set(
-          organizations
-            .map((organization) => organization.regionSido)
-            .filter(Boolean),
-        ),
+        new Set(organizations.map((organization) => organization.regionSido).filter(Boolean)),
       ) as string[],
     [organizations],
   );
@@ -149,37 +132,26 @@ const AffiliationInputPage = ({
     () =>
       organizations.filter(
         (organization) =>
-          organization.regionSido === sido &&
-          organization.regionSigungu === sigungu,
+          organization.regionSido === sido && organization.regionSigungu === sigungu,
       ),
     [organizations, sido, sigungu],
   );
 
   const organizationPrograms = useMemo(
-    () =>
-      programs.filter(
-        (program) => program.organizationId === Number(selectedOrganizationId),
-      ),
+    () => programs.filter((program) => program.organizationId === Number(selectedOrganizationId)),
     [programs, selectedOrganizationId],
   );
 
   const programTypeList = useMemo(
     () =>
       Array.from(
-        new Set(
-          organizationPrograms
-            .map((program) => program.programType)
-            .filter(Boolean),
-        ),
+        new Set(organizationPrograms.map((program) => program.programType).filter(Boolean)),
       ) as string[],
     [organizationPrograms],
   );
 
   const programCandidates = useMemo(
-    () =>
-      organizationPrograms.filter(
-        (program) => program.programType === programType,
-      ),
+    () => organizationPrograms.filter((program) => program.programType === programType),
     [organizationPrograms, programType],
   );
 
@@ -204,8 +176,7 @@ const AffiliationInputPage = ({
     setSelectedProgramId("");
     onChange(
       "orgName",
-      organizations.find((organization) => String(organization.id) === orgId)
-        ?.name ?? "",
+      organizations.find((organization) => String(organization.id) === orgId)?.name ?? "",
     );
     onChange("programName", "");
   };
@@ -231,10 +202,7 @@ const AffiliationInputPage = ({
   // 푸시 구독에 필요한 사업단 ID만 별도로 챙긴다.
   const handleSaveDraftButtonClick = () => {
     if (selectedProgramId) {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEYS.SELECTED_PROGRAM_ID,
-        selectedProgramId,
-      );
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SELECTED_PROGRAM_ID, selectedProgramId);
       subscribeToPush(Number(selectedProgramId));
       registerNativePush(Number(selectedProgramId));
     }
@@ -370,9 +338,7 @@ const AffiliationInputPage = ({
             <Dropdown
               label="성별"
               value={formData.gender}
-              onChange={(value) =>
-                onChange("gender", value as ActivityLogFormData["gender"])
-              }
+              onChange={(value) => onChange("gender", value as ActivityLogFormData["gender"])}
               options={[
                 { value: "", label: "선택하세요" },
                 { value: "남성", label: "남성" },
@@ -398,10 +364,7 @@ const AffiliationInputPage = ({
               placeholder="0000"
               value={formData.phoneLast4}
               onChange={(event) =>
-                onChange(
-                  "phoneLast4",
-                  event.target.value.replace(/\D/g, "").slice(0, 4),
-                )
+                onChange("phoneLast4", event.target.value.replace(/\D/g, "").slice(0, 4))
               }
             />
           </div>

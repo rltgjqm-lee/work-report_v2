@@ -49,8 +49,7 @@ interface ActivityLogExportResponse {
 const computeTotalTimeLabel = (startTime: string, endTime: string) => {
   const [startHour, startMinute] = startTime.split(":").map(Number);
   const [endHour, endMinute] = endTime.split(":").map(Number);
-  const diffMinutesTotal =
-    endHour * 60 + endMinute - (startHour * 60 + startMinute);
+  const diffMinutesTotal = endHour * 60 + endMinute - (startHour * 60 + startMinute);
   const diffHour = Math.floor(diffMinutesTotal / 60);
   const diffMinute = diffMinutesTotal % 60;
   return diffMinute > 0 ? `${diffHour}시간 ${diffMinute}분` : `${diffHour}시간`;
@@ -69,10 +68,7 @@ const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
   return candidate;
 };
 
-export const downloadActivityLogExcel = async (
-  programId: number,
-  month: string,
-) => {
+export const downloadActivityLogExcel = async (programId: number, month: string) => {
   const data = await request<ActivityLogExportResponse>(
     `/api/programs/${programId}/export/activity-log?month=${month}`,
   );
@@ -81,10 +77,7 @@ export const downloadActivityLogExcel = async (
   const usedSheetNames = new Set<string>();
 
   data.participants.forEach((participant) => {
-    const sheetName = sanitizeSheetName(
-      participant.participantName,
-      usedSheetNames,
-    );
+    const sheetName = sanitizeSheetName(participant.participantName, usedSheetNames);
     const logs: ActivityLogItem[] = participant.logs.map((log) => ({
       date: log.actDate,
       start: log.startTime,
@@ -145,18 +138,11 @@ interface CapacityAttendanceExportResponse {
   participants: CapacityAttendanceParticipant[];
 }
 
-export const downloadAttendanceExcel = async (
-  programId: number,
-  month: string,
-) => {
+export const downloadAttendanceExcel = async (programId: number, month: string) => {
   const data = await request<CapacityAttendanceExportResponse>(
     `/api/programs/${programId}/export/attendance?month=${month}`,
   );
-  await downloadCapacityAttendanceWorkbook(
-    data.programName,
-    data.month,
-    data.participants,
-  );
+  await downloadCapacityAttendanceWorkbook(data.programName, data.month, data.participants);
 };
 
 interface PaymentLedgerExportResponse {
@@ -171,10 +157,7 @@ interface PaymentLedgerExportResponse {
   participants: PaymentLedgerParticipant[];
 }
 
-export const downloadPaymentExcel = async (
-  programId: number,
-  month: string,
-) => {
+export const downloadPaymentExcel = async (programId: number, month: string) => {
   const data = await request<PaymentLedgerExportResponse>(
     `/api/programs/${programId}/export/payment?month=${month}`,
   );
@@ -202,10 +185,7 @@ interface WorkScheduleExportResponse {
   participants: WorkScheduleParticipant[];
 }
 
-export const downloadWorkScheduleExcel = async (
-  programId: number,
-  month: string,
-) => {
+export const downloadWorkScheduleExcel = async (programId: number, month: string) => {
   const data = await request<WorkScheduleExportResponse>(
     `/api/programs/${programId}/export/work-schedule?month=${month}`,
   );
@@ -231,10 +211,7 @@ interface PayslipExportResponse {
   participants: PayslipParticipant[];
 }
 
-export const downloadPayslipExcel = async (
-  programId: number,
-  month: string,
-) => {
+export const downloadPayslipExcel = async (programId: number, month: string) => {
   const data = await request<PayslipExportResponse>(
     `/api/programs/${programId}/export/payslip?month=${month}`,
   );
@@ -263,10 +240,7 @@ interface ActivityPaymentExportResponse {
   }[];
 }
 
-export const downloadActivityPaymentLedgerExcel = async (
-  programId: number,
-  month: string,
-) => {
+export const downloadActivityPaymentLedgerExcel = async (programId: number, month: string) => {
   const data = await request<ActivityPaymentExportResponse>(
     `/api/programs/${programId}/export/activity-payment?month=${month}`,
   );

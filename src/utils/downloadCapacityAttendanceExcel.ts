@@ -1,7 +1,6 @@
 import ExcelJS from "exceljs";
 
-export type CapacityAttendanceMarker =
-  "HOLIDAY" | "WEEKEND" | "PRESENT" | "ABSENT" | "NONE";
+export type CapacityAttendanceMarker = "HOLIDAY" | "WEEKEND" | "PRESENT" | "ABSENT" | "NONE";
 
 export interface CapacityAttendanceDay {
   day: number;
@@ -95,8 +94,7 @@ const addCapacityAttendanceSheet = (
 
   // 1. 제목
   sheet.mergeCells(`A1:${colLetter(totalCols)}1`);
-  sheet.getCell("A1").value =
-    `노인역량활용사업 월별 참여자 출근부(${monthNum}월)`;
+  sheet.getCell("A1").value = `노인역량활용사업 월별 참여자 출근부(${monthNum}월)`;
   sheet.getCell("A1").font = { size: 16, bold: true };
   sheet.getCell("A1").alignment = CENTER;
   sheet.getRow(1).height = 28;
@@ -150,11 +148,7 @@ const addCapacityAttendanceSheet = (
 
   const DATA_START_ROW = 5;
 
-  const writeDayCell = (
-    rowIdx: number,
-    offset: number,
-    day: CapacityAttendanceDay,
-  ) => {
+  const writeDayCell = (rowIdx: number, offset: number, day: CapacityAttendanceDay) => {
     const c = (index: number) => colLetter(offset + index + 1);
     const dayCell = sheet.getCell(`${c(0)}${rowIdx}`);
     dayCell.value = `${monthNum}\n${day.day}`;
@@ -217,15 +211,10 @@ const addCapacityAttendanceSheet = (
   }
 
   // 5. 근무결과 요약(실제 집계) + 확인자 서명란
-  const presentDays = participant.days.filter(
-    (day) => day.marker === "PRESENT",
-  ).length;
-  const absentDays = participant.days.filter(
-    (day) => day.marker === "ABSENT",
-  ).length;
+  const presentDays = participant.days.filter((day) => day.marker === "PRESENT").length;
+  const absentDays = participant.days.filter((day) => day.marker === "ABSENT").length;
   const totalMinutes = participant.days.reduce(
-    (sum, day) =>
-      sum + (day.marker === "PRESENT" ? (day.totalMinutes ?? 0) : 0),
+    (sum, day) => sum + (day.marker === "PRESENT" ? (day.totalMinutes ?? 0) : 0),
     0,
   );
   const totalHoursLabel = `${Math.floor(totalMinutes / 60)}시간 ${totalMinutes % 60}분`;
@@ -273,8 +262,7 @@ const addCapacityAttendanceSheet = (
   };
 
   sheet.mergeCells(`${c1(1)}${noteRow2}:${c1(9)}${noteRow2}`);
-  sheet.getCell(`${c1(1)}${noteRow2}`).value =
-    "○ 참여자 관련 특이사항, 근무 특이사항 기록";
+  sheet.getCell(`${c1(1)}${noteRow2}`).value = "○ 참여자 관련 특이사항, 근무 특이사항 기록";
   sheet.getCell(`${c1(1)}${noteRow2}`).alignment = {
     horizontal: "left",
     vertical: "middle",

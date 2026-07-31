@@ -1,9 +1,6 @@
 import { useState } from "react";
 
-import {
-  addParticipant,
-  bulkAddParticipants,
-} from "../../api/admin/participants";
+import { addParticipant, bulkAddParticipants } from "../../api/admin/participants";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -50,11 +47,7 @@ const ParticipantAddModal = ({
   const handleSaveButtonClick = async () => {
     try {
       if (selectedFile) {
-        const rows = await parseParticipantsFile(
-          selectedFile,
-          activeGroups,
-          activeDemandSites,
-        );
+        const rows = await parseParticipantsFile(selectedFile, activeGroups, activeDemandSites);
         if (rows.length === 0) {
           alert("파일에서 등록할 참여자를 찾지 못했습니다.");
 
@@ -74,9 +67,7 @@ const ParticipantAddModal = ({
         }
         await addParticipant(programId, {
           name: form.name,
-          demandSiteId: form.demandSiteId
-            ? Number(form.demandSiteId)
-            : undefined,
+          demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
           phoneLast4: form.lastPhoneNumber,
           groupId: form.groupId ? Number(form.groupId) : undefined,
         });
@@ -105,18 +96,14 @@ const ParticipantAddModal = ({
     >
       <div className="flex items-center justify-between gap-3 bg-[#f0f6ee] border border-[#d3e6cc] rounded-[2px] px-4 py-3.5">
         <div>
-          <div className="text-[13px] font-bold text-[#2f5c25]">
-            엑셀로 일괄 등록
-          </div>
+          <div className="text-[13px] font-bold text-[#2f5c25]">엑셀로 일괄 등록</div>
           <div className="text-xs text-[#5c7a53] mt-0.5">
             양식을 내려받아 작성한 뒤 업로드하세요
           </div>
         </div>
         <button
           className={btnGhostClass}
-          onClick={() =>
-            downloadAddParticipantsTemplate(activeGroups, activeDemandSites)
-          }
+          onClick={() => downloadAddParticipantsTemplate(activeGroups, activeDemandSites)}
         >
           양식 다운로드
         </button>
@@ -125,9 +112,7 @@ const ParticipantAddModal = ({
       <label
         htmlFor="part-file-input"
         className={`flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-[2px] py-6 px-4 cursor-pointer text-center hover:bg-[#f7f8fa] ${
-          selectedFile
-            ? "border-[#1e3a5f] bg-[#f5f8fb]"
-            : "border-[#c7cdd6] hover:border-[#9aa5b3]"
+          selectedFile ? "border-[#1e3a5f] bg-[#f5f8fb]" : "border-[#c7cdd6] hover:border-[#9aa5b3]"
         }`}
       >
         <input
@@ -142,9 +127,7 @@ const ParticipantAddModal = ({
           {selectedFile ? selectedFile.name : "파일이 선택되지 않았습니다"}
         </span>
         <span className="text-[11.5px] text-[#9aa1ab]">
-          {selectedFile
-            ? "다른 파일을 선택하려면 다시 클릭하세요"
-            : "클릭하여 파일 선택 (xlsx)"}
+          {selectedFile ? "다른 파일을 선택하려면 다시 클릭하세요" : "클릭하여 파일 선택 (xlsx)"}
         </span>
       </label>
 
@@ -158,9 +141,7 @@ const ParticipantAddModal = ({
         <input
           className={inputClass}
           value={form.name}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, name: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
       <FormField label="전화번호 뒷자리(4자리)">
@@ -173,9 +154,7 @@ const ParticipantAddModal = ({
           onChange={(event) =>
             setForm((f) => ({
               ...f,
-              lastPhoneNumber: event.target.value
-                .replace(/\D/g, "")
-                .slice(0, 4),
+              lastPhoneNumber: event.target.value.replace(/\D/g, "").slice(0, 4),
             }))
           }
         />

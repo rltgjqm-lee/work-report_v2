@@ -62,8 +62,7 @@ export const addActivityPaymentLedgerSheet = (
 
   // 1. 제목
   sheet.mergeCells("A1:L1");
-  sheet.getCell("A1").value =
-    `${header.programName} ${monthNum}월 활동비 지급내역`;
+  sheet.getCell("A1").value = `${header.programName} ${monthNum}월 활동비 지급내역`;
   sheet.getCell("A1").font = { size: 18, bold: true, name: "맑은 고딕" };
   sheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
   sheet.getRow(1).height = 29.25;
@@ -108,8 +107,7 @@ export const addActivityPaymentLedgerSheet = (
 
   if (participants.length === 0) {
     sheet.mergeCells(`B${startRow}:L${startRow}`);
-    sheet.getCell(`B${startRow}`).value =
-      "해당 월에 활동 기록이 있는 참여자가 없습니다.";
+    sheet.getCell(`B${startRow}`).value = "해당 월에 활동 기록이 있는 참여자가 없습니다.";
     sheet.getCell(`B${startRow}`).alignment = {
       horizontal: "center",
       vertical: "middle",
@@ -129,8 +127,7 @@ export const addActivityPaymentLedgerSheet = (
       sheet.getCell(`I${row}`).value = {
         formula: `ROUND(${header.hourlyWage}*F${row},0)+G${row}+H${row}`,
       };
-      sheet.getCell(`I${row}`).numFmt =
-        '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
+      sheet.getCell(`I${row}`).numFmt = '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
 
       sheet.getRow(row).eachCell({ includeEmpty: true }, (cell, colNumber) => {
         if (colNumber === 1) return; // A는 사업단 병합 셀이라 별도 처리
@@ -153,8 +150,7 @@ export const addActivityPaymentLedgerSheet = (
         if (row > groupStartRow) {
           sheet.mergeCells(`C${groupStartRow}:C${row}`);
         }
-        sheet.getCell(`C${groupStartRow}`).value =
-          participant.demandName ?? "-";
+        sheet.getCell(`C${groupStartRow}`).value = participant.demandName ?? "-";
         sheet.getCell(`C${groupStartRow}`).alignment = {
           horizontal: "center",
           vertical: "middle",
@@ -188,20 +184,17 @@ export const addActivityPaymentLedgerSheet = (
   sheet.getCell(`I${subtotalRow}`).value = {
     formula: `SUM(I${startRow}:I${lastRow})`,
   };
-  sheet.getCell(`I${subtotalRow}`).numFmt =
-    '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
-  sheet
-    .getRow(subtotalRow)
-    .eachCell({ includeEmpty: true }, (cell, colNumber) => {
-      if (colNumber > 11) return; // L(비고)는 소계 서식 밖
-      cell.font = { bold: true, size: 11, name: "맑은 고딕" };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
-      cell.fill = SUBTOTAL_FILL;
-      cell.border = {
-        top: { style: "medium", color: { argb: "FF000000" } },
-        bottom: { style: "medium", color: { argb: "FF000000" } },
-      };
-    });
+  sheet.getCell(`I${subtotalRow}`).numFmt = '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
+  sheet.getRow(subtotalRow).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (colNumber > 11) return; // L(비고)는 소계 서식 밖
+    cell.font = { bold: true, size: 11, name: "맑은 고딕" };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.fill = SUBTOTAL_FILL;
+    cell.border = {
+      top: { style: "medium", color: { argb: "FF000000" } },
+      bottom: { style: "medium", color: { argb: "FF000000" } },
+    };
+  });
 
   // 6. 기관명
   const footerRow = subtotalRow + 1;
@@ -238,11 +231,6 @@ export const buildActivityPaymentLedgerWorkbook = async (
   participants: ActivityPaymentLedgerParticipant[],
 ): Promise<ArrayBuffer> => {
   const workbook = new ExcelJS.Workbook();
-  addActivityPaymentLedgerSheet(
-    workbook,
-    "활동비지급대장",
-    header,
-    participants,
-  );
+  addActivityPaymentLedgerSheet(workbook, "활동비지급대장", header, participants);
   return workbook.xlsx.writeBuffer();
 };

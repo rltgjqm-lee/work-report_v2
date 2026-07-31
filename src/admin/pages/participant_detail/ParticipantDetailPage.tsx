@@ -56,21 +56,12 @@ const ParticipantDetailPage = () => {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [payrollModalOpen, setPayrollModalOpen] = useState(false);
 
-  const { data: participant } = useQuery(
-    participantQueryOptions(participantId),
-  );
-  const { data: leaves = [] } = useQuery(
-    participantLeavesQueryOptions(participantId),
-  );
+  const { data: participant } = useQuery(participantQueryOptions(participantId));
+  const { data: leaves = [] } = useQuery(participantLeavesQueryOptions(participantId));
   const { data: annualLeave } = useQuery(
-    participantAnnualLeaveQueryOptions(
-      participantId,
-      new Date().getFullYear().toString(),
-    ),
+    participantAnnualLeaveQueryOptions(participantId, new Date().getFullYear().toString()),
   );
-  const { data: attendance } = useQuery(
-    participantAttendanceQueryOptions(participantId, month),
-  );
+  const { data: attendance } = useQuery(participantAttendanceQueryOptions(participantId, month));
 
   const attendanceLogs = attendance?.logs ?? [];
   const attendanceStats = attendance?.stats ?? emptyStats;
@@ -100,9 +91,7 @@ const ParticipantDetailPage = () => {
             / 참여자 상세
           </div>
           <h1 className="text-[21px] font-bold m-0">{participant.name}</h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">
-            {participantSummary}
-          </p>
+          <p className="text-[13px] text-[#6b7280] mt-1.5">{participantSummary}</p>
         </div>
       </div>
 
@@ -110,10 +99,7 @@ const ParticipantDetailPage = () => {
       <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-4 mb-5">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-sm font-bold">급여 관련 설정</span>
-          <button
-            className={btnPrimaryClass}
-            onClick={() => setPayrollModalOpen(true)}
-          >
+          <button className={btnPrimaryClass} onClick={() => setPayrollModalOpen(true)}>
             설정 변경
           </button>
         </div>
@@ -165,27 +151,19 @@ const AttendanceHistorySection = ({
 
     <div className="grid grid-cols-4 mb-5">
       <div className="px-5 py-4 border border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-          정상
-        </div>
+        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">정상</div>
         <div className="text-sm font-bold">{stats.normal}건</div>
       </div>
       <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-          지각
-        </div>
+        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">지각</div>
         <div className="text-sm font-bold">{stats.late}건</div>
       </div>
       <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-          조퇴
-        </div>
+        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">조퇴</div>
         <div className="text-sm font-bold">{stats.earlyLeave}건</div>
       </div>
       <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-          총 근무시간
-        </div>
+        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">총 근무시간</div>
         <div className="text-sm font-bold">{stats.totalHours}시간</div>
       </div>
     </div>
@@ -253,10 +231,7 @@ const AttendanceHistorySection = ({
 
             {logs.length === 0 && (
               <tr>
-                <td
-                  colSpan={8}
-                  className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                >
+                <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                   해당 월에 근태 기록이 없습니다.
                 </td>
               </tr>
@@ -273,10 +248,7 @@ interface LeaveHistorySectionProps {
   leaves: ParticipantLeave[];
 }
 
-const LeaveHistorySection = ({
-  annualLeave,
-  leaves,
-}: LeaveHistorySectionProps) => (
+const LeaveHistorySection = ({ annualLeave, leaves }: LeaveHistorySectionProps) => (
   <>
     <div className="mb-3">
       <span className="text-sm font-bold">휴가 이력</span>
@@ -290,18 +262,12 @@ const LeaveHistorySection = ({
         <div className="text-sm font-bold">{annualLeave?.totalDays ?? 0}일</div>
       </div>
       <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-          사용
-        </div>
+        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">사용</div>
         <div className="text-sm font-bold">{annualLeave?.usedDays ?? 0}일</div>
       </div>
       <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-          잔여
-        </div>
-        <div className="text-sm font-bold">
-          {annualLeave?.remainingDays ?? 0}일
-        </div>
+        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">잔여</div>
+        <div className="text-sm font-bold">{annualLeave?.remainingDays ?? 0}일</div>
       </div>
     </div>
 
@@ -350,10 +316,7 @@ const LeaveHistorySection = ({
 
             {leaves.length === 0 && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                >
+                <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                   휴가 이력이 없습니다.
                 </td>
               </tr>

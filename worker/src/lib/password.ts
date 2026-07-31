@@ -50,10 +50,7 @@ const timingSafeEqual = (a: string, b: string): boolean => {
   return diff === 0;
 };
 
-export const verifyPassword = async (
-  password: string,
-  stored: string,
-): Promise<boolean> => {
+export const verifyPassword = async (password: string, stored: string): Promise<boolean> => {
   const [iterationsRaw, saltHex, hashHex] = stored.split(":");
   const iterations = Number(iterationsRaw);
   if (!iterations || !saltHex || !hashHex) return false;

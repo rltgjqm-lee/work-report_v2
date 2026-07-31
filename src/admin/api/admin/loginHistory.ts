@@ -11,8 +11,7 @@ export type LoginHistoryEntry = {
   createdAt: string;
 };
 
-export const listLoginHistory = () =>
-  request<LoginHistoryEntry[]>("/api/admins/login-history");
+export const listLoginHistory = () => request<LoginHistoryEntry[]>("/api/admins/login-history");
 
 export const loginHistoryKeys = {
   all: ["login-history"] as const,

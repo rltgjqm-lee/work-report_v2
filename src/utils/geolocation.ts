@@ -29,9 +29,7 @@ export const readCurrentCoordinates = (): Promise<Coordinates | null> => {
         resolve({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          accuracy: Number.isFinite(position.coords.accuracy)
-            ? position.coords.accuracy
-            : null,
+          accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
           simulated: null,
         }),
       () => resolve(null),

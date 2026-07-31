@@ -4,10 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { listGroups } from "../../api/admin/groups";
 import { getOrganization } from "../../api/admin/organizations";
 import { getProgram, listPrograms } from "../../api/admin/programs";
-import {
-  listDemandSites,
-  listDemandSiteSchedules,
-} from "../../api/admin/demandSites";
+import { listDemandSites, listDemandSiteSchedules } from "../../api/admin/demandSites";
 import ProgramGroupsSection from "./ProgramGroupsSection";
 import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
 import ProgramExcelExportSection from "./ProgramExcelExportSection";
@@ -65,9 +62,7 @@ const ProgramDetailPage = () => {
       setDemandSites(sites);
       Promise.all(
         sites.map((site) =>
-          listDemandSiteSchedules(site.id).then(
-            (schedules) => [site.id, schedules] as const,
-          ),
+          listDemandSiteSchedules(site.id).then((schedules) => [site.id, schedules] as const),
         ),
       ).then((pairs) => setDemandSiteSchedules(Object.fromEntries(pairs)));
     });
@@ -75,10 +70,7 @@ const ProgramDetailPage = () => {
 
   useEffect(refresh, [programId]);
 
-  const activeGroups = useMemo(
-    () => groups.filter((group) => group.isActive),
-    [groups],
-  );
+  const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
 
   const activeDemandSites = useMemo(
     () => demandSites.filter((demandSite) => demandSite.isActive),
@@ -101,12 +93,9 @@ const ProgramDetailPage = () => {
     () =>
       (program?.participants ?? []).filter((participant) => {
         const matchesSearch = participant.name.includes(search);
-        const matchesStatus =
-          statusFilter === "all" || participant.status === statusFilter;
-        const matchesGroup =
-          groupFilter === "all" || participant.groupId === Number(groupFilter);
-        const matchesDemand =
-          demandFilter === "all" || participant.demandName === demandFilter;
+        const matchesStatus = statusFilter === "all" || participant.status === statusFilter;
+        const matchesGroup = groupFilter === "all" || participant.groupId === Number(groupFilter);
+        const matchesDemand = demandFilter === "all" || participant.demandName === demandFilter;
         return matchesSearch && matchesStatus && matchesGroup && matchesDemand;
       }),
     [program, search, statusFilter, groupFilter, demandFilter],
@@ -139,9 +128,7 @@ const ProgramDetailPage = () => {
           <select
             className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
             value={programId}
-            onChange={(event) =>
-              navigate(`/admin/programs/${event.target.value}`)
-            }
+            onChange={(event) => navigate(`/admin/programs/${event.target.value}`)}
           >
             {allPrograms.map((program) => (
               <option key={program.id} value={program.id}>
@@ -162,10 +149,7 @@ const ProgramDetailPage = () => {
             안전 관제
           </button>
           {tab === "participants" && (
-            <button
-              className={btnPrimaryClass}
-              onClick={() => setIsModalOpen(true)}
-            >
+            <button className={btnPrimaryClass} onClick={() => setIsModalOpen(true)}>
               + 참여자 추가
             </button>
           )}
@@ -174,31 +158,23 @@ const ProgramDetailPage = () => {
 
       <div className="grid grid-cols-4 mb-5">
         <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            소속기관
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">소속기관</div>
           <div className="text-sm font-bold">{orgName}</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            사업기간
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">사업기간</div>
           <div className="text-sm font-bold">
             {program.startDate} ~ {program.endDate}
           </div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            운영시간
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">운영시간</div>
           <div className="text-sm font-bold">
             {program.startTime} ~ {program.endTime}
           </div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            참여자수
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">참여자수</div>
           <div className="text-sm font-bold">{filtered.length}명</div>
         </div>
       </div>
@@ -215,11 +191,7 @@ const ProgramDetailPage = () => {
       />
 
       {tab === "groups" && (
-        <ProgramGroupsSection
-          programId={programId}
-          groups={groups}
-          onChanged={refresh}
-        />
+        <ProgramGroupsSection programId={programId} groups={groups} onChanged={refresh} />
       )}
 
       {tab === "demandSites" && (
@@ -251,10 +223,7 @@ const ProgramDetailPage = () => {
       )}
 
       {tab === "excel" && (
-        <ProgramExcelExportSection
-          programId={programId}
-          programType={program.programType}
-        />
+        <ProgramExcelExportSection programId={programId} programType={program.programType} />
       )}
 
       {isModalOpen && (

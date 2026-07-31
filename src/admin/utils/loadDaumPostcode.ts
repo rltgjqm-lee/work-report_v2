@@ -7,15 +7,14 @@ export interface DaumPostcodeResult {
 declare global {
   interface Window {
     daum?: {
-      Postcode: new (options: {
-        oncomplete: (data: DaumPostcodeResult) => void;
-      }) => { open: () => void };
+      Postcode: new (options: { oncomplete: (data: DaumPostcodeResult) => void }) => {
+        open: () => void;
+      };
     };
   }
 }
 
-const SCRIPT_SRC =
-  "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+const SCRIPT_SRC = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
 
 let loadPromise: Promise<void> | null = null;
 

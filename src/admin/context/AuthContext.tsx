@@ -1,17 +1,7 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { getMe, setOnUnauthorized } from "../api/client";
-import {
-  AuthContext,
-  type AuthContextValue,
-  type AuthState,
-} from "./authContextInstance";
+import { AuthContext, type AuthContextValue, type AuthState } from "./authContextInstance";
 
 const initialState: AuthState = { admin: null, loading: true };
 

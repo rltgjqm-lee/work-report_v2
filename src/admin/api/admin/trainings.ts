@@ -46,9 +46,7 @@ export const updateTraining = (
 
 export const listTrainingLogs = (programId: number, trainingId?: number) =>
   request<TrainingLogRow[]>(
-    `/api/trainings/logs?programId=${programId}${
-      trainingId ? `&trainingId=${trainingId}` : ""
-    }`,
+    `/api/trainings/logs?programId=${programId}${trainingId ? `&trainingId=${trainingId}` : ""}`,
   );
 
 export const createTrainingLog = (data: {
@@ -77,6 +75,4 @@ export const cancelTrainingLog = (id: number) =>
   });
 
 export const getTrainingSummary = (programId: number) =>
-  request<TrainingSummaryRow[]>(
-    `/api/trainings/summary?programId=${programId}`,
-  );
+  request<TrainingSummaryRow[]>(`/api/trainings/summary?programId=${programId}`);

@@ -64,11 +64,7 @@ app.route("/api/trainings", trainings);
 
 export default {
   fetch: app.fetch,
-  scheduled: async (
-    _event: ScheduledEvent,
-    env: Env["Bindings"],
-    ctx: ExecutionContext,
-  ) => {
+  scheduled: async (_event: ScheduledEvent, env: Env["Bindings"], ctx: ExecutionContext) => {
     ctx.waitUntil(checkDisasterAlerts(env));
     ctx.waitUntil(checkSignalLoss(env));
     ctx.waitUntil(returnFromLeave(env));

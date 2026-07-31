@@ -15,17 +15,11 @@ app.post("/:id/resolve", async (c) => {
   const db = drizzle(c.env.DB);
   const id = Number(c.req.param("id"));
 
-  const escapeRows = await db
-    .select()
-    .from(escapeLogs)
-    .where(eq(escapeLogs.id, id));
+  const escapeRows = await db.select().from(escapeLogs).where(eq(escapeLogs.id, id));
   const escape = escapeRows[0];
   if (!escape) return c.json({ error: "이탈 기록을 찾을 수 없습니다." }, 404);
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, escape.programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, escape.programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -59,17 +53,11 @@ app.post("/:id/alerted", async (c) => {
   const db = drizzle(c.env.DB);
   const id = Number(c.req.param("id"));
 
-  const escapeRows = await db
-    .select()
-    .from(escapeLogs)
-    .where(eq(escapeLogs.id, id));
+  const escapeRows = await db.select().from(escapeLogs).where(eq(escapeLogs.id, id));
   const escape = escapeRows[0];
   if (!escape) return c.json({ error: "이탈 기록을 찾을 수 없습니다." }, 404);
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, escape.programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, escape.programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {

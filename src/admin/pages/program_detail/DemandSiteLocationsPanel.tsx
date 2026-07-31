@@ -9,12 +9,7 @@ import {
   deleteDemandSiteLocation,
   listDemandSiteLocations,
 } from "../../api/admin/demandSites";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  inputClass,
-  rowActionBtnClass,
-} from "../../uiClasses";
+import { btnGhostClass, btnPrimaryClass, inputClass, rowActionBtnClass } from "../../uiClasses";
 import { geocodeAddress } from "../../utils/geocodeAddress";
 import type { DemandSite, DemandSiteLocation } from "../../types";
 
@@ -35,10 +30,7 @@ interface PendingShape {
  * 수요처 하위 거점(원형/다각형 관제구역)을 지도에서 직접 그려 추가/삭제하는 편집기입니다.
  * Leaflet.draw 툴바로 원(반경)과 다각형을 그리면 그 자리에서 이름을 물어보고 저장합니다.
  */
-const DemandSiteLocationsPanel = ({
-  demandSite,
-  onClose,
-}: DemandSiteLocationsPanelProps) => {
+const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPanelProps) => {
   const [locations, setLocations] = useState<DemandSiteLocation[]>([]);
   const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [pendingName, setPendingName] = useState("");
@@ -58,8 +50,7 @@ const DemandSiteLocationsPanel = ({
 
     geocodeAddress(demandSite.address ?? "")
       .then((point) => {
-        if (point && mapRef.current)
-          mapRef.current.setView([point.lat, point.lng], 16);
+        if (point && mapRef.current) mapRef.current.setView([point.lat, point.lng], 16);
       })
       .catch(() => {});
   };
@@ -147,11 +138,7 @@ const DemandSiteLocationsPanel = ({
 
     // 수요처 자체에 잡아둔 기본 관제구역 — 거점과 구분되게 점선으로 깔아준다.
     // 여기서 편집하진 않고(수요처 수정 모달에서 관리), 어디까지가 관제 범위인지 보여준다.
-    if (
-      demandSite.baseLat !== null &&
-      demandSite.baseLng !== null &&
-      demandSite.radius !== null
-    ) {
+    if (demandSite.baseLat !== null && demandSite.baseLng !== null && demandSite.radius !== null) {
       L.circle([demandSite.baseLat, demandSite.baseLng], {
         radius: demandSite.radius,
         // 안전 관제 지도의 관제구역과 같은 파란 점선으로 맞춘다
@@ -177,11 +164,7 @@ const DemandSiteLocationsPanel = ({
           .bindTooltip(location.name)
           .addTo(layerGroup);
       } else if (location.shapeType === "POLYGON" && location.polygon) {
-        L.polygon(
-          location.polygon.map(
-            (point) => [point.lat, point.lng] as [number, number],
-          ),
-        )
+        L.polygon(location.polygon.map((point) => [point.lat, point.lng] as [number, number]))
           .bindTooltip(location.name)
           .addTo(layerGroup);
       }
@@ -225,9 +208,10 @@ const DemandSiteLocationsPanel = ({
         });
       } else {
         const polygon = pendingShape.layer as L.Polygon;
-        const latLngs = (polygon.getLatLngs()[0] as L.LatLng[]).map(
-          (point) => ({ lat: point.lat, lng: point.lng }),
-        );
+        const latLngs = (polygon.getLatLngs()[0] as L.LatLng[]).map((point) => ({
+          lat: point.lat,
+          lng: point.lng,
+        }));
         await createDemandSiteLocation(demandSite.id, {
           name: pendingName,
           shapeType: "POLYGON",
@@ -271,9 +255,7 @@ const DemandSiteLocationsPanel = ({
         mapRef.current.setView(point, 17);
       }
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "주소 검색에 실패했습니다.",
-      );
+      alert(error instanceof Error ? error.message : "주소 검색에 실패했습니다.");
     }
   };
 
@@ -281,9 +263,7 @@ const DemandSiteLocationsPanel = ({
     <div className="border border-[#e2e5eb] rounded-[2px] mt-2.5 bg-[#fafbfc]">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#eceef1]">
         <div>
-          <span className="text-[13px] font-bold">
-            {demandSite.name} — 거점/관제구역 편집
-          </span>
+          <span className="text-[13px] font-bold">{demandSite.name} — 거점/관제구역 편집</span>
           <div className="text-[12px] text-[#6b7280] mt-0.5">
             {demandSite.address ||
               "등록된 주소 없음 — 수요처 정보에서 주소를 넣으면 지도가 그 위치로 이동합니다."}
@@ -291,10 +271,7 @@ const DemandSiteLocationsPanel = ({
         </div>
         <div className="flex gap-1.5">
           {demandSite.address && (
-            <button
-              className={rowActionBtnClass}
-              onClick={handleFindAddressButtonClick}
-            >
+            <button className={rowActionBtnClass} onClick={handleFindAddressButtonClick}>
               주소로 찾기
             </button>
           )}
@@ -341,9 +318,7 @@ const DemandSiteLocationsPanel = ({
       {pendingShape && (
         <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
           <div className="bg-white rounded-[8px] shadow-xl w-[360px] p-5">
-            <div className="text-[14px] font-bold mb-3">
-              거점 이름을 입력하세요
-            </div>
+            <div className="text-[14px] font-bold mb-3">거점 이름을 입력하세요</div>
             <input
               autoFocus
               className={inputClass}
@@ -354,16 +329,10 @@ const DemandSiteLocationsPanel = ({
               }}
             />
             <div className="flex justify-end gap-2 mt-4">
-              <button
-                className={btnGhostClass}
-                onClick={handleCancelPendingShapeButtonClick}
-              >
+              <button className={btnGhostClass} onClick={handleCancelPendingShapeButtonClick}>
                 취소
               </button>
-              <button
-                className={btnPrimaryClass}
-                onClick={handleSavePendingShapeButtonClick}
-              >
+              <button className={btnPrimaryClass} onClick={handleSavePendingShapeButtonClick}>
                 저장
               </button>
             </div>

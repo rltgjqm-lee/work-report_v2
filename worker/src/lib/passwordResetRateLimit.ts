@@ -23,8 +23,7 @@ export const tryConsumePasswordResetBudget = async (
   const row = rows[0];
   const now = Date.now();
 
-  const windowExpired =
-    !row || now - new Date(row.windowStart).getTime() > WINDOW_MS;
+  const windowExpired = !row || now - new Date(row.windowStart).getTime() > WINDOW_MS;
 
   if (windowExpired) {
     if (row) {

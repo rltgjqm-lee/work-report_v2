@@ -2,12 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { desc, eq, sql } from "drizzle-orm";
 
-import {
-  safetyAlerts,
-  disasterPushLogs,
-  programs,
-  pushSubscriptions,
-} from "../db/schema";
+import { safetyAlerts, disasterPushLogs, programs, pushSubscriptions } from "../db/schema";
 import { hasMinRole, canAccessProgram, getAuth } from "../lib/authz";
 import { sendWebPush } from "../lib/webPush";
 import { ROLES, type Env } from "../types";
@@ -38,10 +33,7 @@ app.get("/", async (c) => {
       failCount: sql<number>`COALESCE(SUM(CASE WHEN ${disasterPushLogs.success} = 0 THEN 1 ELSE 0 END), 0)`,
     })
     .from(safetyAlerts)
-    .leftJoin(
-      disasterPushLogs,
-      eq(safetyAlerts.alertId, disasterPushLogs.messageId),
-    )
+    .leftJoin(disasterPushLogs, eq(safetyAlerts.alertId, disasterPushLogs.messageId))
     .groupBy(safetyAlerts.alertId)
     .orderBy(desc(safetyAlerts.sentAt));
 
@@ -62,10 +54,7 @@ app.post("/test", async (c) => {
     return c.json({ error: "안내 문구와 사업단을 지정해주세요." }, 400);
   }
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, body.programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, body.programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {

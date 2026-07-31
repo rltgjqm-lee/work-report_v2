@@ -61,18 +61,14 @@ const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
         <input
           className={inputClass}
           value={form.name}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, name: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
       <FormField label="설명">
         <input
           className={inputClass}
           value={form.description}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, description: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, description: event.target.value }))}
         />
       </FormField>
       <div className="flex gap-3">
@@ -83,9 +79,7 @@ const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
               step={600}
               className={inputClass}
               value={form.shiftStart}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, shiftStart: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
             />
           </FormField>
         </div>
@@ -96,9 +90,7 @@ const GroupAddModal = ({ onClose, onSaved, programId }: GroupAddModalProps) => {
               step={600}
               className={inputClass}
               value={form.shiftEnd}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, shiftEnd: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
             />
           </FormField>
         </div>

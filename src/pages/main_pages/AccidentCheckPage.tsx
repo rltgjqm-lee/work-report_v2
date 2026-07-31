@@ -61,9 +61,7 @@ const AccidentCheckPage = ({
     <div className={pageClass}>
       <AppBar title="안전 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
-        <label className={labelClass + " px-1"}>
-          오늘 다치신 곳이 있으신가요?
-        </label>
+        <label className={labelClass + " px-1"}>오늘 다치신 곳이 있으신가요?</label>
         <div
           className={choiceCardClass(formData.hasAccident === true)}
           onClick={() => handleAccidentToggleButtonClick(true)}
@@ -105,23 +103,15 @@ const AccidentCheckPage = ({
               <label className={labelClass}>안전사고 발생 후 업무 수행</label>
               <div
                 className={choiceCardClass(formData.accidentAction === "귀가")}
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, accidentAction: "귀가" }))
-                }
+                onClick={() => setFormData((prev) => ({ ...prev, accidentAction: "귀가" }))}
               >
-                <span
-                  className={choiceRadioClass(
-                    formData.accidentAction === "귀가",
-                  )}
-                >
+                <span className={choiceRadioClass(formData.accidentAction === "귀가")}>
                   {formData.accidentAction === "귀가" ? "✓" : ""}
                 </span>
                 귀가
               </div>
               <div
-                className={choiceCardClass(
-                  formData.accidentAction === "업무수행",
-                )}
+                className={choiceCardClass(formData.accidentAction === "업무수행")}
                 onClick={() =>
                   setFormData((prev) => ({
                     ...prev,
@@ -129,11 +119,7 @@ const AccidentCheckPage = ({
                   }))
                 }
               >
-                <span
-                  className={choiceRadioClass(
-                    formData.accidentAction === "업무수행",
-                  )}
-                >
+                <span className={choiceRadioClass(formData.accidentAction === "업무수행")}>
                   {formData.accidentAction === "업무수행" ? "✓" : ""}
                 </span>
                 업무수행
@@ -148,10 +134,7 @@ const AccidentCheckPage = ({
           <button className={btnOutlineClass} onClick={onBack}>
             이전
           </button>
-          <button
-            className={btnPrimaryClass + " flex-1"}
-            onClick={handleSaveButtonClick}
-          >
+          <button className={btnPrimaryClass + " flex-1"} onClick={handleSaveButtonClick}>
             저장
           </button>
         </BottomBarRow>

@@ -11,10 +11,7 @@ type DB = ReturnType<typeof drizzle>;
 
 // 잠겨 있으면 true. 잠금 만료 시각이 지났으면 다시 시도 가능하다고 본다
 // (row는 로그인 성공/실패 시점에 정리되므로 여기서 지우지는 않는다).
-export const isLoginLocked = async (
-  db: DB,
-  email: string,
-): Promise<boolean> => {
+export const isLoginLocked = async (db: DB, email: string): Promise<boolean> => {
   const rows = await db
     .select()
     .from(adminLoginAttempts)
@@ -24,10 +21,7 @@ export const isLoginLocked = async (
   return new Date(row.lockedUntil).getTime() > Date.now();
 };
 
-export const recordLoginFailure = async (
-  db: DB,
-  email: string,
-): Promise<void> => {
+export const recordLoginFailure = async (db: DB, email: string): Promise<void> => {
   const rows = await db
     .select()
     .from(adminLoginAttempts)
@@ -35,9 +29,7 @@ export const recordLoginFailure = async (
   const row = rows[0];
   const failCount = (row?.failCount ?? 0) + 1;
   const lockedUntil =
-    failCount >= MAX_FAIL_COUNT
-      ? new Date(Date.now() + LOCKOUT_MS).toISOString()
-      : null;
+    failCount >= MAX_FAIL_COUNT ? new Date(Date.now() + LOCKOUT_MS).toISOString() : null;
 
   if (row) {
     await db
@@ -45,17 +37,10 @@ export const recordLoginFailure = async (
       .set({ failCount, lockedUntil, updatedAt: new Date().toISOString() })
       .where(eq(adminLoginAttempts.email, email));
   } else {
-    await db
-      .insert(adminLoginAttempts)
-      .values({ email, failCount, lockedUntil });
+    await db.insert(adminLoginAttempts).values({ email, failCount, lockedUntil });
   }
 };
 
-export const clearLoginFailures = async (
-  db: DB,
-  email: string,
-): Promise<void> => {
-  await db
-    .delete(adminLoginAttempts)
-    .where(eq(adminLoginAttempts.email, email));
+export const clearLoginFailures = async (db: DB, email: string): Promise<void> => {
+  await db.delete(adminLoginAttempts).where(eq(adminLoginAttempts.email, email));
 };

@@ -2,12 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { desc, eq, inArray } from "drizzle-orm";
 
-import {
-  admins,
-  adminLoginHistory,
-  adminSessions,
-  demandSites,
-} from "../db/schema";
+import { admins, adminLoginHistory, adminSessions, demandSites } from "../db/schema";
 import { getAuth, parseIdArray } from "../lib/authz";
 import { hashPassword } from "../lib/password";
 import { tryConsumePasswordResetBudget } from "../lib/passwordResetRateLimit";
@@ -81,10 +76,7 @@ app.post("/", async (c) => {
 
   const body = await c.req.json<AdminBody>();
   if (!body.email || !body.name || !body.role || !body.password) {
-    return c.json(
-      { error: "이메일, 이름, 역할, 비밀번호를 모두 입력해주세요." },
-      400,
-    );
+    return c.json({ error: "이메일, 이름, 역할, 비밀번호를 모두 입력해주세요." }, 400);
   }
   if (body.password.length < 8) {
     return c.json({ error: "비밀번호는 8자 이상이어야 합니다." }, 400);
@@ -94,9 +86,7 @@ app.post("/", async (c) => {
   }
 
   const organizationId =
-    auth.role === ROLES.SUPER_ADMIN
-      ? (body.organizationId ?? null)
-      : auth.organizationId;
+    auth.role === ROLES.SUPER_ADMIN ? (body.organizationId ?? null) : auth.organizationId;
   if (body.role !== ROLES.SUPER_ADMIN && !organizationId) {
     return c.json({ error: "소속 기관을 선택해주세요." }, 400);
   }
@@ -157,10 +147,7 @@ app.put("/:id/transfer-programs", async (c) => {
   const fromRows = await db.select().from(admins).where(eq(admins.id, id));
   const from = fromRows[0];
   if (!from) return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
-  if (
-    auth.role !== ROLES.SUPER_ADMIN &&
-    from.organizationId !== auth.organizationId
-  ) {
+  if (auth.role !== ROLES.SUPER_ADMIN && from.organizationId !== auth.organizationId) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -172,10 +159,7 @@ app.put("/:id/transfer-programs", async (c) => {
     return c.json({ error: "같은 계정으로는 이관할 수 없습니다." }, 400);
   }
 
-  const toRows = await db
-    .select()
-    .from(admins)
-    .where(eq(admins.id, body.toAdminId));
+  const toRows = await db.select().from(admins).where(eq(admins.id, body.toAdminId));
   const to = toRows[0];
   if (!to) return c.json({ error: "이관받을 계정을 찾을 수 없습니다." }, 404);
   if (to.organizationId !== from.organizationId) {
@@ -196,9 +180,7 @@ app.put("/:id/transfer-programs", async (c) => {
     db
       .update(admins)
       .set({
-        programIds: JSON.stringify([
-          ...new Set([...parseIdArray(to.programIds), ...programIds]),
-        ]),
+        programIds: JSON.stringify([...new Set([...parseIdArray(to.programIds), ...programIds])]),
       })
       .where(eq(admins.id, to.id)),
     db
@@ -231,21 +213,13 @@ app.put("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const existingRows = await db.select().from(admins).where(eq(admins.id, id));
   const existing = existingRows[0];
-  if (!existing)
-    return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
-  if (
-    auth.role !== ROLES.SUPER_ADMIN &&
-    existing.organizationId !== auth.organizationId
-  ) {
+  if (!existing) return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
+  if (auth.role !== ROLES.SUPER_ADMIN && existing.organizationId !== auth.organizationId) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<AdminBody>();
-  if (
-    body.role &&
-    body.role !== existing.role &&
-    !assignable.includes(body.role)
-  ) {
+  if (body.role && body.role !== existing.role && !assignable.includes(body.role)) {
     return c.json({ error: "이 역할로 변경할 권한이 없습니다." }, 403);
   }
 
@@ -258,8 +232,7 @@ app.put("/:id", async (c) => {
   ) {
     return c.json(
       {
-        error:
-          "담당 사업단이 남아 있습니다. 담당 이관을 먼저 진행한 뒤 비활성화해주세요.",
+        error: "담당 사업단이 남아 있습니다. 담당 이관을 먼저 진행한 뒤 비활성화해주세요.",
       },
       400,
     );
@@ -271,13 +244,8 @@ app.put("/:id", async (c) => {
       name: body.name ?? existing.name,
       role: body.role ?? existing.role,
       programIds:
-        body.programIds !== undefined
-          ? JSON.stringify(body.programIds)
-          : existing.programIds,
-      groupIds:
-        body.groupIds !== undefined
-          ? JSON.stringify(body.groupIds)
-          : existing.groupIds,
+        body.programIds !== undefined ? JSON.stringify(body.programIds) : existing.programIds,
+      groupIds: body.groupIds !== undefined ? JSON.stringify(body.groupIds) : existing.groupIds,
       isActive: body.isActive ?? existing.isActive,
     })
     .where(eq(admins.id, id))
@@ -300,21 +268,14 @@ app.put("/:id/password", async (c) => {
   const db = drizzle(c.env.DB);
 
   if (!(await tryConsumePasswordResetBudget(db, auth.id))) {
-    return c.json(
-      { error: "재설정 요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
-      429,
-    );
+    return c.json({ error: "재설정 요청이 너무 많습니다. 잠시 후 다시 시도해주세요." }, 429);
   }
 
   const id = Number(c.req.param("id"));
   const existingRows = await db.select().from(admins).where(eq(admins.id, id));
   const existing = existingRows[0];
-  if (!existing)
-    return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
-  if (
-    auth.role !== ROLES.SUPER_ADMIN &&
-    existing.organizationId !== auth.organizationId
-  ) {
+  if (!existing) return c.json({ error: "관리자 계정을 찾을 수 없습니다." }, 404);
+  if (auth.role !== ROLES.SUPER_ADMIN && existing.organizationId !== auth.organizationId) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 

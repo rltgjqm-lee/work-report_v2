@@ -7,12 +7,7 @@ interface ConfirmModalProps {
   onConfirm?: () => void;
 }
 
-const ConfirmModal = ({
-  messages,
-  isOpen,
-  onClose,
-  onConfirm,
-}: ConfirmModalProps) => {
+const ConfirmModal = ({ messages, isOpen, onClose, onConfirm }: ConfirmModalProps) => {
   if (!isOpen) return null;
 
   return createPortal(

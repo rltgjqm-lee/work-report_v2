@@ -41,14 +41,10 @@ app.get("/:id", async (c) => {
   const auth = getAuth(c);
   const id = Number(c.req.param("id"));
 
-  if (!canAccessOrg(auth, id))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessOrg(auth, id)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const db = drizzle(c.env.DB);
-  const rows = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.id, id));
+  const rows = await db.select().from(organizations).where(eq(organizations.id, id));
 
   if (!rows[0]) return c.json({ error: "기관을 찾을 수 없습니다." }, 404);
   return c.json(rows[0]);

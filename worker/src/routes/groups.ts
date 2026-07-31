@@ -2,32 +2,18 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, inArray } from "drizzle-orm";
 
-import {
-  groups,
-  programs,
-  participants,
-  groupMonthlySchedule,
-} from "../db/schema";
+import { groups, programs, participants, groupMonthlySchedule } from "../db/schema";
 import { canAccessGroup, getAuth } from "../lib/authz";
 import type { Env } from "../types";
 
 const app = new Hono<Env>();
 
-const loadGroupWithProgram = async (
-  db: ReturnType<typeof drizzle>,
-  groupId: number,
-) => {
-  const groupRows = await db
-    .select()
-    .from(groups)
-    .where(eq(groups.id, groupId));
+const loadGroupWithProgram = async (db: ReturnType<typeof drizzle>, groupId: number) => {
+  const groupRows = await db.select().from(groups).where(eq(groups.id, groupId));
   const group = groupRows[0];
   if (!group) return null;
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, group.programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, group.programId));
   const program = programRows[0];
   if (!program) return null;
 
@@ -58,9 +44,7 @@ app.put("/:id", async (c) => {
     const members = await db
       .select()
       .from(participants)
-      .where(
-        and(eq(participants.groupId, id), eq(participants.status, "ACTIVE")),
-      );
+      .where(and(eq(participants.groupId, id), eq(participants.status, "ACTIVE")));
 
     if (members.length > 0) {
       return c.json(
@@ -72,11 +56,7 @@ app.put("/:id", async (c) => {
     }
   }
 
-  const result = await db
-    .update(groups)
-    .set(body)
-    .where(eq(groups.id, id))
-    .returning();
+  const result = await db.update(groups).set(body).where(eq(groups.id, id)).returning();
 
   return c.json(result[0]);
 });
@@ -100,10 +80,7 @@ app.get("/:id/monthly-schedule", async (c) => {
     .select()
     .from(groupMonthlySchedule)
     .where(
-      and(
-        eq(groupMonthlySchedule.groupId, id),
-        eq(groupMonthlySchedule.yearMonth, yearMonth),
-      ),
+      and(eq(groupMonthlySchedule.groupId, id), eq(groupMonthlySchedule.yearMonth, yearMonth)),
     );
   const schedule = rows[0];
 
@@ -139,10 +116,7 @@ app.put("/:id/monthly-schedule", async (c) => {
     .select()
     .from(groupMonthlySchedule)
     .where(
-      and(
-        eq(groupMonthlySchedule.groupId, id),
-        eq(groupMonthlySchedule.yearMonth, body.yearMonth),
-      ),
+      and(eq(groupMonthlySchedule.groupId, id), eq(groupMonthlySchedule.yearMonth, body.yearMonth)),
     );
   const existing = existingRows[0];
   const workDatesJson = JSON.stringify(body.workDates);

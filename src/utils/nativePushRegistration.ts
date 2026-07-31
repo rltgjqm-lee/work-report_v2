@@ -14,18 +14,15 @@ export const registerNativePush = async (programId: number): Promise<void> => {
     await new Promise<void>((resolve) => {
       PushNotifications.addListener("registration", async (token) => {
         try {
-          await fetch(
-            `${import.meta.env.VITE_API_BASE_URL}/public/push-device-tokens`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                programId,
-                platform: Capacitor.getPlatform(),
-                token: token.value,
-              }),
-            },
-          );
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/push-device-tokens`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              programId,
+              platform: Capacitor.getPlatform(),
+              token: token.value,
+            }),
+          });
         } catch (error) {
           console.error("네이티브 푸시 토큰 서버 등록 실패:", error);
         } finally {

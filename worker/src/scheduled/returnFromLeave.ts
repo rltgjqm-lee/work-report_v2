@@ -14,7 +14,5 @@ export const returnFromLeave = async (env: Env["Bindings"]): Promise<void> => {
   await db
     .update(participants)
     .set({ status: "ACTIVE", leaveStart: null, leaveEnd: null })
-    .where(
-      and(eq(participants.status, "ON_LEAVE"), lt(participants.leaveEnd, date)),
-    );
+    .where(and(eq(participants.status, "ON_LEAVE"), lt(participants.leaveEnd, date)));
 };

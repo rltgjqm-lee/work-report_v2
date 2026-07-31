@@ -12,13 +12,7 @@ interface SlideModalProps {
  * 우측에서 슬라이드로 나타나는 모달의 공통 레이아웃(제목/본문/푸터)입니다.
  *
  */
-const SlideModal = ({
-  isOpen,
-  title,
-  onClose,
-  children,
-  footer,
-}: SlideModalProps) => {
+const SlideModal = ({ isOpen, title, onClose, children, footer }: SlideModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -33,12 +27,8 @@ const SlideModal = ({
             ×
           </button>
         </div>
-        <div className="flex-1 overflow-auto px-6 py-5 flex flex-col gap-4">
-          {children}
-        </div>
-        <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-[#eceef1]">
-          {footer}
-        </div>
+        <div className="flex-1 overflow-auto px-6 py-5 flex flex-col gap-4">{children}</div>
+        <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-[#eceef1]">{footer}</div>
       </div>
     </div>
   );

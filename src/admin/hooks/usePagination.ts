@@ -6,11 +6,7 @@ export const usePagination = <T>(items: T[], perPage: number) => {
   const clampedPage = Math.min(Math.max(1, page), totalPages);
 
   const pageItems = useMemo(
-    () =>
-      items.slice(
-        (clampedPage - 1) * perPage,
-        (clampedPage - 1) * perPage + perPage,
-      ),
+    () => items.slice((clampedPage - 1) * perPage, (clampedPage - 1) * perPage + perPage),
     [items, clampedPage, perPage],
   );
 

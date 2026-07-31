@@ -22,14 +22,7 @@ interface Page6Props {
   onAlert: (messages: string[]) => Promise<void>;
 }
 
-const SignaturePage = ({
-  formData,
-  setFormData,
-  onBack,
-  onSave,
-  onHome,
-  onAlert,
-}: Page6Props) => {
+const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert }: Page6Props) => {
   const handleSaveAndFinishButtonClick = async () => {
     if (!formData.userSignature) {
       onAlert(["참여자 서명이 누락되었습니다. 서명을 작성해주세요."]);
@@ -57,9 +50,7 @@ const SignaturePage = ({
           </label>
           <SignatureCanvas
             value={formData.userSignature}
-            onChange={(dataUrl) =>
-              setFormData((prev) => ({ ...prev, userSignature: dataUrl }))
-            }
+            onChange={(dataUrl) => setFormData((prev) => ({ ...prev, userSignature: dataUrl }))}
           />
         </Card>
 
@@ -70,18 +61,13 @@ const SignaturePage = ({
           </label>
           <SignatureCanvas
             value={formData.demandSignature}
-            onChange={(dataUrl) =>
-              setFormData((prev) => ({ ...prev, demandSignature: dataUrl }))
-            }
+            onChange={(dataUrl) => setFormData((prev) => ({ ...prev, demandSignature: dataUrl }))}
           />
         </Card>
       </div>
 
       <BottomBar>
-        <button
-          className={btnPrimaryClass}
-          onClick={handleSaveAndFinishButtonClick}
-        >
+        <button className={btnPrimaryClass} onClick={handleSaveAndFinishButtonClick}>
           저장하고 마치기
         </button>
       </BottomBar>

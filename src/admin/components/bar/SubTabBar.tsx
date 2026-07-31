@@ -1,8 +1,4 @@
-import {
-  subTabBarClass,
-  subTabBtnActiveClass,
-  subTabBtnClass,
-} from "../../uiClasses";
+import { subTabBarClass, subTabBtnActiveClass, subTabBtnClass } from "../../uiClasses";
 
 interface SubTabBarProps<T extends string> {
   tabs: [T, string][];
@@ -10,11 +6,7 @@ interface SubTabBarProps<T extends string> {
   onChange: (tab: T) => void;
 }
 
-const SubTabBar = <T extends string>({
-  tabs,
-  active,
-  onChange,
-}: SubTabBarProps<T>) => (
+const SubTabBar = <T extends string>({ tabs, active, onChange }: SubTabBarProps<T>) => (
   <div className={subTabBarClass}>
     {tabs.map(([tabKey, label]) => (
       <button

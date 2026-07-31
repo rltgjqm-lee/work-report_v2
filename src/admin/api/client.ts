@@ -11,10 +11,7 @@ export const setOnUnauthorized = (handler: () => void) => {
 // 로그인 성공 시 서버가 httpOnly 세션 쿠키를 내려주고, 이후 요청은 그 쿠키로 인증된다 —
 // 브라우저가 쿠키를 함께 보내야 하므로 credentials: "include". 클라이언트가 토큰을
 // 직접 들고 있거나 Authorization 헤더를 붙이는 부분은 없다.
-export const request = async <T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> => {
+export const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   let response: Response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {

@@ -68,10 +68,7 @@ const DisasterPushLogsPage = () => {
               ))}
               {alerts.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                  >
+                  <td colSpan={6} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                     발송된 재난문자가 없습니다.
                   </td>
                 </tr>

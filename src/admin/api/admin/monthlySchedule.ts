@@ -1,13 +1,8 @@
 import { request } from "../client";
-import type {
-  GroupMonthlySchedule,
-  ParticipantMonthlySchedule,
-} from "../../types";
+import type { GroupMonthlySchedule, ParticipantMonthlySchedule } from "../../types";
 
 export const getGroupMonthlySchedule = (groupId: number, month: string) =>
-  request<GroupMonthlySchedule>(
-    `/api/groups/${groupId}/monthly-schedule?month=${month}`,
-  );
+  request<GroupMonthlySchedule>(`/api/groups/${groupId}/monthly-schedule?month=${month}`);
 
 export const updateGroupMonthlySchedule = (
   groupId: number,
@@ -18,10 +13,7 @@ export const updateGroupMonthlySchedule = (
     body: JSON.stringify(data),
   });
 
-export const getParticipantMonthlySchedule = (
-  participantId: number,
-  month: string,
-) =>
+export const getParticipantMonthlySchedule = (participantId: number, month: string) =>
   request<ParticipantMonthlySchedule>(
     `/api/participants/${participantId}/monthly-schedule?month=${month}`,
   );
@@ -34,18 +26,12 @@ export const updateParticipantMonthlySchedule = (
     maxMonthlyMinutes: number | null;
   },
 ) =>
-  request<ParticipantMonthlySchedule>(
-    `/api/participants/${participantId}/monthly-schedule`,
-    {
-      method: "PUT",
-      body: JSON.stringify(data),
-    },
-  );
+  request<ParticipantMonthlySchedule>(`/api/participants/${participantId}/monthly-schedule`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
-export const deleteParticipantMonthlySchedule = (
-  participantId: number,
-  month: string,
-) =>
+export const deleteParticipantMonthlySchedule = (participantId: number, month: string) =>
   request<{ success: boolean }>(
     `/api/participants/${participantId}/monthly-schedule?month=${month}`,
     { method: "DELETE" },

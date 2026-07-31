@@ -50,9 +50,7 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
       {
         onSuccess: () => onClose(),
         onError: (error) =>
-          setError(
-            error instanceof Error ? error.message : "재설정에 실패했습니다.",
-          ),
+          setError(error instanceof Error ? error.message : "재설정에 실패했습니다."),
       },
     );
   };

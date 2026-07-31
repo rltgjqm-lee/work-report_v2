@@ -3,17 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import {
-  getEscapes,
-  getLiveWorkers,
-  getProgram,
-  listPrograms,
-} from "../api/admin/programs";
+import { getEscapes, getLiveWorkers, getProgram, listPrograms } from "../api/admin/programs";
 import { markEscapeAlerted, resolveEscape } from "../api/admin/escapes";
-import {
-  listDemandSiteLocations,
-  listDemandSites,
-} from "../api/admin/demandSites";
+import { listDemandSiteLocations, listDemandSites } from "../api/admin/demandSites";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
 import type {
@@ -77,9 +69,7 @@ const EscapesPage = () => {
 
   useEffect(() => {
     if (preselectedProgramId) {
-      getProgram(preselectedProgramId).then((program) =>
-        setProgramName(program.name),
-      );
+      getProgram(preselectedProgramId).then((program) => setProgramName(program.name));
     }
   }, [preselectedProgramId]);
 
@@ -104,9 +94,7 @@ const EscapesPage = () => {
       const openEscapes = await getEscapes(programId, "OPEN");
       if (status === "OPEN") setRows(openEscapes);
 
-      const critical = openEscapes.find(
-        (row) => row.escape.alertCount >= 3 && !row.escape.alerted,
-      );
+      const critical = openEscapes.find((row) => row.escape.alertCount >= 3 && !row.escape.alerted);
       if (critical) {
         setCriticalEscape(critical);
         markEscapeAlerted(critical.escape.id);
@@ -123,8 +111,7 @@ const EscapesPage = () => {
       workers.filter(
         (worker) =>
           worker.name.includes(search) &&
-          (!selectedDemandSiteId ||
-            String(worker.demandSiteId) === selectedDemandSiteId),
+          (!selectedDemandSiteId || String(worker.demandSiteId) === selectedDemandSiteId),
       ),
     [workers, search, selectedDemandSiteId],
   );
@@ -137,17 +124,14 @@ const EscapesPage = () => {
       (demandSite) => String(demandSite.id) === selectedDemandSiteId,
     );
 
-    return rows.filter(
-      (row) => row.demandSiteName === selectedDemandSite?.name,
-    );
+    return rows.filter((row) => row.demandSiteName === selectedDemandSite?.name);
   }, [rows, demandSites, selectedDemandSiteId]);
 
   const visibleGeofences = useMemo(
     () =>
       geofences.filter(
         (geofence) =>
-          !selectedDemandSiteId ||
-          String(geofence.demandSiteId) === selectedDemandSiteId,
+          !selectedDemandSiteId || String(geofence.demandSiteId) === selectedDemandSiteId,
       ),
     [geofences, selectedDemandSiteId],
   );
@@ -172,14 +156,14 @@ const EscapesPage = () => {
       setDemandSites(sites);
       setGeofences(
         sites.flatMap((demandSite, siteIndex) => {
-          const siteGeofences: DemandSiteGeofence[] = locationsPerSite[
-            siteIndex
-          ].map((location) => ({
-            demandSiteId: demandSite.id,
-            demandSiteName: demandSite.name,
-            location,
-            baseArea: null,
-          }));
+          const siteGeofences: DemandSiteGeofence[] = locationsPerSite[siteIndex].map(
+            (location) => ({
+              demandSiteId: demandSite.id,
+              demandSiteName: demandSite.name,
+              location,
+              baseArea: null,
+            }),
+          );
 
           // 거점을 안 그린 수요처도 기본 관제구역이 잡혀 있으면 지도에 나와야 한다
           if (
@@ -277,13 +261,9 @@ const EscapesPage = () => {
           .bindTooltip(tooltipLabel)
           .addTo(layer);
       } else if (location.shapeType === "POLYGON" && location.polygon) {
-        location.polygon.forEach((point) =>
-          points.push([point.lat, point.lng]),
-        );
+        location.polygon.forEach((point) => points.push([point.lat, point.lng]));
         L.polygon(
-          location.polygon.map(
-            (point) => [point.lat, point.lng] as [number, number],
-          ),
+          location.polygon.map((point) => [point.lat, point.lng] as [number, number]),
           shapeStyle,
         )
           .bindTooltip(tooltipLabel)
@@ -329,9 +309,7 @@ const EscapesPage = () => {
           `이탈횟수: ${worker.alertCount}회<br/>` +
           `수요처: ${worker.demandSiteName}<br/>` +
           `마지막 위치: ${
-            worker.lastLocationAt
-              ? new Date(worker.lastLocationAt).toLocaleTimeString()
-              : "-"
+            worker.lastLocationAt ? new Date(worker.lastLocationAt).toLocaleTimeString() : "-"
           }`,
       );
       marker.addTo(layer);
@@ -345,10 +323,7 @@ const EscapesPage = () => {
     }
   }, [filteredWorkers]);
 
-  const handleResolveButtonClick = async (
-    escapeId: number,
-    participantName: string,
-  ) => {
+  const handleResolveButtonClick = async (escapeId: number, participantName: string) => {
     const memo = prompt(`'${participantName}' 님 이탈 확인 처리 — 메모(선택)`);
     if (memo === null) return;
 
@@ -379,9 +354,7 @@ const EscapesPage = () => {
             <div className="text-xs text-[#6b7280] mb-1.5">
               사업단 관리 /{" "}
               <a
-                onClick={() =>
-                  navigate(`/admin/programs/${preselectedProgramId}`)
-                }
+                onClick={() => navigate(`/admin/programs/${preselectedProgramId}`)}
                 className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
               >
                 {programName || "사업단 상세"}
@@ -423,11 +396,7 @@ const EscapesPage = () => {
               })),
             ]}
           />
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="🔍 참여자 이름 검색"
-          />
+          <SearchInput value={search} onChange={setSearch} placeholder="🔍 참여자 이름 검색" />
           <FilterSelect
             value={status}
             onChange={(value) => setStatus(value as EscapeStatus)}
@@ -476,9 +445,7 @@ const EscapesPage = () => {
                     <span className="w-3 h-3 rounded-full border-2 border-dashed border-[#3182f6] flex-none" />
                     관제구역
                   </div>
-                  <div className="text-[#6b7280] ml-auto">
-                    근무중 {filteredWorkers.length}명
-                  </div>
+                  <div className="text-[#6b7280] ml-auto">근무중 {filteredWorkers.length}명</div>
                 </div>
               </div>
 
@@ -533,10 +500,7 @@ const EscapesPage = () => {
                               <button
                                 className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
                                 onClick={() =>
-                                  handleResolveButtonClick(
-                                    row.escape.id,
-                                    row.participantName,
-                                  )
+                                  handleResolveButtonClick(row.escape.id, row.participantName)
                                 }
                               >
                                 확인 처리
@@ -573,9 +537,7 @@ const EscapesPage = () => {
       {criticalEscape && (
         <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
           <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
-            <div className="text-[#e74c3c] text-xl font-bold mb-4">
-              🚨 3단계 위급 이탈
-            </div>
+            <div className="text-[#e74c3c] text-xl font-bold mb-4">🚨 3단계 위급 이탈</div>
             <div className="text-sm space-y-1.5 mb-5">
               <p>
                 <strong>참여자:</strong> {criticalEscape.participantName}
@@ -587,8 +549,7 @@ const EscapesPage = () => {
                 <strong>이탈 횟수:</strong> {criticalEscape.escape.alertCount}회
               </p>
               <p>
-                <strong>이탈 거리:</strong>{" "}
-                {criticalEscape.escape.distanceKm.toFixed(2)}km
+                <strong>이탈 거리:</strong> {criticalEscape.escape.distanceKm.toFixed(2)}km
               </p>
             </div>
             <div className="flex gap-2.5">

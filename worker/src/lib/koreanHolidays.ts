@@ -33,5 +33,4 @@ export const isWeekendOrHoliday = (date: string): boolean => {
 };
 
 // 공휴일이면 이름을, 주말이거나 평일이면 null을 반환한다.
-export const getHolidayName = (date: string): string | null =>
-  KOREAN_HOLIDAYS[date] ?? null;
+export const getHolidayName = (date: string): string | null => KOREAN_HOLIDAYS[date] ?? null;

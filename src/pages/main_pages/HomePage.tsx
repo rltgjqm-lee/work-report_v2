@@ -3,11 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import {
-  clockIn,
-  clockOut,
-  getCurrentAdminRole,
-} from "../../utils/attendanceApi";
+import { clockIn, clockOut, getCurrentAdminRole } from "../../utils/attendanceApi";
 import { readCurrentCoordinates } from "../../utils/geolocation";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 
@@ -67,9 +63,7 @@ const ModuleItem = ({
       className={`flex-none h-[42px] px-5 rounded-xl border-none text-[15px] font-extrabold ${
         busy
           ? "bg-[#f2f4f6] text-[#9ca3af] cursor-default"
-          : `cursor-pointer ${
-              done ? "bg-[#f2f4f6] text-[#4e5968]" : "bg-[#3182f6] text-white"
-            }`
+          : `cursor-pointer ${done ? "bg-[#f2f4f6] text-[#4e5968]" : "bg-[#3182f6] text-white"}`
       }`}
     >
       {busy ? "확인 중" : done ? "확인" : "등록"}
@@ -102,18 +96,14 @@ const HomePage = ({
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
-    getCurrentAdminRole().then((role) =>
-      setIsSuperAdmin(role === "SUPER_ADMIN"),
-    );
+    getCurrentAdminRole().then((role) => setIsSuperAdmin(role === "SUPER_ADMIN"));
   }, []);
 
   // 💡 출근 등록은 별도 페이지 없이 즉시 서버에 기록하고 컨펌 모달로 결과만 보여준다.
   // setFormData 직후 곧바로 onSave()를 부르면 onSave가 아직 갱신 전 formData를 클로저로
   // 물고 있어서 방금 기록한 시각을 저장하지 못한다 — 상태 반영 → 재렌더까지 기다렸다가
   // effect에서 저장한다.
-  const [pendingAttendanceInTime, setPendingAttendanceInTime] = useState<
-    string | null
-  >(null);
+  const [pendingAttendanceInTime, setPendingAttendanceInTime] = useState<string | null>(null);
 
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
@@ -127,9 +117,7 @@ const HomePage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAttendanceInTime]);
 
-  const [pendingAttendanceOutTime, setPendingAttendanceOutTime] = useState<
-    string | null
-  >(null);
+  const [pendingAttendanceOutTime, setPendingAttendanceOutTime] = useState<string | null>(null);
 
   useEffect(() => {
     if (!pendingAttendanceOutTime) return;
@@ -151,9 +139,7 @@ const HomePage = ({
     return `${year}.${month}.${day}`;
   }, []);
 
-  const programLabel = formData.programType
-    ? `${formData.programType} 사업`
-    : "";
+  const programLabel = formData.programType ? `${formData.programType} 사업` : "";
 
   const attendanceInDone = formData.startTime.hour !== "";
   const attendanceOutDone = formData.endTime.hour !== "";
@@ -164,9 +150,7 @@ const HomePage = ({
   // 💡 출퇴근 등록 시 현재 위치를 같이 보낸다. 측위에 최대 10초가 걸릴 수 있어서 그동안
   // 버튼을 잠그고, 위치를 못 읽으면(권한 거부/실내) null로 그냥 진행한다 — 1단계는
   // 기록만 하고 위치로 출퇴근을 막지 않는다.
-  const [attendanceSubmitting, setAttendanceSubmitting] = useState<
-    "in" | "out" | null
-  >(null);
+  const [attendanceSubmitting, setAttendanceSubmitting] = useState<"in" | "out" | null>(null);
 
   const handleAttendanceInButtonClick = async () => {
     if (attendanceInDone) {
@@ -192,9 +176,7 @@ const HomePage = ({
       setFormData((prev) => ({ ...prev, startTime }));
       setPendingAttendanceInTime(formatTimeField(startTime));
     } catch (error) {
-      onAlert([
-        error instanceof Error ? error.message : "출근 등록에 실패했습니다.",
-      ]);
+      onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다."]);
     } finally {
       setAttendanceSubmitting(null);
     }
@@ -254,9 +236,7 @@ const HomePage = ({
       setFormData((prev) => ({ ...prev, endTime }));
       setPendingAttendanceOutTime(formatTimeField(endTime));
     } catch (error) {
-      onAlert([
-        error instanceof Error ? error.message : "퇴근 등록에 실패했습니다.",
-      ]);
+      onAlert([error instanceof Error ? error.message : "퇴근 등록에 실패했습니다."]);
     } finally {
       setAttendanceSubmitting(null);
     }
@@ -297,9 +277,7 @@ const HomePage = ({
             {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
           </div>
           <div className="flex items-center justify-between gap-2.5">
-            <span className="text-[19px] font-extrabold text-[#1f2937]">
-              {programLabel}
-            </span>
+            <span className="text-[19px] font-extrabold text-[#1f2937]">{programLabel}</span>
           </div>
           <div className="text-[15px] text-[#4e5968] font-semibold mt-1.5">
             {formData.programName} 사업입니다.
@@ -342,9 +320,7 @@ const HomePage = ({
           category="출근"
           title="출근 등록"
           status={
-            attendanceInDone
-              ? `${formatTimeField(formData.startTime)} 출근했어요`
-              : "출근 전이에요"
+            attendanceInDone ? `${formatTimeField(formData.startTime)} 출근했어요` : "출근 전이에요"
           }
           done={attendanceInDone}
           busy={attendanceSubmitting === "in"}
@@ -358,9 +334,7 @@ const HomePage = ({
             category="업무"
             title="업무 일지 등록"
             status={
-              workDone
-                ? `${formData.actContent} · ${formData.actPlace}`
-                : "업무 일지 기록 전이에요"
+              workDone ? `${formData.actContent} · ${formData.actPlace}` : "업무 일지 기록 전이에요"
             }
             done={workDone}
             onClick={handleOpenWorkButtonClick}
@@ -389,9 +363,7 @@ const HomePage = ({
           category="퇴근"
           title="퇴근 등록"
           status={
-            attendanceOutDone
-              ? `${formatTimeField(formData.endTime)} 퇴근했어요`
-              : "퇴근 전이에요"
+            attendanceOutDone ? `${formatTimeField(formData.endTime)} 퇴근했어요` : "퇴근 전이에요"
           }
           done={attendanceOutDone}
           busy={attendanceSubmitting === "out"}

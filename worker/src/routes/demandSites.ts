@@ -94,9 +94,7 @@ type LocationBody = {
 
 const serializeLocation = (row: typeof demandSiteLocations.$inferSelect) => ({
   ...row,
-  polygon: row.polygon
-    ? (JSON.parse(row.polygon) as { lat: number; lng: number }[])
-    : null,
+  polygon: row.polygon ? (JSON.parse(row.polygon) as { lat: number; lng: number }[]) : null,
 });
 
 const loadAccessibleProgram = async (
@@ -104,10 +102,7 @@ const loadAccessibleProgram = async (
   auth: ReturnType<typeof getAuth>,
   programId: number,
 ) => {
-  const rows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const rows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = rows[0];
   if (!program) return null;
   if (!canAccessProgram(auth, program)) return null;
@@ -157,8 +152,7 @@ app.get("/", async (c) => {
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   // 담당자 이름은 계정 쪽에 있으니 조인해서 같이 내려준다. 계정 연결 이전에 자유 입력으로
   // 쌓인 contactPerson은 표시할 이름이 없을 때의 대체값으로 남는다.
@@ -183,8 +177,7 @@ app.get("/assignable-admins", async (c) => {
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select({ id: admins.id, name: admins.name })
@@ -210,8 +203,7 @@ app.post("/", async (c) => {
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, body.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   // 좌표를 직접 보내지 않았으면 주소로 잡아준다
   const point =
@@ -225,8 +217,7 @@ app.post("/", async (c) => {
       programId: body.programId,
       name: body.name,
       address: body.address,
-      contactAdminId:
-        body.contactAdminId ?? (await findProgramManagerId(db, program)),
+      contactAdminId: body.contactAdminId ?? (await findProgramManagerId(db, program)),
       ...normalizeBaseArea(
         point ? point.lat : body.baseLat,
         point ? point.lng : body.baseLng,
@@ -243,16 +234,12 @@ app.put("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const db = drizzle(c.env.DB);
 
-  const existingRows = await db
-    .select()
-    .from(demandSites)
-    .where(eq(demandSites.id, id));
+  const existingRows = await db.select().from(demandSites).where(eq(demandSites.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, existing.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<DemandSiteBody>();
 
@@ -281,14 +268,8 @@ app.put("/:id", async (c) => {
       address,
       // 담당자는 명시적으로 null을 보내 비울 수 있어야 해서 undefined만 걸러낸다
       contactAdminId:
-        body.contactAdminId === undefined
-          ? existing.contactAdminId
-          : body.contactAdminId,
-      ...normalizeBaseArea(
-        nextBaseArea.baseLat,
-        nextBaseArea.baseLng,
-        nextBaseArea.radius,
-      ),
+        body.contactAdminId === undefined ? existing.contactAdminId : body.contactAdminId,
+      ...normalizeBaseArea(nextBaseArea.baseLat, nextBaseArea.baseLng, nextBaseArea.radius),
       isActive: body.isActive ?? existing.isActive,
     })
     .where(eq(demandSites.id, id))
@@ -304,16 +285,12 @@ app.get("/:id/locations", async (c) => {
   const id = Number(c.req.param("id"));
   const db = drizzle(c.env.DB);
 
-  const siteRows = await db
-    .select()
-    .from(demandSites)
-    .where(eq(demandSites.id, id));
+  const siteRows = await db.select().from(demandSites).where(eq(demandSites.id, id));
   const site = siteRows[0];
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select()
@@ -328,16 +305,12 @@ app.post("/:id/locations", async (c) => {
   const id = Number(c.req.param("id"));
   const db = drizzle(c.env.DB);
 
-  const siteRows = await db
-    .select()
-    .from(demandSites)
-    .where(eq(demandSites.id, id));
+  const siteRows = await db.select().from(demandSites).where(eq(demandSites.id, id));
   const site = siteRows[0];
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<LocationBody>();
   if (!body.name || !body.shapeType) {
@@ -345,14 +318,9 @@ app.post("/:id/locations", async (c) => {
   }
   if (
     body.shapeType === "RADIUS" &&
-    (body.baseLat === undefined ||
-      body.baseLng === undefined ||
-      body.radius === undefined)
+    (body.baseLat === undefined || body.baseLng === undefined || body.radius === undefined)
   ) {
-    return c.json(
-      { error: "RADIUS 거점은 baseLat, baseLng, radius가 필요합니다." },
-      400,
-    );
+    return c.json({ error: "RADIUS 거점은 baseLat, baseLng, radius가 필요합니다." }, 400);
   }
   if (body.shapeType === "POLYGON" && (body.polygon?.length ?? 0) < 3) {
     return c.json({ error: "POLYGON 거점은 좌표가 3개 이상 필요합니다." }, 400);
@@ -366,12 +334,8 @@ app.post("/:id/locations", async (c) => {
       shapeType: body.shapeType,
       baseLat: body.shapeType === "RADIUS" ? body.baseLat : null,
       baseLng: body.shapeType === "RADIUS" ? body.baseLng : null,
-      radius:
-        body.shapeType === "RADIUS"
-          ? Math.max(body.radius!, MIN_RADIUS_METERS)
-          : null,
-      polygon:
-        body.shapeType === "POLYGON" ? JSON.stringify(body.polygon) : null,
+      radius: body.shapeType === "RADIUS" ? Math.max(body.radius!, MIN_RADIUS_METERS) : null,
+      polygon: body.shapeType === "POLYGON" ? JSON.stringify(body.polygon) : null,
     })
     .returning();
 
@@ -398,8 +362,7 @@ app.put("/locations/:locationId", async (c) => {
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<LocationBody>();
   const shapeType = body.shapeType ?? location.shapeType;
@@ -409,10 +372,8 @@ app.put("/locations/:locationId", async (c) => {
     .set({
       name: body.name ?? location.name,
       shapeType,
-      baseLat:
-        shapeType === "RADIUS" ? (body.baseLat ?? location.baseLat) : null,
-      baseLng:
-        shapeType === "RADIUS" ? (body.baseLng ?? location.baseLng) : null,
+      baseLat: shapeType === "RADIUS" ? (body.baseLat ?? location.baseLat) : null,
+      baseLng: shapeType === "RADIUS" ? (body.baseLng ?? location.baseLng) : null,
       radius:
         shapeType === "RADIUS"
           ? Math.max(body.radius ?? location.radius ?? 0, MIN_RADIUS_METERS)
@@ -448,12 +409,9 @@ app.delete("/locations/:locationId", async (c) => {
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
-  await db
-    .delete(demandSiteLocations)
-    .where(eq(demandSiteLocations.id, locationId));
+  await db.delete(demandSiteLocations).where(eq(demandSiteLocations.id, locationId));
 
   return c.json({ success: true });
 });
@@ -463,16 +421,12 @@ app.get("/:id/schedules", async (c) => {
   const id = Number(c.req.param("id"));
   const db = drizzle(c.env.DB);
 
-  const siteRows = await db
-    .select()
-    .from(demandSites)
-    .where(eq(demandSites.id, id));
+  const siteRows = await db.select().from(demandSites).where(eq(demandSites.id, id));
   const site = siteRows[0];
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select({
@@ -495,23 +449,16 @@ app.post("/:id/schedules", async (c) => {
   const id = Number(c.req.param("id"));
   const db = drizzle(c.env.DB);
 
-  const siteRows = await db
-    .select()
-    .from(demandSites)
-    .where(eq(demandSites.id, id));
+  const siteRows = await db.select().from(demandSites).where(eq(demandSites.id, id));
   const site = siteRows[0];
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<ScheduleBody>();
   if (!body.groupId || !body.shiftStart || !body.shiftEnd) {
-    return c.json(
-      { error: "조와 근무 시작 시간, 종료 시간을 모두 지정해주세요." },
-      400,
-    );
+    return c.json({ error: "조와 근무 시작 시간, 종료 시간을 모두 지정해주세요." }, 400);
   }
 
   const result = await db
@@ -547,8 +494,7 @@ app.put("/schedules/:scheduleId", async (c) => {
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<ScheduleBody>();
 
@@ -584,12 +530,9 @@ app.delete("/schedules/:scheduleId", async (c) => {
   if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
-  await db
-    .delete(demandSiteSchedules)
-    .where(eq(demandSiteSchedules.id, scheduleId));
+  await db.delete(demandSiteSchedules).where(eq(demandSiteSchedules.id, scheduleId));
 
   return c.json({ success: true });
 });

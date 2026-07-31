@@ -1,11 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  sqliteTable,
-  integer,
-  text,
-  real,
-  uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 import { ROLES, type AdminRole } from "../types";
 
@@ -42,20 +36,14 @@ export const programs = sqliteTable("programs", {
   hourlyWage: integer("hourly_wage").notNull().default(3000),
   healthInsuranceRate: real("health_insurance_rate").notNull().default(3.545),
   longtermCareRate: real("longterm_care_rate").notNull().default(12.27),
-  employmentInsuranceRate: real("employment_insurance_rate")
-    .notNull()
-    .default(0.9),
+  employmentInsuranceRate: real("employment_insurance_rate").notNull().default(0.9),
   // 고용보험은 근로자부담분(실업급여, employmentInsuranceRate)과 별개로 사업주가
   // 고용안정·직업능력개발사업 부담금을 추가로 낸다 — 급여대장 기관부담 계산용.
   employmentInsuranceEmployerRate: real("employment_insurance_employer_rate")
     .notNull()
     .default(1.15),
-  industrialAccidentRate: real("industrial_accident_rate")
-    .notNull()
-    .default(1.5),
-  annualLeaveDailyWage: integer("annual_leave_daily_wage")
-    .notNull()
-    .default(31710),
+  industrialAccidentRate: real("industrial_accident_rate").notNull().default(1.5),
+  annualLeaveDailyWage: integer("annual_leave_daily_wage").notNull().default(31710),
   // 계약 종료 시 소프트 삭제 — 비활성화하면 소속 활성 참여자도 함께 참여종료 처리한다
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
@@ -95,10 +83,7 @@ export const groupMonthlySchedule = sqliteTable(
       .default(sql`(current_timestamp)`),
   },
   (table) => [
-    uniqueIndex("group_monthly_schedule_group_month_unique").on(
-      table.groupId,
-      table.yearMonth,
-    ),
+    uniqueIndex("group_monthly_schedule_group_month_unique").on(table.groupId, table.yearMonth),
   ],
 );
 
@@ -198,10 +183,7 @@ export const participants = sqliteTable("participants", {
   demandSiteId: integer("demand_site_id").references(() => demandSites.id),
   phoneLast4: text("phone_last4").notNull(),
   birthYear: integer("birth_year"),
-  status: text("status")
-    .$type<"ACTIVE" | "DROPPED" | "ON_LEAVE">()
-    .notNull()
-    .default("ACTIVE"),
+  status: text("status").$type<"ACTIVE" | "DROPPED" | "ON_LEAVE">().notNull().default("ACTIVE"),
   droppedAt: text("dropped_at"),
   dropReason: text("drop_reason"),
   leaveStart: text("leave_start"),
@@ -213,10 +195,7 @@ export const participants = sqliteTable("participants", {
     .notNull()
     .default("none"),
   dementiaAmount: integer("dementia_amount").notNull().default(0),
-  dementiaType: text("dementia_type")
-    .$type<"add" | "deduct" | "none">()
-    .notNull()
-    .default("none"),
+  dementiaType: text("dementia_type").$type<"add" | "deduct" | "none">().notNull().default("none"),
   // 4대보험 가입여부/주휴시간은 역량활동 참여자만 의미가 있다 (공익활동은 UI에서 숨김).
   // 요율(%) 자체는 그대로 programs에 있고, 여기는 "이 참여자가 대상인지"만 켜고 끈다.
   socialInsuranceEnrolled: integer("social_insurance_enrolled", {
@@ -239,10 +218,7 @@ export const participantLeaves = sqliteTable("participant_leaves", {
   leaveStart: text("leave_start").notNull(),
   leaveEnd: text("leave_end").notNull(),
   // 유급(PAID)은 연차에서 차감, 무급(UNPAID)은 연차 잔여 확인/차감 없음
-  leaveType: text("leave_type")
-    .$type<"PAID" | "UNPAID">()
-    .notNull()
-    .default("PAID"),
+  leaveType: text("leave_type").$type<"PAID" | "UNPAID">().notNull().default("PAID"),
   // 서버가 leaveStart~leaveEnd로 자동 계산해 저장 (일 수)
   leaveDays: integer("leave_days").notNull().default(0),
   reason: text("reason"),
@@ -339,32 +315,26 @@ export const adminLoginHistory = sqliteTable("admin_login_history", {
 
 // PUT /api/me/password(본인 비밀번호 변경)에서 현재 비밀번호를 틀린 횟수 추적 —
 // 로그인 세션이 이미 있는 상태에서 현재 비밀번호를 무차별 대입하는 걸 막는다.
-export const adminPasswordChangeAttempts = sqliteTable(
-  "admin_password_change_attempts",
-  {
-    adminId: integer("admin_id")
-      .primaryKey()
-      .references(() => admins.id),
-    failCount: integer("fail_count").notNull().default(0),
-    lockedUntil: text("locked_until"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
-  },
-);
+export const adminPasswordChangeAttempts = sqliteTable("admin_password_change_attempts", {
+  adminId: integer("admin_id")
+    .primaryKey()
+    .references(() => admins.id),
+  failCount: integer("fail_count").notNull().default(0),
+  lockedUntil: text("locked_until"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
 
 // PUT /api/admins/:id/password(남의 비밀번호 재설정)를 수행한 관리자별로 15분당
 // 재설정 횟수를 추적 — 탈취된 세션으로 계정을 대량 재설정/잠금시키는 남용을 막는다.
-export const adminPasswordResetAttempts = sqliteTable(
-  "admin_password_reset_attempts",
-  {
-    actorAdminId: integer("actor_admin_id")
-      .primaryKey()
-      .references(() => admins.id),
-    count: integer("count").notNull().default(0),
-    windowStart: text("window_start").notNull(),
-  },
-);
+export const adminPasswordResetAttempts = sqliteTable("admin_password_reset_attempts", {
+  actorAdminId: integer("actor_admin_id")
+    .primaryKey()
+    .references(() => admins.id),
+  count: integer("count").notNull().default(0),
+  windowStart: text("window_start").notNull(),
+});
 
 export const pushSubscriptions = sqliteTable("push_subscriptions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -485,9 +455,7 @@ export const attendanceLogs = sqliteTable("attendance_logs", {
     .notNull()
     .default(sql`(current_timestamp)`),
   // 강제수정/무효화한 관리자와 시각 — 프론트에는 안 보여주고 감사 목적으로만 DB에 남긴다.
-  correctedByAdminId: integer("corrected_by_admin_id").references(
-    () => admins.id,
-  ),
+  correctedByAdminId: integer("corrected_by_admin_id").references(() => admins.id),
   correctedAt: text("corrected_at"),
   // 출근/퇴근 버튼을 누른 시점의 위치. 기기가 GPS를 안 주거나 참여자가 위치 권한을
   // 거부하면 전부 null로 남고, 그래도 출퇴근은 정상 처리된다.
@@ -529,15 +497,10 @@ export const projectTrainings = sqliteTable("project_trainings", {
   isPaid: integer("is_paid", { mode: "boolean" }).notNull().default(false),
   // WORK: 근무시간으로 합산(주휴수당 포함) / HOURLY: 시간×시급 별도지급
   // DAILY: 고정 일당 별도지급 / NONE: 기록만, 급여 미반영
-  payMode: text("pay_mode")
-    .$type<"WORK" | "HOURLY" | "DAILY" | "NONE">()
-    .notNull()
-    .default("NONE"),
+  payMode: text("pay_mode").$type<"WORK" | "HOURLY" | "DAILY" | "NONE">().notNull().default("NONE"),
   hours: real("hours"),
   dailyWage: integer("daily_wage"),
-  isRequired: integer("is_required", { mode: "boolean" })
-    .notNull()
-    .default(false),
+  isRequired: integer("is_required", { mode: "boolean" }).notNull().default(false),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
@@ -545,28 +508,22 @@ export const projectTrainings = sqliteTable("project_trainings", {
 });
 
 // 참여자별 교육 이수 기록. payAmount는 등록 시 교육의 payMode 기준으로 서버가 계산해 저장한다.
-export const participantTrainingLogs = sqliteTable(
-  "participant_training_logs",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    participantId: integer("participant_id")
-      .notNull()
-      .references(() => participants.id),
-    trainingId: integer("training_id")
-      .notNull()
-      .references(() => projectTrainings.id),
-    attendDate: text("attend_date").notNull(),
-    attendHours: real("attend_hours").notNull().default(0),
-    payAmount: integer("pay_amount").notNull().default(0),
-    status: text("status")
-      .$type<"COMPLETED" | "CANCELLED">()
-      .notNull()
-      .default("COMPLETED"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
-  },
-);
+export const participantTrainingLogs = sqliteTable("participant_training_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  participantId: integer("participant_id")
+    .notNull()
+    .references(() => participants.id),
+  trainingId: integer("training_id")
+    .notNull()
+    .references(() => projectTrainings.id),
+  attendDate: text("attend_date").notNull(),
+  attendHours: real("attend_hours").notNull().default(0),
+  payAmount: integer("pay_amount").notNull().default(0),
+  status: text("status").$type<"COMPLETED" | "CANCELLED">().notNull().default("COMPLETED"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
 
 // 이탈 이벤트 1건 = 배정된 수요처 반경을 벗어난 순간(복귀 후 다시 벗어나면 새 건).
 // alertCount는 이 참여자가 해결(RESOLVED) 처리 이후 다시 벗어난 누적 횟수.
@@ -628,9 +585,7 @@ export const activityLogs = sqliteTable("activity_logs", {
   endTime: text("end_time").notNull(),
   content: text("content"),
   place: text("place"),
-  hasAccident: integer("has_accident", { mode: "boolean" })
-    .notNull()
-    .default(false),
+  hasAccident: integer("has_accident", { mode: "boolean" }).notNull().default(false),
   accidentDetail: text("accident_detail"),
   accidentAction: text("accident_action"),
   userSignature: text("user_signature"),

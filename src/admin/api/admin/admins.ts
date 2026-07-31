@@ -1,8 +1,4 @@
-import {
-  mutationOptions,
-  queryOptions,
-  type QueryClient,
-} from "@tanstack/react-query";
+import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { request } from "../client";
 import type { Admin, Role } from "../../types";
@@ -78,9 +74,7 @@ const transferAdminPrograms = (id: number, toAdminId: number) =>
     { method: "PUT", body: JSON.stringify({ toAdminId }) },
   );
 
-export const transferAdminProgramsMutationOptions = (
-  queryClient: QueryClient,
-) =>
+export const transferAdminProgramsMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ id, toAdminId }: TransferAdminProgramsVariables) =>
       transferAdminPrograms(id, toAdminId),

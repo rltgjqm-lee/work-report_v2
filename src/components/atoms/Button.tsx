@@ -11,12 +11,7 @@ const VARIANT_CLASS = {
   text: btnTextClass,
 };
 
-const Button = ({
-  variant = "primary",
-  children,
-  className = "",
-  ...props
-}: ButtonProps) => {
+const Button = ({ variant = "primary", children, className = "", ...props }: ButtonProps) => {
   return (
     <button className={`${VARIANT_CLASS[variant]} ${className}`} {...props}>
       {children}

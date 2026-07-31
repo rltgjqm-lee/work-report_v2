@@ -2,12 +2,7 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq } from "drizzle-orm";
 
-import {
-  projectTrainings,
-  participantTrainingLogs,
-  participants,
-  programs,
-} from "../db/schema";
+import { projectTrainings, participantTrainingLogs, participants, programs } from "../db/schema";
 import { canAccessProgram, getAuth } from "../lib/authz";
 import type { Env } from "../types";
 
@@ -18,10 +13,7 @@ const loadAccessibleProgram = async (
   auth: ReturnType<typeof getAuth>,
   programId: number,
 ) => {
-  const rows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const rows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = rows[0];
   if (!program) return null;
   if (!canAccessProgram(auth, program)) return null;
@@ -51,8 +43,7 @@ app.get("/", async (c) => {
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const rows = await db
     .select()
@@ -76,16 +67,12 @@ app.post("/", async (c) => {
   }>();
 
   if (!body.programId || !body.name || !body.category) {
-    return c.json(
-      { error: "사업단, 교육명, 교육 구분을 모두 입력해주세요." },
-      400,
-    );
+    return c.json({ error: "사업단, 교육명, 교육 구분을 모두 입력해주세요." }, 400);
   }
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, body.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const result = await db
     .insert(projectTrainings)
@@ -109,16 +96,12 @@ app.put("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const db = drizzle(c.env.DB);
 
-  const existingRows = await db
-    .select()
-    .from(projectTrainings)
-    .where(eq(projectTrainings.id, id));
+  const existingRows = await db.select().from(projectTrainings).where(eq(projectTrainings.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "교육 정보를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, existing.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<{
     name?: string;
@@ -158,8 +141,7 @@ app.get("/logs", async (c) => {
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const trainingId = c.req.query("trainingId");
   const conditions = [eq(participants.programId, programId)];
@@ -174,14 +156,8 @@ app.get("/logs", async (c) => {
       trainingName: projectTrainings.name,
     })
     .from(participantTrainingLogs)
-    .innerJoin(
-      participants,
-      eq(participantTrainingLogs.participantId, participants.id),
-    )
-    .innerJoin(
-      projectTrainings,
-      eq(participantTrainingLogs.trainingId, projectTrainings.id),
-    )
+    .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
+    .innerJoin(projectTrainings, eq(participantTrainingLogs.trainingId, projectTrainings.id))
     .where(and(...conditions));
 
   return c.json(rows);
@@ -221,8 +197,7 @@ app.post("/logs", async (c) => {
   }
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const attendHours = body.attendHours ?? training.hours ?? 0;
   const payAmount = computePayAmount(training, attendHours, program);
@@ -251,8 +226,7 @@ app.put("/logs/:id", async (c) => {
     .from(participantTrainingLogs)
     .where(eq(participantTrainingLogs.id, id));
   const existing = existingRows[0];
-  if (!existing)
-    return c.json({ error: "교육 참석 기록을 찾을 수 없습니다." }, 404);
+  if (!existing) return c.json({ error: "교육 참석 기록을 찾을 수 없습니다." }, 404);
 
   const participantRows = await db
     .select()
@@ -262,8 +236,7 @@ app.put("/logs/:id", async (c) => {
   if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const trainingRows = await db
     .select()
@@ -304,8 +277,7 @@ app.delete("/logs/:id", async (c) => {
     .from(participantTrainingLogs)
     .where(eq(participantTrainingLogs.id, id));
   const existing = existingRows[0];
-  if (!existing)
-    return c.json({ error: "교육 참석 기록을 찾을 수 없습니다." }, 404);
+  if (!existing) return c.json({ error: "교육 참석 기록을 찾을 수 없습니다." }, 404);
 
   const participantRows = await db
     .select()
@@ -315,8 +287,7 @@ app.delete("/logs/:id", async (c) => {
   if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   const program = await loadAccessibleProgram(db, auth, participant.programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const result = await db
     .update(participantTrainingLogs)
@@ -336,19 +307,13 @@ app.get("/summary", async (c) => {
 
   const db = drizzle(c.env.DB);
   const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program)
-    return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const [activeParticipants, requiredTrainings, logs] = await Promise.all([
     db
       .select()
       .from(participants)
-      .where(
-        and(
-          eq(participants.programId, programId),
-          eq(participants.status, "ACTIVE"),
-        ),
-      ),
+      .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE"))),
     db
       .select()
       .from(projectTrainings)
@@ -365,21 +330,13 @@ app.get("/summary", async (c) => {
         trainingId: participantTrainingLogs.trainingId,
       })
       .from(participantTrainingLogs)
-      .innerJoin(
-        participants,
-        eq(participantTrainingLogs.participantId, participants.id),
-      )
+      .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
       .where(
-        and(
-          eq(participants.programId, programId),
-          eq(participantTrainingLogs.status, "COMPLETED"),
-        ),
+        and(eq(participants.programId, programId), eq(participantTrainingLogs.status, "COMPLETED")),
       ),
   ]);
 
-  const completedKeySet = new Set(
-    logs.map((log) => `${log.participantId}:${log.trainingId}`),
-  );
+  const completedKeySet = new Set(logs.map((log) => `${log.participantId}:${log.trainingId}`));
 
   const summary = activeParticipants
     .map((participant) => {

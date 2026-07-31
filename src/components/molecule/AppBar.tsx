@@ -29,9 +29,7 @@ const AppBar = ({ title, onBack, onHome, right }: AppBarProps) => (
       </button>
     )}
     {!onBack && !onHome && <span className="w-10 flex-none" />}
-    <span className="flex-1 text-center text-[18px] font-extrabold text-[#1f2937]">
-      {title}
-    </span>
+    <span className="flex-1 text-center text-[18px] font-extrabold text-[#1f2937]">{title}</span>
     {right ?? <span className="w-10 flex-none" />}
   </div>
 );

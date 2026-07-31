@@ -18,8 +18,7 @@ export const btnGhostClass =
   "border border-[#d7dbe1] px-4 py-2.5 text-[13px] font-semibold rounded-[2px] cursor-pointer bg-white text-[#374151] hover:bg-[#f5f6f8] whitespace-nowrap";
 export const rowActionBtnClass =
   "bg-transparent border-none text-[#8a6d1f] text-xs font-semibold cursor-pointer px-1.5 py-1 hover:underline";
-export const countChipClass =
-  "text-xs text-[#6b7280] font-medium whitespace-nowrap";
+export const countChipClass = "text-xs text-[#6b7280] font-medium whitespace-nowrap";
 // 밑줄 강조형 탭(관리자 페이지.dc.html 디자인) — pill형 탭이 필요하면 별도로 쓸 것.
 // border-none은 border-style:none이라 border-b-2(너비)를 줘도 안 그려진다 — border-0(너비 0)으로
 // 좌/우/위만 리셋하고 아래쪽만 border-b-2로 두께를 올려야 밑줄이 실제로 보인다.
@@ -37,10 +36,8 @@ export const subTabBtnActiveClass =
   "border border-[#1e3a5f] bg-[#1e3a5f] px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-white";
 // 양식 출력 카드(관리자 페이지.dc.html의 .export-grid/.export-card) — 사업단 상세 >
 // 양식 출력 탭에서 서식별로 카드 하나씩 보여줄 때 쓴다.
-export const exportGridClass =
-  "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4";
-export const exportCardClass =
-  "bg-white border border-[#e2e5eb] rounded-lg p-[22px]";
+export const exportGridClass = "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4";
+export const exportCardClass = "bg-white border border-[#e2e5eb] rounded-lg p-[22px]";
 export const exportIconClass = "text-[26px] mb-2.5";
 export const exportNameClass = "text-[15px] font-bold text-[#1f2937] mb-1.5";
 export const exportDescClass =

@@ -20,11 +20,7 @@ import {
   startLocationReporting,
   type LocationReportState,
 } from "../utils/locationReporting";
-import {
-  formatTimeField,
-  hhmmToTimeParts,
-  isoToTimeParts,
-} from "../utils/timeFormat";
+import { formatTimeField, hhmmToTimeParts, isoToTimeParts } from "../utils/timeFormat";
 
 const VIEW_TYPE = {
   AFFILIATION: "affiliation",
@@ -215,10 +211,7 @@ const Main = () => {
   // 💡 앱이 처음 구동될 때 IndexedDB를 최초 1회 연결하는 이펙트
   useEffect(() => {
     // 1. 상수에 정의된 이름("SeniorActivityDB")과 버전(1)으로 DB 오픈
-    const request = window.indexedDB.open(
-      INDEXED_DB_CONFIG.DB_NAME,
-      INDEXED_DB_CONFIG.DB_VERSION,
-    );
+    const request = window.indexedDB.open(INDEXED_DB_CONFIG.DB_NAME, INDEXED_DB_CONFIG.DB_VERSION);
 
     // 2. DB가 브라우저에 처음 생성되거나 버전이 바뀔 때 실행 (테이블 생성 단계)
     // 💡 event 타입을 IDBVersionChangeEvent로 정확하게 매핑
@@ -264,10 +257,7 @@ const Main = () => {
     const { userSignature, demandSignature, ...draftFields } = formData;
     void userSignature;
     void demandSignature;
-    localStorage.setItem(
-      LOCAL_STORAGE_KEYS.FORM_DRAFT,
-      JSON.stringify(draftFields),
-    );
+    localStorage.setItem(LOCAL_STORAGE_KEYS.FORM_DRAFT, JSON.stringify(draftFields));
   }, [formData]);
 
   // 💡 본인확인이 끝나고 db가 준비되면, 홈 대시보드가 "오늘 진행 상황"을 보여줄 수 있도록
@@ -281,8 +271,7 @@ const Main = () => {
   useEffect(() => {
     if (!db || !formData.participantId) return;
     const today = new Date().toISOString().slice(0, 10);
-    const isSameParticipant =
-      lastLoadedParticipantIdRef.current === formData.participantId;
+    const isSameParticipant = lastLoadedParticipantIdRef.current === formData.participantId;
     if (formData.actDate === today && isSameParticipant) return;
     lastLoadedParticipantIdRef.current = formData.participantId;
 
@@ -291,8 +280,7 @@ const Main = () => {
     request.onsuccess = () => {
       const items: ActivityLogItem[] = request.result || [];
       const todayItem = items.find(
-        (item) =>
-          item.participantId === formData.participantId && item.date === today,
+        (item) => item.participantId === formData.participantId && item.date === today,
       );
 
       setFormData((prev) => ({
@@ -312,8 +300,7 @@ const Main = () => {
         accidentChecked: todayItem?.accidentChecked ?? false,
         accidentDetail: todayItem?.accidentDetail || "",
         accidentAction:
-          (todayItem?.accidentAction as "귀가" | "업무수행" | undefined) ||
-          "업무수행",
+          (todayItem?.accidentAction as "귀가" | "업무수행" | undefined) || "업무수행",
         // 💡 서명은 매일 새로 받아야 하므로 오늘 저장된 게 없으면 이전 값을 절대
         // 이어받지 않고 비운다(같은 참여자여도 예외 없음).
         userSignature: todayItem?.uSign || "",
@@ -327,12 +314,8 @@ const Main = () => {
         .then(({ clockIn, clockOut }) => {
           setFormData((prev) => ({
             ...prev,
-            startTime: clockIn
-              ? isoToTimeParts(clockIn)
-              : { ampm: "AM", hour: "", minute: "" },
-            endTime: clockOut
-              ? isoToTimeParts(clockOut)
-              : { ampm: "PM", hour: "", minute: "" },
+            startTime: clockIn ? isoToTimeParts(clockIn) : { ampm: "AM", hour: "", minute: "" },
+            endTime: clockOut ? isoToTimeParts(clockOut) : { ampm: "PM", hour: "", minute: "" },
           }));
         })
         .catch(() => {
@@ -344,19 +327,16 @@ const Main = () => {
   // 💡 근무 중(출근 완료 ~ 퇴근 전) 위치를 주기적으로 서버에 보고해 관제구역 이탈을
   // 판정받는다. 어느 화면에 있어도 계속 보고돼야 하므로 개별 페이지가 아니라 여기서 돌린다.
   // 앱이 화면에 보이는 동안만 동작한다 — 자세한 제약은 locationReporting.ts 참고.
-  const isWorking =
-    formData.startTime.hour !== "" && formData.endTime.hour === "";
+  const isWorking = formData.startTime.hour !== "" && formData.endTime.hour === "";
 
-  const [locationReportState, setLocationReportState] =
-    useState<LocationReportState>(IDLE_LOCATION_REPORT_STATE);
+  const [locationReportState, setLocationReportState] = useState<LocationReportState>(
+    IDLE_LOCATION_REPORT_STATE,
+  );
 
   useEffect(() => {
     if (!formData.participantId || !isWorking) return;
 
-    const stopReporting = startLocationReporting(
-      formData.participantId,
-      setLocationReportState,
-    );
+    const stopReporting = startLocationReporting(formData.participantId, setLocationReportState);
     // 보고를 멈출 때(퇴근/참여자 변경) 상태도 같이 비운다 — 안 그러면 다음에 출근할 때
     // 첫 보고가 도착하기 전까지 지난번 이탈/전송실패 배너가 그대로 남는다.
     return () => {
@@ -373,14 +353,13 @@ const Main = () => {
         {isWorking &&
           (locationReportState.escapedDemandSiteName !== null ? (
             <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[#fef2f2] border-t border-[#fecaca] text-[13.5px] font-bold text-[#b91c1c]">
-              ⚠️ {locationReportState.escapedDemandSiteName} 활동 구역을
-              벗어났어요 — 근무지로 돌아가주세요
+              ⚠️ {locationReportState.escapedDemandSiteName} 활동 구역을 벗어났어요 — 근무지로
+              돌아가주세요
             </div>
           ) : (
             locationReportState.reportFailing && (
               <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[#fffbeb] border-t border-[#fde68a] text-[13.5px] font-bold text-[#b45309]">
-                위치가 전송되지 않고 있어요 — 위치 권한과 네트워크를
-                확인해주세요
+                위치가 전송되지 않고 있어요 — 위치 권한과 네트워크를 확인해주세요
               </div>
             )
           ))}

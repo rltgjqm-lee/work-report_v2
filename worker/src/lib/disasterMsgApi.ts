@@ -15,8 +15,7 @@ export type DisasterMessagePage = {
 // ⚠️ numOfRows는 몇을 요청하든 서버가 최대 1000으로 강제 고정한다.
 // ⚠️ crtDt(YYYYMMDD)는 "그날 하루"가 아니라 "그 날짜 이후 전체 누적"을 오름차순으로 반환한다.
 //    그래서 매번 오늘 날짜로 crtDt를 넣어야 그날 치만(대략 100~350건 수준) 받게 된다.
-const DISASTER_API_BASE_URL =
-  "https://www.safetydata.go.kr/V2/api/DSSP-IF-00247";
+const DISASTER_API_BASE_URL = "https://www.safetydata.go.kr/V2/api/DSSP-IF-00247";
 const MAX_ROWS_PER_PAGE = 1000;
 
 type RawDisasterMessage = {

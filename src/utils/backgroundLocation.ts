@@ -6,9 +6,7 @@ import type {
 
 import type { Coordinates } from "./geolocation";
 
-const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
-  "BackgroundGeolocation",
-);
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
 // 이 거리(m) 이상 움직였을 때만 새 좌표를 받는다. 서버 보고는 별도로 10분에 한 번으로
 // 묶으므로 이 값은 통신량이 아니라 GPS 사용량(배터리)을 좌우한다.

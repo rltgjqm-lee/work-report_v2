@@ -26,11 +26,7 @@ interface AnnualLeaveModalProps {
 // 부모가 열 때만 이 컴포넌트를 마운트하는 방식(조건부 렌더)이라, 열릴 때마다
 // 새로 마운트되면서 아래 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 // 다만 연차 현황(balance)은 target에 대한 비동기 조회 결과라 effect가 남아있다.
-const AnnualLeaveModal = ({
-  onClose,
-  onSaved,
-  target,
-}: AnnualLeaveModalProps) => {
+const AnnualLeaveModal = ({ onClose, onSaved, target }: AnnualLeaveModalProps) => {
   const [form, setForm] = useState(emptyForm);
   const [balance, setBalance] = useState<AnnualLeave | null>(null);
 
@@ -77,17 +73,15 @@ const AnnualLeaveModal = ({
     >
       {balance && (
         <div className="text-xs text-[#6b7280] mb-3">
-          {balance.year}년 현황 — 총 {balance.totalDays}일 / 사용{" "}
-          {balance.usedDays}일 / 잔여 {balance.remainingDays}일
+          {balance.year}년 현황 — 총 {balance.totalDays}일 / 사용 {balance.usedDays}일 / 잔여{" "}
+          {balance.remainingDays}일
         </div>
       )}
       <FormField label="연도">
         <input
           className={inputClass}
           value={form.year}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, year: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, year: event.target.value }))}
         />
       </FormField>
       <FormField label="총 연차 일수">
@@ -95,9 +89,7 @@ const AnnualLeaveModal = ({
           type="number"
           className={inputClass}
           value={form.totalDays}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, totalDays: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, totalDays: event.target.value }))}
         />
       </FormField>
     </SlideModal>

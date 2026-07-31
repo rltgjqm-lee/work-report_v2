@@ -10,10 +10,7 @@ import {
   disasterApiCallLog,
   pendingPushes,
 } from "../db/schema";
-import {
-  fetchDisasterMessagesPage,
-  type DisasterMessage,
-} from "../lib/disasterMsgApi";
+import { fetchDisasterMessagesPage, type DisasterMessage } from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
 import { getKstNow } from "../lib/kst";
 import { isWeekendOrHoliday } from "../lib/koreanHolidays";
@@ -45,28 +42,16 @@ const isSidoOnlySegment = (segment: string, sido: string): boolean => {
 // 시/군/구가 명시된 알림은 그 시/군/구 이름이 그대로 포함돼 있어야 매칭되고,
 // 시/도 전역 알림(시/군/구 없이 시/도만 옴)은 시/군/구와 무관하게 그 시/도 소속
 // 사업단 전부에 매칭된다.
-const matchesOrgRegion = (
-  regionText: string,
-  sido: string,
-  sigungu: string,
-): boolean => {
+const matchesOrgRegion = (regionText: string, sido: string, sigungu: string): boolean => {
   if (!regionText.includes(sido)) return false;
   if (regionText.includes(sigungu)) return true;
-  return regionText
-    .split(",")
-    .some((segment) => isSidoOnlySegment(segment, sido));
+  return regionText.split(",").some((segment) => isSidoOnlySegment(segment, sido));
 };
 
 // 오늘 날짜(KST)의 호출 카운트를 확인하고, 한도 안이면 카운트를 올리고 true를 반환한다.
 // 한도에 도달했으면 카운트를 올리지 않고 false를 반환 — 호출하는 쪽은 이때 API를 호출하면 안 된다.
-const tryConsumeApiCallBudget = async (
-  db: DB,
-  date: string,
-): Promise<boolean> => {
-  const rows = await db
-    .select()
-    .from(disasterApiCallLog)
-    .where(eq(disasterApiCallLog.date, date));
+const tryConsumeApiCallBudget = async (db: DB, date: string): Promise<boolean> => {
+  const rows = await db.select().from(disasterApiCallLog).where(eq(disasterApiCallLog.date, date));
   const current = rows[0]?.callCount ?? 0;
   if (current >= DAILY_CALL_CAP) return false;
 
@@ -114,17 +99,12 @@ const fetchTodaysMessagesWithBudget = async (
 };
 
 // 1단계: 새 재난문자를 조회해서 지역/근무시간에 매칭되는 구독을 대기열에 적재만 한다
-const enqueueNewMatches = async (
-  db: DB,
-  env: Env["Bindings"],
-): Promise<void> => {
+const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> => {
   const { date } = getKstNow();
   const messages = await fetchTodaysMessagesWithBudget(db, env, date);
   if (messages.length === 0) return;
 
-  const processedRows = await db
-    .select({ alertId: safetyAlerts.alertId })
-    .from(safetyAlerts);
+  const processedRows = await db.select({ alertId: safetyAlerts.alertId }).from(safetyAlerts);
   const processedIds = new Set(processedRows.map((r) => r.alertId));
   const newMessages = messages.filter((m) => !processedIds.has(m.id));
   if (newMessages.length === 0) return;
@@ -140,9 +120,7 @@ const enqueueNewMatches = async (
   for (const message of newMessages) {
     const matchingPrograms = programsWithOrg.filter(({ program, org }) => {
       if (!org.regionSido || !org.regionSigungu) return false;
-      if (
-        !matchesOrgRegion(message.region, org.regionSido, org.regionSigungu)
-      ) {
+      if (!matchesOrgRegion(message.region, org.regionSido, org.regionSigungu)) {
         return false;
       }
       if (date < program.startDate || date > program.endDate) return false;
@@ -212,9 +190,7 @@ const drainPushQueue = async (db: DB, env: Env["Bindings"]): Promise<void> => {
       });
 
       if (!result.ok && result.expired) {
-        await db
-          .delete(pushSubscriptions)
-          .where(eq(pushSubscriptions.endpoint, item.endpoint));
+        await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, item.endpoint));
       }
     } catch (err) {
       console.error("푸시 발송 중 오류:", err);
@@ -232,9 +208,7 @@ const drainPushQueue = async (db: DB, env: Env["Bindings"]): Promise<void> => {
   }
 };
 
-export const checkDisasterAlerts = async (
-  env: Env["Bindings"],
-): Promise<void> => {
+export const checkDisasterAlerts = async (env: Env["Bindings"]): Promise<void> => {
   // 주말/공휴일엔 아무도 근무하지 않으니 재난문자를 조회할 이유가 없다 —
   // 조회 자체를 건너뛰어 일일 호출 예산도 아낀다.
   const { date } = getKstNow();

@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 
 import { getLeaves, getLeaveStats } from "../../api/admin/programs";
 import MonthPicker from "../../components/MonthPicker";
-import StatusChip, {
-  type StatusChipVariant,
-} from "../../components/chip/StatusChip";
+import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
 import type { LeaveRow, LeaveStats } from "../../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
@@ -54,9 +52,7 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
 
   // month는 "2026-07" 형식이라, slice(5, 7)로 "-" 뒤 월 부분("07")만 꺼내서
   // stats.monthly[].month("01"~"12")와 비교한다
-  const monthStat = stats.monthly.find(
-    (row) => row.month === month.slice(5, 7),
-  );
+  const monthStat = stats.monthly.find((row) => row.month === month.slice(5, 7));
 
   return (
     <div>
@@ -66,12 +62,8 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
 
       <div className="grid grid-cols-3 mb-3">
         <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            이달 휴가
-          </div>
-          <div className="text-sm font-bold">
-            {monthStat?.totalLeaves ?? 0}건
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">이달 휴가</div>
+          <div className="text-sm font-bold">{monthStat?.totalLeaves ?? 0}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
           <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
@@ -139,9 +131,7 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
                     {row.leave.leaveDays}일
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    <StatusChip
-                      variant={LEAVE_TYPE_VARIANT[row.leave.leaveType]}
-                    >
+                    <StatusChip variant={LEAVE_TYPE_VARIANT[row.leave.leaveType]}>
                       {LEAVE_TYPE_LABEL[row.leave.leaveType]}
                     </StatusChip>
                   </td>
@@ -157,10 +147,7 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
               ))}
               {filteredLeaves.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                  >
+                  <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                     해당 월에 휴가 기록이 없습니다.
                   </td>
                 </tr>

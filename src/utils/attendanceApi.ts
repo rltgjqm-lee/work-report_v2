@@ -43,9 +43,7 @@ export const getCurrentAdminRole = async (): Promise<string | null> => {
 export const getTodayAttendance = async (
   participantId: number,
 ): Promise<{ clockIn: string | null; clockOut: string | null }> => {
-  const res = await fetch(
-    `${BASE_URL}/public/attendance/today?participantId=${participantId}`,
-  );
+  const res = await fetch(`${BASE_URL}/public/attendance/today?participantId=${participantId}`);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}) as { error?: string });
     throw new Error(data.error || "출퇴근 기록 조회에 실패했습니다.");
@@ -53,15 +51,12 @@ export const getTodayAttendance = async (
   return res.json();
 };
 
-export const identifyParticipant = (
-  programId: number,
-  name: string,
-  phoneLast4: string,
-) =>
-  request<{ participantId: number; name: string }>(
-    "/public/attendance/identify",
-    { programId, name, phoneLast4 },
-  );
+export const identifyParticipant = (programId: number, name: string, phoneLast4: string) =>
+  request<{ participantId: number; name: string }>("/public/attendance/identify", {
+    programId,
+    name,
+    phoneLast4,
+  });
 
 // debug.date("YYYY-MM-DD")/debug.time("HH:MM")은 출퇴근 날짜·시간 검증을 테스트하기
 // 위한 override — 서버가 localhost 요청이거나 통합관리자 세션일 때만 실제로 반영한다.
@@ -100,15 +95,12 @@ export const clockOut = (
   debug?: DebugAttendanceOverride,
   coordinates?: Coordinates | null,
 ) =>
-  request<{ id: number; clockOut: string; totalMinutes: number }>(
-    "/public/attendance/clock-out",
-    {
-      participantId,
-      ...coordinatesPayload(coordinates),
-      ...(debug?.date && { debugDate: debug.date }),
-      ...(debug?.time && { debugTime: debug.time }),
-    },
-  );
+  request<{ id: number; clockOut: string; totalMinutes: number }>("/public/attendance/clock-out", {
+    participantId,
+    ...coordinatesPayload(coordinates),
+    ...(debug?.date && { debugDate: debug.date }),
+    ...(debug?.time && { debugTime: debug.time }),
+  });
 
 // 근무 중 위치 보고의 응답. escaped=true면 관제구역을 벗어난 상태이고,
 // uncertain=true면 GPS 오차가 커서 서버가 이탈 판정을 보류한 것이다(둘은 배타적).
@@ -143,10 +135,7 @@ const postViaNativeHttp = async <T>(path: string, body: object): Promise<T> => {
 
 // 근무 중 위치 보고 — 서버가 관제구역 이탈을 판정하고 통신 끊김 감지용 수신 시각도 갱신한다.
 // 출근 중이 아니면 서버가 escaped=false와 함께 조용히 무시한다.
-export const reportLocation = (
-  participantId: number,
-  coordinates: Coordinates,
-) => {
+export const reportLocation = (participantId: number, coordinates: Coordinates) => {
   const body = { participantId, ...coordinatesPayload(coordinates) };
   return Capacitor.isNativePlatform()
     ? postViaNativeHttp<LocationReportResult>("/public/location", body)
@@ -160,14 +149,11 @@ export const signAttendance = async (
   signatureDataUrl: string,
 ): Promise<{ id: number; signatureKey: string }> => {
   const blob = await (await fetch(signatureDataUrl)).blob();
-  const res = await fetch(
-    `${BASE_URL}/public/attendance/sign?participantId=${participantId}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": blob.type || "image/png" },
-      body: blob,
-    },
-  );
+  const res = await fetch(`${BASE_URL}/public/attendance/sign?participantId=${participantId}`, {
+    method: "POST",
+    headers: { "Content-Type": blob.type || "image/png" },
+    body: blob,
+  });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}) as { error?: string });
     throw new Error(data.error || "요청에 실패했습니다.");

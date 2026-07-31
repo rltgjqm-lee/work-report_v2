@@ -55,9 +55,9 @@ const DemandSiteFormModal = ({
         }
       : emptyForm,
   );
-  const [assignableAdmins, setAssignableAdmins] = useState<
-    { id: number; name: string | null }[]
-  >([]);
+  const [assignableAdmins, setAssignableAdmins] = useState<{ id: number; name: string | null }[]>(
+    [],
+  );
 
   // 담당자는 신규 등록 때 서버가 사업단 담당자로 자동 지정하므로, 고를 일은 수정할 때뿐이다
   useEffect(() => {
@@ -77,9 +77,7 @@ const DemandSiteFormModal = ({
         },
       }).open();
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "주소 검색을 열 수 없습니다.",
-      );
+      alert(error instanceof Error ? error.message : "주소 검색을 열 수 없습니다.");
     }
   };
 
@@ -99,9 +97,7 @@ const DemandSiteFormModal = ({
       if (editingDemandSite) {
         await updateDemandSite(editingDemandSite.id, {
           ...payload,
-          contactAdminId: form.contactAdminId
-            ? Number(form.contactAdminId)
-            : null,
+          contactAdminId: form.contactAdminId ? Number(form.contactAdminId) : null,
         });
       } else {
         await createDemandSite({ programId, ...payload });
@@ -132,9 +128,7 @@ const DemandSiteFormModal = ({
         <input
           className={inputClass}
           value={form.name}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, name: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
       <FormField label="주소">
@@ -146,11 +140,7 @@ const DemandSiteFormModal = ({
             placeholder="주소 검색을 눌러 입력해주세요"
             onClick={handleSearchAddressButtonClick}
           />
-          <button
-            type="button"
-            className={btnGhostClass}
-            onClick={handleSearchAddressButtonClick}
-          >
+          <button type="button" className={btnGhostClass} onClick={handleSearchAddressButtonClick}>
             주소 검색
           </button>
         </div>
@@ -161,9 +151,7 @@ const DemandSiteFormModal = ({
           <FilterSelect
             className="w-full"
             value={form.contactAdminId}
-            onChange={(value) =>
-              setForm((f) => ({ ...f, contactAdminId: value }))
-            }
+            onChange={(value) => setForm((f) => ({ ...f, contactAdminId: value }))}
             options={[
               { value: "", label: "지정 안 함" },
               ...assignableAdmins.map((assignableAdmin) => ({
@@ -172,12 +160,11 @@ const DemandSiteFormModal = ({
               })),
             ]}
           />
-          {editingDemandSite.contactAdminId === null &&
-            editingDemandSite.contactPerson && (
-              <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
-                예전에 입력된 담당자: {editingDemandSite.contactPerson}
-              </p>
-            )}
+          {editingDemandSite.contactAdminId === null && editingDemandSite.contactPerson && (
+            <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+              예전에 입력된 담당자: {editingDemandSite.contactPerson}
+            </p>
+          )}
         </FormField>
       )}
 
@@ -189,13 +176,11 @@ const DemandSiteFormModal = ({
           value={form.radius}
           min={MIN_RADIUS_METERS}
           step={100}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, radius: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, radius: event.target.value }))}
         />
         <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
-          관제 중심은 위 주소 위치로 잡힙니다. 주소가 없으면 이 수요처는
-          관제되지 않습니다 — 거점 관리에서 구역을 직접 그려도 됩니다.
+          관제 중심은 위 주소 위치로 잡힙니다. 주소가 없으면 이 수요처는 관제되지 않습니다 — 거점
+          관리에서 구역을 직접 그려도 됩니다.
         </p>
       </FormField>
     </SlideModal>

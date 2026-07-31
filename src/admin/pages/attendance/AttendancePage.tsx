@@ -53,10 +53,7 @@ const AttendancePage = () => {
 
     return new Set(
       participants
-        .filter(
-          (participant) =>
-            String(participant.demandSiteId) === selectedDemandSiteId,
-        )
+        .filter((participant) => String(participant.demandSiteId) === selectedDemandSiteId)
         .map((participant) => participant.id),
     );
   }, [participants, selectedDemandSiteId]);
@@ -66,9 +63,7 @@ const AttendancePage = () => {
   const filteredParticipants = useMemo(
     () =>
       filteredParticipantIds
-        ? participants.filter((participant) =>
-            filteredParticipantIds.has(participant.id),
-          )
+        ? participants.filter((participant) => filteredParticipantIds.has(participant.id))
         : participants,
     [participants, filteredParticipantIds],
   );
@@ -81,9 +76,7 @@ const AttendancePage = () => {
             <div className="text-xs text-[#6b7280] mb-1.5">
               사업단 관리 /{" "}
               <a
-                onClick={() =>
-                  navigate(`/admin/programs/${preselectedProgramId}`)
-                }
+                onClick={() => navigate(`/admin/programs/${preselectedProgramId}`)}
                 className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
               >
                 {programName || "사업단 상세"}
@@ -148,10 +141,7 @@ const AttendancePage = () => {
           />
 
           {tab === "attendance" && (
-            <AttendanceTabPanel
-              programId={programId}
-              participantIds={filteredParticipantIds}
-            />
+            <AttendanceTabPanel programId={programId} participantIds={filteredParticipantIds} />
           )}
           {tab === "training" && (
             <TrainingTabPanel
@@ -161,10 +151,7 @@ const AttendancePage = () => {
             />
           )}
           {tab === "leave" && (
-            <LeaveTabPanel
-              programId={programId}
-              participantIds={filteredParticipantIds}
-            />
+            <LeaveTabPanel programId={programId} participantIds={filteredParticipantIds} />
           )}
         </>
       )}

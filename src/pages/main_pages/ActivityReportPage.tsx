@@ -95,10 +95,7 @@ const ActivityReportPage = ({
           <button className={btnOutlineClass} onClick={onBack}>
             이전
           </button>
-          <button
-            className={btnPrimaryClass + " flex-1"}
-            onClick={handleSaveButtonClick}
-          >
+          <button className={btnPrimaryClass + " flex-1"} onClick={handleSaveButtonClick}>
             저장
           </button>
         </BottomBarRow>

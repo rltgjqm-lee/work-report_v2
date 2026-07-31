@@ -27,18 +27,15 @@ export const subscribeToPush = async (programId: number): Promise<void> => {
 
     const json = subscription.toJSON();
 
-    await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/public/push-subscriptions`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          programId,
-          endpoint: json.endpoint,
-          keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth },
-        }),
-      },
-    );
+    await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/push-subscriptions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        programId,
+        endpoint: json.endpoint,
+        keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth },
+      }),
+    });
   } catch (err) {
     console.error("재난문자 푸시 구독 등록 실패:", err);
   }

@@ -1,8 +1,4 @@
-import {
-  mutationOptions,
-  queryOptions,
-  type QueryClient,
-} from "@tanstack/react-query";
+import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { request } from "../client";
 import { adminKeys } from "./admins";
@@ -18,9 +14,7 @@ import type {
 } from "../../types";
 
 export const listPrograms = (organizationId?: number) =>
-  request<Program[]>(
-    `/api/programs${organizationId ? `?organizationId=${organizationId}` : ""}`,
-  );
+  request<Program[]>(`/api/programs${organizationId ? `?organizationId=${organizationId}` : ""}`);
 
 export const programKeys = {
   all: ["programs"] as const,
@@ -37,16 +31,13 @@ export const programsQueryOptions = queryOptions({
   queryFn: () => listPrograms(),
 });
 
-export const programsByOrganizationQueryOptions = (
-  organizationId: number | undefined,
-) =>
+export const programsByOrganizationQueryOptions = (organizationId: number | undefined) =>
   queryOptions({
     queryKey: programKeys.byOrganization(organizationId),
     queryFn: () => listPrograms(organizationId),
   });
 
-export const getProgram = (id: number) =>
-  request<ProgramWithParticipants>(`/api/programs/${id}`);
+export const getProgram = (id: number) => request<ProgramWithParticipants>(`/api/programs/${id}`);
 
 export const programQueryOptions = (id: number) =>
   queryOptions({
@@ -54,9 +45,7 @@ export const programQueryOptions = (id: number) =>
     queryFn: () => getProgram(id),
   });
 
-export const createProgram = (
-  data: Partial<Omit<Program, "id" | "createdAt">>,
-) =>
+export const createProgram = (data: Partial<Omit<Program, "id" | "createdAt">>) =>
   request<Program>("/api/programs", {
     method: "POST",
     body: JSON.stringify(data),
@@ -75,10 +64,7 @@ export interface UpdateProgramVariables {
   data: Partial<Omit<Program, "id" | "createdAt" | "organizationId">>;
 }
 
-export const updateProgram = (
-  id: number,
-  data: UpdateProgramVariables["data"],
-) =>
+export const updateProgram = (id: number, data: UpdateProgramVariables["data"]) =>
   request<Program>(`/api/programs/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -86,8 +72,7 @@ export const updateProgram = (
 
 export const updateProgramMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ id, data }: UpdateProgramVariables) =>
-      updateProgram(id, data),
+    mutationFn: ({ id, data }: UpdateProgramVariables) => updateProgram(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programKeys.all });
     },
@@ -100,10 +85,10 @@ export interface SetProgramManagerVariables {
 
 // 사업단 담당자 지정
 export const setProgramManager = (programId: number, adminId: number | null) =>
-  request<{ ok: true; adminId: number | null }>(
-    `/api/programs/${programId}/manager`,
-    { method: "PUT", body: JSON.stringify({ adminId }) },
-  );
+  request<{ ok: true; adminId: number | null }>(`/api/programs/${programId}/manager`, {
+    method: "PUT",
+    body: JSON.stringify({ adminId }),
+  });
 
 export const setProgramManagerMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
@@ -116,14 +101,10 @@ export const setProgramManagerMutationOptions = (queryClient: QueryClient) =>
   });
 
 export const getMonthlyAttendance = (programId: number, month: string) =>
-  request<MonthlyAttendance>(
-    `/api/programs/${programId}/attendance?month=${month}`,
-  );
+  request<MonthlyAttendance>(`/api/programs/${programId}/attendance?month=${month}`);
 
 export const getLeaves = (programId: number, month?: string) =>
-  request<LeaveRow[]>(
-    `/api/programs/${programId}/leaves${month ? `?month=${month}` : ""}`,
-  );
+  request<LeaveRow[]>(`/api/programs/${programId}/leaves${month ? `?month=${month}` : ""}`);
 
 export const getLeaveStats = (programId: number, year: string) =>
   request<LeaveStats>(`/api/programs/${programId}/leaves/stats?year=${year}`);

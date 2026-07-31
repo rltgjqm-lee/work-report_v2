@@ -1,16 +1,11 @@
 import { useEffect, useState } from "react";
 
 import { getMonthlyAttendance } from "../../api/admin/programs";
-import {
-  correctAttendance,
-  invalidateAttendance,
-} from "../../api/admin/attendance";
+import { correctAttendance, invalidateAttendance } from "../../api/admin/attendance";
 import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
-import StatusChip, {
-  type StatusChipVariant,
-} from "../../components/chip/StatusChip";
+import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
 import {
   btnGhostClass,
   btnPrimaryClass,
@@ -58,17 +53,13 @@ interface AttendanceTabPanelProps {
  * 관리자 페이지 > 근태 관리 페이지의 "근태" 탭 내용입니다.
  *
  */
-const AttendanceTabPanel = ({
-  programId,
-  participantIds,
-}: AttendanceTabPanelProps) => {
+const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelProps) => {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [dayFilter, setDayFilter] = useState("all");
   const [logs, setLogs] = useState<AttendanceRow[]>([]);
   const [stats, setStats] = useState<AttendanceStats>(emptyStats);
 
-  const [correctionTarget, setCorrectionTarget] =
-    useState<AttendanceRow | null>(null);
+  const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
     clockOut: "",
@@ -87,11 +78,7 @@ const AttendanceTabPanel = ({
   // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다
   useEffect(() => setDayFilter("all"), [month]);
 
-  const daysInMonth = new Date(
-    Number(month.slice(0, 4)),
-    Number(month.slice(5, 7)),
-    0,
-  ).getDate();
+  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
   // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체)
   const scopedLogs = participantIds
@@ -101,10 +88,7 @@ const AttendanceTabPanel = ({
   const filteredLogs =
     dayFilter === "all"
       ? scopedLogs
-      : scopedLogs.filter(
-          (row) =>
-            row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
-        );
+      : scopedLogs.filter((row) => row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`);
 
   // 서버가 준 stats는 사업단 전체 기준이라, 수요처나 날짜로 걸렀으면 직접 다시 센다
   const dayStatsTotals =
@@ -115,11 +99,9 @@ const AttendanceTabPanel = ({
             total: acc.total + 1,
             normal: acc.normal + (row.log.status === "NORMAL" ? 1 : 0),
             late: acc.late + (row.log.status === "LATE" ? 1 : 0),
-            earlyLeave:
-              acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
+            earlyLeave: acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
             totalMinutes:
-              acc.totalMinutes +
-              (row.log.status !== "INVALID" ? (row.log.totalMinutes ?? 0) : 0),
+              acc.totalMinutes + (row.log.status !== "INVALID" ? (row.log.totalMinutes ?? 0) : 0),
           }),
           { total: 0, normal: 0, late: 0, earlyLeave: 0, totalMinutes: 0 },
         );
@@ -194,27 +176,19 @@ const AttendanceTabPanel = ({
 
       <div className="grid grid-cols-5 mb-5">
         <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            총 건수
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">총 건수</div>
           <div className="text-sm font-bold">{displayStats.total}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            정상
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">정상</div>
           <div className="text-sm font-bold">{displayStats.normal}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            지각
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">지각</div>
           <div className="text-sm font-bold">{displayStats.late}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
-            조퇴
-          </div>
+          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">조퇴</div>
           <div className="text-sm font-bold">{displayStats.earlyLeave}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
@@ -321,10 +295,7 @@ const AttendanceTabPanel = ({
               ))}
               {filteredLogs.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={10}
-                    className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                  >
+                  <td colSpan={10} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                     {dayFilter === "all"
                       ? "해당 월에 근태 기록이 없습니다."
                       : "해당 일자에 근태 기록이 없습니다."}
@@ -340,8 +311,7 @@ const AttendanceTabPanel = ({
         <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
           <div className="bg-white rounded-[8px] shadow-xl w-[380px] p-5">
             <div className="text-[14px] font-bold mb-4">
-              {correctionTarget.participantName} —{" "}
-              {correctionTarget.log.workDate} 근태 수정
+              {correctionTarget.participantName} — {correctionTarget.log.workDate} 근태 수정
             </div>
 
             <div className="flex flex-col gap-3">
@@ -378,9 +348,7 @@ const AttendanceTabPanel = ({
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
-                  상태
-                </label>
+                <label className="block text-[12px] font-semibold text-[#374151] mb-1">상태</label>
                 <select
                   className={selectClass}
                   value={correctionForm.status}
@@ -414,16 +382,10 @@ const AttendanceTabPanel = ({
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
-              <button
-                className={btnGhostClass}
-                onClick={() => setCorrectionTarget(null)}
-              >
+              <button className={btnGhostClass} onClick={() => setCorrectionTarget(null)}>
                 취소
               </button>
-              <button
-                className={btnPrimaryClass}
-                onClick={handleSaveCorrectionButtonClick}
-              >
+              <button className={btnPrimaryClass} onClick={handleSaveCorrectionButtonClick}>
                 저장
               </button>
             </div>

@@ -76,8 +76,7 @@ const SignatureCanvas = ({ value, onChange }: SignatureCanvasProps) => {
 
     if (value && value.startsWith("data:image")) {
       const image = new Image();
-      image.onload = () =>
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      image.onload = () => ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       image.src = value;
     }
 
@@ -105,10 +104,7 @@ const SignatureCanvas = ({ value, onChange }: SignatureCanvasProps) => {
 
   return (
     <div className={sigBoxClass}>
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full rounded-2xl touch-none"
-      />
+      <canvas ref={canvasRef} className="w-full h-full rounded-2xl touch-none" />
       <button onClick={handleClearButtonClick} className={sigClearClass}>
         지우기
       </button>

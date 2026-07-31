@@ -1,14 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import {
-  and,
-  eq,
-  getTableColumns,
-  inArray,
-  isNull,
-  like,
-  sql,
-} from "drizzle-orm";
+import { and, eq, getTableColumns, inArray, isNull, like, sql } from "drizzle-orm";
 
 import {
   admins,
@@ -24,12 +16,7 @@ import {
   participantEscapeMeta,
   pushSubscriptions,
 } from "../db/schema";
-import {
-  canAccessProgram,
-  getAuth,
-  hasMinRole,
-  parseIdArray,
-} from "../lib/authz";
+import { canAccessProgram, getAuth, hasMinRole, parseIdArray } from "../lib/authz";
 import { getKstNow } from "../lib/kst";
 import { ROLES, type Env } from "../types";
 
@@ -66,16 +53,11 @@ app.get("/", async (c) => {
       : (auth.organizationId as number);
 
   const rows = organizationId
-    ? await db
-        .select()
-        .from(programs)
-        .where(eq(programs.organizationId, organizationId))
+    ? await db.select().from(programs).where(eq(programs.organizationId, organizationId))
     : await db.select().from(programs);
 
   const visible =
-    auth.role === ROLES.MANAGER
-      ? rows.filter((p) => auth.programIds.includes(p.id))
-      : rows;
+    auth.role === ROLES.MANAGER ? rows.filter((p) => auth.programIds.includes(p.id)) : rows;
 
   return c.json(visible);
 });
@@ -85,10 +67,7 @@ app.get("/:id", async (c) => {
   const db = drizzle(c.env.DB);
   const id = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, id));
+  const programRows = await db.select().from(programs).where(eq(programs.id, id));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -127,22 +106,12 @@ app.post("/", async (c) => {
   }
 
   const organizationId =
-    auth.role === ROLES.SUPER_ADMIN
-      ? body.organizationId
-      : (auth.organizationId as number);
+    auth.role === ROLES.SUPER_ADMIN ? body.organizationId : (auth.organizationId as number);
   const { name, startDate, endDate, startTime, endTime } = body;
-  if (
-    !organizationId ||
-    !name ||
-    !startDate ||
-    !endDate ||
-    !startTime ||
-    !endTime
-  ) {
+  if (!organizationId || !name || !startDate || !endDate || !startTime || !endTime) {
     return c.json(
       {
-        error:
-          "기관, 사업단명, 시작일, 종료일, 시작 시간, 종료 시간을 모두 입력해주세요.",
+        error: "기관, 사업단명, 시작일, 종료일, 시작 시간, 종료 시간을 모두 입력해주세요.",
       },
       400,
     );
@@ -179,16 +148,10 @@ app.put("/:id/manager", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (
-    !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) ||
-    !canAccessProgram(auth, program)
-  ) {
+  if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) || !canAccessProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -198,12 +161,7 @@ app.put("/:id/manager", async (c) => {
   const managerCandidates = await db
     .select({ id: admins.id, programIds: admins.programIds })
     .from(admins)
-    .where(
-      and(
-        eq(admins.organizationId, program.organizationId),
-        eq(admins.role, ROLES.MANAGER),
-      ),
-    );
+    .where(and(eq(admins.organizationId, program.organizationId), eq(admins.role, ROLES.MANAGER)));
 
   if (
     nextManagerId !== null &&
@@ -221,9 +179,7 @@ app.put("/:id/manager", async (c) => {
 
     const nextProgramIds = shouldHave
       ? [...assignedProgramIds, programId]
-      : assignedProgramIds.filter(
-          (assignedProgramId) => assignedProgramId !== programId,
-        );
+      : assignedProgramIds.filter((assignedProgramId) => assignedProgramId !== programId);
 
     return [
       db
@@ -252,10 +208,7 @@ app.put("/:id", async (c) => {
   const db = drizzle(c.env.DB);
   const id = Number(c.req.param("id"));
 
-  const existingRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, id));
+  const existingRows = await db.select().from(programs).where(eq(programs.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   // 사업단 수정은 SUB_ADMIN까지 허용 (등록/삭제는 ORGANIZATION_ADMIN 이상)
@@ -266,18 +219,11 @@ app.put("/:id", async (c) => {
   const body = await c.req.json<ProgramBody>();
 
   // 활성/비활성 전환(소프트 삭제)은 ORGANIZATION_ADMIN 이상만 — 일반 정보 수정과는 별개 권한
-  if (
-    body.isActive !== undefined &&
-    !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)
-  ) {
+  if (body.isActive !== undefined && !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const result = await db
-    .update(programs)
-    .set(body)
-    .where(eq(programs.id, id))
-    .returning();
+  const result = await db.update(programs).set(body).where(eq(programs.id, id)).returning();
 
   // 💡 사업단을 비활성화하면 소속된 활성 참여자도 함께 참여종료(DROPPED) 처리한다
   // (설계도 5-7-3: 사업단 삭제 시 활성 참여자 자동 탈락)
@@ -289,9 +235,7 @@ app.put("/:id", async (c) => {
         droppedAt: new Date().toISOString(),
         dropReason: "사업단 종료",
       })
-      .where(
-        and(eq(participants.programId, id), eq(participants.status, "ACTIVE")),
-      );
+      .where(and(eq(participants.programId, id), eq(participants.status, "ACTIVE")));
   }
 
   return c.json(result[0]);
@@ -302,10 +246,7 @@ app.get("/:id/groups", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -337,10 +278,7 @@ app.post("/:id/groups", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -355,10 +293,7 @@ app.post("/:id/groups", async (c) => {
   }>();
 
   if (!body.name || !body.shiftStart || !body.shiftEnd) {
-    return c.json(
-      { error: "조 이름과 근무 시작 시간, 종료 시간을 모두 입력해주세요." },
-      400,
-    );
+    return c.json({ error: "조 이름과 근무 시작 시간, 종료 시간을 모두 입력해주세요." }, 400);
   }
 
   const result = await db
@@ -380,20 +315,14 @@ app.get("/:id/participants", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const rows = await db
-    .select()
-    .from(participants)
-    .where(eq(participants.programId, programId));
+  const rows = await db.select().from(participants).where(eq(participants.programId, programId));
 
   return c.json(rows);
 });
@@ -403,10 +332,7 @@ app.post("/:id/participants", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -425,10 +351,7 @@ app.post("/:id/participants", async (c) => {
     return c.json({ error: "이름을 입력해주세요." }, 400);
   }
   if (!body.phoneLast4 || !/^\d{4}$/.test(body.phoneLast4)) {
-    return c.json(
-      { error: "전화번호 뒷 4자리를 숫자 4자리로 입력해주세요." },
-      400,
-    );
+    return c.json({ error: "전화번호 뒷 4자리를 숫자 4자리로 입력해주세요." }, 400);
   }
   if (body.demandSiteId) {
     const demandSiteRows = await db
@@ -460,10 +383,7 @@ app.post("/:id/participants/bulk", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -524,10 +444,7 @@ app.delete("/:id/participants/:participantId", async (c) => {
   const programId = Number(c.req.param("id"));
   const participantId = Number(c.req.param("participantId"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -536,21 +453,13 @@ app.delete("/:id/participants/:participantId", async (c) => {
 
   // 💡 참여자를 참조하는 자식 테이블을 먼저 지워야 FOREIGN KEY constraint failed 없이
   // 삭제가 성공한다 (사업단 삭제 라우트와 동일한 이유) — 8·9장에서 추가된 테이블도 포함
-  await db
-    .delete(activityLogs)
-    .where(eq(activityLogs.participantId, participantId));
-  await db
-    .delete(participantLeaves)
-    .where(eq(participantLeaves.participantId, participantId));
-  await db
-    .delete(attendanceLogs)
-    .where(eq(attendanceLogs.participantId, participantId));
+  await db.delete(activityLogs).where(eq(activityLogs.participantId, participantId));
+  await db.delete(participantLeaves).where(eq(participantLeaves.participantId, participantId));
+  await db.delete(attendanceLogs).where(eq(attendanceLogs.participantId, participantId));
   await db
     .delete(participantAnnualLeave)
     .where(eq(participantAnnualLeave.participantId, participantId));
-  await db
-    .delete(escapeLogs)
-    .where(eq(escapeLogs.participantId, participantId));
+  await db.delete(escapeLogs).where(eq(escapeLogs.participantId, participantId));
   await db
     .delete(participantEscapeMeta)
     .where(eq(participantEscapeMeta.participantId, participantId));
@@ -562,12 +471,7 @@ app.delete("/:id/participants/:participantId", async (c) => {
 
   const result = await db
     .delete(participants)
-    .where(
-      and(
-        eq(participants.id, participantId),
-        eq(participants.programId, programId),
-      ),
-    )
+    .where(and(eq(participants.id, participantId), eq(participants.programId, programId)))
     .returning();
 
   if (!result[0]) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
@@ -580,10 +484,7 @@ app.post("/:id/participants/bulk-status", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -604,10 +505,7 @@ app.post("/:id/participants/bulk-status", async (c) => {
     .select()
     .from(participants)
     .where(
-      and(
-        eq(participants.programId, programId),
-        inArray(participants.id, body.participantIds),
-      ),
+      and(eq(participants.programId, programId), inArray(participants.id, body.participantIds)),
     );
 
   if (body.status === "DROPPED") {
@@ -649,10 +547,7 @@ app.get("/:id/attendance", async (c) => {
 
   if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -671,10 +566,7 @@ app.get("/:id/attendance", async (c) => {
     .innerJoin(participants, eq(attendanceLogs.participantId, participants.id))
     .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
     .where(
-      and(
-        eq(attendanceLogs.programId, programId),
-        like(attendanceLogs.workDate, `${month}%`),
-      ),
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
 
   const stats = {
@@ -682,9 +574,7 @@ app.get("/:id/attendance", async (c) => {
     normal: rows.filter((row) => row.log.status === "NORMAL").length,
     late: rows.filter((row) => row.log.status === "LATE").length,
     earlyLeave: rows.filter((row) => row.log.status === "EARLY_LEAVE").length,
-    totalHours: Math.floor(
-      rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60,
-    ),
+    totalHours: Math.floor(rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60),
   };
 
   return c.json({ logs: rows, stats });
@@ -696,10 +586,7 @@ app.get("/:id/leaves", async (c) => {
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month"); // "YYYY-MM"
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -719,22 +606,13 @@ app.get("/:id/leaves", async (c) => {
       annualRemainingDays: participantAnnualLeave.remainingDays,
     })
     .from(participantLeaves)
-    .innerJoin(
-      participants,
-      eq(participantLeaves.participantId, participants.id),
-    )
+    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
     .leftJoin(groups, eq(participants.groupId, groups.id))
     .leftJoin(
       participantAnnualLeave,
       and(
-        eq(
-          participantAnnualLeave.participantId,
-          participantLeaves.participantId,
-        ),
-        eq(
-          participantAnnualLeave.year,
-          sql`substr(${participantLeaves.leaveStart}, 1, 4)`,
-        ),
+        eq(participantAnnualLeave.participantId, participantLeaves.participantId),
+        eq(participantAnnualLeave.year, sql`substr(${participantLeaves.leaveStart}, 1, 4)`),
       ),
     )
     .where(and(...conditions))
@@ -749,10 +627,7 @@ app.get("/:id/leaves/stats", async (c) => {
   const programId = Number(c.req.param("id"));
   const year = c.req.query("year") ?? new Date().getFullYear().toString();
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -762,29 +637,19 @@ app.get("/:id/leaves/stats", async (c) => {
   const leaveRows = await db
     .select({ leave: participantLeaves })
     .from(participantLeaves)
-    .innerJoin(
-      participants,
-      eq(participantLeaves.participantId, participants.id),
-    )
+    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
     .where(
-      and(
-        eq(participants.programId, programId),
-        like(participantLeaves.leaveStart, `${year}%`),
-      ),
+      and(eq(participants.programId, programId), like(participantLeaves.leaveStart, `${year}%`)),
     );
 
   const monthly = Array.from({ length: 12 }, (_, index) => {
     const month = String(index + 1).padStart(2, "0");
-    const monthRows = leaveRows.filter(
-      (row) => row.leave.leaveStart.slice(5, 7) === month,
-    );
+    const monthRows = leaveRows.filter((row) => row.leave.leaveStart.slice(5, 7) === month);
     return {
       month,
       totalLeaves: monthRows.length,
-      paidLeaves: monthRows.filter((row) => row.leave.leaveType === "PAID")
-        .length,
-      unpaidLeaves: monthRows.filter((row) => row.leave.leaveType === "UNPAID")
-        .length,
+      paidLeaves: monthRows.filter((row) => row.leave.leaveType === "PAID").length,
+      unpaidLeaves: monthRows.filter((row) => row.leave.leaveType === "UNPAID").length,
       totalDays: monthRows.reduce((sum, row) => sum + row.leave.leaveDays, 0),
     };
   });
@@ -792,25 +657,14 @@ app.get("/:id/leaves/stats", async (c) => {
   const annualRows = await db
     .select({ annual: participantAnnualLeave })
     .from(participantAnnualLeave)
-    .innerJoin(
-      participants,
-      eq(participantAnnualLeave.participantId, participants.id),
-    )
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participantAnnualLeave.year, year),
-      ),
-    );
+    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
+    .where(and(eq(participants.programId, programId), eq(participantAnnualLeave.year, year)));
 
   const annual = {
     participants: annualRows.length,
     totalAnnual: annualRows.reduce((sum, row) => sum + row.annual.totalDays, 0),
     usedAnnual: annualRows.reduce((sum, row) => sum + row.annual.usedDays, 0),
-    remainingAnnual: annualRows.reduce(
-      (sum, row) => sum + row.annual.remainingDays,
-      0,
-    ),
+    remainingAnnual: annualRows.reduce((sum, row) => sum + row.annual.remainingDays, 0),
   };
 
   return c.json({ monthly, annual });
@@ -822,10 +676,7 @@ app.get("/:id/escapes", async (c) => {
   const programId = Number(c.req.param("id"));
   const status = c.req.query("status") ?? "OPEN";
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -860,10 +711,7 @@ app.get("/:id/workers/live", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
@@ -896,16 +744,8 @@ app.get("/:id/workers/live", async (c) => {
     )
     .leftJoin(groups, eq(participants.groupId, groups.id))
     .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
-    .leftJoin(
-      participantEscapeMeta,
-      eq(participantEscapeMeta.participantId, participants.id),
-    )
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participants.status, "ACTIVE"),
-      ),
-    );
+    .leftJoin(participantEscapeMeta, eq(participantEscapeMeta.participantId, participants.id))
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const workers = rows.map((row) => ({
     participantId: row.participantId,

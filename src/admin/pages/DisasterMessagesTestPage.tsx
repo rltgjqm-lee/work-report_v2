@@ -27,9 +27,7 @@ const DisasterMessagesPage = () => {
   const [testMessage, setTestMessage] = useState("");
   const [testResult, setTestResult] = useState<string | null>(null);
 
-  const sendTestMutation = useMutation(
-    sendTestSafetyAlertMutationOptions(queryClient),
-  );
+  const sendTestMutation = useMutation(sendTestSafetyAlertMutationOptions(queryClient));
 
   const handleSendTestButtonClick = () => {
     if (!testProgramId || !testMessage) {
@@ -47,11 +45,7 @@ const DisasterMessagesPage = () => {
           setTestMessage("");
         },
         onError: (error) => {
-          alert(
-            error instanceof Error
-              ? error.message
-              : "테스트 발송에 실패했습니다.",
-          );
+          alert(error instanceof Error ? error.message : "테스트 발송에 실패했습니다.");
         },
       },
     );
@@ -62,9 +56,8 @@ const DisasterMessagesPage = () => {
       <div className="mb-5">
         <h1 className="text-[21px] font-bold m-0">재난문자 테스트</h1>
         <p className="text-[13px] text-[#6b7280] mt-1.5">
-          테스트 발송 및 행안부 수신 원본 전체(매칭 안 돼 발송 안 된 것 포함)를
-          확인하는 진단용 화면입니다. 실제 발송 이력은 "재난문자 발송이력"
-          메뉴를 확인하세요.
+          테스트 발송 및 행안부 수신 원본 전체(매칭 안 돼 발송 안 된 것 포함)를 확인하는 진단용
+          화면입니다. 실제 발송 이력은 "재난문자 발송이력" 메뉴를 확인하세요.
         </p>
       </div>
 
@@ -90,16 +83,11 @@ const DisasterMessagesPage = () => {
             onChange={(event) => setTestMessage(event.target.value)}
           />
 
-          <button
-            className={btnPrimaryClass}
-            onClick={handleSendTestButtonClick}
-          >
+          <button className={btnPrimaryClass} onClick={handleSendTestButtonClick}>
             발송
           </button>
         </div>
-        {testResult && (
-          <div className="text-xs text-[#1e3a5f] mt-2.5">{testResult}</div>
-        )}
+        {testResult && <div className="text-xs text-[#1e3a5f] mt-2.5">{testResult}</div>}
       </div>
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
@@ -159,10 +147,7 @@ const DisasterMessagesPage = () => {
 
               {alerts.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]"
-                  >
+                  <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                     발송된 재난문자가 없습니다.
                   </td>
                 </tr>

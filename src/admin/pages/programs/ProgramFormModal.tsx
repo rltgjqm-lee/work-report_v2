@@ -10,13 +10,7 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
-import {
-  ROLES,
-  type Admin,
-  type Organization,
-  type Program,
-  type Role,
-} from "../../types";
+import { ROLES, type Admin, type Organization, type Program, type Role } from "../../types";
 
 const emptyForm = {
   organizationId: "",
@@ -49,15 +43,9 @@ const ProgramFormModal = ({
   managerAdmins,
 }: ProgramFormModalProps) => {
   const queryClient = useQueryClient();
-  const createProgramMutation = useMutation(
-    createProgramMutationOptions(queryClient),
-  );
-  const updateProgramMutation = useMutation(
-    updateProgramMutationOptions(queryClient),
-  );
-  const setProgramManagerMutation = useMutation(
-    setProgramManagerMutationOptions(queryClient),
-  );
+  const createProgramMutation = useMutation(createProgramMutationOptions(queryClient));
+  const updateProgramMutation = useMutation(updateProgramMutationOptions(queryClient));
+  const setProgramManagerMutation = useMutation(setProgramManagerMutationOptions(queryClient));
   const [form, setForm] = useState(
     editingProgram
       ? {
@@ -238,9 +226,7 @@ const ProgramFormModal = ({
         <input
           className={inputClass}
           value={form.name}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, name: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
 
@@ -252,9 +238,7 @@ const ProgramFormModal = ({
               type="date"
               className={inputClass}
               value={form.startDate}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, startDate: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, startDate: event.target.value }))}
             />
           </FormField>
         </div>
@@ -267,9 +251,7 @@ const ProgramFormModal = ({
               className={inputClass}
               value={form.endDate}
               min={form.startDate || undefined}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, endDate: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, endDate: event.target.value }))}
             />
           </FormField>
         </div>
@@ -284,9 +266,7 @@ const ProgramFormModal = ({
               step={600}
               className={inputClass}
               value={form.startTime}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, startTime: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, startTime: event.target.value }))}
             />
           </FormField>
         </div>
@@ -300,9 +280,7 @@ const ProgramFormModal = ({
               className={inputClass}
               value={form.endTime}
               min={form.startTime || undefined}
-              onChange={(event) =>
-                setForm((f) => ({ ...f, endTime: event.target.value }))
-              }
+              onChange={(event) => setForm((f) => ({ ...f, endTime: event.target.value }))}
             />
           </FormField>
         </div>
@@ -314,9 +292,7 @@ const ProgramFormModal = ({
           type="number"
           className={inputClass}
           value={form.hourlyWage}
-          onChange={(event) =>
-            setForm((f) => ({ ...f, hourlyWage: event.target.value }))
-          }
+          onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
         />
       </FormField>
 

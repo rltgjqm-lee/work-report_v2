@@ -1,8 +1,5 @@
 import { reportLocation } from "./attendanceApi";
-import {
-  isNativePlatform,
-  startBackgroundLocationWatch,
-} from "./backgroundLocation";
+import { isNativePlatform, startBackgroundLocationWatch } from "./backgroundLocation";
 import { readCurrentCoordinates, type Coordinates } from "./geolocation";
 
 // 서버 보고 주기. 서버의 통신 끊김 판정(checkSignalLoss.ts, 25분)은 이 값의 2배 이상이어야
@@ -32,9 +29,7 @@ const sendReport = async (
   try {
     const result = await reportLocation(participantId, coordinates);
     onStateChange({
-      escapedDemandSiteName: result.escaped
-        ? (result.demandSiteName ?? null)
-        : null,
+      escapedDemandSiteName: result.escaped ? (result.demandSiteName ?? null) : null,
       reportFailing: false,
     });
   } catch {

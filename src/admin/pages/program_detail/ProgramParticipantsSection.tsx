@@ -59,13 +59,8 @@ const ProgramParticipantsSection = ({
   onGroupFilterChange,
   onChanged,
 }: ProgramParticipantsSectionProps) => {
-  const { page, totalPages, pageItems, setPage } = usePagination(
-    participants,
-    15,
-  );
-  const [selectedParticipantIds, setSelectedParticipantIds] = useState<
-    number[]
-  >([]);
+  const { page, totalPages, pageItems, setPage } = usePagination(participants, 15);
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<number[]>([]);
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [leaveTarget, setLeaveTarget] = useState<{
     id: number;
@@ -76,9 +71,7 @@ const ProgramParticipantsSection = ({
     id: number;
     name: string;
   } | null>(null);
-  const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(
-    null,
-  );
+  const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(null);
 
   const handleParticipantSelectionChange = (participantId: number) => {
     setSelectedParticipantIds((current) =>
@@ -88,10 +81,7 @@ const ProgramParticipantsSection = ({
     );
   };
 
-  const handleGroupSelectChange = async (
-    participantId: number,
-    groupId: string,
-  ) => {
+  const handleGroupSelectChange = async (participantId: number, groupId: string) => {
     try {
       if (groupId) await moveParticipantToGroup(participantId, Number(groupId));
       onChanged();
@@ -105,10 +95,7 @@ const ProgramParticipantsSection = ({
     setLeaveModalOpen(true);
   };
 
-  const handleAnnualSettingButtonClick = (
-    participantId: number,
-    name: string,
-  ) => {
+  const handleAnnualSettingButtonClick = (participantId: number, name: string) => {
     setAnnualTarget({ id: participantId, name });
     setAnnualModalOpen(true);
   };
@@ -135,10 +122,7 @@ const ProgramParticipantsSection = ({
     }
   };
 
-  const handleReactivateButtonClick = async (
-    participantId: number,
-    name: string,
-  ) => {
+  const handleReactivateButtonClick = async (participantId: number, name: string) => {
     if (!confirm(`'${name}' 님을 다시 활동중 상태로 되돌리시겠습니까?`)) return;
 
     try {
@@ -149,10 +133,7 @@ const ProgramParticipantsSection = ({
     }
   };
 
-  const handleDeleteButtonClick = async (
-    participantId: number,
-    name: string,
-  ) => {
+  const handleDeleteButtonClick = async (participantId: number, name: string) => {
     if (!confirm(`'${name}' 님을 참여자 명단에서 삭제하시겠습니까?`)) return;
     try {
       await deleteParticipant(programId, participantId);
@@ -180,12 +161,7 @@ const ProgramParticipantsSection = ({
   };
 
   const handleBulkReactivateButtonClick = async () => {
-    if (
-      !confirm(
-        `선택한 ${selectedParticipantIds.length}명을 재활성화하시겠습니까?`,
-      )
-    )
-      return;
+    if (!confirm(`선택한 ${selectedParticipantIds.length}명을 재활성화하시겠습니까?`)) return;
 
     try {
       await bulkUpdateParticipantStatus(programId, {
@@ -203,11 +179,7 @@ const ProgramParticipantsSection = ({
     <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <SearchInput
-            value={search}
-            onChange={onSearchChange}
-            placeholder="이름 검색"
-          />
+          <SearchInput value={search} onChange={onSearchChange} placeholder="이름 검색" />
           <FilterSelect
             value={demandFilter}
             onChange={onDemandFilterChange}
@@ -251,16 +223,10 @@ const ProgramParticipantsSection = ({
           <span className="text-xs text-[#1e3a5f] font-semibold">
             {selectedParticipantIds.length}명 선택됨
           </span>
-          <button
-            className={rowActionBtnClass}
-            onClick={handleBulkDropButtonClick}
-          >
+          <button className={rowActionBtnClass} onClick={handleBulkDropButtonClick}>
             일괄 참여종료
           </button>
-          <button
-            className={rowActionBtnClass}
-            onClick={handleBulkReactivateButtonClick}
-          >
+          <button className={rowActionBtnClass} onClick={handleBulkReactivateButtonClick}>
             일괄 재활성화
           </button>
         </div>
@@ -299,9 +265,7 @@ const ProgramParticipantsSection = ({
                   <input
                     type="checkbox"
                     checked={selectedParticipantIds.includes(participant.id)}
-                    onChange={() =>
-                      handleParticipantSelectionChange(participant.id)
-                    }
+                    onChange={() => handleParticipantSelectionChange(participant.id)}
                   />
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
@@ -319,16 +283,11 @@ const ProgramParticipantsSection = ({
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                   <FilterSelect
                     value={String(participant.groupId ?? "")}
-                    onChange={(value) =>
-                      handleGroupSelectChange(participant.id, value)
-                    }
+                    onChange={(value) => handleGroupSelectChange(participant.id, value)}
                     options={[
                       { value: "", label: "미배정" },
                       ...groups
-                        .filter(
-                          (group) =>
-                            group.isActive || group.id === participant.groupId,
-                        )
+                        .filter((group) => group.isActive || group.id === participant.groupId)
                         .map((group) => ({
                           value: String(group.id),
                           label: group.name,
@@ -344,22 +303,14 @@ const ProgramParticipantsSection = ({
                     <>
                       <button
                         className={rowActionBtnClass}
-                        onClick={() =>
-                          handleLeaveButtonClick(
-                            participant.id,
-                            participant.name,
-                          )
-                        }
+                        onClick={() => handleLeaveButtonClick(participant.id, participant.name)}
                       >
                         휴무
                       </button>
                       <button
                         className={rowActionBtnClass}
                         onClick={() =>
-                          handleAnnualSettingButtonClick(
-                            participant.id,
-                            participant.name,
-                          )
+                          handleAnnualSettingButtonClick(participant.id, participant.name)
                         }
                       >
                         연차설정
@@ -372,12 +323,7 @@ const ProgramParticipantsSection = ({
                       </button>
                       <button
                         className={rowActionBtnClass}
-                        onClick={() =>
-                          handleDropButtonClick(
-                            participant.id,
-                            participant.name,
-                          )
-                        }
+                        onClick={() => handleDropButtonClick(participant.id, participant.name)}
                       >
                         참여종료
                       </button>
@@ -394,21 +340,14 @@ const ProgramParticipantsSection = ({
                   {participant.status === "DROPPED" && (
                     <button
                       className={rowActionBtnClass}
-                      onClick={() =>
-                        handleReactivateButtonClick(
-                          participant.id,
-                          participant.name,
-                        )
-                      }
+                      onClick={() => handleReactivateButtonClick(participant.id, participant.name)}
                     >
                       재활성화
                     </button>
                   )}
                   <button
                     className={rowActionBtnClass}
-                    onClick={() =>
-                      handleDeleteButtonClick(participant.id, participant.name)
-                    }
+                    onClick={() => handleDeleteButtonClick(participant.id, participant.name)}
                   >
                     삭제
                   </button>

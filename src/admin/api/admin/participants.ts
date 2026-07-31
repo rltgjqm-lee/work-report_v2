@@ -1,8 +1,4 @@
-import {
-  mutationOptions,
-  queryOptions,
-  type QueryClient,
-} from "@tanstack/react-query";
+import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import { request } from "../client";
 import { programKeys } from "./programs";
@@ -25,8 +21,7 @@ export const participantKeys = {
     [...participantKeys.detail(id), "annual-leave", year] as const,
 };
 
-export const getParticipant = (id: number) =>
-  request<ParticipantDetail>(`/api/participants/${id}`);
+export const getParticipant = (id: number) => request<ParticipantDetail>(`/api/participants/${id}`);
 
 export const participantQueryOptions = (id: number) =>
   queryOptions({
@@ -35,9 +30,7 @@ export const participantQueryOptions = (id: number) =>
   });
 
 export const getParticipantAttendance = (id: number, month: string) =>
-  request<ParticipantMonthlyAttendance>(
-    `/api/participants/${id}/attendance?month=${month}`,
-  );
+  request<ParticipantMonthlyAttendance>(`/api/participants/${id}/attendance?month=${month}`);
 
 export const participantAttendanceQueryOptions = (id: number, month: string) =>
   queryOptions({
@@ -70,10 +63,9 @@ export const addParticipant = (
   });
 
 export const deleteParticipant = (programId: number, participantId: number) =>
-  request<{ success: boolean }>(
-    `/api/programs/${programId}/participants/${participantId}`,
-    { method: "DELETE" },
-  );
+  request<{ success: boolean }>(`/api/programs/${programId}/participants/${participantId}`, {
+    method: "DELETE",
+  });
 
 export interface DeleteParticipantVariables {
   programId: number;
@@ -133,10 +125,7 @@ export interface UpdateParticipantVariables {
   >;
 }
 
-export const updateParticipant = (
-  id: number,
-  data: UpdateParticipantVariables["data"],
-) =>
+export const updateParticipant = (id: number, data: UpdateParticipantVariables["data"]) =>
   request<Participant>(`/api/participants/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -147,8 +136,7 @@ export const updateParticipant = (
 // mutate(variables, { onSuccess, onError })에 둔다.
 export const updateParticipantMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ id, data }: UpdateParticipantVariables) =>
-      updateParticipant(id, data),
+    mutationFn: ({ id, data }: UpdateParticipantVariables) => updateParticipant(id, data),
     onSuccess: (updated, variables) => {
       queryClient.setQueryData(
         participantKeys.detail(variables.id),
@@ -203,10 +191,7 @@ export const participantAnnualLeaveQueryOptions = (id: number, year: string) =>
     queryFn: () => getAnnualLeave(id, year),
   });
 
-export const setAnnualLeave = (
-  id: number,
-  data: { year: string; totalDays: number },
-) =>
+export const setAnnualLeave = (id: number, data: { year: string; totalDays: number }) =>
   request<AnnualLeave>(`/api/participants/${id}/annual-leave`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -220,7 +205,7 @@ export const bulkUpdateParticipantStatus = (
     dropReason?: string;
   },
 ) =>
-  request<Participant[]>(
-    `/api/programs/${programId}/participants/bulk-status`,
-    { method: "POST", body: JSON.stringify(data) },
-  );
+  request<Participant[]>(`/api/programs/${programId}/participants/bulk-status`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });

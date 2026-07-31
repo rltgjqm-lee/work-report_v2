@@ -62,10 +62,7 @@ app.get("/:id", async (c) => {
     found.participant.groupId
       ? db.select().from(groups).where(eq(groups.id, found.participant.groupId))
       : Promise.resolve([]),
-    db
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, found.program.organizationId)),
+    db.select().from(organizations).where(eq(organizations.id, found.program.organizationId)),
   ]);
 
   return c.json({
@@ -101,12 +98,7 @@ app.get("/:id/attendance", async (c) => {
     })
     .from(attendanceLogs)
     .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
-    .where(
-      and(
-        eq(attendanceLogs.participantId, id),
-        like(attendanceLogs.workDate, `${month}%`),
-      ),
-    )
+    .where(and(eq(attendanceLogs.participantId, id), like(attendanceLogs.workDate, `${month}%`)))
     .orderBy(desc(attendanceLogs.workDate));
 
   const stats = {
@@ -114,9 +106,7 @@ app.get("/:id/attendance", async (c) => {
     normal: rows.filter((row) => row.log.status === "NORMAL").length,
     late: rows.filter((row) => row.log.status === "LATE").length,
     earlyLeave: rows.filter((row) => row.log.status === "EARLY_LEAVE").length,
-    totalHours: Math.floor(
-      rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60,
-    ),
+    totalHours: Math.floor(rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60),
   };
 
   return c.json({ logs: rows, stats });
@@ -179,11 +169,7 @@ app.put("/:id", async (c) => {
     }
   }
 
-  const result = await db
-    .update(participants)
-    .set(body)
-    .where(eq(participants.id, id))
-    .returning();
+  const result = await db.update(participants).set(body).where(eq(participants.id, id)).returning();
 
   return c.json(result[0]);
 });
@@ -203,10 +189,7 @@ app.post("/:id/group", async (c) => {
   const body = await c.req.json<{ groupId?: number }>();
   if (!body.groupId) return c.json({ error: "조를 지정해주세요." }, 400);
 
-  const groupRows = await db
-    .select()
-    .from(groups)
-    .where(eq(groups.id, body.groupId));
+  const groupRows = await db.select().from(groups).where(eq(groups.id, body.groupId));
   const group = groupRows[0];
   if (!group || group.programId !== found.participant.programId) {
     return c.json({ error: "해당 사업단의 조가 아닙니다." }, 400);
@@ -278,10 +261,7 @@ app.post("/:id/leave", async (c) => {
       .select()
       .from(participantAnnualLeave)
       .where(
-        and(
-          eq(participantAnnualLeave.participantId, id),
-          eq(participantAnnualLeave.year, year),
-        ),
+        and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
       );
     const remainingDays = annualRows[0]?.remainingDays ?? 0;
     if (remainingDays < leaveDays) {
@@ -323,10 +303,7 @@ app.post("/:id/leave", async (c) => {
         updatedAt: new Date().toISOString(),
       })
       .where(
-        and(
-          eq(participantAnnualLeave.participantId, id),
-          eq(participantAnnualLeave.year, year),
-        ),
+        and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
       );
   }
 
@@ -369,10 +346,7 @@ app.post("/:id/reactivate", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
   if (found.participant.status !== "DROPPED") {
-    return c.json(
-      { error: "탈락 상태인 참여자만 재활성화할 수 있습니다." },
-      400,
-    );
+    return c.json({ error: "탈락 상태인 참여자만 재활성화할 수 있습니다." }, 400);
   }
 
   const result = await db
@@ -405,10 +379,7 @@ app.get("/:id/annual-leave", async (c) => {
     .select()
     .from(participantAnnualLeave)
     .where(
-      and(
-        eq(participantAnnualLeave.participantId, id),
-        eq(participantAnnualLeave.year, year),
-      ),
+      and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
     );
 
   return c.json(
@@ -442,10 +413,7 @@ app.post("/:id/annual-leave", async (c) => {
     .select()
     .from(participantAnnualLeave)
     .where(
-      and(
-        eq(participantAnnualLeave.participantId, id),
-        eq(participantAnnualLeave.year, body.year),
-      ),
+      and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, body.year)),
     );
   const existing = existingRows[0];
 

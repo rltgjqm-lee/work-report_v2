@@ -30,14 +30,8 @@ const base64FromArrayBuffer = (buffer: ArrayBuffer): string => {
   return btoa(binary);
 };
 
-const loadAccessibleProgram = async (
-  db: ReturnType<typeof drizzle>,
-  programId: number,
-) => {
-  const rows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, programId));
+const loadAccessibleProgram = async (db: ReturnType<typeof drizzle>, programId: number) => {
+  const rows = await db.select().from(programs).where(eq(programs.id, programId));
   return rows[0] ?? null;
 };
 
@@ -52,8 +46,7 @@ app.get("/:id/export/activity-log", async (c) => {
 
   const program = await loadAccessibleProgram(db, programId);
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const organizationRows = await db
     .select()
@@ -69,12 +62,7 @@ app.get("/:id/export/activity-log", async (c) => {
     })
     .from(activityLogs)
     .innerJoin(participants, eq(activityLogs.participantId, participants.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        like(activityLogs.actDate, `${month}%`),
-      ),
-    )
+    .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)))
     .orderBy(activityLogs.actDate);
 
   const participantsByName = new Map<
@@ -127,8 +115,7 @@ app.get("/:id/export/activity-payment", async (c) => {
 
   const program = await loadAccessibleProgram(db, programId);
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const organizationRows = await db
     .select()
@@ -139,23 +126,13 @@ app.get("/:id/export/activity-payment", async (c) => {
   const activeParticipants = await db
     .select()
     .from(participants)
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participants.status, "ACTIVE"),
-      ),
-    );
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const logRows = await db
     .select({ log: activityLogs })
     .from(activityLogs)
     .innerJoin(participants, eq(activityLogs.participantId, participants.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        like(activityLogs.actDate, `${month}%`),
-      ),
-    );
+    .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)));
 
   const minutesByParticipant = new Map<number, number>();
   for (const { log } of logRows) {
@@ -169,9 +146,7 @@ app.get("/:id/export/activity-payment", async (c) => {
   }
 
   const sortedParticipants = [...activeParticipants].sort((a, b) => {
-    const demandCompare = (a.demandName ?? "").localeCompare(
-      b.demandName ?? "",
-    );
+    const demandCompare = (a.demandName ?? "").localeCompare(b.demandName ?? "");
     return demandCompare !== 0 ? demandCompare : a.name.localeCompare(b.name);
   });
 
@@ -198,8 +173,7 @@ app.get("/:id/export/attendance", async (c) => {
 
   const program = await loadAccessibleProgram(db, programId);
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const activeParticipants = await db
     .select({
@@ -210,22 +184,14 @@ app.get("/:id/export/attendance", async (c) => {
     })
     .from(participants)
     .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participants.status, "ACTIVE"),
-      ),
-    );
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const groupScheduleRows = await db
     .select()
     .from(groupMonthlySchedule)
     .where(eq(groupMonthlySchedule.yearMonth, month));
   const groupScheduleByGroupId = new Map(
-    groupScheduleRows.map((row) => [
-      row.groupId,
-      JSON.parse(row.workDates) as string[],
-    ]),
+    groupScheduleRows.map((row) => [row.groupId, JSON.parse(row.workDates) as string[]]),
   );
 
   const participantScheduleRows = await db
@@ -243,10 +209,7 @@ app.get("/:id/export/attendance", async (c) => {
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.programId, programId),
-        like(attendanceLogs.workDate, `${month}%`),
-      ),
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
   const logByParticipantDate = new Map(
     logRows.map((log) => [`${log.participantId}_${log.workDate}`, log]),
@@ -261,26 +224,17 @@ app.get("/:id/export/attendance", async (c) => {
         const object = await c.env.SIGNATURES_BUCKET.get(log.signatureKey!);
         if (!object) return;
         const buffer = await object.arrayBuffer();
-        signatureBase64ByKey.set(
-          log.signatureKey!,
-          base64FromArrayBuffer(buffer),
-        );
+        signatureBase64ByKey.set(log.signatureKey!, base64FromArrayBuffer(buffer));
       }),
   );
 
-  const daysInMonth = new Date(
-    Number(month.slice(0, 4)),
-    Number(month.slice(5, 7)),
-    0,
-  ).getDate();
+  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
   const participantsPayload = activeParticipants.map(
     ({ participant, groupName, shiftStart, shiftEnd }) => {
       const scheduledDates =
         participantScheduleByParticipantId.get(participant.id) ??
-        (participant.groupId
-          ? groupScheduleByGroupId.get(participant.groupId)
-          : undefined) ??
+        (participant.groupId ? groupScheduleByGroupId.get(participant.groupId) : undefined) ??
         [];
 
       const days = Array.from({ length: daysInMonth }, (_, index) => {
@@ -344,8 +298,7 @@ app.get("/:id/export/work-schedule", async (c) => {
 
   const program = await loadAccessibleProgram(db, programId);
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const orgRows = await db
     .select()
@@ -362,22 +315,14 @@ app.get("/:id/export/work-schedule", async (c) => {
     })
     .from(participants)
     .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participants.status, "ACTIVE"),
-      ),
-    );
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const groupScheduleRows = await db
     .select()
     .from(groupMonthlySchedule)
     .where(eq(groupMonthlySchedule.yearMonth, month));
   const groupScheduleByGroupId = new Map(
-    groupScheduleRows.map((row) => [
-      row.groupId,
-      JSON.parse(row.workDates) as string[],
-    ]),
+    groupScheduleRows.map((row) => [row.groupId, JSON.parse(row.workDates) as string[]]),
   );
 
   const participantScheduleRows = await db
@@ -392,23 +337,15 @@ app.get("/:id/export/work-schedule", async (c) => {
   );
 
   const monthStart = `${month}-01`;
-  const daysInMonth = new Date(
-    Number(month.slice(0, 4)),
-    Number(month.slice(5, 7)),
-    0,
-  ).getDate();
+  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
   const monthEnd = `${month}-${String(daysInMonth).padStart(2, "0")}`;
 
-  const clipLeaveDaysToMonth = (
-    leaveStart: string,
-    leaveEnd: string,
-  ): number => {
+  const clipLeaveDaysToMonth = (leaveStart: string, leaveEnd: string): number => {
     const start = leaveStart > monthStart ? leaveStart : monthStart;
     const end = leaveEnd < monthEnd ? leaveEnd : monthEnd;
     if (start > end) return 0;
     const diffDays =
-      (new Date(`${end}T00:00:00Z`).getTime() -
-        new Date(`${start}T00:00:00Z`).getTime()) /
+      (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime()) /
       86400000;
     return diffDays + 1;
   };
@@ -416,10 +353,7 @@ app.get("/:id/export/work-schedule", async (c) => {
   const leaveRows = await db
     .select({ leave: participantLeaves })
     .from(participantLeaves)
-    .innerJoin(
-      participants,
-      eq(participantLeaves.participantId, participants.id),
-    )
+    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
     .where(eq(participants.programId, programId))
     .then((rows) => rows.map((row) => row.leave));
   const leavesByParticipant = new Map<number, typeof leaveRows>();
@@ -435,10 +369,7 @@ app.get("/:id/export/work-schedule", async (c) => {
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.programId, programId),
-        like(attendanceLogs.workDate, `${month}%`),
-      ),
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
   const presentDaysByParticipant = new Map<number, number>();
   for (const log of attendanceRows) {
@@ -453,9 +384,7 @@ app.get("/:id/export/work-schedule", async (c) => {
     ({ participant, groupName, shiftStart, shiftEnd }) => {
       const scheduledDates =
         participantScheduleByParticipantId.get(participant.id) ??
-        (participant.groupId
-          ? groupScheduleByGroupId.get(participant.groupId)
-          : undefined) ??
+        (participant.groupId ? groupScheduleByGroupId.get(participant.groupId) : undefined) ??
         [];
 
       const leaves = leavesByParticipant.get(participant.id) ?? [];
@@ -502,8 +431,7 @@ app.get("/:id/export/payslip", async (c) => {
 
   const program = await loadAccessibleProgram(db, programId);
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const orgRows = await db
     .select()
@@ -514,21 +442,13 @@ app.get("/:id/export/payslip", async (c) => {
   const activeParticipants = await db
     .select()
     .from(participants)
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participants.status, "ACTIVE"),
-      ),
-    );
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const attendanceRows = await db
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.programId, programId),
-        like(attendanceLogs.workDate, `${month}%`),
-      ),
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
   const minutesByParticipant = new Map<number, number>();
   for (const log of attendanceRows) {
@@ -548,10 +468,7 @@ app.get("/:id/export/payslip", async (c) => {
     employmentInsuranceRate: program.employmentInsuranceRate,
     participants: activeParticipants.map((participant) => ({
       name: participant.name,
-      actualWorkHours:
-        Math.round(
-          ((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10,
-        ) / 10,
+      actualWorkHours: Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
     })),
   });
 });
@@ -569,8 +486,7 @@ app.get("/:id/export/payment", async (c) => {
 
   const program = await loadAccessibleProgram(db, programId);
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program))
-    return c.json({ error: "권한이 없습니다." }, 403);
+  if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
   const activeParticipants = await db
     .select({
@@ -580,21 +496,13 @@ app.get("/:id/export/payment", async (c) => {
     })
     .from(participants)
     .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participants.status, "ACTIVE"),
-      ),
-    );
+    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const attendanceRows = await db
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.programId, programId),
-        like(attendanceLogs.workDate, `${month}%`),
-      ),
+      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
   const minutesByParticipant = new Map<number, number>();
   for (const log of attendanceRows) {
@@ -608,10 +516,7 @@ app.get("/:id/export/payment", async (c) => {
   const trainingRows = await db
     .select({ log: participantTrainingLogs })
     .from(participantTrainingLogs)
-    .innerJoin(
-      participants,
-      eq(participantTrainingLogs.participantId, participants.id),
-    )
+    .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
     .where(
       and(
         eq(participants.programId, programId),
@@ -624,28 +529,19 @@ app.get("/:id/export/payment", async (c) => {
   for (const log of trainingRows) {
     trainingHoursByParticipant.set(
       log.participantId,
-      (trainingHoursByParticipant.get(log.participantId) ?? 0) +
-        log.attendHours,
+      (trainingHoursByParticipant.get(log.participantId) ?? 0) + log.attendHours,
     );
   }
 
   const monthStart = `${month}-01`;
-  const daysInMonth = new Date(
-    Number(month.slice(0, 4)),
-    Number(month.slice(5, 7)),
-    0,
-  ).getDate();
+  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
   const monthEnd = `${month}-${String(daysInMonth).padStart(2, "0")}`;
-  const clipLeaveDaysToMonth = (
-    leaveStart: string,
-    leaveEnd: string,
-  ): number => {
+  const clipLeaveDaysToMonth = (leaveStart: string, leaveEnd: string): number => {
     const start = leaveStart > monthStart ? leaveStart : monthStart;
     const end = leaveEnd < monthEnd ? leaveEnd : monthEnd;
     if (start > end) return 0;
     const diffDays =
-      (new Date(`${end}T00:00:00Z`).getTime() -
-        new Date(`${start}T00:00:00Z`).getTime()) /
+      (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime()) /
       86400000;
     return diffDays + 1;
   };
@@ -653,16 +549,8 @@ app.get("/:id/export/payment", async (c) => {
   const leaveRows = await db
     .select({ leave: participantLeaves })
     .from(participantLeaves)
-    .innerJoin(
-      participants,
-      eq(participantLeaves.participantId, participants.id),
-    )
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participantLeaves.leaveType, "PAID"),
-      ),
-    )
+    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
+    .where(and(eq(participants.programId, programId), eq(participantLeaves.leaveType, "PAID")))
     .then((rows) => rows.map((row) => row.leave));
   const paidLeaveDaysByParticipant = new Map<number, number>();
   for (const leave of leaveRows) {
@@ -677,10 +565,7 @@ app.get("/:id/export/payment", async (c) => {
   const annualLeaveRows = await db
     .select({ leave: participantAnnualLeave })
     .from(participantAnnualLeave)
-    .innerJoin(
-      participants,
-      eq(participantAnnualLeave.participantId, participants.id),
-    )
+    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
     .where(
       and(
         eq(participants.programId, programId),
@@ -692,32 +577,24 @@ app.get("/:id/export/payment", async (c) => {
     annualLeaveRows.map((leave) => [leave.participantId, leave.remainingDays]),
   );
 
-  const participantsPayload = activeParticipants.map(
-    ({ participant, shiftStart, shiftEnd }) => {
-      const dailyHours =
-        shiftStart && shiftEnd
-          ? (() => {
-              const [sh, sm] = shiftStart.split(":").map(Number);
-              const [eh, em] = shiftEnd.split(":").map(Number);
-              return (eh * 60 + em - (sh * 60 + sm)) / 60;
-            })()
-          : 0;
+  const participantsPayload = activeParticipants.map(({ participant, shiftStart, shiftEnd }) => {
+    const dailyHours =
+      shiftStart && shiftEnd
+        ? (() => {
+            const [sh, sm] = shiftStart.split(":").map(Number);
+            const [eh, em] = shiftEnd.split(":").map(Number);
+            return (eh * 60 + em - (sh * 60 + sm)) / 60;
+          })()
+        : 0;
 
-      return {
-        name: participant.name,
-        actualWorkHours:
-          Math.round(
-            ((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10,
-          ) / 10,
-        trainingHours: trainingHoursByParticipant.get(participant.id) ?? 0,
-        paidLeaveHours:
-          (paidLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
-        remainingLeaveHours:
-          (remainingLeaveDaysByParticipant.get(participant.id) ?? 0) *
-          dailyHours,
-      };
-    },
-  );
+    return {
+      name: participant.name,
+      actualWorkHours: Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
+      trainingHours: trainingHoursByParticipant.get(participant.id) ?? 0,
+      paidLeaveHours: (paidLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
+      remainingLeaveHours: (remainingLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
+    };
+  });
 
   return c.json({
     programName: program.name,

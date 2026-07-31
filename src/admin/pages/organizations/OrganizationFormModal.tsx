@@ -40,17 +40,10 @@ interface OrganizationFormModalProps {
  * 관리자 페이지 > 기관 관리 페이지에서 기관을 추가/수정하는 모달입니다.
  *
  */
-const OrganizationFormModal = ({
-  onClose,
-  editingOrganization,
-}: OrganizationFormModalProps) => {
+const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFormModalProps) => {
   const queryClient = useQueryClient();
-  const createOrganizationMutation = useMutation(
-    createOrganizationMutationOptions(queryClient),
-  );
-  const updateOrganizationMutation = useMutation(
-    updateOrganizationMutationOptions(queryClient),
-  );
+  const createOrganizationMutation = useMutation(createOrganizationMutationOptions(queryClient));
+  const updateOrganizationMutation = useMutation(updateOrganizationMutationOptions(queryClient));
   const [form, setForm] = useState(
     editingOrganization
       ? {
@@ -84,16 +77,11 @@ const OrganizationFormModal = ({
     const saveCallbacks = {
       onSuccess: () => onClose(),
       onError: (error: unknown) =>
-        setError(
-          error instanceof Error ? error.message : "저장에 실패했습니다.",
-        ),
+        setError(error instanceof Error ? error.message : "저장에 실패했습니다."),
     };
 
     if (editingOrganization) {
-      updateOrganizationMutation.mutate(
-        { id: editingOrganization.id, data: form },
-        saveCallbacks,
-      );
+      updateOrganizationMutation.mutate({ id: editingOrganization.id, data: form }, saveCallbacks);
     } else {
       createOrganizationMutation.mutate(form, saveCallbacks);
     }
@@ -119,27 +107,21 @@ const OrganizationFormModal = ({
         <input
           className={inputClass}
           value={form.name}
-          onChange={(event) =>
-            setForm((form) => ({ ...form, name: event.target.value }))
-          }
+          onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
       </FormField>
       <FormField label="기관주소">
         <input
           className={inputClass}
           value={form.address}
-          onChange={(event) =>
-            setForm((form) => ({ ...form, address: event.target.value }))
-          }
+          onChange={(event) => setForm((form) => ({ ...form, address: event.target.value }))}
         />
       </FormField>
       <FormField label="대표자">
         <input
           className={inputClass}
           value={form.rep}
-          onChange={(event) =>
-            setForm((form) => ({ ...form, rep: event.target.value }))
-          }
+          onChange={(event) => setForm((form) => ({ ...form, rep: event.target.value }))}
         />
       </FormField>
       <div className="flex gap-3">
@@ -149,9 +131,7 @@ const OrganizationFormModal = ({
               className={inputClass}
               placeholder="02-1234-5678"
               value={form.phone}
-              onChange={(event) =>
-                setForm((form) => ({ ...form, phone: event.target.value }))
-              }
+              onChange={(event) => setForm((form) => ({ ...form, phone: event.target.value }))}
             />
           </FormField>
         </div>
@@ -161,9 +141,7 @@ const OrganizationFormModal = ({
               className={inputClass}
               placeholder="02-1234-5678"
               value={form.fax}
-              onChange={(event) =>
-                setForm((form) => ({ ...form, fax: event.target.value }))
-              }
+              onChange={(event) => setForm((form) => ({ ...form, fax: event.target.value }))}
             />
           </FormField>
         </div>
@@ -172,9 +150,7 @@ const OrganizationFormModal = ({
         <input
           className={inputClass}
           value={form.bizNo}
-          onChange={(event) =>
-            setForm((form) => ({ ...form, bizNo: event.target.value }))
-          }
+          onChange={(event) => setForm((form) => ({ ...form, bizNo: event.target.value }))}
         />
       </FormField>
       <div className="flex gap-3">
@@ -203,9 +179,7 @@ const OrganizationFormModal = ({
               className="w-full"
               value={form.regionSigungu}
               disabled={!form.regionSido}
-              onChange={(value) =>
-                setForm((form) => ({ ...form, regionSigungu: value }))
-              }
+              onChange={(value) => setForm((form) => ({ ...form, regionSigungu: value }))}
               options={[
                 { value: "", label: "선택하세요" },
                 ...(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => ({
@@ -239,9 +213,7 @@ const OrganizationFormModal = ({
               className={inputClass}
               placeholder="예: 2026"
               value={form.prjYear}
-              onChange={(event) =>
-                setForm((form) => ({ ...form, prjYear: event.target.value }))
-              }
+              onChange={(event) => setForm((form) => ({ ...form, prjYear: event.target.value }))}
             />
           </FormField>
         </div>

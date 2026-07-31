@@ -8,12 +8,7 @@ import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  compactInputClass,
-  inputClass,
-} from "../../uiClasses";
+import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
 import type { Group } from "../../types";
 
 const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
@@ -33,11 +28,7 @@ interface GroupMonthlyScheduleModalProps {
  * 관리자 페이지 > 사업단 상세 페이지에서 조의 월간 근무일 스케줄을 설정하는 모달입니다.
  * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정한다.
  */
-const GroupMonthlyScheduleModal = ({
-  onClose,
-  onSaved,
-  group,
-}: GroupMonthlyScheduleModalProps) => {
+const GroupMonthlyScheduleModal = ({ onClose, onSaved, group }: GroupMonthlyScheduleModalProps) => {
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
@@ -60,14 +51,10 @@ const GroupMonthlyScheduleModal = ({
   }, [group.id, yearMonth]);
 
   // 조 근무시간(shiftStart~shiftEnd) 기준 하루 근무분 — 근무일 수와 곱해서 월 상한 초과를 미리 막는다
-  const shiftMinutesPerDay = Math.max(
-    0,
-    toMinutes(group.shiftEnd) - toMinutes(group.shiftStart),
-  );
+  const shiftMinutesPerDay = Math.max(0, toMinutes(group.shiftEnd) - toMinutes(group.shiftStart));
   const maxMonthlyMinutes = Math.round(Number(maxMonthlyHours) * 60) || 0;
   const projectedMinutes = workDates.length * shiftMinutesPerDay;
-  const isOverCap =
-    maxMonthlyMinutes > 0 && projectedMinutes > maxMonthlyMinutes;
+  const isOverCap = maxMonthlyMinutes > 0 && projectedMinutes > maxMonthlyMinutes;
 
   const handleToggleDate = (date: string) => {
     const isAdding = !workDates.includes(date);
@@ -104,9 +91,7 @@ const GroupMonthlyScheduleModal = ({
 
   const handleSaveButtonClick = async () => {
     if (isOverCap) {
-      alert(
-        "선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.",
-      );
+      alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
     }
     try {
@@ -165,9 +150,7 @@ const GroupMonthlyScheduleModal = ({
             value={patternWorkDays}
             onChange={(event) => setPatternWorkDays(event.target.value)}
           />
-          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">
-            일 근무 /
-          </span>
+          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 근무 /</span>
           <input
             type="number"
             min={0}
@@ -175,13 +158,8 @@ const GroupMonthlyScheduleModal = ({
             value={patternRestDays}
             onChange={(event) => setPatternRestDays(event.target.value)}
           />
-          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">
-            일 휴무
-          </span>
-          <button
-            className={btnGhostClass}
-            onClick={handleGeneratePatternButtonClick}
-          >
+          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 휴무</span>
+          <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
             자동 생성
           </button>
         </div>
@@ -189,9 +167,7 @@ const GroupMonthlyScheduleModal = ({
 
       <FormField label="근무일 (클릭해서 선택/해제)">
         {loading ? (
-          <div className="text-[13px] text-[#9aa1ab] py-4 text-center">
-            불러오는 중...
-          </div>
+          <div className="text-[13px] text-[#9aa1ab] py-4 text-center">불러오는 중...</div>
         ) : (
           <MonthlyScheduleCalendar
             yearMonth={yearMonth}
@@ -204,8 +180,8 @@ const GroupMonthlyScheduleModal = ({
       <div
         className={`text-[12px] ${isOverCap ? "text-[#e94b4b] font-semibold" : "text-[#9aa1ab]"}`}
       >
-        선택된 근무일: {workDates.length}일 · 예상 근무시간:{" "}
-        {(projectedMinutes / 60).toFixed(1)}시간 / 상한 {maxMonthlyHours}시간
+        선택된 근무일: {workDates.length}일 · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}
+        시간 / 상한 {maxMonthlyHours}시간
         {isOverCap && " (상한 초과)"}
       </div>
     </SlideModal>

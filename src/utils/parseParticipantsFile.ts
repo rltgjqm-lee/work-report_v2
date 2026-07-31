@@ -34,16 +34,13 @@ const toPhoneLast4 = (value: unknown): string => {
   return /^\d+$/.test(text) ? text.padStart(4, "0") : text;
 };
 
-const resolveGroupId = (
-  groupName: string,
-  groups: GroupOption[],
-): number | undefined => groups.find((group) => group.name === groupName)?.id;
+const resolveGroupId = (groupName: string, groups: GroupOption[]): number | undefined =>
+  groups.find((group) => group.name === groupName)?.id;
 
 const resolveDemandSiteId = (
   demandSiteName: string,
   demandSites: DemandSiteOption[],
-): number | undefined =>
-  demandSites.find((demandSite) => demandSite.name === demandSiteName)?.id;
+): number | undefined => demandSites.find((demandSite) => demandSite.name === demandSiteName)?.id;
 
 const parseXlsx = async (
   file: File,
@@ -69,9 +66,7 @@ const parseXlsx = async (
 
     rows.push({
       name,
-      demandSiteId: demandSiteName
-        ? resolveDemandSiteId(demandSiteName, demandSites)
-        : undefined,
+      demandSiteId: demandSiteName ? resolveDemandSiteId(demandSiteName, demandSites) : undefined,
       phoneLast4: toPhoneLast4(row.getCell(3).value),
       groupId: groupName ? resolveGroupId(groupName, groups) : undefined,
     });

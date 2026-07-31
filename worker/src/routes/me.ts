@@ -26,10 +26,7 @@ app.put("/password", async (c) => {
   }>();
 
   if (!body.currentPassword || !body.newPassword) {
-    return c.json(
-      { error: "현재 비밀번호와 새 비밀번호를 입력해주세요." },
-      400,
-    );
+    return c.json({ error: "현재 비밀번호와 새 비밀번호를 입력해주세요." }, 400);
   }
   if (body.newPassword.length < 8) {
     return c.json({ error: "새 비밀번호는 8자 이상이어야 합니다." }, 400);
@@ -38,10 +35,7 @@ app.put("/password", async (c) => {
   const db = drizzle(c.env.DB);
 
   if (await isPasswordChangeLocked(db, auth.id)) {
-    return c.json(
-      { error: "시도가 너무 많습니다. 15분 후 다시 시도해주세요." },
-      429,
-    );
+    return c.json({ error: "시도가 너무 많습니다. 15분 후 다시 시도해주세요." }, 429);
   }
 
   const rows = await db.select().from(admins).where(eq(admins.id, auth.id));

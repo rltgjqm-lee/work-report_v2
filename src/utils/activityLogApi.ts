@@ -30,9 +30,7 @@ export type ActivityLogPayload = {
   demandSignature?: string;
 };
 
-export const createActivityLog = async (
-  payload: ActivityLogPayload,
-): Promise<{ id: number }> => {
+export const createActivityLog = async (payload: ActivityLogPayload): Promise<{ id: number }> => {
   const res = await fetch(`${BASE_URL}/public/activity-logs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

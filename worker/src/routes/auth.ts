@@ -12,11 +12,7 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_TTL_MS,
 } from "../lib/sessionToken";
-import {
-  isLoginLocked,
-  recordLoginFailure,
-  clearLoginFailures,
-} from "../lib/loginRateLimit";
+import { isLoginLocked, recordLoginFailure, clearLoginFailures } from "../lib/loginRateLimit";
 import { recordLoginHistory } from "../lib/loginHistory";
 import type { Env } from "../types";
 
@@ -37,10 +33,7 @@ app.post("/login", async (c) => {
   const db = drizzle(c.env.DB);
 
   if (await isLoginLocked(db, email)) {
-    return c.json(
-      { error: "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요." },
-      429,
-    );
+    return c.json({ error: "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요." }, 429);
   }
 
   const rows = await db.select().from(admins).where(eq(admins.email, email));
@@ -103,9 +96,7 @@ app.post("/logout", async (c) => {
   if (token) {
     const db = drizzle(c.env.DB);
     const tokenHash = await hashSessionToken(token);
-    await db
-      .delete(adminSessions)
-      .where(eq(adminSessions.tokenHash, tokenHash));
+    await db.delete(adminSessions).where(eq(adminSessions.tokenHash, tokenHash));
   }
 
   deleteCookie(c, SESSION_COOKIE_NAME, {

@@ -15,9 +15,7 @@ export const parseIdArray = (raw: string | null): number[] => {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((v) => typeof v === "number")
-      : [];
+    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "number") : [];
   } catch {
     return [];
   }
@@ -45,16 +43,10 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
     );
   const sessionRow = sessionRows[0];
   if (!sessionRow) {
-    return c.json(
-      { error: "세션이 만료되었습니다. 다시 로그인해주세요." },
-      401,
-    );
+    return c.json({ error: "세션이 만료되었습니다. 다시 로그인해주세요." }, 401);
   }
 
-  const rows = await db
-    .select()
-    .from(admins)
-    .where(eq(admins.id, sessionRow.adminId));
+  const rows = await db.select().from(admins).where(eq(admins.id, sessionRow.adminId));
   const admin = rows[0];
   if (!admin) {
     return c.json({ error: "등록되지 않은 관리자입니다." }, 403);
@@ -80,9 +72,7 @@ export const getAuth = (c: Context<Env>): AdminSession => c.get("admin");
 
 // requireAdmin과 같은 쿠키 검증 로직이지만, /public/* 같은 미인증 라우트에서 "로그인한
 // 관리자면 그 정보를, 아니면 조용히 null"을 알고 싶을 때 쓴다(401로 막지 않는다).
-export const tryGetAdmin = async (
-  c: Context<Env>,
-): Promise<AdminSession | null> => {
+export const tryGetAdmin = async (c: Context<Env>): Promise<AdminSession | null> => {
   const token = getCookie(c, SESSION_COOKIE_NAME);
   if (!token) return null;
 
@@ -101,10 +91,7 @@ export const tryGetAdmin = async (
   const sessionRow = sessionRows[0];
   if (!sessionRow) return null;
 
-  const rows = await db
-    .select()
-    .from(admins)
-    .where(eq(admins.id, sessionRow.adminId));
+  const rows = await db.select().from(admins).where(eq(admins.id, sessionRow.adminId));
   const admin = rows[0];
   if (!admin || !admin.isActive) return null;
 
@@ -130,10 +117,7 @@ export const hasMinRole = (admin: AdminSession, required: AdminRole): boolean =>
   ROLE_LEVELS[admin.role] >= ROLE_LEVELS[required];
 
 // 기관 단위 접근: SUPER_ADMIN은 전체, 나머지는 소속 기관만
-export const canAccessOrg = (
-  admin: AdminSession,
-  organizationId: number,
-): boolean =>
+export const canAccessOrg = (admin: AdminSession, organizationId: number): boolean =>
   admin.role === ROLES.SUPER_ADMIN || admin.organizationId === organizationId;
 
 // 사업단 단위 접근: 기관 소속이면 통과, MANAGER는 담당 사업단(programIds)만
@@ -142,8 +126,7 @@ export const canAccessProgram = (
   program: { organizationId: number; id: number },
 ): boolean => {
   if (admin.role === ROLES.SUPER_ADMIN) return true;
-  if (admin.role === ROLES.MANAGER)
-    return admin.programIds.includes(program.id);
+  if (admin.role === ROLES.MANAGER) return admin.programIds.includes(program.id);
   return admin.organizationId === program.organizationId;
 };
 

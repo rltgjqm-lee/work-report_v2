@@ -4,20 +4,13 @@ interface PaginationProps {
   onChange: (page: number) => void;
 }
 
-const buildPageNumbers = (
-  current: number,
-  total: number,
-): (number | "ellipsis")[] => {
+const buildPageNumbers = (current: number, total: number): (number | "ellipsis")[] => {
   if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
   const numbers: (number | "ellipsis")[] = [1];
 
   if (current > 3) numbers.push("ellipsis");
 
-  for (
-    let i = Math.max(2, current - 1);
-    i <= Math.min(total - 1, current + 1);
-    i++
-  ) {
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
     numbers.push(i);
   }
 
@@ -48,10 +41,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
       </button>
       {pages.map((pageNumber, index) =>
         pageNumber === "ellipsis" ? (
-          <span
-            key={`ellipsis-${index}`}
-            className="text-[#9aa1ab] text-xs px-1"
-          >
+          <span key={`ellipsis-${index}`} className="text-[#9aa1ab] text-xs px-1">
             …
           </span>
         ) : (

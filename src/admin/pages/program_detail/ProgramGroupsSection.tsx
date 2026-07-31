@@ -16,11 +16,7 @@ interface ProgramGroupsSectionProps {
  * 관리자 페이지 > 사업단 상세 페이지의 조 관리 섹션입니다.
  *
  */
-const ProgramGroupsSection = ({
-  programId,
-  groups,
-  onChanged,
-}: ProgramGroupsSectionProps) => {
+const ProgramGroupsSection = ({ programId, groups, onChanged }: ProgramGroupsSectionProps) => {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [scheduleTarget, setScheduleTarget] = useState<Group | null>(null);
 
@@ -40,18 +36,13 @@ const ProgramGroupsSection = ({
     <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
         <span className="text-sm font-bold">조 관리</span>
-        <button
-          className={btnGhostClass}
-          onClick={() => setGroupModalOpen(true)}
-        >
+        <button className={btnGhostClass} onClick={() => setGroupModalOpen(true)}>
           + 조 추가
         </button>
       </div>
       <div className="flex flex-wrap gap-2.5 px-5 py-4">
         {groups.length === 0 && (
-          <span className="text-[13px] text-[#9aa1ab]">
-            등록된 조가 없습니다.
-          </span>
+          <span className="text-[13px] text-[#9aa1ab]">등록된 조가 없습니다.</span>
         )}
         {groups.map((group) => (
           <div
@@ -63,13 +54,8 @@ const ProgramGroupsSection = ({
               {group.shiftStart}~{group.shiftEnd}
             </span>
             <span className="text-[#9aa1ab]">{group.participantCount}명</span>
-            <span className="text-[#9aa1ab]">
-              {group.isActive ? "활성" : "비활성"}
-            </span>
-            <button
-              className={rowActionBtnClass}
-              onClick={() => setScheduleTarget(group)}
-            >
+            <span className="text-[#9aa1ab]">{group.isActive ? "활성" : "비활성"}</span>
+            <button className={rowActionBtnClass} onClick={() => setScheduleTarget(group)}>
               월간 스케줄
             </button>
             <button

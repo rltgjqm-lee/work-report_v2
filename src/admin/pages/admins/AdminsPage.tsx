@@ -1,10 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  adminsQueryOptions,
-  updateAdminMutationOptions,
-} from "../../api/admin/admins";
+import { adminsQueryOptions, updateAdminMutationOptions } from "../../api/admin/admins";
 import { organizationsQueryOptions } from "../../api/admin/organizations";
 import AdminFormModal from "./AdminFormModal";
 import ResetPasswordModal from "./ResetPasswordModal";
@@ -59,15 +56,12 @@ const AdminsPage = () => {
   const [transferTarget, setTransferTarget] = useState<Admin | null>(null);
 
   const OrganizationNameById = (organizationId: number | null) =>
-    organizations.find((organization) => organization.id === organizationId)
-      ?.name ?? "-";
+    organizations.find((organization) => organization.id === organizationId)?.name ?? "-";
 
   const filtered = useMemo(
     () =>
       admins.filter(
-        (adminRow) =>
-          (adminRow.name ?? "").includes(search) ||
-          adminRow.email.includes(search),
+        (adminRow) => (adminRow.name ?? "").includes(search) || adminRow.email.includes(search),
       ),
     [admins, search],
   );
@@ -82,9 +76,7 @@ const AdminsPage = () => {
     setModalOpen(true);
   };
 
-  const updateAdminMutation = useMutation(
-    updateAdminMutationOptions(queryClient),
-  );
+  const updateAdminMutation = useMutation(updateAdminMutationOptions(queryClient));
 
   const handleToggleActiveButtonClick = (adminRow: Admin) => {
     if (adminRow.isActive && adminRow.programIds.length > 0) {
@@ -96,20 +88,12 @@ const AdminsPage = () => {
     }
 
     const actionLabel = adminRow.isActive ? "비활성화" : "활성화";
-    if (
-      !confirm(
-        `'${adminRow.name ?? adminRow.email}' 계정을 ${actionLabel}하시겠습니까?`,
-      )
-    )
-      return;
+    if (!confirm(`'${adminRow.name ?? adminRow.email}' 계정을 ${actionLabel}하시겠습니까?`)) return;
 
     updateAdminMutation.mutate(
       { id: adminRow.id, data: { isActive: !adminRow.isActive } },
       {
-        onError: (error) =>
-          alert(
-            error instanceof Error ? error.message : "처리에 실패했습니다.",
-          ),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
   };
@@ -126,11 +110,7 @@ const AdminsPage = () => {
   };
 
   if (!role || assignableRoles.length === 0) {
-    return (
-      <div className="text-[13px] text-[#6b7280]">
-        관리자 계정을 관리할 권한이 없습니다.
-      </div>
-    );
+    return <div className="text-[13px] text-[#6b7280]">관리자 계정을 관리할 권한이 없습니다.</div>;
   }
 
   return (
@@ -149,11 +129,7 @@ const AdminsPage = () => {
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="이름 또는 이메일 검색"
-          />
+          <SearchInput value={search} onChange={setSearch} placeholder="이름 또는 이메일 검색" />
           <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
             총 {filtered.length}명
           </span>

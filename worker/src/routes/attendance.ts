@@ -8,21 +8,12 @@ import type { Env } from "../types";
 
 const app = new Hono<Env>();
 
-const loadAttendanceLogWithProgram = async (
-  db: ReturnType<typeof drizzle>,
-  logId: number,
-) => {
-  const logRows = await db
-    .select()
-    .from(attendanceLogs)
-    .where(eq(attendanceLogs.id, logId));
+const loadAttendanceLogWithProgram = async (db: ReturnType<typeof drizzle>, logId: number) => {
+  const logRows = await db.select().from(attendanceLogs).where(eq(attendanceLogs.id, logId));
   const log = logRows[0];
   if (!log) return null;
 
-  const programRows = await db
-    .select()
-    .from(programs)
-    .where(eq(programs.id, log.programId));
+  const programRows = await db.select().from(programs).where(eq(programs.id, log.programId));
   const program = programRows[0];
   if (!program) return null;
 
@@ -57,18 +48,12 @@ app.put("/:logId", async (c) => {
   const toIso = (time: string) => `${found.log.workDate}T${time}:00.000Z`;
 
   const finalClockIn = body.clockIn ? toIso(body.clockIn) : found.log.clockIn;
-  const finalClockOut = body.clockOut
-    ? toIso(body.clockOut)
-    : found.log.clockOut;
+  const finalClockOut = body.clockOut ? toIso(body.clockOut) : found.log.clockOut;
   // 출근/퇴근 시간을 고치면 총 근무시간(분)도 항상 그 시간 기준으로 다시 계산한다 —
   // 관리자가 분 값을 직접 입력하게 두면 시간과 분이 어긋날 수 있다.
   const totalMinutes =
     finalClockIn && finalClockOut
-      ? Math.floor(
-          (new Date(finalClockOut).getTime() -
-            new Date(finalClockIn).getTime()) /
-            60000,
-        )
+      ? Math.floor((new Date(finalClockOut).getTime() - new Date(finalClockIn).getTime()) / 60000)
       : found.log.totalMinutes;
 
   const result = await db

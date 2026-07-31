@@ -94,9 +94,7 @@ app.get("/programs/:id/demand-sites", async (c) => {
   const rows = await db
     .select({ id: demandSites.id, name: demandSites.name })
     .from(demandSites)
-    .where(
-      and(eq(demandSites.programId, programId), eq(demandSites.isActive, true)),
-    );
+    .where(and(eq(demandSites.programId, programId), eq(demandSites.isActive, true)));
 
   return c.json(rows);
 });
@@ -109,12 +107,7 @@ app.post("/push-subscriptions", async (c) => {
     keys?: { p256dh?: string; auth?: string };
   }>();
 
-  if (
-    !body.programId ||
-    !body.endpoint ||
-    !body.keys?.p256dh ||
-    !body.keys?.auth
-  ) {
+  if (!body.programId || !body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {
     return c.json({ error: "푸시 구독 정보가 올바르지 않습니다." }, 400);
   }
 
@@ -159,8 +152,7 @@ app.post("/push-subscriptions/link-participant", async (c) => {
     .where(eq(pushSubscriptions.endpoint, body.endpoint))
     .returning();
 
-  if (!result[0])
-    return c.json({ error: "푸시 구독 정보를 찾을 수 없습니다." }, 404);
+  if (!result[0]) return c.json({ error: "푸시 구독 정보를 찾을 수 없습니다." }, 404);
   return c.json(result[0]);
 });
 
@@ -176,10 +168,7 @@ app.post("/attendance/identify", async (c) => {
   }>();
 
   if (!body.programId || !body.name || !body.phoneLast4) {
-    return c.json(
-      { error: "사업단, 이름, 전화번호 뒷 4자리를 모두 입력해주세요." },
-      400,
-    );
+    return c.json({ error: "사업단, 이름, 전화번호 뒷 4자리를 모두 입력해주세요." }, 400);
   }
 
   const rows = await db
@@ -212,10 +201,7 @@ app.post("/push-device-tokens", async (c) => {
   }>();
 
   if (!body.programId || !body.platform || !body.token) {
-    return c.json(
-      { error: "사업단, 플랫폼, 푸시 토큰을 모두 지정해주세요." },
-      400,
-    );
+    return c.json({ error: "사업단, 플랫폼, 푸시 토큰을 모두 지정해주세요." }, 400);
   }
 
   const result = await db
@@ -254,8 +240,7 @@ app.post("/push-device-tokens/link-participant", async (c) => {
     .where(eq(pushDeviceTokens.token, body.token))
     .returning();
 
-  if (!result[0])
-    return c.json({ error: "푸시 토큰을 찾을 수 없습니다." }, 404);
+  if (!result[0]) return c.json({ error: "푸시 토큰을 찾을 수 없습니다." }, 404);
   return c.json(result[0]);
 });
 
@@ -278,12 +263,7 @@ app.get("/attendance/today", async (c) => {
       clockOut: attendanceLogs.clockOut,
     })
     .from(attendanceLogs)
-    .where(
-      and(
-        eq(attendanceLogs.participantId, participantId),
-        eq(attendanceLogs.workDate, date),
-      ),
-    );
+    .where(and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, date)));
 
   const row = rows[0];
   return c.json({
@@ -310,27 +290,17 @@ app.post("/attendance/clock-in", async (c) => {
     return c.json({ error: "참여자를 지정해주세요." }, 400);
   }
 
-  const rows = await db
-    .select()
-    .from(participants)
-    .where(eq(participants.id, body.participantId));
+  const rows = await db.select().from(participants).where(eq(participants.id, body.participantId));
   let participant = rows[0];
   if (!participant) {
-    return c.json(
-      { error: "본인 확인이 만료되었습니다. 다시 확인해주세요." },
-      404,
-    );
+    return c.json({ error: "본인 확인이 만료되었습니다. 다시 확인해주세요." }, 404);
   }
 
   const debugOverride = await readDebugOverride(c, body);
   const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
 
   // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
-  if (
-    participant.status === "ON_LEAVE" &&
-    participant.leaveEnd &&
-    participant.leaveEnd < date
-  ) {
+  if (participant.status === "ON_LEAVE" && participant.leaveEnd && participant.leaveEnd < date) {
     const updated = await db
       .update(participants)
       .set({ status: "ACTIVE", leaveStart: null, leaveEnd: null })
@@ -346,10 +316,7 @@ app.post("/attendance/clock-in", async (c) => {
   // 배정된 조에 근무시간이 설정돼 있으면 그 시간 ±30분 범위에서만 출근을 허용한다.
   // 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한 사업단도 있어서).
   if (participant.groupId) {
-    const groupRows = await db
-      .select()
-      .from(groups)
-      .where(eq(groups.id, participant.groupId));
+    const groupRows = await db.select().from(groups).where(eq(groups.id, participant.groupId));
     const group = groupRows[0];
 
     if (group) {
@@ -358,16 +325,10 @@ app.post("/attendance/clock-in", async (c) => {
       const latest = toMinutes(group.shiftEnd) + 30;
 
       if (nowMinutes < earliest) {
-        return c.json(
-          { error: `아직 근무 시작 시간(${group.shiftStart})이 아닙니다.` },
-          400,
-        );
+        return c.json({ error: `아직 근무 시작 시간(${group.shiftStart})이 아닙니다.` }, 400);
       }
       if (nowMinutes > latest) {
-        return c.json(
-          { error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` },
-          400,
-        );
+        return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);
       }
     }
   }
@@ -376,10 +337,7 @@ app.post("/attendance/clock-in", async (c) => {
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.participantId, participant.id),
-        eq(attendanceLogs.workDate, date),
-      ),
+      and(eq(attendanceLogs.participantId, participant.id), eq(attendanceLogs.workDate, date)),
     );
   if (existing.length > 0) {
     return c.json({ error: "이미 출근 처리되었습니다." }, 400);
@@ -455,10 +413,7 @@ app.post("/attendance/clock-out", async (c) => {
     const nowMinutes = toMinutes(time);
     const earliest = toMinutes(group.shiftEnd) - 10;
     if (nowMinutes < earliest) {
-      return c.json(
-        { error: `아직 근무 종료 시간(${group.shiftEnd}) 전입니다.` },
-        400,
-      );
+      return c.json({ error: `아직 근무 종료 시간(${group.shiftEnd}) 전입니다.` }, 400);
     }
   }
 
@@ -537,19 +492,13 @@ app.patch("/attendance/clock-in", async (c) => {
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.participantId, body.participantId),
-        eq(attendanceLogs.workDate, date),
-      ),
+      and(eq(attendanceLogs.participantId, body.participantId), eq(attendanceLogs.workDate, date)),
     );
   const log = rows[0];
   if (!log) return c.json({ error: "출근 기록이 없습니다." }, 404);
 
   if (log.groupId) {
-    const groupRows = await db
-      .select()
-      .from(groups)
-      .where(eq(groups.id, log.groupId));
+    const groupRows = await db.select().from(groups).where(eq(groups.id, log.groupId));
     const group = groupRows[0];
 
     if (group) {
@@ -592,10 +541,7 @@ app.patch("/attendance/clock-out", async (c) => {
     .select()
     .from(attendanceLogs)
     .where(
-      and(
-        eq(attendanceLogs.participantId, body.participantId),
-        eq(attendanceLogs.workDate, date),
-      ),
+      and(eq(attendanceLogs.participantId, body.participantId), eq(attendanceLogs.workDate, date)),
     );
   const log = rows[0];
   if (!log || !log.clockIn) {
@@ -611,10 +557,7 @@ app.patch("/attendance/clock-out", async (c) => {
   let note: string | undefined;
 
   if (log.groupId) {
-    const groupRows = await db
-      .select()
-      .from(groups)
-      .where(eq(groups.id, log.groupId));
+    const groupRows = await db.select().from(groups).where(eq(groups.id, log.groupId));
     const group = groupRows[0];
 
     if (group) {
@@ -664,12 +607,7 @@ app.post("/attendance/sign", async (c) => {
   const rows = await db
     .select()
     .from(attendanceLogs)
-    .where(
-      and(
-        eq(attendanceLogs.participantId, participantId),
-        eq(attendanceLogs.workDate, date),
-      ),
-    );
+    .where(and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, date)));
   const log = rows[0];
   if (!log) return c.json({ error: "근태 기록이 없습니다." }, 404);
 
@@ -742,10 +680,7 @@ app.post("/location", async (c) => {
     .where(eq(participantEscapeMeta.participantId, participant.id));
   const meta = metaRows[0];
 
-  const saveMeta = (fields: {
-    alertCount?: number;
-    outsideStart?: string | null;
-  }) =>
+  const saveMeta = (fields: { alertCount?: number; outsideStart?: string | null }) =>
     meta
       ? db
           .update(participantEscapeMeta)
@@ -804,9 +739,7 @@ app.post("/location", async (c) => {
     });
   }
 
-  const isInside = areas.some((area) =>
-    isInsideArea(body.lat!, body.lng!, area),
-  );
+  const isInside = areas.some((area) => isInsideArea(body.lat!, body.lng!, area));
   const distanceKm = distanceToNearestArea(body.lat!, body.lng!, areas);
   const currentAlertCount = meta?.alertCount ?? 0;
 
@@ -840,9 +773,7 @@ app.post("/location", async (c) => {
 
   if (!isInside) {
     const isNewEscape = !meta?.outsideStart;
-    const newAlertCount = isNewEscape
-      ? currentAlertCount + 1
-      : currentAlertCount;
+    const newAlertCount = isNewEscape ? currentAlertCount + 1 : currentAlertCount;
 
     if (isNewEscape) {
       await db.insert(escapeLogs).values({
@@ -933,16 +864,8 @@ app.post("/activity-logs", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<ActivityLogBody>();
 
-  if (
-    !body.participantId ||
-    !body.actDate ||
-    !body.startTime ||
-    !body.endTime
-  ) {
-    return c.json(
-      { error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." },
-      400,
-    );
+  if (!body.participantId || !body.actDate || !body.startTime || !body.endTime) {
+    return c.json({ error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." }, 400);
   }
 
   const participant = await db
@@ -980,16 +903,8 @@ app.put("/activity-logs/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const body = await c.req.json<ActivityLogBody>();
 
-  if (
-    !body.participantId ||
-    !body.actDate ||
-    !body.startTime ||
-    !body.endTime
-  ) {
-    return c.json(
-      { error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." },
-      400,
-    );
+  if (!body.participantId || !body.actDate || !body.startTime || !body.endTime) {
+    return c.json({ error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." }, 400);
   }
 
   const result = await db
@@ -1006,12 +921,7 @@ app.put("/activity-logs/:id", async (c) => {
       userSignature: body.userSignature,
       demandSignature: body.demandSignature,
     })
-    .where(
-      and(
-        eq(activityLogs.id, id),
-        eq(activityLogs.participantId, body.participantId),
-      ),
-    )
+    .where(and(eq(activityLogs.id, id), eq(activityLogs.participantId, body.participantId)))
     .returning();
 
   if (!result[0]) return c.json({ error: "활동일지를 찾을 수 없습니다." }, 404);

@@ -37,9 +37,7 @@ const SECTION_FILL: ExcelJS.Fill = {
   fgColor: { argb: "FFCFF1D1" },
 };
 const MONEY_FMT = '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
-const COL_WIDTHS = [
-  1.71, 13.14, 6.14, 4.86, 12.71, 2.29, 9.29, 9.57, 9.86, 4.57, 5.86, 2, 16.14,
-];
+const COL_WIDTHS = [1.71, 13.14, 6.14, 4.86, 12.71, 2.29, 9.29, 9.57, 9.86, 4.57, 5.86, 2, 16.14];
 const ROW_HEIGHTS: Record<number, number> = {
   1: 40.5,
   2: 18,
@@ -259,14 +257,8 @@ const addPayslipSheet = (
     ["기타수당", "(수기 입력 — 초과근무시간 기준 산정 필요)"],
     ["팀장수당", "근로계약서 제6조 제1항에 따른 월 정액"],
     ["건강보험", `지급액(a) × 건강보험료율(${header.healthInsuranceRate}%)`],
-    [
-      "장기요양보험",
-      `건강보험료 × 장기요양보험료율(${header.longtermCareRate}%)`,
-    ],
-    [
-      "고용보험",
-      `지급액(a) × 고용보험료율(${header.employmentInsuranceRate}%)`,
-    ],
+    ["장기요양보험", `건강보험료 × 장기요양보험료율(${header.longtermCareRate}%)`],
+    ["고용보험", `지급액(a) × 고용보험료율(${header.employmentInsuranceRate}%)`],
   ];
   guideRows.forEach(([label, desc], index) => {
     const row = 26 + index;
@@ -281,21 +273,19 @@ const addPayslipSheet = (
 
   const lastRow = 25 + guideRows.length;
   for (let rowNumber = 2; rowNumber <= lastRow; rowNumber++) {
-    sheet
-      .getRow(rowNumber)
-      .eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        if (!cell.fill || cell.fill.type !== "pattern") cell.fill = WHITE_FILL;
-        // A열(3행 이후)은 얇은 여백 칸이라 가로 테두리(위/아래)는 빼고 세로 테두리만 남긴다.
-        cell.border =
-          colNumber === 1 && rowNumber >= 3
-            ? { left: THIN_BORDER, right: THIN_BORDER }
-            : {
-                top: THIN_BORDER,
-                left: THIN_BORDER,
-                bottom: THIN_BORDER,
-                right: THIN_BORDER,
-              };
-      });
+    sheet.getRow(rowNumber).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      if (!cell.fill || cell.fill.type !== "pattern") cell.fill = WHITE_FILL;
+      // A열(3행 이후)은 얇은 여백 칸이라 가로 테두리(위/아래)는 빼고 세로 테두리만 남긴다.
+      cell.border =
+        colNumber === 1 && rowNumber >= 3
+          ? { left: THIN_BORDER, right: THIN_BORDER }
+          : {
+              top: THIN_BORDER,
+              left: THIN_BORDER,
+              bottom: THIN_BORDER,
+              right: THIN_BORDER,
+            };
+    });
   }
 
   // 지급일 줄(4행)은 제목과 바로 이어 붙게 경계선을 뺀다 — 제목 병합칸(B2:M3)의

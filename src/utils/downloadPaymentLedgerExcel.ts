@@ -48,9 +48,9 @@ const COMPUTED_FILL: ExcelJS.Fill = {
 
 const COL_COUNT = 33; // A~AG
 const COL_WIDTHS = [
-  5, 7.75, 7.75, 7.75, 10.75, 3.75, 3.75, 7.75, 7.75, 7.75, 6.875, 7.375, 7.75,
-  5.75, 10.75, 7.75, 7.75, 7.75, 10.75, 7.75, 7.75, 7.75, 7.75, 10.75, 10.75,
-  5.75, 8.75, 5.75, 8.75, 10.75, 10.75, 10.75, 8.875,
+  5, 7.75, 7.75, 7.75, 10.75, 3.75, 3.75, 7.75, 7.75, 7.75, 6.875, 7.375, 7.75, 5.75, 10.75, 7.75,
+  7.75, 7.75, 10.75, 7.75, 7.75, 7.75, 7.75, 10.75, 10.75, 5.75, 8.75, 5.75, 8.75, 10.75, 10.75,
+  10.75, 8.875,
 ];
 // 원본 서식의 열 그룹 경계(굵은 테두리) — 이 열의 왼쪽/오른쪽에 medium 테두리를 준다.
 const LEFT_MEDIUM_COLS = new Set([1, 9, 16, 20, 25, 26, 32]);
@@ -103,8 +103,7 @@ export const downloadPaymentLedgerWorkbook = async (
 
   // 1. 제목
   sheet.mergeCells(`A${ROW_TITLE}:${lastCol}${ROW_TITLE}`);
-  sheet.getCell(`A${ROW_TITLE}`).value =
-    `${monthNum}월 ${header.programName} 참여자 급여대장`;
+  sheet.getCell(`A${ROW_TITLE}`).value = `${monthNum}월 ${header.programName} 참여자 급여대장`;
   sheet.getCell(`A${ROW_TITLE}`).font = {
     bold: true,
     size: 20,
@@ -118,8 +117,7 @@ export const downloadPaymentLedgerWorkbook = async (
 
   // 2. 월 소정근로시간 기준(만근 판정 기준) — 이 사업단만의 정책값이라 직접 입력 셀로 둔다.
   sheet.mergeCells(`A${ROW_SETTINGS}:E${ROW_SETTINGS}`);
-  sheet.getCell(`A${ROW_SETTINGS}`).value =
-    "※ 월 소정근로시간 기준(직접 입력) :";
+  sheet.getCell(`A${ROW_SETTINGS}`).value = "※ 월 소정근로시간 기준(직접 입력) :";
   sheet.getCell(`A${ROW_SETTINGS}`).font = {
     bold: true,
     size: 10,
@@ -136,8 +134,7 @@ export const downloadPaymentLedgerWorkbook = async (
     bottom: THIN,
     right: THIN,
   };
-  sheet.getCell("G" + ROW_SETTINGS).value =
-    "시간 (만근여부·기본급·주휴시간 계산 기준)";
+  sheet.getCell("G" + ROW_SETTINGS).value = "시간 (만근여부·기본급·주휴시간 계산 기준)";
   sheet.getCell("G" + ROW_SETTINGS).font = {
     size: 9,
     italic: true,
@@ -227,8 +224,7 @@ export const downloadPaymentLedgerWorkbook = async (
   sheet.getRow(ROW_TOTAL).height = 30;
   if (participants.length === 0) {
     sheet.mergeCells(`B${DATA_START}:${lastCol}${DATA_START}`);
-    sheet.getCell(`B${DATA_START}`).value =
-      "해당 월에 활동중인 참여자가 없습니다.";
+    sheet.getCell(`B${DATA_START}`).value = "해당 월에 활동중인 참여자가 없습니다.";
     sheet.getCell(`B${DATA_START}`).alignment = CENTER;
     sheet.getRow(DATA_START).height = 30;
   }
@@ -245,10 +241,8 @@ export const downloadPaymentLedgerWorkbook = async (
     };
     sheet.getCell(`J${row}`).value = { formula: `SUM(K${row}:M${row})` };
     sheet.getCell(`K${row}`).value = participant.actualWorkHours;
-    sheet.getCell(`L${row}`).value =
-      Math.round(participant.paidLeaveHours * 10) / 10;
-    sheet.getCell(`M${row}`).value =
-      Math.round(participant.trainingHours * 10) / 10;
+    sheet.getCell(`L${row}`).value = Math.round(participant.paidLeaveHours * 10) / 10;
+    sheet.getCell(`M${row}`).value = Math.round(participant.trainingHours * 10) / 10;
     sheet.getCell(`N${row}`).value = {
       formula: `IF(J${row}=$F$${ROW_SETTINGS},"O","X")`,
     };
@@ -277,8 +271,7 @@ export const downloadPaymentLedgerWorkbook = async (
     sheet.getCell(`Y${row}`).value = { formula: `O${row}-S${row}` };
     // 주휴시간(Z)은 이 사업단만의 정책 산식이라 직접 입력하게 비워둔다.
     sheet.getCell(`AA${row}`).value = { formula: `H${row}*Z${row}` };
-    sheet.getCell(`AB${row}`).value =
-      Math.round(participant.remainingLeaveHours * 10) / 10;
+    sheet.getCell(`AB${row}`).value = Math.round(participant.remainingLeaveHours * 10) / 10;
     sheet.getCell(`AC${row}`).value = { formula: `H${row}*AB${row}` };
     sheet.getCell(`AD${row}`).value = { formula: `AA${row}+AC${row}` };
     sheet.getCell(`AE${row}`).value = { formula: `O${row}+AD${row}` };

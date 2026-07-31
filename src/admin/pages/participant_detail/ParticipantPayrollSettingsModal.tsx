@@ -29,9 +29,7 @@ const ParticipantPayrollSettingsModal = ({
   participant,
 }: ParticipantPayrollSettingsModalProps) => {
   const queryClient = useQueryClient();
-  const updateParticipantMutation = useMutation(
-    updateParticipantMutationOptions(queryClient),
-  );
+  const updateParticipantMutation = useMutation(updateParticipantMutationOptions(queryClient));
   const [form, setForm] = useState({
     educationAmount: String(participant.educationAmount),
     educationType: participant.educationType,
@@ -62,10 +60,7 @@ const ParticipantPayrollSettingsModal = ({
       },
       {
         onSuccess: () => onClose(),
-        onError: (error) =>
-          alert(
-            error instanceof Error ? error.message : "저장에 실패했습니다.",
-          ),
+        onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
       },
     );
   };

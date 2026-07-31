@@ -22,14 +22,7 @@ interface DropdownProps {
  * 참여자용 페이지에서 공통으로 쓰는 select 드롭다운입니다. label을 넘기지 않으면
  * (예: 시작/종료 시간처럼 여러 개가 한 라벨 아래 나란히 있는 경우) 라벨 없이 select만 렌더링합니다.
  */
-const Dropdown = ({
-  value,
-  onChange,
-  options,
-  label,
-  disabled,
-  className,
-}: DropdownProps) => (
+const Dropdown = ({ value, onChange, options, label, disabled, className }: DropdownProps) => (
   <div className={`flex-1 min-w-0 ${className ?? ""}`}>
     {label && <label className={labelClass}>{label}</label>}
     <div className="relative">
@@ -40,11 +33,7 @@ const Dropdown = ({
         onChange={(event) => onChange(event.target.value)}
       >
         {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-          >
+          <option key={option.value} value={option.value} disabled={option.disabled}>
             {option.label}
           </option>
         ))}

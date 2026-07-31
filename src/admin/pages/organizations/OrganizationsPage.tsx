@@ -26,15 +26,13 @@ const OrganizationsPage = () => {
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingOrganization, setEditingOrganization] =
-    useState<Organization | null>(null);
+  const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
 
   const filtered = useMemo(
     () =>
       organizations.filter(
         (organization) =>
-          organization.name.includes(search) ||
-          (organization.rep ?? "").includes(search),
+          organization.name.includes(search) || (organization.rep ?? "").includes(search),
       ),
     [organizations, search],
   );
@@ -51,23 +49,17 @@ const OrganizationsPage = () => {
     setModalOpen(true);
   };
 
-  const updateOrganizationMutation = useMutation(
-    updateOrganizationMutationOptions(queryClient),
-  );
+  const updateOrganizationMutation = useMutation(updateOrganizationMutationOptions(queryClient));
 
   const handleToggleActiveButtonClick = (organization: Organization) => {
     const actionLabel = organization.isActive ? "비활성화" : "활성화";
 
-    if (!confirm(`'${organization.name}' 기관을 ${actionLabel}하시겠습니까?`))
-      return;
+    if (!confirm(`'${organization.name}' 기관을 ${actionLabel}하시겠습니까?`)) return;
 
     updateOrganizationMutation.mutate(
       { id: organization.id, data: { isActive: !organization.isActive } },
       {
-        onError: (error) =>
-          alert(
-            error instanceof Error ? error.message : "처리에 실패했습니다.",
-          ),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
   };
@@ -155,8 +147,7 @@ const OrganizationsPage = () => {
                     {organization.isActive ? "활성" : "비활성"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {(role === ROLES.SUPER_ADMIN ||
-                      role === ROLES.ORGANIZATION_ADMIN) && (
+                    {(role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN) && (
                       <button
                         className={rowActionBtnClass}
                         onClick={() => handleEditButtonClick(organization)}
@@ -167,9 +158,7 @@ const OrganizationsPage = () => {
                     {role === ROLES.SUPER_ADMIN && (
                       <button
                         className={rowActionBtnClass}
-                        onClick={() =>
-                          handleToggleActiveButtonClick(organization)
-                        }
+                        onClick={() => handleToggleActiveButtonClick(organization)}
                       >
                         {organization.isActive ? "비활성화" : "활성화"}
                       </button>

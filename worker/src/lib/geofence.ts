@@ -2,12 +2,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 
 import { demandSites, demandSiteLocations } from "../db/schema";
-import {
-  distanceOutsidePolygonM,
-  haversineKm,
-  isPointInPolygon,
-  polygonCentroid,
-} from "./geo";
+import { distanceOutsidePolygonM, haversineKm, isPointInPolygon, polygonCentroid } from "./geo";
 
 type Database = ReturnType<typeof drizzle>;
 
@@ -23,22 +18,12 @@ export type GeofenceArea = {
 };
 
 // 좌표가 관제구역 하나(원형 or 다각형) 안에 있는지 판정
-export const isInsideArea = (
-  lat: number,
-  lng: number,
-  area: GeofenceArea,
-): boolean => {
+export const isInsideArea = (lat: number, lng: number, area: GeofenceArea): boolean => {
   if (area.shapeType === "RADIUS") {
-    if (
-      area.baseLat === null ||
-      area.baseLng === null ||
-      area.radius === null
-    ) {
+    if (area.baseLat === null || area.baseLng === null || area.radius === null) {
       return false;
     }
-    return (
-      haversineKm(lat, lng, area.baseLat, area.baseLng) <= area.radius / 1000
-    );
+    return haversineKm(lat, lng, area.baseLat, area.baseLng) <= area.radius / 1000;
   }
   if (!area.polygon) return false;
   const polygon = JSON.parse(area.polygon) as { lat: number; lng: number }[];
@@ -47,11 +32,7 @@ export const isInsideArea = (
 
 // 가장 가까운 구역까지의 거리(km) — 원형은 중심, 다각형은 중심점 기준의 대략적인 값.
 // 이탈 로그의 distanceKm과 출퇴근 기록의 distanceM이 같은 기준을 쓰도록 여기서만 계산한다.
-export const distanceToNearestArea = (
-  lat: number,
-  lng: number,
-  areas: GeofenceArea[],
-): number => {
+export const distanceToNearestArea = (lat: number, lng: number, areas: GeofenceArea[]): number => {
   const distances = areas.map((area) => {
     if (area.shapeType === "RADIUS") {
       if (area.baseLat === null || area.baseLng === null) return Infinity;
@@ -68,22 +49,13 @@ export const distanceToNearestArea = (
 // 좌표가 관제구역 밖으로 얼마나 나가 있는지(m) — 구역 하나라도 안에 있으면 0.
 // distanceToNearestArea(중심까지의 거리)와 달리 "경계를 얼마나 넘었는가"라서,
 // GPS 오차와 직접 비교해 이탈을 단정해도 되는지 판단할 수 있다.
-export const distanceOutsideAreasM = (
-  lat: number,
-  lng: number,
-  areas: GeofenceArea[],
-): number => {
+export const distanceOutsideAreasM = (lat: number, lng: number, areas: GeofenceArea[]): number => {
   const distances = areas.map((area) => {
     if (area.shapeType === "RADIUS") {
-      if (
-        area.baseLat === null ||
-        area.baseLng === null ||
-        area.radius === null
-      ) {
+      if (area.baseLat === null || area.baseLng === null || area.radius === null) {
         return Infinity;
       }
-      const centerDistanceM =
-        haversineKm(lat, lng, area.baseLat, area.baseLng) * 1000;
+      const centerDistanceM = haversineKm(lat, lng, area.baseLat, area.baseLng) * 1000;
       return Math.max(0, centerDistanceM - area.radius);
     }
     if (!area.polygon) return Infinity;
@@ -104,11 +76,7 @@ export const buildDemandSiteAreas = (
   locations: GeofenceArea[],
 ): GeofenceArea[] => {
   const areas: GeofenceArea[] = [...locations];
-  if (
-    demandSite.baseLat !== null &&
-    demandSite.baseLng !== null &&
-    demandSite.radius !== null
-  ) {
+  if (demandSite.baseLat !== null && demandSite.baseLng !== null && demandSite.radius !== null) {
     areas.push({
       shapeType: "RADIUS",
       baseLat: demandSite.baseLat,

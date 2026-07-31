@@ -28,8 +28,7 @@ export const addActivityLogSheet = (
 
   // 1. 제목 셀 설정 및 병합
   sheet.mergeCells("A1:J1");
-  sheet.getCell("A1").value =
-    "노인일자리 및 사회활동 지원사업 공익활동 활동일지(예시)";
+  sheet.getCell("A1").value = "노인일자리 및 사회활동 지원사업 공익활동 활동일지(예시)";
   sheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
   sheet.getCell("A1").font = { size: 16, bold: true, underline: true };
   sheet.getRow(1).height = 40;
@@ -139,8 +138,7 @@ export const addActivityLogSheet = (
 
   if (sortedLogs.length === 0) {
     sheet.mergeCells(`A${startRow}:J${startRow}`);
-    sheet.getCell(`A${startRow}`).value =
-      "해당 기간에 등록된 활동일지가 없습니다.";
+    sheet.getCell(`A${startRow}`).value = "해당 기간에 등록된 활동일지가 없습니다.";
     sheet.getCell(`A${startRow}`).alignment = {
       horizontal: "center",
       vertical: "middle",

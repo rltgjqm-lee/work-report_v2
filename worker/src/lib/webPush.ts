@@ -5,8 +5,7 @@ export type PushSubscriptionInput = {
   keys: { p256dh: string; auth: string };
 };
 
-export type SendPushResult =
-  { ok: true } | { ok: false; expired: boolean; status: number };
+export type SendPushResult = { ok: true } | { ok: false; expired: boolean; status: number };
 
 export const sendWebPush = async (
   subscription: PushSubscriptionInput,

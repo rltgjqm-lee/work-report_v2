@@ -42,21 +42,15 @@ export const getAffiliations = async (): Promise<Affiliations> => {
   return response.json();
 };
 
-export const getDemandSites = async (
-  programId: number,
-): Promise<DemandSite[]> => {
-  const response = await fetch(
-    `${BASE_URL}/public/programs/${programId}/demand-sites`,
-  );
+export const getDemandSites = async (programId: number): Promise<DemandSite[]> => {
+  const response = await fetch(`${BASE_URL}/public/programs/${programId}/demand-sites`);
 
   if (!response.ok) throw new Error("수요처 목록을 불러오지 못했습니다.");
 
   return response.json();
 };
 
-export const getRegistrationStatus = async (
-  participantId: number,
-): Promise<RegistrationStatus> => {
+export const getRegistrationStatus = async (participantId: number): Promise<RegistrationStatus> => {
   const response = await fetch(
     `${BASE_URL}/public/participants/${participantId}/registration-status`,
   );
