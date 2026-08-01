@@ -15,6 +15,7 @@ import { subscribeToPush } from "../../utils/pushSubscription";
 import { registerNativePush } from "../../utils/nativePushRegistration";
 import { affiliationsQueryOptions, demandSitesQueryOptions } from "../../utils/publicApi";
 
+import type { Affiliations } from "../../utils/publicApi";
 import type { ActivityLogFormData } from "../../types/form";
 
 const PLACEHOLDER_OPTION = { value: "", label: "선택하세요" };
@@ -29,6 +30,22 @@ const toOptions = (values: string[]) => [
   PLACEHOLDER_OPTION,
   ...values.map((value) => ({ value, label: value })),
 ];
+
+// 💡 localStorage에 저장된 기관/사업단을 매칭한다
+const findRestoredSelection = (
+  affiliations: Affiliations,
+  orgName: string,
+  programName: string,
+) => {
+  const organization = affiliations.organizations.find((candidate) => candidate.name === orgName);
+  if (!organization) return null;
+
+  const program = affiliations.programs.find(
+    (candidate) => candidate.organizationId === organization.id && candidate.name === programName,
+  );
+
+  return { organization, program: program ?? null };
+};
 
 /**
  * Page 1: 사용자 정보 입력 — 지역/기관유형/사업유형 캐스케이딩 선택
@@ -77,32 +94,23 @@ const AffiliationInputPage = ({
 
     if (!formData.orgName) return;
 
-    const matchedOrganization = affiliations.organizations.find(
-      (organization) => organization.name === formData.orgName,
-    );
+    const restored = findRestoredSelection(affiliations, formData.orgName, formData.programName);
 
-    if (!matchedOrganization) return;
+    if (!restored) return;
+
+    const { organization, program } = restored;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 복원된 formData를 드롭다운 선택 상태로 되돌린다
-    setSido(matchedOrganization.regionSido ?? "");
-    setSigungu(matchedOrganization.regionSigungu ?? "");
-    setSelectedOrganizationId(String(matchedOrganization.id));
+    setSido(organization.regionSido ?? "");
+    setSigungu(organization.regionSigungu ?? "");
+    setSelectedOrganizationId(String(organization.id));
 
-    if (!formData.programName) return;
+    if (!program) return;
 
-    const matchedProgram = affiliations.programs.find(
-      (program) =>
-        program.organizationId === matchedOrganization.id && program.name === formData.programName,
-    );
-    if (!matchedProgram) return;
-
-    setProgramType(matchedProgram.programType ?? "");
-    setSelectedProgramId(String(matchedProgram.id));
-    onChange(
-      "programType",
-      (matchedProgram.programType ?? "") as ActivityLogFormData["programType"],
-    );
-    onChange("programId", matchedProgram.id);
+    setProgramType(program.programType ?? "");
+    setSelectedProgramId(String(program.id));
+    onChange("programType", (program.programType ?? "") as ActivityLogFormData["programType"]);
+    onChange("programId", program.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [affiliations]);
 
