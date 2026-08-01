@@ -3,7 +3,6 @@ import ExcelJS from "exceljs";
 export interface PaymentLedgerHeader {
   programName: string;
   month: string; // "YYYY-MM"
-  hourlyWage: number;
   healthInsuranceRate: number; // %
   longtermCareRate: number; // % (건강보험료 대비)
   employmentInsuranceRate: number; // % (개인부담)
@@ -17,6 +16,11 @@ export interface PaymentLedgerParticipant {
   trainingHours: number;
   paidLeaveHours: number;
   remainingLeaveHours: number;
+  hourlyWage: number;
+  healthInsuranceEnrolled: boolean;
+  longtermCareInsuranceEnrolled: boolean;
+  employmentInsuranceEnrolled: boolean;
+  industrialAccidentInsuranceEnrolled: boolean;
 }
 
 // color 없이 style만 주면 구글 시트가 xlsx를 가져올 때 테두리를 안 그리는 문제가 있어서
@@ -234,7 +238,7 @@ export const downloadPaymentLedgerWorkbook = async (
 
     sheet.getCell(`A${row}`).value = i + 1;
     sheet.getCell(`B${row}`).value = participant.name;
-    sheet.getCell(`H${row}`).value = header.hourlyWage;
+    sheet.getCell(`H${row}`).value = participant.hourlyWage;
     // 근무일수 = 총근무시간 ÷ 1일 소정근로시간(= 월 소정근로시간 기준 ÷ 4주 ÷ 5일)
     sheet.getCell(`I${row}`).value = {
       formula: `J${row}*20/$F$${ROW_SETTINGS}`,
@@ -249,24 +253,24 @@ export const downloadPaymentLedgerWorkbook = async (
     sheet.getCell(`O${row}`).value = {
       formula: `IF(N${row}="O",$F$${ROW_SETTINGS}*H${row},H${row}*J${row})`,
     };
-    sheet.getCell(`P${row}`).value = {
-      formula: `ROUND((O${row}+AA${row})*${header.healthInsuranceRate}/100,0)`,
-    };
-    sheet.getCell(`Q${row}`).value = {
-      formula: `ROUND(P${row}*${header.longtermCareRate}/100,0)`,
-    };
-    sheet.getCell(`R${row}`).value = {
-      formula: `ROUND((O${row}+AA${row})*${header.employmentInsuranceRate}/100,0)`,
-    };
+    sheet.getCell(`P${row}`).value = participant.healthInsuranceEnrolled
+      ? { formula: `ROUND((O${row}+AA${row})*${header.healthInsuranceRate}/100,0)` }
+      : 0;
+    sheet.getCell(`Q${row}`).value = participant.longtermCareInsuranceEnrolled
+      ? { formula: `ROUND(P${row}*${header.longtermCareRate}/100,0)` }
+      : 0;
+    sheet.getCell(`R${row}`).value = participant.employmentInsuranceEnrolled
+      ? { formula: `ROUND((O${row}+AA${row})*${header.employmentInsuranceRate}/100,0)` }
+      : 0;
     sheet.getCell(`S${row}`).value = { formula: `SUM(P${row}:R${row})` };
     sheet.getCell(`T${row}`).value = { formula: `P${row}` };
     sheet.getCell(`U${row}`).value = { formula: `Q${row}` };
-    sheet.getCell(`V${row}`).value = {
-      formula: `ROUND((O${row}+AA${row})*${header.employmentInsuranceEmployerRate}/100,0)`,
-    };
-    sheet.getCell(`W${row}`).value = {
-      formula: `ROUND((O${row}+AA${row})*${header.industrialAccidentRate}/100,0)`,
-    };
+    sheet.getCell(`V${row}`).value = participant.employmentInsuranceEnrolled
+      ? { formula: `ROUND((O${row}+AA${row})*${header.employmentInsuranceEmployerRate}/100,0)` }
+      : 0;
+    sheet.getCell(`W${row}`).value = participant.industrialAccidentInsuranceEnrolled
+      ? { formula: `ROUND((O${row}+AA${row})*${header.industrialAccidentRate}/100,0)` }
+      : 0;
     sheet.getCell(`X${row}`).value = { formula: `SUM(T${row}:W${row})` };
     sheet.getCell(`Y${row}`).value = { formula: `O${row}-S${row}` };
     // 주휴시간(Z)은 이 사업단만의 정책 산식이라 직접 입력하게 비워둔다.

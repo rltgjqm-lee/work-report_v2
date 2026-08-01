@@ -23,10 +23,10 @@ const loadAccessibleProgram = async (
 const computePayAmount = (
   training: typeof projectTrainings.$inferSelect,
   attendHours: number,
-  program: typeof programs.$inferSelect,
+  hourlyWage: number,
 ): number => {
   if (training.payMode === "HOURLY") {
-    return Math.round(attendHours * program.hourlyWage);
+    return Math.round(attendHours * hourlyWage);
   }
   if (training.payMode === "DAILY") {
     return training.dailyWage ?? 0;
@@ -200,7 +200,11 @@ app.post("/logs", async (c) => {
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const attendHours = body.attendHours ?? training.hours ?? 0;
-  const payAmount = computePayAmount(training, attendHours, program);
+  const payAmount = computePayAmount(
+    training,
+    attendHours,
+    participant.hourlyWage ?? program.hourlyWage,
+  );
 
   const result = await db
     .insert(participantTrainingLogs)
@@ -251,7 +255,11 @@ app.put("/logs/:id", async (c) => {
   }>();
 
   const attendHours = body.attendHours ?? existing.attendHours;
-  const payAmount = computePayAmount(training, attendHours, program);
+  const payAmount = computePayAmount(
+    training,
+    attendHours,
+    participant.hourlyWage ?? program.hourlyWage,
+  );
 
   const result = await db
     .update(participantTrainingLogs)

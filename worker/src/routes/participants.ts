@@ -69,6 +69,7 @@ app.get("/:id", async (c) => {
     ...found.participant,
     programName: found.program.name,
     programType: found.program.programType,
+    programHourlyWage: found.program.hourlyWage,
     groupName: groupRows[0]?.name ?? null,
     organizationName: organizationRows[0]?.name ?? null,
   });
@@ -150,11 +151,15 @@ app.put("/:id", async (c) => {
     demandSiteId?: number;
     birthYear?: number;
     groupId?: number;
+    hourlyWage?: number | null;
     educationAmount?: number;
     educationType?: "add" | "deduct" | "none";
     dementiaAmount?: number;
     dementiaType?: "add" | "deduct" | "none";
-    socialInsuranceEnrolled?: boolean;
+    healthInsuranceEnrolled?: boolean;
+    longtermCareInsuranceEnrolled?: boolean;
+    employmentInsuranceEnrolled?: boolean;
+    industrialAccidentInsuranceEnrolled?: boolean;
     weeklyHolidayHours?: number;
   }>();
 

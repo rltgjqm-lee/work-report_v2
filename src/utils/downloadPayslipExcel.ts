@@ -3,7 +3,6 @@ import ExcelJS from "exceljs";
 export interface PayslipHeader {
   organizationName: string;
   month: string; // "YYYY-MM"
-  hourlyWage: number;
   healthInsuranceRate: number; // %
   longtermCareRate: number; // % (건강보험료 대비 요율)
   employmentInsuranceRate: number; // %
@@ -12,6 +11,10 @@ export interface PayslipHeader {
 export interface PayslipParticipant {
   name: string;
   actualWorkHours: number;
+  hourlyWage: number;
+  healthInsuranceEnrolled: boolean;
+  longtermCareInsuranceEnrolled: boolean;
+  employmentInsuranceEnrolled: boolean;
 }
 
 // 원본 서식(work-report-v4/서식(1)/역량활용/노인역량활용사업 급여명세서.xlsx)의 실측값을
@@ -190,15 +193,30 @@ const addPayslipSheet = (
   // 건강보험 = 지급액(a) × 건강보험료율 / 장기요양보험 = 건강보험료 × 장기요양보험료율
   // (실무 관례대로 건강보험료에 대한 비율로 계산) / 고용보험 = 지급액(a) × 고용보험료율.
   // 산재보험은 전액 사업주 부담이라 근로자 명세서엔 0으로 고정.
-  setMoneyValue("H11:J11", "K11:M11", "건강보험", {
-    formula: `ROUND(E17*${header.healthInsuranceRate}/100,0)`,
-  });
-  setMoneyValue("H12:J12", "K12:M12", "장기요양보험", {
-    formula: `ROUND(K11*${header.longtermCareRate}/100,0)`,
-  });
-  setMoneyValue("H13:J13", "K13:M13", "고용보험", {
-    formula: `ROUND(E17*${header.employmentInsuranceRate}/100,0)`,
-  });
+  setMoneyValue(
+    "H11:J11",
+    "K11:M11",
+    "건강보험",
+    participant.healthInsuranceEnrolled
+      ? { formula: `ROUND(E17*${header.healthInsuranceRate}/100,0)` }
+      : 0,
+  );
+  setMoneyValue(
+    "H12:J12",
+    "K12:M12",
+    "장기요양보험",
+    participant.longtermCareInsuranceEnrolled
+      ? { formula: `ROUND(K11*${header.longtermCareRate}/100,0)` }
+      : 0,
+  );
+  setMoneyValue(
+    "H13:J13",
+    "K13:M13",
+    "고용보험",
+    participant.employmentInsuranceEnrolled
+      ? { formula: `ROUND(E17*${header.employmentInsuranceRate}/100,0)` }
+      : 0,
+  );
   setMoneyValue("H14:J14", "K14:M14", "산재보험", 0);
   setMoneyValue("H15:J15", "K15:M15", "소득세", null);
   setMoneyValue("H16:J16", "K16:M16", "지방세", null);
@@ -230,7 +248,7 @@ const addPayslipSheet = (
   setLabel(sheet, "L21", "기타근무시간", { bold: true, fill: SECTION_FILL });
 
   sheet.mergeCells("B23:C23");
-  sheet.getCell("B23").value = header.hourlyWage;
+  sheet.getCell("B23").value = participant.hourlyWage;
   sheet.mergeCells("D23:F23");
   sheet.getCell("D23").value = participant.actualWorkHours;
   sheet.mergeCells("G23:H23");

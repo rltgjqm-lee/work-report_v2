@@ -31,11 +31,15 @@ const ParticipantPayrollSettingsModal = ({
   const queryClient = useQueryClient();
   const updateParticipantMutation = useMutation(updateParticipantMutationOptions(queryClient));
   const [form, setForm] = useState({
+    hourlyWage: String(participant.hourlyWage ?? participant.programHourlyWage),
     educationAmount: String(participant.educationAmount),
     educationType: participant.educationType,
     dementiaAmount: String(participant.dementiaAmount),
     dementiaType: participant.dementiaType,
-    socialInsuranceEnrolled: participant.socialInsuranceEnrolled,
+    healthInsuranceEnrolled: participant.healthInsuranceEnrolled,
+    longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
+    employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
+    industrialAccidentInsuranceEnrolled: participant.industrialAccidentInsuranceEnrolled,
     weeklyHolidayHours: String(participant.weeklyHolidayHours),
   });
 
@@ -46,13 +50,17 @@ const ParticipantPayrollSettingsModal = ({
       {
         id: participant.id,
         data: {
+          hourlyWage: Number(form.hourlyWage),
           educationAmount: Number(form.educationAmount),
           educationType: form.educationType,
           dementiaAmount: Number(form.dementiaAmount),
           dementiaType: form.dementiaType,
           ...(isCompetencyProgram
             ? {
-                socialInsuranceEnrolled: form.socialInsuranceEnrolled,
+                healthInsuranceEnrolled: form.healthInsuranceEnrolled,
+                longtermCareInsuranceEnrolled: form.longtermCareInsuranceEnrolled,
+                employmentInsuranceEnrolled: form.employmentInsuranceEnrolled,
+                industrialAccidentInsuranceEnrolled: form.industrialAccidentInsuranceEnrolled,
                 weeklyHolidayHours: Number(form.weeklyHolidayHours),
               }
             : {}),
@@ -86,8 +94,21 @@ const ParticipantPayrollSettingsModal = ({
       }
     >
       <p className="text-xs text-[#9aa1ab] m-0">
-        교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
+        시급·교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
       </p>
+
+      <FormField label="시급(원)">
+        <input
+          type="number"
+          className={inputClass}
+          value={form.hourlyWage}
+          onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
+        />
+        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+          기본값은 사업단 등록 시 설정한 시급({participant.programHourlyWage.toLocaleString()}원)
+          입니다.
+        </p>
+      </FormField>
 
       <div className="flex gap-3">
         <div className="flex-1">
@@ -156,38 +177,78 @@ const ParticipantPayrollSettingsModal = ({
       </div>
 
       {isCompetencyProgram && (
-        <div className="flex gap-3 items-end">
-          <div className="flex-1">
-            <FormField label="주휴시간(월, 시간)">
-              <input
-                type="number"
-                className={inputClass}
-                value={form.weeklyHolidayHours}
-                onChange={(event) =>
-                  setForm((f) => ({
-                    ...f,
-                    weeklyHolidayHours: event.target.value,
-                  }))
-                }
-              />
-            </FormField>
-          </div>
-          <div className="flex-1 pb-2.5">
-            <label className="flex items-center gap-2 text-[13px]">
-              <input
-                type="checkbox"
-                checked={form.socialInsuranceEnrolled}
-                onChange={(event) =>
-                  setForm((f) => ({
-                    ...f,
-                    socialInsuranceEnrolled: event.target.checked,
-                  }))
-                }
-              />
-              4대보험 가입
-            </label>
-          </div>
-        </div>
+        <>
+          <FormField label="주휴시간(월, 시간)">
+            <input
+              type="number"
+              className={inputClass}
+              value={form.weeklyHolidayHours}
+              onChange={(event) =>
+                setForm((f) => ({
+                  ...f,
+                  weeklyHolidayHours: event.target.value,
+                }))
+              }
+            />
+          </FormField>
+
+          <FormField label="4대보험 가입">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={form.healthInsuranceEnrolled}
+                  onChange={(event) =>
+                    setForm((f) => ({
+                      ...f,
+                      healthInsuranceEnrolled: event.target.checked,
+                    }))
+                  }
+                />
+                건강보험
+              </label>
+              <label className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={form.longtermCareInsuranceEnrolled}
+                  onChange={(event) =>
+                    setForm((f) => ({
+                      ...f,
+                      longtermCareInsuranceEnrolled: event.target.checked,
+                    }))
+                  }
+                />
+                장기요양보험
+              </label>
+              <label className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={form.employmentInsuranceEnrolled}
+                  onChange={(event) =>
+                    setForm((f) => ({
+                      ...f,
+                      employmentInsuranceEnrolled: event.target.checked,
+                    }))
+                  }
+                />
+                고용보험
+              </label>
+              <label className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={form.industrialAccidentInsuranceEnrolled}
+                  onChange={(event) =>
+                    setForm((f) => ({
+                      ...f,
+                      industrialAccidentInsuranceEnrolled: event.target.checked,
+                    }))
+                  }
+                />
+                산재보험
+              </label>
+            </div>
+          </FormField>
+        </>
       )}
     </SlideModal>
   );

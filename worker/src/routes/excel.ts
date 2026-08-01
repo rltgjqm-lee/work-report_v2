@@ -153,11 +153,11 @@ app.get("/:id/export/activity-payment", async (c) => {
   return c.json({
     programName: program.name,
     organizationName,
-    hourlyWage: program.hourlyWage,
     participants: sortedParticipants.map((participant) => ({
       name: participant.name,
       demandName: participant.demandName,
       minutes: minutesByParticipant.get(participant.id) ?? 0,
+      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
     })),
   });
 });
@@ -462,13 +462,16 @@ app.get("/:id/export/payslip", async (c) => {
   return c.json({
     organizationName: org?.name ?? "",
     month,
-    hourlyWage: program.hourlyWage,
     healthInsuranceRate: program.healthInsuranceRate,
     longtermCareRate: program.longtermCareRate,
     employmentInsuranceRate: program.employmentInsuranceRate,
     participants: activeParticipants.map((participant) => ({
       name: participant.name,
       actualWorkHours: Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
+      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
+      healthInsuranceEnrolled: participant.healthInsuranceEnrolled,
+      longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
+      employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
     })),
   });
 });
@@ -593,13 +596,17 @@ app.get("/:id/export/payment", async (c) => {
       trainingHours: trainingHoursByParticipant.get(participant.id) ?? 0,
       paidLeaveHours: (paidLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
       remainingLeaveHours: (remainingLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
+      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
+      healthInsuranceEnrolled: participant.healthInsuranceEnrolled,
+      longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
+      employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
+      industrialAccidentInsuranceEnrolled: participant.industrialAccidentInsuranceEnrolled,
     };
   });
 
   return c.json({
     programName: program.name,
     month,
-    hourlyWage: program.hourlyWage,
     healthInsuranceRate: program.healthInsuranceRate,
     longtermCareRate: program.longtermCareRate,
     employmentInsuranceRate: program.employmentInsuranceRate,

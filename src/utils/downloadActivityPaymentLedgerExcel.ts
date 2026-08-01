@@ -4,13 +4,13 @@ export interface ActivityPaymentLedgerHeader {
   programName: string;
   organizationName: string;
   month: string; // "YYYY-MM"
-  hourlyWage: number;
 }
 
 export interface ActivityPaymentLedgerParticipant {
   name: string;
   demandName: string | null;
   minutes: number;
+  hourlyWage: number;
 }
 
 // color를 안 주면 스펙상 automatic(보통 검정)이지만, 구글 시트는 xlsx를 가져올 때
@@ -125,7 +125,7 @@ export const addActivityPaymentLedgerSheet = (
       // 실지급액 = 시급 × 월활동시간 + 교육(G) + 치매검진(H) — 교육/치매검진은
       // 정산 페이지에서 나중에 채워질 빈 칸이라 수식으로 걸어두면 자동 반영된다.
       sheet.getCell(`I${row}`).value = {
-        formula: `ROUND(${header.hourlyWage}*F${row},0)+G${row}+H${row}`,
+        formula: `ROUND(${participant.hourlyWage}*F${row},0)+G${row}+H${row}`,
       };
       sheet.getCell(`I${row}`).numFmt = '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
 

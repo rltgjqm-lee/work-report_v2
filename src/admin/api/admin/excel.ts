@@ -148,7 +148,6 @@ export const downloadAttendanceExcel = async (programId: number, month: string) 
 interface PaymentLedgerExportResponse {
   programName: string;
   month: string;
-  hourlyWage: number;
   healthInsuranceRate: number;
   longtermCareRate: number;
   employmentInsuranceRate: number;
@@ -166,7 +165,6 @@ export const downloadPaymentExcel = async (programId: number, month: string) => 
     {
       programName: data.programName,
       month: data.month,
-      hourlyWage: data.hourlyWage,
       healthInsuranceRate: data.healthInsuranceRate,
       longtermCareRate: data.longtermCareRate,
       employmentInsuranceRate: data.employmentInsuranceRate,
@@ -204,7 +202,6 @@ export const downloadWorkScheduleExcel = async (programId: number, month: string
 interface PayslipExportResponse {
   organizationName: string;
   month: string;
-  hourlyWage: number;
   healthInsuranceRate: number;
   longtermCareRate: number;
   employmentInsuranceRate: number;
@@ -220,7 +217,6 @@ export const downloadPayslipExcel = async (programId: number, month: string) => 
     {
       organizationName: data.organizationName,
       month: data.month,
-      hourlyWage: data.hourlyWage,
       healthInsuranceRate: data.healthInsuranceRate,
       longtermCareRate: data.longtermCareRate,
       employmentInsuranceRate: data.employmentInsuranceRate,
@@ -232,11 +228,11 @@ export const downloadPayslipExcel = async (programId: number, month: string) => 
 interface ActivityPaymentExportResponse {
   programName: string;
   organizationName: string;
-  hourlyWage: number;
   participants: {
     name: string;
     demandName: string | null;
     minutes: number;
+    hourlyWage: number;
   }[];
 }
 
@@ -250,7 +246,6 @@ export const downloadActivityPaymentLedgerExcel = async (programId: number, mont
       programName: data.programName,
       organizationName: data.organizationName,
       month,
-      hourlyWage: data.hourlyWage,
     },
     data.participants,
   );

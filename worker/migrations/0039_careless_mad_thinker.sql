@@ -1,0 +1,1 @@
+ALTER TABLE `participants` ADD `hourly_wage` integer;

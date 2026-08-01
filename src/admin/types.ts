@@ -111,11 +111,15 @@ export type Participant = {
   dropReason: string | null;
   leaveStart: string | null;
   leaveEnd: string | null;
+  hourlyWage: number | null;
   educationAmount: number;
   educationType: "add" | "deduct" | "none";
   dementiaAmount: number;
   dementiaType: "add" | "deduct" | "none";
-  socialInsuranceEnrolled: boolean;
+  healthInsuranceEnrolled: boolean;
+  longtermCareInsuranceEnrolled: boolean;
+  employmentInsuranceEnrolled: boolean;
+  industrialAccidentInsuranceEnrolled: boolean;
   weeklyHolidayHours: number;
   createdAt: string;
 };
@@ -227,6 +231,7 @@ export type ParticipantMonthlyAttendance = {
 export type ParticipantDetail = Participant & {
   programName: string;
   programType: string | null;
+  programHourlyWage: number;
   groupName: string | null;
   organizationName: string | null;
 };

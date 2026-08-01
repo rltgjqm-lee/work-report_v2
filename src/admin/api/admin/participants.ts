@@ -143,11 +143,15 @@ export interface UpdateParticipantVariables {
       | "demandSiteId"
       | "birthYear"
       | "groupId"
+      | "hourlyWage"
       | "educationAmount"
       | "educationType"
       | "dementiaAmount"
       | "dementiaType"
-      | "socialInsuranceEnrolled"
+      | "healthInsuranceEnrolled"
+      | "longtermCareInsuranceEnrolled"
+      | "employmentInsuranceEnrolled"
+      | "industrialAccidentInsuranceEnrolled"
       | "weeklyHolidayHours"
     >
   >;

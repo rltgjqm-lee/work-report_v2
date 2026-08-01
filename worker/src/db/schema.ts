@@ -187,6 +187,9 @@ export const participants = sqliteTable("participants", {
   dropReason: text("drop_reason"),
   leaveStart: text("leave_start"),
   leaveEnd: text("leave_end"),
+  // 시급 — 사업단 공통값(programs.hourlyWage)이 기본이지만 참여자마다 다르게 줄 수 있어
+  // null이면 사업단 시급을 그대로 따르고, 값이 있으면 이 참여자만의 시급으로 덮어쓴다.
+  hourlyWage: integer("hourly_wage"),
   // 교육비/치매검진비 — 예전엔 사업단(programs) 공통값이었는데 참여자마다 달라서 이쪽으로 옮겼다.
   educationAmount: integer("education_amount").notNull().default(0),
   educationType: text("education_type")
@@ -196,8 +199,18 @@ export const participants = sqliteTable("participants", {
   dementiaAmount: integer("dementia_amount").notNull().default(0),
   dementiaType: text("dementia_type").$type<"add" | "deduct" | "none">().notNull().default("none"),
   // 4대보험 가입여부/주휴시간은 역량활동 참여자만 의미가 있다 (공익활동은 UI에서 숨김).
-  // 요율(%) 자체는 그대로 programs에 있고, 여기는 "이 참여자가 대상인지"만 켜고 끈다.
-  socialInsuranceEnrolled: integer("social_insurance_enrolled", {
+  // 요율(%) 자체는 그대로 programs에 있고, 여기는 "이 참여자가 어떤 보험 대상인지"만
+  // 하나씩 켜고 끈다 — 보험마다 가입 여부가 다를 수 있어 넷을 따로 둔다.
+  healthInsuranceEnrolled: integer("health_insurance_enrolled", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  longtermCareInsuranceEnrolled: integer("longterm_care_insurance_enrolled", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  employmentInsuranceEnrolled: integer("employment_insurance_enrolled", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  industrialAccidentInsuranceEnrolled: integer("industrial_accident_insurance_enrolled", {
     mode: "boolean",
   })
     .notNull()

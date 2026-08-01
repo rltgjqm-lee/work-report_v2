@@ -274,6 +274,34 @@
       "when": 1785559697444,
       "tag": "0038_useful_magma",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1785566602399,
+      "tag": "0039_careless_mad_thinker",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1785567732465,
+      "tag": "0040_smiling_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1785567758043,
+      "tag": "0041_backfill_social_insurance",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1785567799253,
+      "tag": "0042_mean_starjammers",
+      "breakpoints": true
     }
   ]
 }
