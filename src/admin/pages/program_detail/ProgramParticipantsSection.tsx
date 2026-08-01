@@ -106,6 +106,7 @@ const ProgramParticipantsSection = ({
     moveParticipantToGroupMutation.mutate(
       { participantId, programId, groupId: Number(groupId) },
       {
+        onSuccess: () => alert("조가 변경되었습니다."),
         onError: (error) =>
           alert(error instanceof Error ? error.message : "조 배정에 실패했습니다."),
       },
