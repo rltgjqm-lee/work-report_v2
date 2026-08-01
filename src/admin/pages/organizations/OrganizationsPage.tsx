@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -7,6 +7,7 @@ import {
 } from "../../api/admin/organizations";
 import Pagination from "../../components/Pagination";
 import OrganizationFormModal from "./OrganizationFormModal";
+import OrganizationDetailPanel from "./OrganizationDetailPanel";
 import SearchInput from "../../components/SearchInput";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
@@ -27,6 +28,10 @@ const OrganizationsPage = () => {
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
+  const [expandedOrgId, setExpandedOrgId] = useState<number | null>(null);
+
+  // 소속 직원 목록(/api/admins)은 SUPER_ADMIN/ORGANIZATION_ADMIN만 조회 권한이 있다.
+  const canViewStaff = role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
 
   const filtered = useMemo(
     () =>
@@ -98,6 +103,9 @@ const OrganizationsPage = () => {
           <table className="w-full min-w-[1190px] table-fixed border-collapse">
             <thead>
               <tr>
+                {role === ROLES.SUPER_ADMIN && (
+                  <th className="w-[32px] bg-[#f7f8fa] px-2 py-[11px] border-b border-[#e2e5eb]" />
+                )}
                 <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   기관명
                 </th>
@@ -124,47 +132,73 @@ const OrganizationsPage = () => {
             </thead>
             <tbody>
               {pageItems.map((organization) => (
-                <tr key={organization.id} className="hover:bg-[#f8fafc]">
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {organization.name}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {organization.rep}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {organization.phone}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {organization.fax}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {organization.bizNo}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                    {organization.address}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    {organization.isActive ? "활성" : "비활성"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                    {(role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN) && (
-                      <button
-                        className={rowActionBtnClass}
-                        onClick={() => handleEditButtonClick(organization)}
-                      >
-                        수정
-                      </button>
-                    )}
+                <Fragment key={organization.id}>
+                  <tr className="hover:bg-[#f8fafc]">
                     {role === ROLES.SUPER_ADMIN && (
-                      <button
-                        className={rowActionBtnClass}
-                        onClick={() => handleToggleActiveButtonClick(organization)}
-                      >
-                        {organization.isActive ? "비활성화" : "활성화"}
-                      </button>
+                      <td className="px-2 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                        <button
+                          className="w-6 h-6 border-none bg-transparent text-[#6b7280] text-xs cursor-pointer p-0"
+                          onClick={() =>
+                            setExpandedOrgId((current) =>
+                              current === organization.id ? null : organization.id,
+                            )
+                          }
+                        >
+                          {expandedOrgId === organization.id ? "▾" : "▸"}
+                        </button>
+                      </td>
                     )}
-                  </td>
-                </tr>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                      {organization.name}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                      {organization.rep}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                      {organization.phone}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                      {organization.fax}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                      {organization.bizNo}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                      {organization.address}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                      {organization.isActive ? "활성" : "비활성"}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                      {(role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN) && (
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleEditButtonClick(organization)}
+                        >
+                          수정
+                        </button>
+                      )}
+                      {role === ROLES.SUPER_ADMIN && (
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleToggleActiveButtonClick(organization)}
+                        >
+                          {organization.isActive ? "비활성화" : "활성화"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                  {role === ROLES.SUPER_ADMIN && expandedOrgId === organization.id && (
+                    <tr>
+                      <td colSpan={9} className="p-3 bg-white border-b border-[#e2e5eb]">
+                        <OrganizationDetailPanel
+                          organizationId={organization.id}
+                          canViewStaff={canViewStaff}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -174,6 +208,19 @@ const OrganizationsPage = () => {
           <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         )}
       </div>
+
+      {role !== ROLES.SUPER_ADMIN &&
+        pageItems.map((organization) => (
+          <div key={organization.id} className="mt-5">
+            <div className="text-sm font-bold mb-2.5">{organization.name} 상세</div>
+            <div className="bg-white border border-[#e2e5eb] rounded-[2px] p-3">
+              <OrganizationDetailPanel
+                organizationId={organization.id}
+                canViewStaff={canViewStaff}
+              />
+            </div>
+          </div>
+        ))}
 
       {modalOpen && (
         <OrganizationFormModal
