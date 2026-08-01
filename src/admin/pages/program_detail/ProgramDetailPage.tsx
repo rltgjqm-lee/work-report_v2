@@ -148,17 +148,17 @@ const ProgramDetailPage = () => {
           >
             근태 관리
           </button>
+
           <button
             className={btnGhostClass}
             onClick={() => navigate(`/admin/programs/${programId}/escapes`)}
           >
             안전 관제
           </button>
-          {tab === PROGRAM_DETAIL_TAB.PARTICIPANTS && (
-            <button className={btnPrimaryClass} onClick={() => setIsModalOpen(true)}>
-              + 참여자 추가
-            </button>
-          )}
+
+          <button className={btnPrimaryClass} onClick={() => setIsModalOpen(true)}>
+            + 참여자 추가
+          </button>
         </div>
       </div>
 
