@@ -29,8 +29,8 @@ const PROGRAM_DETAIL_TAB = {
 type Tab = (typeof PROGRAM_DETAIL_TAB)[keyof typeof PROGRAM_DETAIL_TAB];
 
 const PROGRAM_DETAIL_TABS: [Tab, string][] = [
-  [PROGRAM_DETAIL_TAB.GROUPS, "조 관리"],
   [PROGRAM_DETAIL_TAB.DEMAND_SITES, "수요처 관리"],
+  [PROGRAM_DETAIL_TAB.GROUPS, "조 관리"],
   [PROGRAM_DETAIL_TAB.PARTICIPANTS, "참여자 명단"],
   [PROGRAM_DETAIL_TAB.EXCEL, "양식 출력"],
 ];
