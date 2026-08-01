@@ -1,5 +1,42 @@
+import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
+
 import { request } from "../client";
-import type { EscapeLog } from "../../types";
+import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../../types";
+
+export const escapeKeys = {
+  all: ["escapes"] as const,
+  byProgram: (programId: number, status: EscapeStatus) =>
+    [...escapeKeys.all, "program", programId, status] as const,
+};
+
+export const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
+  request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);
+
+export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
+  queryOptions({
+    queryKey: escapeKeys.byProgram(programId, status),
+    queryFn: () => getEscapes(programId, status),
+  });
+
+export const liveWorkerKeys = {
+  all: ["live-workers"] as const,
+  byProgram: (programId: number) => [...liveWorkerKeys.all, programId] as const,
+};
+
+export const getLiveWorkers = (programId: number) =>
+  request<LiveWorker[]>(`/api/programs/${programId}/workers/live`);
+
+export const liveWorkersQueryOptions = (programId: number) =>
+  queryOptions({
+    queryKey: liveWorkerKeys.byProgram(programId),
+    queryFn: () => getLiveWorkers(programId),
+  });
+
+export interface ResolveEscapeVariables {
+  escapeId: number;
+  programId: number;
+  memo?: string;
+}
 
 export const resolveEscape = (id: number, memo?: string) =>
   request<EscapeLog>(`/api/escapes/${id}/resolve`, {
@@ -7,5 +44,30 @@ export const resolveEscape = (id: number, memo?: string) =>
     body: JSON.stringify({ memo }),
   });
 
+// critical: 이탈이 해결되면 그 사업단의 OPEN/RESOLVED 이탈 목록이 둘 다 바뀐다 —
+// escapeKeys.all로 이 도메인 전체(모든 사업단·상태)를 한 번에 무효화한다.
+export const resolveEscapeMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ escapeId, memo }: ResolveEscapeVariables) => resolveEscape(escapeId, memo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: escapeKeys.all });
+    },
+  });
+
+export interface MarkEscapeAlertedVariables {
+  escapeId: number;
+  programId: number;
+}
+
 export const markEscapeAlerted = (id: number) =>
   request<EscapeLog>(`/api/escapes/${id}/alerted`, { method: "POST" });
+
+export const markEscapeAlertedMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ escapeId }: MarkEscapeAlertedVariables) => markEscapeAlerted(escapeId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: escapeKeys.byProgram(variables.programId, "OPEN"),
+      });
+    },
+  });

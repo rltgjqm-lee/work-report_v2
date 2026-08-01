@@ -3,11 +3,8 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 import { request } from "../client";
 import { adminKeys } from "./admins";
 import type {
-  EscapeRow,
-  EscapeStatus,
   LeaveRow,
   LeaveStats,
-  LiveWorker,
   MonthlyAttendance,
   Program,
   ProgramWithParticipants,
@@ -108,9 +105,3 @@ export const getLeaves = (programId: number, month?: string) =>
 
 export const getLeaveStats = (programId: number, year: string) =>
   request<LeaveStats>(`/api/programs/${programId}/leaves/stats?year=${year}`);
-
-export const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
-  request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);
-
-export const getLiveWorkers = (programId: number) =>
-  request<LiveWorker[]>(`/api/programs/${programId}/workers/live`);

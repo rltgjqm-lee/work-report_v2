@@ -1,21 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { getEscapes, getLiveWorkers, getProgram, listPrograms } from "../api/admin/programs";
-import { markEscapeAlerted, resolveEscape } from "../api/admin/escapes";
-import { listDemandSiteLocations, listDemandSites } from "../api/admin/demandSites";
+import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
+import {
+  escapesQueryOptions,
+  liveWorkersQueryOptions,
+  markEscapeAlertedMutationOptions,
+  resolveEscapeMutationOptions,
+} from "../api/admin/escapes";
+import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api/admin/demandSites";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
-import type {
-  DemandSite,
-  DemandSiteLocation,
-  EscapeRow,
-  EscapeStatus,
-  LiveWorker,
-  Program,
-} from "../types";
+import type { DemandSiteLocation, EscapeRow, EscapeStatus, LiveWorker } from "../types";
 
 // 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
 // location이 null이면 거점이 아니라 수요처 자체에 잡아둔 기본 원이다.
@@ -45,66 +44,103 @@ const EscapesPage = () => {
   const navigate = useNavigate();
   const preselectedProgramId = id ? Number(id) : null;
 
-  const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
-  const [programName, setProgramName] = useState("");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
-  const [rows, setRows] = useState<EscapeRow[]>([]);
-  const [workers, setWorkers] = useState<LiveWorker[]>([]);
   const [search, setSearch] = useState("");
   const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
-  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
-  const [geofences, setGeofences] = useState<DemandSiteGeofence[]>([]);
   const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
+  const queryClient = useQueryClient();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const geofenceLayerRef = useRef<L.LayerGroup | null>(null);
 
-  // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
-  useEffect(() => {
-    if (!preselectedProgramId) listPrograms().then(setPrograms);
-  }, [preselectedProgramId]);
-
-  useEffect(() => {
-    if (preselectedProgramId) {
-      getProgram(preselectedProgramId).then((program) => setProgramName(program.name));
-    }
-  }, [preselectedProgramId]);
-
   const programId = preselectedProgramId ?? Number(selectedProgramId);
 
-  const refresh = () => {
-    if (!programId) return;
-    getEscapes(programId, status).then(setRows);
-  };
+  // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
+  const { data: programs = [] } = useQuery({
+    ...programsQueryOptions,
+    enabled: !preselectedProgramId,
+  });
+  const { data: preselectedProgram } = useQuery({
+    ...programQueryOptions(preselectedProgramId ?? 0),
+    enabled: !!preselectedProgramId,
+  });
+  const programName = preselectedProgram?.name ?? "";
 
-  useEffect(refresh, [programId, status]);
+  // OPEN은 위급 이탈 감지를 위해 항상 폴링하고, RESOLVED는 상태 탭을 볼 때만 조회한다.
+  const { data: openEscapes = [] } = useQuery({
+    ...escapesQueryOptions(programId, "OPEN"),
+    enabled: !!programId,
+    refetchInterval: POLL_INTERVAL_MS,
+  });
+  const { data: resolvedEscapes = [] } = useQuery({
+    ...escapesQueryOptions(programId, "RESOLVED"),
+    enabled: !!programId && status === "RESOLVED",
+  });
+  const rows = status === "OPEN" ? openEscapes : resolvedEscapes;
 
-  // 관제 폴링 — 실시간 근무자 위치 갱신 + 새로 발생한 3단계(위급) 이탈을 감지해 팝업.
-  // programId가 없으면(사이드바 진입 직후, 아직 미선택) 아래 렌더링에서 안내 문구만 보여주므로
-  // rows/workers를 굳이 초기화할 필요가 없다.
+  const { data: workers = [] } = useQuery({
+    ...liveWorkersQueryOptions(programId),
+    enabled: !!programId,
+    refetchInterval: POLL_INTERVAL_MS,
+  });
+
+  const { data: demandSites = [] } = useQuery({
+    ...demandSitesQueryOptions(programId),
+    enabled: !!programId,
+  });
+  const demandSiteLocationQueries = useQueries({
+    queries: demandSites.map((demandSite) => demandSiteLocationsQueryOptions(demandSite.id)),
+  });
+  const geofences = useMemo(
+    () =>
+      demandSites.flatMap((demandSite, index) => {
+        const locations = demandSiteLocationQueries[index]?.data ?? [];
+        const siteGeofences: DemandSiteGeofence[] = locations.map((location) => ({
+          demandSiteId: demandSite.id,
+          demandSiteName: demandSite.name,
+          location,
+          baseArea: null,
+        }));
+
+        // 거점을 안 그린 수요처도 기본 관제구역이 잡혀 있으면 지도에 나와야 한다
+        if (
+          demandSite.baseLat !== null &&
+          demandSite.baseLng !== null &&
+          demandSite.radius !== null
+        ) {
+          siteGeofences.push({
+            demandSiteId: demandSite.id,
+            demandSiteName: demandSite.name,
+            location: null,
+            baseArea: {
+              lat: demandSite.baseLat,
+              lng: demandSite.baseLng,
+              radius: demandSite.radius,
+            },
+          });
+        }
+
+        return siteGeofences;
+      }),
+    [demandSites, demandSiteLocationQueries],
+  );
+
+  const resolveEscapeMutation = useMutation(resolveEscapeMutationOptions(queryClient));
+  const markEscapeAlertedMutation = useMutation(markEscapeAlertedMutationOptions(queryClient));
+
+  // 새로 발생한 3단계(위급) 이탈을 감지해 팝업 — openEscapes가 폴링될 때마다 확인한다.
   useEffect(() => {
-    if (!programId) return;
-
-    const tick = async () => {
-      getLiveWorkers(programId).then(setWorkers);
-
-      const openEscapes = await getEscapes(programId, "OPEN");
-      if (status === "OPEN") setRows(openEscapes);
-
-      const critical = openEscapes.find((row) => row.escape.alertCount >= 3 && !row.escape.alerted);
-      if (critical) {
-        setCriticalEscape(critical);
-        markEscapeAlerted(critical.escape.id);
-      }
-    };
-
-    tick();
-    const interval = setInterval(tick, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [programId, status]);
+    const critical = openEscapes.find((row) => row.escape.alertCount >= 3 && !row.escape.alerted);
+    if (critical) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 폴링된 서버 상태를 감지해 팝업을 띄운다
+      setCriticalEscape(critical);
+      markEscapeAlertedMutation.mutate({ escapeId: critical.escape.id, programId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openEscapes]);
 
   const filteredWorkers = useMemo(
     () =>
@@ -135,65 +171,6 @@ const EscapesPage = () => {
       ),
     [geofences, selectedDemandSiteId],
   );
-
-  // 수요처 관제구역은 지도 초기화와 분리해서 받아둔다 — 지도 생성 시점에 한 번만
-  // 그리면, 사업단을 바꾸거나 응답이 늦게 도착했을 때 아무것도 안 그려진 채로 남는다.
-  useEffect(() => {
-    // 사업단 미선택 상태에서는 지도도 필터도 렌더링되지 않으므로, 남아있는 값을
-    // 굳이 비우지 않는다 — 다음 사업단을 고르면 아래 로딩이 통째로 갈아끼운다.
-    if (!programId) return;
-
-    let cancelled = false;
-
-    const loadGeofences = async () => {
-      const sites = await listDemandSites(programId);
-      const locationsPerSite = await Promise.all(
-        sites.map((demandSite) => listDemandSiteLocations(demandSite.id)),
-      );
-
-      if (cancelled) return;
-
-      setDemandSites(sites);
-      setGeofences(
-        sites.flatMap((demandSite, siteIndex) => {
-          const siteGeofences: DemandSiteGeofence[] = locationsPerSite[siteIndex].map(
-            (location) => ({
-              demandSiteId: demandSite.id,
-              demandSiteName: demandSite.name,
-              location,
-              baseArea: null,
-            }),
-          );
-
-          // 거점을 안 그린 수요처도 기본 관제구역이 잡혀 있으면 지도에 나와야 한다
-          if (
-            demandSite.baseLat !== null &&
-            demandSite.baseLng !== null &&
-            demandSite.radius !== null
-          ) {
-            siteGeofences.push({
-              demandSiteId: demandSite.id,
-              demandSiteName: demandSite.name,
-              location: null,
-              baseArea: {
-                lat: demandSite.baseLat,
-                lng: demandSite.baseLng,
-                radius: demandSite.radius,
-              },
-            });
-          }
-
-          return siteGeofences;
-        }),
-      );
-    };
-
-    loadGeofences();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [programId]);
 
   // 지도 초기화 — 사이드바로 진입해 사업단 미선택 상태면 지도 컨테이너 자체가 아직
   // 렌더링 안 됐으므로, programId가 정해져 컨테이너가 나타난 뒤에 초기화한다
@@ -323,27 +300,28 @@ const EscapesPage = () => {
     }
   }, [filteredWorkers]);
 
-  const handleResolveButtonClick = async (escapeId: number, participantName: string) => {
+  const handleResolveButtonClick = (escapeId: number, participantName: string) => {
     const memo = prompt(`'${participantName}' 님 이탈 확인 처리 — 메모(선택)`);
     if (memo === null) return;
 
-    try {
-      await resolveEscape(escapeId, memo || undefined);
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    resolveEscapeMutation.mutate(
+      { escapeId, programId, memo: memo || undefined },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
-  const handleResolveCriticalButtonClick = async () => {
+  const handleResolveCriticalButtonClick = () => {
     if (!criticalEscape) return;
-    try {
-      await resolveEscape(criticalEscape.escape.id);
-      setCriticalEscape(null);
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+
+    resolveEscapeMutation.mutate(
+      { escapeId: criticalEscape.escape.id, programId },
+      {
+        onSuccess: () => setCriticalEscape(null),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
   return (
@@ -370,7 +348,6 @@ const EscapesPage = () => {
               value={selectedProgramId}
               onChange={(value) => {
                 setSelectedProgramId(value);
-                // 사업단이 바뀌면 이전 사업단의 수요처 필터는 의미가 없다
                 setSelectedDemandSiteId("");
               }}
               options={[
@@ -382,8 +359,6 @@ const EscapesPage = () => {
               ]}
             />
           )}
-          {/* 사업단을 고르기 전에도 자리를 지킨다 — 고를 수 있는 수요처가 없을 뿐이라
-              비활성 상태로 보여준다 (수요처 목록은 사업단에 딸려 있다) */}
           <FilterSelect
             value={selectedDemandSiteId}
             onChange={setSelectedDemandSiteId}
