@@ -250,14 +250,18 @@ const Main = () => {
     return () => window.removeEventListener("online", handleNetworkOnline);
   }, [db]);
 
-  // 💡 formData가 바뀔 때마다 draft를 저장해서 새로고침해도 참여자 식별/오늘 진행
-  // 상황이 그대로 유지되도록 한다. 서명은 매일 새로 받아야 해서 draft에는 안 남긴다.
+  // 💡 formData가 바뀔 때마다가 아니라 단계(view)가 넘어갈 때만 draft를 저장한다 —
+  // 각 페이지의 "다음/저장" 시점에 formData가 그 단계에서 확정된 상태이므로, 입력
+  // 중간중간(키 입력마다)이 아니라 이 시점에 한 번씩만 저장해도 새로고침 시 참여자
+  // 식별/오늘 진행 상황을 복원하는 데는 충분하다. 서명은 매일 새로 받아야 해서
+  // draft에는 안 남긴다.
   useEffect(() => {
     const { userSignature, demandSignature, ...draftFields } = formData;
     void userSignature;
     void demandSignature;
     localStorage.setItem(LOCAL_STORAGE_KEYS.FORM_DRAFT, JSON.stringify(draftFields));
-  }, [formData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   // 💡 본인확인이 끝나고 db가 준비되면, 홈 대시보드가 "오늘 진행 상황"을 보여줄 수 있도록
   // 오늘 날짜로 이미 저장된 레코드가 있는지 확인해서 formData에 반영한다(없으면 오늘 날짜만
