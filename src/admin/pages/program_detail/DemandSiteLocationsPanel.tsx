@@ -292,7 +292,7 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
             </button>
           )}
           <button className={rowActionBtnClass} onClick={onClose}>
-            닫기
+            저장 닫기
           </button>
         </div>
       </div>
