@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { logout } from "../api/auth";
+import { organizationQueryOptions } from "../api/admin/organizations";
 import ChangePasswordModal from "./modal/ChangePasswordModal";
 import { useAuth } from "../context/useAuth";
 import { ROLES } from "../types";
@@ -61,6 +63,12 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
+  const { data: organization } = useQuery({
+    ...organizationQueryOptions(admin?.organizationId ?? 0),
+    enabled: !!admin?.organizationId,
+  });
+  const sidebarSubtitle = organization?.name ?? "일자리 사업 관리";
+
   const navItems = [
     ...BASE_NAV_ITEMS,
     ...(admin?.role === ROLES.SUPER_ADMIN ? [SAFETY_ALERT_TEST_NAV_ITEM] : []),
@@ -87,7 +95,7 @@ const AdminLayout = () => {
       <aside className="w-[248px] flex-none bg-[#14283d] text-[#e6ebf2] flex flex-col py-6">
         <div className="px-6 pb-[22px] border-b border-white/[0.08] mb-3.5">
           <div className="text-[15px] font-bold text-white">기관 통합관리시스템</div>
-          <div className="text-[11px] text-[#8fa3bd] mt-[5px]">노인일자리 사업 관리</div>
+          <div className="text-[11px] text-[#8fa3bd] mt-[5px]">{sidebarSubtitle}</div>
         </div>
         {navItems.map((navItem) => (
           <NavLink
