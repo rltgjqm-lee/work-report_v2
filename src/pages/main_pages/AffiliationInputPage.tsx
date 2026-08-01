@@ -13,9 +13,10 @@ import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
 import { registerNativePush } from "../../utils/nativePushRegistration";
-import { affiliationsQueryOptions, demandSitesQueryOptions } from "../../utils/publicApi";
+import { affiliationsQueryOptions } from "../../utils/affiliationsApi";
+import { demandSitesQueryOptions } from "../../utils/demandSitesApi";
 
-import type { Affiliations } from "../../utils/publicApi";
+import type { Affiliations } from "../../utils/affiliationsApi";
 import type { ActivityLogFormData } from "../../types/form";
 
 const PLACEHOLDER_OPTION = { value: "", label: "선택하세요" };

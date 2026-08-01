@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import AppBar from "../../components/molecule/AppBar";
 import Card from "../../components/atoms/Card";
@@ -6,8 +7,7 @@ import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { getAffiliations, getRegistrationStatus } from "../../utils/publicApi";
-import { identifyParticipant } from "../../utils/attendanceApi";
+import { identifyParticipantQueryOptions } from "../../utils/attendanceApi";
 import type { ActivityLogFormData } from "../../types/form";
 
 type ExceptionInfo = {
@@ -15,8 +15,6 @@ type ExceptionInfo = {
   title: string;
   body: string;
 };
-
-const todayStr = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Page 2: 등록 확인 — 기본정보에서 입력한 내용을 요약해 보여주고, 참여자 상태(휴무/탈락)나
@@ -33,79 +31,66 @@ const RegistrationConfirmPage = ({
   onBack: () => void;
   onNext: () => void;
 }) => {
-  const [exception, setException] = useState<ExceptionInfo | null | "loading">("loading");
-  const [orgAddress, setOrgAddress] = useState("");
+  const {
+    data: identified,
+    isPending: isIdentifyPending,
+    isError: isIdentifyError,
+    error: identifyError,
+  } = useQuery(identifyParticipantQueryOptions(formData.programId, formData.userName));
+  const participantId = identified?.participantId;
+  const orgAddress = identified?.orgAddress;
 
   useEffect(() => {
-    if (!formData.programId || !formData.userName) {
-      return;
-    }
-
-    // 1단계: 이름으로 실제 참여자를 조회(본인확인)한다 — 동명이인은 등록 시 이름에
-    // 숫자를 붙여 미리 구분해둔다.
-    identifyParticipant(formData.programId, formData.userName)
-      .then((identified) => {
-        onChange("participantId", identified.participantId);
-
-        // 2단계: 조회된 participantId로 현재 상태(휴무/탈락)와 사업 기간을 확인한다.
-        return Promise.all([getRegistrationStatus(identified.participantId), getAffiliations()]);
-      })
-      .then(([registrationStatus, { programs, organizations }]) => {
-        if (registrationStatus.status === "DROPPED") {
-          setException({
-            variant: "warn",
-            title: "참여가 종료되었어요.",
-            body: "담당자에게 문의해 주세요.",
-          });
-          return;
-        }
-        if (registrationStatus.status === "ON_LEAVE") {
-          setException({
-            variant: "caution",
-            title: "현재 휴무 중이에요.",
-            body: registrationStatus.leaveEnd
-              ? `${registrationStatus.leaveEnd}까지 휴무 예정이에요. 복귀 후 다시 이용해 주세요.`
-              : "복귀 후 다시 이용해 주세요.",
-          });
-          return;
-        }
-
-        const program = programs.find((p) => p.id === formData.programId);
-        const organization = organizations.find((o) => o.id === program?.organizationId);
-        setOrgAddress(
-          [organization?.regionSido, organization?.regionSigungu].filter(Boolean).join(" "),
-        );
-
-        const today = todayStr();
-
-        if (program && program.endDate < today) {
-          setException({
-            variant: "caution",
-            title: "사업이 종료되었어요.",
-            body: "다른 사업에 참여하시려면 '이전'을 눌러 다시 선택해 주세요.",
-          });
-          return;
-        }
-        if (program && program.startDate > today) {
-          setException({
-            variant: "caution",
-            title: "아직 사업이 시작되지 않았어요.",
-            body: `${program.startDate}부터 이용하실 수 있어요.`,
-          });
-          return;
-        }
-
-        setException(null);
-      })
-      .catch((error) => {
-        setException({
-          variant: "warn",
-          title: "본인 확인에 실패했어요.",
-          body: error instanceof Error ? error.message : "이름을 다시 확인해 주세요.",
-        });
-      });
+    if (!participantId) return;
+    onChange("participantId", participantId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.programId, formData.userName]);
+  }, [participantId]);
+
+  let exception: ExceptionInfo | null | "loading";
+
+  if (isIdentifyPending) {
+    exception = "loading";
+  } else if (isIdentifyError) {
+    exception = {
+      variant: "warn",
+      title: "본인 확인에 실패했어요.",
+      body: identifyError instanceof Error ? identifyError.message : "이름을 다시 확인해 주세요.",
+    };
+  } else if (identified.status === "DROPPED") {
+    exception = {
+      variant: "warn",
+      title: "참여가 종료되었어요.",
+      body: "담당자에게 문의해 주세요.",
+    };
+  } else if (identified.status === "ON_LEAVE") {
+    exception = {
+      variant: "caution",
+      title: "현재 휴무 중이에요.",
+      body: identified.leaveEnd
+        ? `${identified.leaveEnd}까지 휴무 예정이에요. 복귀 후 다시 이용해 주세요.`
+        : "복귀 후 다시 이용해 주세요.",
+    };
+  } else if (identified.program) {
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (identified.program.endDate < today) {
+      exception = {
+        variant: "caution",
+        title: "사업이 종료되었어요.",
+        body: "다른 사업에 참여하시려면 '이전'을 눌러 다시 선택해 주세요.",
+      };
+    } else if (identified.program.startDate > today) {
+      exception = {
+        variant: "caution",
+        title: "아직 사업이 시작되지 않았어요.",
+        body: `${identified.program.startDate}부터 이용하실 수 있어요.`,
+      };
+    } else {
+      exception = null;
+    }
+  } else {
+    exception = null;
+  }
 
   return (
     <div className={pageClass}>

@@ -70,23 +70,6 @@ app.get("/affiliations", async (c) => {
   return c.json({ organizations: organizationRows, programs: programRows });
 });
 
-// 등록확인 페이지에서 참여자 상태(휴무/탈락)를 판단하기 위한 조회 — identify는
-// 이름+전화번호 매칭만 하고 상태는 안 보므로, participantId로 최신 상태를 다시 확인한다.
-app.get("/participants/:id/registration-status", async (c) => {
-  const db = drizzle(c.env.DB);
-  const participantId = Number(c.req.param("id"));
-
-  const rows = await db
-    .select({ status: participants.status, leaveEnd: participants.leaveEnd })
-    .from(participants)
-    .where(eq(participants.id, participantId));
-
-  const row = rows[0];
-  if (!row) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
-
-  return c.json(row);
-});
-
 app.get("/programs/:id/demand-sites", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
@@ -159,6 +142,9 @@ app.post("/push-subscriptions/link-participant", async (c) => {
 // 참여자 셀프 근태체크 — 이름으로 본인 확인 (동명이인은 등록 시 이름에 "1", "2"를
 // 붙여 미리 구분해둔다). 로그인/개인 UID 없이, 클라이언트가 응답의 participantId를
 // 로컬스토리지에 저장해두고 이후 출퇴근에 재사용한다.
+// 💡 등록확인 화면이 참여자 상태(휴무/탈락)와 사업 기간을 바로 판단할 수 있도록,
+// 이미 조회해둔 participant/program/organization row에서 필요한 필드를 한 응답에
+// 같이 실어보낸다 — 화면이 그 판단을 위해 별도로 왕복할 필요가 없게 하기 위함이다.
 app.post("/attendance/identify", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
@@ -170,24 +156,24 @@ app.post("/attendance/identify", async (c) => {
     return c.json({ error: "사업단과 이름을 모두 입력해주세요." }, 400);
   }
 
-  const rows = await db
-    .select()
-    .from(participants)
-    .where(and(eq(participants.programId, body.programId), eq(participants.name, body.name)));
+  const [programRows, participantRows] = await Promise.all([
+    db.select().from(programs).where(eq(programs.id, body.programId)),
+    db
+      .select()
+      .from(participants)
+      .where(and(eq(participants.programId, body.programId), eq(participants.name, body.name))),
+  ]);
+  const program = programRows[0];
+  const participant = participantRows[0];
 
-  const participant = rows[0];
+  const organizationRows = program
+    ? await db.select().from(organizations).where(eq(organizations.id, program.organizationId))
+    : [];
+  const organization = organizationRows[0];
+
   if (!participant) {
     // 어느 사업단을 보고 있었는지 알려줘야 참여자가 담당자에게 바로 문의할 수 있다.
-    const programRows = await db.select().from(programs).where(eq(programs.id, body.programId));
-    const program = programRows[0];
-
     if (program) {
-      const organizationRows = await db
-        .select()
-        .from(organizations)
-        .where(eq(organizations.id, program.organizationId));
-      const organization = organizationRows[0];
-
       const programTypeLabel = program.programType ?? "";
       const orgLabel = [organization?.regionSido, organization?.regionSigungu, organization?.name]
         .filter(Boolean)
@@ -204,7 +190,16 @@ app.post("/attendance/identify", async (c) => {
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
   }
 
-  return c.json({ participantId: participant.id, name: participant.name });
+  return c.json({
+    participantId: participant.id,
+    name: participant.name,
+    status: participant.status,
+    leaveEnd: participant.leaveEnd,
+    program: program ? { startDate: program.startDate, endDate: program.endDate } : null,
+    organization: organization
+      ? { regionSido: organization.regionSido, regionSigungu: organization.regionSigungu }
+      : null,
+  });
 });
 
 // 하이브리드 앱(Capacitor)이 발급받은 네이티브 푸시 토큰(FCM/APNs) 등록.

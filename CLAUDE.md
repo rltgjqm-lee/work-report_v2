@@ -175,3 +175,86 @@ deleteParticipantMutation.mutate(variables, {
 레퍼런스: `src/admin/pages/LoginHistoryPage.tsx`, `src/admin/pages/DisasterMessagesPage.tsx`,
 `src/admin/pages/ParticipantsPage.tsx` + `src/admin/api/admin/participants.ts`
 (critical/UI 분리 예시), `src/admin/AdminApp.tsx`의 `QueryClientProvider` 설정.
+
+같은 규칙이 참여자 앱(`src/pages/main_pages/`)의 데이터 조회에도 그대로 적용됩니다 —
+그 앱의 API 파일 위치는 `src/utils/<도메인>Api.ts`(예: `affiliationsApi.ts`,
+`attendanceApi.ts`)이고, 그 안에 fetch 함수 + 쿼리 키 + `queryOptions()`를 같이 둡니다.
+`QueryClientProvider`는 `src/MobileApp.tsx`에 있습니다.
+
+### 파라미터가 있는 쿼리: `enabled`/`select`도 팩토리 안에 접어넣는다
+
+`demandSitesQueryOptions(programId)`처럼 파라미터를 받는 쿼리 옵션 팩토리를 만들 때, 그
+쿼리가 조건부로만 실행되어야 하거나(`enabled`) 응답을 그 화면이 쓰는 모양으로 다듬어야
+한다면(`select`), 호출하는 페이지에서
+`{ ...xxxQueryOptions(...), enabled: ..., select: ... }`처럼 스프레드해서 오버라이드하지
+않습니다. 소비자가 하나뿐인 이상 그 페이지만을 위한 오버라이드를 페이지 쪽에 흩어놓을
+이유가 없으니, 팩토리 함수 자체에 다 넣습니다.
+
+- **`enabled`**: 파라미터 타입을 `number | undefined`처럼 받고, 팩토리 안에서
+  `enabled: !!participantId`로 계산합니다. `queryKey`/`queryFn`에 쓸 fallback 값(`?? 0`
+  등)도 같이 팩토리 안에서 처리해서, 페이지는 `useQuery(xxxQueryOptions(participantId))`
+  하나로 끝나게 합니다.
+- **`select`**: `{ ...data, extra: ... }`처럼 원본을 통째로 스프레드하지 않고, 그 화면이
+  실제로 쓰는 필드만 이름을 붙여 명시적으로 리턴합니다. 원본 타입을 그대로 노출하면
+  쓰지도 않는 필드까지 소비자가 안고 가야 하고, 나중에 원본 필드가 바뀌면 상관없는
+  화면까지 타입 에러가 납니다.
+- `select`가 원본과 다른 모양을 리턴하면, 그 결과 타입을 같은 파일에 별도
+  `export type`으로 만들어 페이지가 원본 응답 타입 대신 그 타입을 참조하게 합니다.
+
+```ts
+// src/utils/attendanceApi.ts
+export type IdentifiedRegistration = {
+  participantId: number;
+  status: IdentifiedParticipant["status"];
+  leaveEnd: string | null;
+  program: IdentifiedParticipant["program"];
+  orgAddress: string;
+};
+
+export const identifyParticipantQueryOptions = (
+  programId: number | undefined,
+  name: string | undefined,
+) =>
+  queryOptions({
+    queryKey: identifyParticipantKeys.byProgramAndName(programId ?? 0, name ?? ""),
+    queryFn: () => identifyParticipant(programId as number, name as string),
+    enabled: !!programId && !!name,
+    select: (identified: IdentifiedParticipant): IdentifiedRegistration => ({
+      participantId: identified.participantId,
+      status: identified.status,
+      leaveEnd: identified.leaveEnd,
+      program: identified.program,
+      orgAddress: [identified.organization?.regionSido, identified.organization?.regionSigungu]
+        .filter(Boolean)
+        .join(" "),
+    }),
+  });
+```
+
+```tsx
+// RegistrationConfirmPage.tsx — 페이지는 오버라이드 없이 그대로 쓴다
+const { data: identified, isPending, isError, error } = useQuery(
+  identifyParticipantQueryOptions(formData.programId, formData.userName),
+);
+```
+
+### `useQuery` 결과는 호출부에서 바로 구조분해한다
+
+`const xxxQuery = useQuery(...)`로 결과 객체를 통째로 들고 있다가 `xxxQuery.data`,
+`xxxQuery.isPending`, `xxxQuery.isError`를 여기저기서 반복해서 찍지 않습니다. 호출 시점에
+바로 의미 있는 이름으로 구조분해합니다.
+
+```tsx
+const {
+  data: identified,
+  isPending: isIdentifyPending,
+  isError: isIdentifyError,
+  error: identifyError,
+} = useQuery(identifyParticipantQueryOptions(formData.programId, formData.userName));
+```
+
+한 화면에 쿼리가 여러 개면 이 접두사(`isIdentifyPending` 등)가 어떤 쿼리의 상태인지
+구분해줍니다.
+
+레퍼런스: `src/utils/attendanceApi.ts`(`identifyParticipantQueryOptions`의 `enabled`/`select`
+예시), `src/pages/main_pages/RegistrationConfirmPage.tsx`(구조분해 소비 예시).

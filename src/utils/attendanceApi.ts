@@ -1,4 +1,5 @@
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
+import { queryOptions } from "@tanstack/react-query";
 
 import type { Coordinates } from "./geolocation";
 
@@ -51,10 +52,55 @@ export const getTodayAttendance = async (
   return res.json();
 };
 
+// 💡 등록확인 화면이 참여자 상태/사업 기간을 바로 판단할 수 있도록 서버가 한 응답에
+// 다 실어보낸다 — registrationStatus/affiliations를 별도로 왕복하지 않아도 되게 하기 위함
+export type IdentifiedParticipant = {
+  participantId: number;
+  name: string;
+  status: "ACTIVE" | "ON_LEAVE" | "DROPPED";
+  leaveEnd: string | null;
+  program: { startDate: string; endDate: string } | null;
+  organization: { regionSido: string | null; regionSigungu: string | null } | null;
+};
+
 export const identifyParticipant = (programId: number, name: string) =>
-  request<{ participantId: number; name: string }>("/public/attendance/identify", {
+  request<IdentifiedParticipant>("/public/attendance/identify", {
     programId,
     name,
+  });
+
+export const identifyParticipantKeys = {
+  all: ["identify-participant"] as const,
+  byProgramAndName: (programId: number, name: string) =>
+    [...identifyParticipantKeys.all, programId, name] as const,
+};
+
+// 💡 등록확인 화면이 identifyParticipantQueryOptions의 select에서 실제로 받는 모양
+export type IdentifiedRegistration = {
+  participantId: number;
+  status: IdentifiedParticipant["status"];
+  leaveEnd: string | null;
+  program: IdentifiedParticipant["program"];
+  orgAddress: string;
+};
+
+export const identifyParticipantQueryOptions = (
+  programId: number | undefined,
+  name: string | undefined,
+) =>
+  queryOptions({
+    queryKey: identifyParticipantKeys.byProgramAndName(programId ?? 0, name ?? ""),
+    queryFn: () => identifyParticipant(programId as number, name as string),
+    enabled: !!programId && !!name,
+    select: (identified: IdentifiedParticipant): IdentifiedRegistration => ({
+      participantId: identified.participantId,
+      status: identified.status,
+      leaveEnd: identified.leaveEnd,
+      program: identified.program,
+      orgAddress: [identified.organization?.regionSido, identified.organization?.regionSigungu]
+        .filter(Boolean)
+        .join(" "),
+    }),
   });
 
 // debug.date("YYYY-MM-DD")/debug.time("HH:MM")은 출퇴근 날짜·시간 검증을 테스트하기
