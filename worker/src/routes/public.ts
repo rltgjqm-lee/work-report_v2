@@ -153,7 +153,7 @@ app.post("/attendance/identify", async (c) => {
   }>();
 
   if (!body.programId || !body.name) {
-    return c.json({ error: "사업단과 이름을 모두 입력해주세요." }, 400);
+    return c.json({ error: "MISSING_FIELDS" }, 400);
   }
 
   const [programRows, participantRows] = await Promise.all([
@@ -172,22 +172,25 @@ app.post("/attendance/identify", async (c) => {
   const organization = organizationRows[0];
 
   if (!participant) {
-    // 어느 사업단을 보고 있었는지 알려줘야 참여자가 담당자에게 바로 문의할 수 있다.
+    // 메시지 문구는 프론트에서 조립한다 — 여기서는 판단에 필요한 코드/데이터만 내려준다.
     if (program) {
-      const programTypeLabel = program.programType ?? "";
-      const orgLabel = [organization?.regionSido, organization?.regionSigungu, organization?.name]
-        .filter(Boolean)
-        .join(" ");
-
       return c.json(
         {
-          error: `${orgLabel} ${programTypeLabel} ${program.name} 사업에 등록이 안되어 있습니다.\n해당 기관, 사업 담당자에게 문의하여 주세요.`,
+          error: "NOT_REGISTERED",
+          organization: organization
+            ? {
+                regionSido: organization.regionSido,
+                regionSigungu: organization.regionSigungu,
+                name: organization.name,
+              }
+            : null,
+          program: { name: program.name, programType: program.programType },
         },
         404,
       );
     }
 
-    return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
+    return c.json({ error: "PROGRAM_NOT_FOUND" }, 404);
   }
 
   return c.json({

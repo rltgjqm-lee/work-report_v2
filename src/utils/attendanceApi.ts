@@ -63,11 +63,47 @@ export type IdentifiedParticipant = {
   organization: { regionSido: string | null; regionSigungu: string | null } | null;
 };
 
-export const identifyParticipant = (programId: number, name: string) =>
-  request<IdentifiedParticipant>("/public/attendance/identify", {
-    programId,
-    name,
+// 💡 메시지 문구는 화면(RegistrationConfirmPage)에서 조립한다 — 여기서는 백엔드가 내려준
+// 코드/데이터를 그대로 실어 던지기만 한다.
+export type IdentifyErrorBody =
+  | { error: "MISSING_FIELDS" | "PROGRAM_NOT_FOUND" }
+  | {
+      error: "NOT_REGISTERED";
+      organization: {
+        regionSido: string | null;
+        regionSigungu: string | null;
+        name: string;
+      } | null;
+      program: { name: string; programType: string | null };
+    };
+
+export class IdentifyError extends Error {
+  body: IdentifyErrorBody;
+
+  constructor(body: IdentifyErrorBody) {
+    super(body.error);
+    this.body = body;
+  }
+}
+
+export const identifyParticipant = async (
+  programId: number,
+  name: string,
+): Promise<IdentifiedParticipant> => {
+  const res = await fetch(`${BASE_URL}/public/attendance/identify`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ programId, name }),
   });
+  if (!res.ok) {
+    const data = await res
+      .json()
+      .catch(() => ({ error: "PROGRAM_NOT_FOUND" }) as IdentifyErrorBody);
+    throw new IdentifyError(data);
+  }
+  return res.json();
+};
 
 export const identifyParticipantKeys = {
   all: ["identify-participant"] as const,

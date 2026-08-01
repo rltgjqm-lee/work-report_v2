@@ -7,7 +7,7 @@ import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { identifyParticipantQueryOptions } from "../../utils/attendanceApi";
+import { IdentifyError, identifyParticipantQueryOptions } from "../../utils/attendanceApi";
 import type { ActivityLogFormData } from "../../types/form";
 
 type ExceptionInfo = {
@@ -40,22 +40,40 @@ const RegistrationConfirmPage = ({
   const participantId = identified?.participantId;
   const orgAddress = identified?.orgAddress;
 
+  let exception: ExceptionInfo | null | "loading";
+
   useEffect(() => {
     if (!participantId) return;
     onChange("participantId", participantId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participantId]);
 
-  let exception: ExceptionInfo | null | "loading";
-
   if (isIdentifyPending) {
     exception = "loading";
   } else if (isIdentifyError) {
-    exception = {
-      variant: "warn",
-      title: "본인 확인에 실패했어요.",
-      body: identifyError instanceof Error ? identifyError.message : "이름을 다시 확인해 주세요.",
-    };
+    if (identifyError instanceof IdentifyError && identifyError.body.error === "NOT_REGISTERED") {
+      const { organization, program } = identifyError.body;
+      const organizationLabel = [
+        organization?.regionSido,
+        organization?.regionSigungu,
+        organization?.name,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      exception = {
+        variant: "warn",
+        title: "본인 확인에 실패했어요.",
+        body: `${organizationLabel} ${program.programType ?? ""} ${program.name} 사업에 등록이 안되어 있습니다.
+        \n해당 기관, 사업 담당자에게 문의하여 주세요.`,
+      };
+    } else {
+      exception = {
+        variant: "warn",
+        title: "본인 확인에 실패했어요.",
+        body: "이름을 다시 확인해 주세요.",
+      };
+    }
   } else if (identified.status === "DROPPED") {
     exception = {
       variant: "warn",
