@@ -71,14 +71,14 @@ const RegistrationConfirmPage = ({
       exception = {
         variant: "warn",
         title: "본인 확인에 실패했어요.",
-        body: "이름을 다시 확인해 주세요.",
+        body: "이름을 다시 확인해 주세요. \n해당 기관, 사업 담당자에게 문의하여 주세요.",
       };
     }
   } else if (identified.status === "DROPPED") {
     exception = {
       variant: "warn",
       title: "참여가 종료되었어요.",
-      body: "담당자에게 문의해 주세요.",
+      body: "해당 기관, 사업 담당자에게 문의하여 주세요.",
     };
   } else if (identified.status === "ON_LEAVE") {
     exception = {
