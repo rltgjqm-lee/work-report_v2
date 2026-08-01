@@ -51,11 +51,10 @@ export const getTodayAttendance = async (
   return res.json();
 };
 
-export const identifyParticipant = (programId: number, name: string, phoneLast4: string) =>
+export const identifyParticipant = (programId: number, name: string) =>
   request<{ participantId: number; name: string }>("/public/attendance/identify", {
     programId,
     name,
-    phoneLast4,
   });
 
 // debug.date("YYYY-MM-DD")/debug.time("HH:MM")은 출퇴근 날짜·시간 검증을 테스트하기

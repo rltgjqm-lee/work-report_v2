@@ -266,9 +266,6 @@ const ProgramParticipantsSection = ({
               <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                 수요처명
               </th>
-              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
-                전화번호
-              </th>
               <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                 조
               </th>
@@ -296,9 +293,6 @@ const ProgramParticipantsSection = ({
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                   {participant.demandName}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                  {participant.phoneLast4}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                   <FilterSelect

@@ -156,31 +156,24 @@ app.post("/push-subscriptions/link-participant", async (c) => {
   return c.json(result[0]);
 });
 
-// 참여자 셀프 근태체크 — 이름+전화번호 뒤4자리로 본인 확인 (등록 시 동명이인 구분에
-// 쓰인 조합과 동일). 로그인/개인 UID 없이, 클라이언트가 응답의 participantId를
+// 참여자 셀프 근태체크 — 이름으로 본인 확인 (동명이인은 등록 시 이름에 "1", "2"를
+// 붙여 미리 구분해둔다). 로그인/개인 UID 없이, 클라이언트가 응답의 participantId를
 // 로컬스토리지에 저장해두고 이후 출퇴근에 재사용한다.
 app.post("/attendance/identify", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     programId?: number;
     name?: string;
-    phoneLast4?: string;
   }>();
 
-  if (!body.programId || !body.name || !body.phoneLast4) {
-    return c.json({ error: "사업단, 이름, 전화번호 뒷 4자리를 모두 입력해주세요." }, 400);
+  if (!body.programId || !body.name) {
+    return c.json({ error: "사업단과 이름을 모두 입력해주세요." }, 400);
   }
 
   const rows = await db
     .select()
     .from(participants)
-    .where(
-      and(
-        eq(participants.programId, body.programId),
-        eq(participants.name, body.name),
-        eq(participants.phoneLast4, body.phoneLast4),
-      ),
-    );
+    .where(and(eq(participants.programId, body.programId), eq(participants.name, body.name)));
 
   const participant = rows[0];
   if (!participant) {

@@ -15,7 +15,6 @@ import { parseParticipantsFile } from "../../../utils/parseParticipantsFile";
 
 const emptyForm = {
   name: "",
-  lastPhoneNumber: "",
   demandSiteId: "",
   groupId: "",
 };
@@ -67,17 +66,11 @@ const ParticipantAddModal = ({
 
           return;
         }
-        if (!/^\d{4}$/.test(form.lastPhoneNumber)) {
-          alert("전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.");
-
-          return;
-        }
         await addParticipantMutation.mutateAsync({
           programId,
           data: {
             name: form.name,
             demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
-            phoneLast4: form.lastPhoneNumber,
             groupId: form.groupId ? Number(form.groupId) : undefined,
           },
         });
@@ -153,21 +146,11 @@ const ParticipantAddModal = ({
           value={form.name}
           onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
-      </FormField>
-      <FormField label="전화번호 뒷자리(4자리)">
-        <input
-          className={inputClass}
-          value={form.lastPhoneNumber}
-          maxLength={4}
-          inputMode="numeric"
-          placeholder="0000"
-          onChange={(event) =>
-            setForm((f) => ({
-              ...f,
-              lastPhoneNumber: event.target.value.replace(/\D/g, "").slice(0, 4),
-            }))
-          }
-        />
+        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+          동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요
+          <br />
+          (예: 홍길동1, 홍길동2).
+        </p>
       </FormField>
       <FormField label="수요처">
         <FilterSelect

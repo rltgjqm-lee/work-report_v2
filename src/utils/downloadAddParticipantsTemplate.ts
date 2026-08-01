@@ -31,14 +31,8 @@ export async function downloadAddParticipantsTemplate(
     },
   };
 
-  // 4. 1행 헤더 입력 (A1 ~ E1)
-  const headerRow = worksheet.addRow([
-    "순번",
-    "이름",
-    "전화번호 뒷자리 (4자리)",
-    "수요처(목록선택)",
-    "조",
-  ]);
+  // 4. 1행 헤더 입력 (A1 ~ D1)
+  const headerRow = worksheet.addRow(["순번", "이름", "수요처(목록선택)", "조"]);
   headerRow.height = 25;
   headerRow.eachCell((cell: Cell) => {
     cell.style = headerStyle as Style;
@@ -46,10 +40,10 @@ export async function downloadAddParticipantsTemplate(
 
   // 5. 2행 주의사항 입력 (요청하신 줄바꿈 적용 및 높이 조절)
   const noticeText =
-    "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만, [전화번호]는 앞의 0이 지워지지 않도록 4자리 숫자를 문자 형태로 입력해 주세요.";
+    "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만 입력해 주세요.\n• 동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요\n  (예: 홍길동1, 홍길동2).";
   const noticeRow = worksheet.addRow([noticeText]);
-  noticeRow.height = 65; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 65로 대폭 확장
-  worksheet.mergeCells("A2:E2");
+  noticeRow.height = 78; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 78로 확장
+  worksheet.mergeCells("A2:D2");
 
   noticeRow.getCell(1).style = {
     font: {
@@ -66,7 +60,6 @@ export async function downloadAddParticipantsTemplate(
   worksheet.columns = [
     { key: "num", width: 12, numFmt: "#,##0" },
     { key: "name", width: 18, numFmt: "@" },
-    { key: "phone", width: 28, numFmt: "@" }, // 기본 텍스트 서식 지정
     { key: "demandSite", width: 22, numFmt: "@" },
     { key: "group", width: 18, numFmt: "@" },
   ];
@@ -95,11 +88,9 @@ export async function downloadAddParticipantsTemplate(
 
   // 7. 데이터 입력 영역 생성 (3행부터 502행까지 잠금 해제)
   for (let i = 1; i <= 500; i++) {
-    // 💡 번호 깨짐 방지: 전화번호를 입력할 빈 셀의 서식을 처음부터 강제로 '텍스트(@)'로 주입합니다.
     const row = worksheet.addRow({
       num: i,
       name: "",
-      phone: "",
       demandSite: "",
       group: "",
     });
@@ -113,20 +104,16 @@ export async function downloadAddParticipantsTemplate(
         right: { style: "thin", color: { argb: "FFE0E0E0" } },
       };
 
-      // 💡 컬럼 서식 강제화 (특히 C열 전화번호 뒷자리에 강제 텍스트 서식 `@` 주입)
-      if (colNumber === 3) {
-        cell.numFmt = "@";
-        cell.alignment = { horizontal: "center" };
-      } else if (colNumber === 1) {
+      if (colNumber === 1) {
         cell.alignment = { horizontal: "center" };
       } else {
         cell.numFmt = "@"; // 이름/수요처/조도 텍스트 서식으로 안전하게 지정
       }
     });
 
-    // 💡 D열(수요처)은 등록된 수요처 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
+    // 💡 C열(수요처)은 등록된 수요처 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
     if (demandSiteListRange) {
-      row.getCell(4).dataValidation = {
+      row.getCell(3).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [demandSiteListRange],
@@ -136,9 +123,9 @@ export async function downloadAddParticipantsTemplate(
       };
     }
 
-    // 💡 E열(조)은 등록된 조 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
+    // 💡 D열(조)은 등록된 조 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
     if (groupListRange) {
-      row.getCell(5).dataValidation = {
+      row.getCell(4).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [groupListRange],

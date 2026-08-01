@@ -104,7 +104,6 @@ export type Participant = {
   name: string;
   demandName: string | null;
   demandSiteId: number | null;
-  phoneLast4: string;
   birthYear: number | null;
   status: ParticipantStatus;
   droppedAt: string | null;

@@ -148,7 +148,6 @@ app.put("/:id", async (c) => {
     name?: string;
     demandName?: string;
     demandSiteId?: number;
-    phoneLast4?: string;
     birthYear?: number;
     groupId?: number;
     educationAmount?: number;

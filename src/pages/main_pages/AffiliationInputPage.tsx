@@ -353,20 +353,12 @@ const AffiliationInputPage = ({
                 value={formData.userName}
                 onChange={(event) => onChange("userName", event.target.value)}
               />
+              <p className="text-[11px] text-gray-400 mt-1">
+                동명이인이 있으면 이름 뒤에 숫자를 붙여주세요
+                <br />
+                (예: 홍길동1)
+              </p>
             </div>
-          </div>
-
-          {/* 전화번호 뒷자리 (동명이인 구분용) */}
-          <div>
-            <LabeledInput
-              labelTitle="전화번호 뒷자리(4자리)"
-              id="phoneLast4"
-              placeholder="0000"
-              value={formData.phoneLast4}
-              onChange={(event) =>
-                onChange("phoneLast4", event.target.value.replace(/\D/g, "").slice(0, 4))
-              }
-            />
           </div>
         </Card>
       </div>

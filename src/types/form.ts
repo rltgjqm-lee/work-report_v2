@@ -1,14 +1,13 @@
 export interface ActivityLogFormData {
   // Page 1: 초기 설정
   id?: number;
-  participantId?: number; // 이름+전화번호로 식별된 실제 participants 행 id (서버 동기화용)
+  participantId?: number; // 이름으로 식별된 실제 participants 행 id (서버 동기화용)
   programId?: number; // 등록확인 페이지에서 사업 시작/종료일을 다시 조회할 때 씀
   orgName: string;
   programName: string;
   demandName: string;
   gender: "남성" | "여성" | "";
   userName: string;
-  phoneLast4: string; // 동명이인 구분용 — 등록확인 페이지에서 이름과 함께 본인확인에 씀
   programType: "공익 활동" | "역량 활동" | ""; // 홈 대시보드 모듈 분기용
   // Page 3: 활동 일시
   actDate: string;

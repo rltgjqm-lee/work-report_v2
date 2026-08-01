@@ -53,7 +53,6 @@ export interface AddParticipantVariables {
   data: {
     name: string;
     demandSiteId?: number;
-    phoneLast4: string;
     groupId?: number;
     birthYear?: number;
   };
@@ -110,7 +109,6 @@ export interface BulkAddParticipantsVariables {
     participants: {
       name: string;
       demandSiteId?: number;
-      phoneLast4: string;
       groupId?: number;
     }[];
   };
@@ -143,7 +141,6 @@ export interface UpdateParticipantVariables {
       | "name"
       | "demandName"
       | "demandSiteId"
-      | "phoneLast4"
       | "birthYear"
       | "groupId"
       | "educationAmount"

@@ -68,7 +68,6 @@ const initialFormData: ActivityLogFormData = {
   demandName: "",
   gender: "",
   userName: "",
-  phoneLast4: "",
   programType: "",
   actDate: "",
   // 💡 출근/퇴근 버튼을 눌러야 채워짐 — hour가 비어있으면 "아직 출근 전"으로 판단한다.

@@ -342,16 +342,12 @@ app.post("/:id/participants", async (c) => {
   const body = await c.req.json<{
     name?: string;
     demandSiteId?: number;
-    phoneLast4?: string;
     groupId?: number;
     birthYear?: number;
   }>();
 
   if (!body.name) {
     return c.json({ error: "이름을 입력해주세요." }, 400);
-  }
-  if (!body.phoneLast4 || !/^\d{4}$/.test(body.phoneLast4)) {
-    return c.json({ error: "전화번호 뒷 4자리를 숫자 4자리로 입력해주세요." }, 400);
   }
   if (body.demandSiteId) {
     const demandSiteRows = await db
@@ -369,7 +365,6 @@ app.post("/:id/participants", async (c) => {
       programId,
       name: body.name,
       demandSiteId: body.demandSiteId,
-      phoneLast4: body.phoneLast4,
       groupId: body.groupId,
       birthYear: body.birthYear,
     })
@@ -394,7 +389,6 @@ app.post("/:id/participants/bulk", async (c) => {
     participants?: {
       name?: string;
       demandSiteId?: number;
-      phoneLast4?: string;
       groupId?: number;
       birthYear?: number;
     }[];
@@ -409,11 +403,6 @@ app.post("/:id/participants/bulk", async (c) => {
   rows.forEach((row, index) => {
     if (!row.name) {
       errors.push({ index, error: "이름을 입력해주세요." });
-    } else if (!row.phoneLast4 || !/^\d{4}$/.test(row.phoneLast4)) {
-      errors.push({
-        index,
-        error: "전화번호 뒷 4자리를 숫자 4자리로 입력해주세요.",
-      });
     }
   });
 
@@ -428,7 +417,6 @@ app.post("/:id/participants/bulk", async (c) => {
         programId,
         name: row.name!,
         demandSiteId: row.demandSiteId,
-        phoneLast4: row.phoneLast4!,
         groupId: row.groupId,
         birthYear: row.birthYear,
       })),

@@ -36,12 +36,13 @@ const RegistrationConfirmPage = ({
   const [exception, setException] = useState<ExceptionInfo | null | "loading">("loading");
 
   useEffect(() => {
-    if (!formData.programId || !formData.userName || !formData.phoneLast4) {
+    if (!formData.programId || !formData.userName) {
       return;
     }
 
-    // 1단계: 이름+전화번호로 실제 참여자를 조회(본인확인)한다 — 동명이인 구분용.
-    identifyParticipant(formData.programId, formData.userName, formData.phoneLast4)
+    // 1단계: 이름으로 실제 참여자를 조회(본인확인)한다 — 동명이인은 등록 시 이름에
+    // 숫자를 붙여 미리 구분해둔다.
+    identifyParticipant(formData.programId, formData.userName)
       .then((identified) => {
         onChange("participantId", identified.participantId);
 
@@ -94,11 +95,11 @@ const RegistrationConfirmPage = ({
         setException({
           variant: "warn",
           title: "본인 확인에 실패했어요.",
-          body: error instanceof Error ? error.message : "이름과 전화번호를 다시 확인해 주세요.",
+          body: error instanceof Error ? error.message : "이름을 다시 확인해 주세요.",
         });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.programId, formData.userName, formData.phoneLast4]);
+  }, [formData.programId, formData.userName]);
 
   return (
     <div className={pageClass}>
