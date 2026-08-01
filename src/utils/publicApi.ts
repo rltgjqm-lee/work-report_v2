@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+
 export type Organization = {
   id: number;
   name: string;
@@ -34,12 +36,26 @@ export type RegistrationStatus = {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+export const affiliationsKeys = {
+  all: ["affiliations"] as const,
+};
+
 export const getAffiliations = async (): Promise<Affiliations> => {
   const response = await fetch(`${BASE_URL}/public/affiliations`);
 
   if (!response.ok) throw new Error("기관/사업단 목록을 불러오지 못했습니다.");
 
   return response.json();
+};
+
+export const affiliationsQueryOptions = queryOptions({
+  queryKey: affiliationsKeys.all,
+  queryFn: getAffiliations,
+});
+
+export const demandSiteKeys = {
+  all: ["public-demand-sites"] as const,
+  byProgram: (programId: number) => [...demandSiteKeys.all, programId] as const,
 };
 
 export const getDemandSites = async (programId: number): Promise<DemandSite[]> => {
@@ -49,6 +65,12 @@ export const getDemandSites = async (programId: number): Promise<DemandSite[]> =
 
   return response.json();
 };
+
+export const demandSitesQueryOptions = (programId: number) =>
+  queryOptions({
+    queryKey: demandSiteKeys.byProgram(programId),
+    queryFn: () => getDemandSites(programId),
+  });
 
 export const getRegistrationStatus = async (participantId: number): Promise<RegistrationStatus> => {
   const response = await fetch(

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import AppBar from "../../components/molecule/AppBar";
 import Dropdown from "../../components/molecule/Dropdown";
@@ -12,13 +13,7 @@ import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
 import { registerNativePush } from "../../utils/nativePushRegistration";
-import {
-  getAffiliations,
-  getDemandSites,
-  type DemandSite,
-  type Organization,
-  type Program,
-} from "../../utils/publicApi";
+import { affiliationsQueryOptions, demandSitesQueryOptions } from "../../utils/publicApi";
 
 import type { ActivityLogFormData } from "../../types/form";
 import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
@@ -40,72 +35,79 @@ const AffiliationInputPage = ({
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
 
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
 
   const [programType, setProgramType] = useState("");
-  const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState("");
-
-  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
-  const [affiliationsLoaded, setAffiliationsLoaded] = useState(false);
 
   // 💡 사업단 수가 많지 않아 조직 선택을 기다리지 않고 전체 목록을 한 번의 API
   // 호출로 불러온 뒤 organizationId로 클라이언트에서 필터링한다
+  const {
+    data: affiliations,
+    isSuccess: affiliationsLoaded,
+    isError: affiliationsErrored,
+  } = useQuery(affiliationsQueryOptions);
+  const organizations = useMemo(() => affiliations?.organizations ?? [], [affiliations]);
+  const programs = useMemo(() => affiliations?.programs ?? [], [affiliations]);
+
   useEffect(() => {
-    getAffiliations()
-      .then(({ organizations: fetchedOrganizations, programs: fetchedPrograms }) => {
-        setOrganizations(fetchedOrganizations);
-        setPrograms(fetchedPrograms);
-        setAffiliationsLoaded(true);
-
-        // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로
-        // 매칭해 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다
-        if (!formData.orgName) return;
-
-        const matchedOrganization = fetchedOrganizations.find(
-          (organization) => organization.name === formData.orgName,
-        );
-        if (!matchedOrganization) return;
-
-        setSido(matchedOrganization.regionSido ?? "");
-        setSigungu(matchedOrganization.regionSigungu ?? "");
-        setSelectedOrganizationId(String(matchedOrganization.id));
-
-        if (!formData.programName) return;
-
-        const matchedProgram = fetchedPrograms.find(
-          (program) =>
-            program.organizationId === matchedOrganization.id &&
-            program.name === formData.programName,
-        );
-        if (!matchedProgram) return;
-
-        setProgramType(matchedProgram.programType ?? "");
-        setSelectedProgramId(String(matchedProgram.id));
-        onChange(
-          "programType",
-          (matchedProgram.programType ?? "") as ActivityLogFormData["programType"],
-        );
-        onChange("programId", matchedProgram.id);
-      })
-      .catch(() => {
-        onAlert(["기관/사업단 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
-      });
+    if (affiliationsErrored) {
+      onAlert(["기관/사업단 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [affiliationsErrored]);
+
+  // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로 매칭해
+  // 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다 — 목록이
+  // 도착한 직후 한 번만 시도한다(다시 불러와도 사용자가 이미 고른 값을 덮어쓰지 않도록).
+  const hasRestoredSelectionRef = useRef(false);
+  useEffect(() => {
+    if (!affiliations || hasRestoredSelectionRef.current) return;
+    hasRestoredSelectionRef.current = true;
+
+    if (!formData.orgName) return;
+
+    const matchedOrganization = affiliations.organizations.find(
+      (organization) => organization.name === formData.orgName,
+    );
+    if (!matchedOrganization) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 복원된 formData를 드롭다운 선택 상태로 되돌린다
+    setSido(matchedOrganization.regionSido ?? "");
+    setSigungu(matchedOrganization.regionSigungu ?? "");
+    setSelectedOrganizationId(String(matchedOrganization.id));
+
+    if (!formData.programName) return;
+
+    const matchedProgram = affiliations.programs.find(
+      (program) =>
+        program.organizationId === matchedOrganization.id && program.name === formData.programName,
+    );
+    if (!matchedProgram) return;
+
+    setProgramType(matchedProgram.programType ?? "");
+    setSelectedProgramId(String(matchedProgram.id));
+    onChange(
+      "programType",
+      (matchedProgram.programType ?? "") as ActivityLogFormData["programType"],
+    );
+    onChange("programId", matchedProgram.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [affiliations]);
 
   // 💡 사업단을 바꾸면 이전 사업단의 수요처 선택이 남아있으면 안 되므로 목록을 다시
   // 불러오는 동안 선택값도 초기화한다.
+  const { data: demandSites = [], isError: demandSitesErrored } = useQuery({
+    ...demandSitesQueryOptions(Number(selectedProgramId)),
+    enabled: !!selectedProgramId,
+  });
+
   useEffect(() => {
-    if (!selectedProgramId) return;
-    getDemandSites(Number(selectedProgramId))
-      .then(setDemandSites)
-      .catch(() => {
-        onAlert(["수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
-      });
+    if (demandSitesErrored) {
+      onAlert(["수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProgramId]);
+  }, [demandSitesErrored]);
 
   const sidoList = useMemo(
     () =>
