@@ -17,10 +17,17 @@ import { affiliationsQueryOptions, demandSitesQueryOptions } from "../../utils/p
 
 import type { ActivityLogFormData } from "../../types/form";
 
+const PLACEHOLDER_OPTION = { value: "", label: "선택하세요" };
+
 const GENDER_OPTIONS = [
-  { value: "", label: "선택하세요" },
+  PLACEHOLDER_OPTION,
   { value: "남성", label: "남성" },
   { value: "여성", label: "여성" },
+];
+
+const toOptions = (values: string[]) => [
+  PLACEHOLDER_OPTION,
+  ...values.map((value) => ({ value, label: value })),
 ];
 
 /**
@@ -99,11 +106,11 @@ const AffiliationInputPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [affiliations]);
 
-  const demandSitesOptions = {
+  const demandSitesQueryConfig = {
     ...demandSitesQueryOptions(Number(selectedProgramId)),
     enabled: !!selectedProgramId,
   };
-  const { data: demandSites = [], isError: demandSitesErrored } = useQuery(demandSitesOptions);
+  const { data: demandSites = [], isError: demandSitesErrored } = useQuery(demandSitesQueryConfig);
 
   useEffect(() => {
     if (demandSitesErrored) {
@@ -161,23 +168,11 @@ const AffiliationInputPage = ({
   );
 
   // 💡 각 Dropdown에 넘길 옵션 목록 — 위 후보 목록들을 { value, label } 형태로 변환해 한 곳에 모은다
-  const sidoOptions = useMemo(
-    () => [
-      { value: "", label: "선택하세요" },
-      ...sidoList.map((sidoOption) => ({ value: sidoOption, label: sidoOption })),
-    ],
-    [sidoList],
-  );
-  const sigunguOptions = useMemo(
-    () => [
-      { value: "", label: "선택하세요" },
-      ...sigunguList.map((sigunguOption) => ({ value: sigunguOption, label: sigunguOption })),
-    ],
-    [sigunguList],
-  );
+  const sidoOptions = useMemo(() => toOptions(sidoList), [sidoList]);
+  const sigunguOptions = useMemo(() => toOptions(sigunguList), [sigunguList]);
   const organizationOptions = useMemo(
     () => [
-      { value: "", label: "선택하세요" },
+      PLACEHOLDER_OPTION,
       ...organizationCandidates.map((organization) => ({
         value: String(organization.id),
         label: organization.name,
@@ -185,19 +180,10 @@ const AffiliationInputPage = ({
     ],
     [organizationCandidates],
   );
-  const programTypeOptions = useMemo(
-    () => [
-      { value: "", label: "선택하세요" },
-      ...programTypeList.map((programTypeOption) => ({
-        value: programTypeOption,
-        label: programTypeOption,
-      })),
-    ],
-    [programTypeList],
-  );
+  const programTypeOptions = useMemo(() => toOptions(programTypeList), [programTypeList]);
   const programOptions = useMemo(
     () => [
-      { value: "", label: "선택하세요" },
+      PLACEHOLDER_OPTION,
       ...programCandidates.map((program) => ({
         value: String(program.id),
         label: program.name,
@@ -206,10 +192,7 @@ const AffiliationInputPage = ({
     [programCandidates],
   );
   const demandSiteOptions = useMemo(
-    () => [
-      { value: "", label: "선택하세요" },
-      ...demandSites.map((demandSite) => ({ value: demandSite.name, label: demandSite.name })),
-    ],
+    () => toOptions(demandSites.map((demandSite) => demandSite.name)),
     [demandSites],
   );
   const dropdownOptions = {
