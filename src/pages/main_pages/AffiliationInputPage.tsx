@@ -16,7 +16,12 @@ import { registerNativePush } from "../../utils/nativePushRegistration";
 import { affiliationsQueryOptions, demandSitesQueryOptions } from "../../utils/publicApi";
 
 import type { ActivityLogFormData } from "../../types/form";
-import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
+
+const GENDER_OPTIONS = [
+  { value: "", label: "선택하세요" },
+  { value: "남성", label: "남성" },
+  { value: "여성", label: "여성" },
+];
 
 /**
  * Page 1: 사용자 정보 입력 — 지역/기관유형/사업유형 캐스케이딩 선택
@@ -34,9 +39,7 @@ const AffiliationInputPage = ({
 }) => {
   const [sido, setSido] = useState("");
   const [sigungu, setSigungu] = useState("");
-
   const [selectedOrganizationId, setSelectedOrganizationId] = useState("");
-
   const [programType, setProgramType] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
@@ -58,9 +61,9 @@ const AffiliationInputPage = ({
   }, [affiliationsErrored]);
 
   // 💡 로컬스토리지에서 복원된 formData.orgName/programName이 있으면 이름으로 매칭해
-  // 지역/기관유형/기관/사업유형/사업단 드롭다운 선택 상태를 역으로 채운다 — 목록이
-  // 도착한 직후 한 번만 시도한다(다시 불러와도 사용자가 이미 고른 값을 덮어쓰지 않도록).
+  // 지역/기관유형/기관/사업유형/사업단 드롭다운 항목을 선택한다
   const hasRestoredSelectionRef = useRef(false);
+
   useEffect(() => {
     if (!affiliations || hasRestoredSelectionRef.current) return;
     hasRestoredSelectionRef.current = true;
@@ -70,6 +73,7 @@ const AffiliationInputPage = ({
     const matchedOrganization = affiliations.organizations.find(
       (organization) => organization.name === formData.orgName,
     );
+
     if (!matchedOrganization) return;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 복원된 formData를 드롭다운 선택 상태로 되돌린다
@@ -95,12 +99,11 @@ const AffiliationInputPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [affiliations]);
 
-  // 💡 사업단을 바꾸면 이전 사업단의 수요처 선택이 남아있으면 안 되므로 목록을 다시
-  // 불러오는 동안 선택값도 초기화한다.
-  const { data: demandSites = [], isError: demandSitesErrored } = useQuery({
+  const demandSitesOptions = {
     ...demandSitesQueryOptions(Number(selectedProgramId)),
     enabled: !!selectedProgramId,
-  });
+  };
+  const { data: demandSites = [], isError: demandSitesErrored } = useQuery(demandSitesOptions);
 
   useEffect(() => {
     if (demandSitesErrored) {
@@ -157,6 +160,68 @@ const AffiliationInputPage = ({
     [organizationPrograms, programType],
   );
 
+  // 💡 각 Dropdown에 넘길 옵션 목록 — 위 후보 목록들을 { value, label } 형태로 변환해 한 곳에 모은다
+  const sidoOptions = useMemo(
+    () => [
+      { value: "", label: "선택하세요" },
+      ...sidoList.map((sidoOption) => ({ value: sidoOption, label: sidoOption })),
+    ],
+    [sidoList],
+  );
+  const sigunguOptions = useMemo(
+    () => [
+      { value: "", label: "선택하세요" },
+      ...sigunguList.map((sigunguOption) => ({ value: sigunguOption, label: sigunguOption })),
+    ],
+    [sigunguList],
+  );
+  const organizationOptions = useMemo(
+    () => [
+      { value: "", label: "선택하세요" },
+      ...organizationCandidates.map((organization) => ({
+        value: String(organization.id),
+        label: organization.name,
+      })),
+    ],
+    [organizationCandidates],
+  );
+  const programTypeOptions = useMemo(
+    () => [
+      { value: "", label: "선택하세요" },
+      ...programTypeList.map((programTypeOption) => ({
+        value: programTypeOption,
+        label: programTypeOption,
+      })),
+    ],
+    [programTypeList],
+  );
+  const programOptions = useMemo(
+    () => [
+      { value: "", label: "선택하세요" },
+      ...programCandidates.map((program) => ({
+        value: String(program.id),
+        label: program.name,
+      })),
+    ],
+    [programCandidates],
+  );
+  const demandSiteOptions = useMemo(
+    () => [
+      { value: "", label: "선택하세요" },
+      ...demandSites.map((demandSite) => ({ value: demandSite.name, label: demandSite.name })),
+    ],
+    [demandSites],
+  );
+  const dropdownOptions = {
+    sido: sidoOptions,
+    sigungu: sigunguOptions,
+    organization: organizationOptions,
+    programType: programTypeOptions,
+    program: programOptions,
+    demandSite: demandSiteOptions,
+  };
+
+  // 💡 핸들러 — 상위 드롭다운이 바뀌면 하위 선택값을 초기화한다
   const handleSidoChange = (value: string) => {
     setSido(value);
     setSigungu("");
@@ -200,16 +265,6 @@ const AffiliationInputPage = ({
     onChange("demandName", "");
   };
 
-  // 💡 formData 자체는 Main.tsx가 바뀔 때마다 자동으로 draft 저장하므로, 여기서는
-  // 푸시 구독에 필요한 사업단 ID만 별도로 챙긴다.
-  const handleSaveDraftButtonClick = () => {
-    if (selectedProgramId) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.SELECTED_PROGRAM_ID, selectedProgramId);
-      subscribeToPush(Number(selectedProgramId));
-      registerNativePush(Number(selectedProgramId));
-    }
-  };
-
   const handleNextButtonClick = () => {
     const errors = validateForm(formData, PAGE1_RULES);
 
@@ -218,7 +273,11 @@ const AffiliationInputPage = ({
       return;
     }
 
-    handleSaveDraftButtonClick();
+    if (selectedProgramId) {
+      subscribeToPush(Number(selectedProgramId));
+      registerNativePush(Number(selectedProgramId));
+    }
+
     onNext();
   };
 
@@ -242,13 +301,7 @@ const AffiliationInputPage = ({
               label="시·도"
               value={sido}
               onChange={handleSidoChange}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...sidoList.map((sidoOption) => ({
-                  value: sidoOption,
-                  label: sidoOption,
-                })),
-              ]}
+              options={dropdownOptions.sido}
             />
 
             {/* 시/군/구 */}
@@ -257,13 +310,7 @@ const AffiliationInputPage = ({
               value={sigungu}
               disabled={!sido}
               onChange={handleSigunguChange}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...sigunguList.map((sigunguOption) => ({
-                  value: sigunguOption,
-                  label: sigunguOption,
-                })),
-              ]}
+              options={dropdownOptions.sigungu}
             />
           </div>
 
@@ -274,13 +321,7 @@ const AffiliationInputPage = ({
               value={selectedOrganizationId}
               disabled={!sigungu}
               onChange={handleOrganizationChange}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...organizationCandidates.map((organization) => ({
-                  value: String(organization.id),
-                  label: organization.name,
-                })),
-              ]}
+              options={dropdownOptions.organization}
             />
 
             <Dropdown
@@ -288,13 +329,7 @@ const AffiliationInputPage = ({
               value={programType}
               disabled={!selectedOrganizationId}
               onChange={handleProgramTypeChange}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...programTypeList.map((programTypeOption) => ({
-                  value: programTypeOption,
-                  label: programTypeOption,
-                })),
-              ]}
+              options={dropdownOptions.programType}
             />
           </div>
 
@@ -304,13 +339,7 @@ const AffiliationInputPage = ({
             value={selectedProgramId}
             disabled={!programType}
             onChange={handleProgramChange}
-            options={[
-              { value: "", label: "선택하세요" },
-              ...programCandidates.map((program) => ({
-                value: String(program.id),
-                label: program.name,
-              })),
-            ]}
+            options={dropdownOptions.program}
           />
 
           {/* 수요처 */}
@@ -326,13 +355,7 @@ const AffiliationInputPage = ({
             value={formData.demandName}
             disabled={!selectedProgramId}
             onChange={(value) => onChange("demandName", value)}
-            options={[
-              { value: "", label: "선택하세요" },
-              ...demandSites.map((demandSite) => ({
-                value: demandSite.name,
-                label: demandSite.name,
-              })),
-            ]}
+            options={dropdownOptions.demandSite}
           />
 
           {/* 성별/참여자 성함 */}
@@ -341,11 +364,7 @@ const AffiliationInputPage = ({
               label="성별"
               value={formData.gender}
               onChange={(value) => onChange("gender", value as ActivityLogFormData["gender"])}
-              options={[
-                { value: "", label: "선택하세요" },
-                { value: "남성", label: "남성" },
-                { value: "여성", label: "여성" },
-              ]}
+              options={GENDER_OPTIONS}
             />
             <div className="flex-1">
               <LabeledInput
