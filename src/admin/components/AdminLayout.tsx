@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -84,11 +84,23 @@ const AdminLayout = () => {
     navigate("/admin/login");
   };
 
-  const todayLabel = new Date().toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // 세션 만료까지 남은 시간을 1초마다 갱신해 보여준다.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const sessionRemainingLabel = (() => {
+    if (!admin) return "";
+    const remainingSeconds = Math.max(
+      0,
+      Math.floor((new Date(admin.expiresAt).getTime() - now) / 1000),
+    );
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    return `세션 만료까지 ${minutes}:${String(seconds).padStart(2, "0")}`;
+  })();
 
   return (
     <div className="flex w-full min-h-screen bg-[#f3f4f6] text-[#1f2937] font-sans">
@@ -130,7 +142,7 @@ const AdminLayout = () => {
           <div className="text-base font-bold">{getTopbarTitle(location.pathname)}</div>
           <div className="flex items-center gap-4 text-xs text-[#6b7280]">
             <span>
-              {todayLabel} · {admin?.name ?? admin?.email}
+              {sessionRemainingLabel} · {admin?.name ?? admin?.email}
             </span>
             <button
               onClick={() => setPasswordModalOpen(true)}

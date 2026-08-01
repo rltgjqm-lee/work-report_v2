@@ -2,7 +2,7 @@
 // SHA-256 해시만 저장한다. 세션 토큰 자체가 256비트 랜덤이라 무차별 대입은 사실상
 // 불가능하지만, DB 유출 시에도 세션을 그대로 재사용 못 하게 하는 방어층을 더한다.
 export const SESSION_COOKIE_NAME = "admin_session";
-export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일
+export const SESSION_TTL_MS = 60 * 60 * 1000; // 1시간
 
 const toHex = (buffer: ArrayBuffer): string =>
   Array.from(new Uint8Array(buffer))

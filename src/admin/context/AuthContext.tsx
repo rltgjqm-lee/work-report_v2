@@ -37,6 +37,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  // 세션 만료 시각이 되면 다른 화면 조작 없이도 자동으로 로그아웃 처리한다 —
+  // API 401을 다음 요청까지 기다리지 않고 그 순간 바로 세션을 정리한다.
+  const expiresAt = state.admin?.expiresAt;
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    const delay = Math.max(0, new Date(expiresAt).getTime() - Date.now());
+    const timer = setTimeout(() => {
+      setState({ admin: null, loading: false });
+      alert("세션이 만료되었습니다. 다시 로그인해주세요.");
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [expiresAt]);
+
   const value = useMemo<AuthContextValue>(
     () => ({ ...state, isAuthenticated: !!state.admin, refresh }),
     [state, refresh],

@@ -33,7 +33,7 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
   const tokenHash = await hashSessionToken(token);
 
   const sessionRows = await db
-    .select({ adminId: adminSessions.adminId })
+    .select({ adminId: adminSessions.adminId, expiresAt: adminSessions.expiresAt })
     .from(adminSessions)
     .where(
       and(
@@ -63,6 +63,7 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
     organizationId: admin.organizationId,
     programIds: parseIdArray(admin.programIds),
     groupIds: parseIdArray(admin.groupIds),
+    expiresAt: sessionRow.expiresAt,
   };
   c.set("admin", session);
   await next();
@@ -80,7 +81,7 @@ export const tryGetAdmin = async (c: Context<Env>): Promise<AdminSession | null>
   const tokenHash = await hashSessionToken(token);
 
   const sessionRows = await db
-    .select({ adminId: adminSessions.adminId })
+    .select({ adminId: adminSessions.adminId, expiresAt: adminSessions.expiresAt })
     .from(adminSessions)
     .where(
       and(
@@ -103,6 +104,7 @@ export const tryGetAdmin = async (c: Context<Env>): Promise<AdminSession | null>
     organizationId: admin.organizationId,
     programIds: parseIdArray(admin.programIds),
     groupIds: parseIdArray(admin.groupIds),
+    expiresAt: sessionRow.expiresAt,
   };
 };
 

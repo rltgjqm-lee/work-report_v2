@@ -15,6 +15,7 @@ export type AdminSession = {
   organizationId: number | null;
   programIds: number[];
   groupIds: number[];
+  expiresAt: string;
 };
 
 export type Organization = {
