@@ -14,6 +14,7 @@ import type { Participant } from "../types";
 
 type ParticipantRow = Participant & {
   programName: string;
+  programType: string | null;
   organizationName: string;
 };
 
@@ -33,6 +34,7 @@ const PROGRAM_FILTER = {
 const ParticipantsPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [programFilter, setProgramFilter] = useState<string>(PROGRAM_FILTER.ALL);
   const [demandSiteFilter, setDemandSiteFilter] = useState<string>(DEMAND_SITE.ALL);
   const [search, setSearch] = useState("");
@@ -42,6 +44,14 @@ const ParticipantsPage = () => {
   const programQueries = useQueries({
     queries: programs.map((program) => programQueryOptions(program.id)),
   });
+
+  const filteredPrograms = useMemo(
+    () =>
+      programTypeFilter === "all"
+        ? programs
+        : programs.filter((program) => program.programType === programTypeFilter),
+    [programs, programTypeFilter],
+  );
 
   const OrganizationNameById = useMemo(
     () => new Map(organizations.map((organization) => [organization.id, organization.name])),
@@ -57,6 +67,7 @@ const ParticipantsPage = () => {
         return fullProgram.participants.map((participant) => ({
           ...participant,
           programName: fullProgram.name,
+          programType: fullProgram.programType,
           organizationName: OrganizationNameById.get(fullProgram.organizationId) ?? "-",
         }));
       }),
@@ -66,10 +77,16 @@ const ParticipantsPage = () => {
   // 수요처는 사업단마다 다르므로, 선택한 사업단에 실제로 있는 수요처만 후보로 올린다.
   // 참여자 행이 들고 있는 이름(demandName)을 그대로 쓰므로 별도 조회가 필요 없다.
   const demandSiteNames = useMemo(() => {
-    const scopedRows =
-      programFilter === PROGRAM_FILTER.ALL
+    let scopedRows =
+      programTypeFilter === "all"
         ? rows
-        : rows.filter((participantRow) => participantRow.programId === Number(programFilter));
+        : rows.filter((participantRow) => participantRow.programType === programTypeFilter);
+
+    if (programFilter !== PROGRAM_FILTER.ALL) {
+      scopedRows = scopedRows.filter(
+        (participantRow) => participantRow.programId === Number(programFilter),
+      );
+    }
 
     return [
       ...new Set(
@@ -78,10 +95,14 @@ const ParticipantsPage = () => {
           .filter((demandName): demandName is string => !!demandName),
       ),
     ].sort((a, b) => a.localeCompare(b));
-  }, [rows, programFilter]);
+  }, [rows, programFilter, programTypeFilter]);
 
   const filtered = useMemo(() => {
     let list = rows;
+
+    if (programTypeFilter !== "all") {
+      list = list.filter((participantRow) => participantRow.programType === programTypeFilter);
+    }
 
     if (programFilter !== PROGRAM_FILTER.ALL) {
       list = list.filter((participantRow) => participantRow.programId === Number(programFilter));
@@ -101,7 +122,7 @@ const ParticipantsPage = () => {
       );
     }
     return list;
-  }, [rows, programFilter, demandSiteFilter, search]);
+  }, [rows, programTypeFilter, programFilter, demandSiteFilter, search]);
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
@@ -134,6 +155,20 @@ const ParticipantsPage = () => {
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
           <div className="flex items-center gap-2.5">
             <FilterSelect
+              value={programTypeFilter}
+              onChange={(value) => {
+                setProgramTypeFilter(value);
+                setProgramFilter(PROGRAM_FILTER.ALL);
+                setDemandSiteFilter(DEMAND_SITE.ALL);
+                setPage(1);
+              }}
+              options={[
+                { value: "all", label: "전체 유형" },
+                { value: "공익 활동", label: "공익 활동" },
+                { value: "역량 활동", label: "역량 활동" },
+              ]}
+            />
+            <FilterSelect
               value={programFilter}
               onChange={(value) => {
                 setProgramFilter(value);
@@ -142,7 +177,7 @@ const ParticipantsPage = () => {
               }}
               options={[
                 { value: PROGRAM_FILTER.ALL, label: "전체 사업단" },
-                ...programs.map((program) => ({
+                ...filteredPrograms.map((program) => ({
                   value: String(program.id),
                   label: program.name,
                 })),

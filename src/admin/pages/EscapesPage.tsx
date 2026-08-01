@@ -44,6 +44,7 @@ const EscapesPage = () => {
   const navigate = useNavigate();
   const preselectedProgramId = id ? Number(id) : null;
 
+  const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [search, setSearch] = useState("");
@@ -68,6 +69,14 @@ const EscapesPage = () => {
     enabled: !!preselectedProgramId,
   });
   const programName = preselectedProgram?.name ?? "";
+
+  const filteredPrograms = useMemo(
+    () =>
+      programTypeFilter === "all"
+        ? programs
+        : programs.filter((program) => program.programType === programTypeFilter),
+    [programs, programTypeFilter],
+  );
 
   // OPEN은 위급 이탈 감지를 위해 항상 폴링하고, RESOLVED는 상태 탭을 볼 때만 조회한다.
   const { data: openEscapes = [] } = useQuery({
@@ -345,6 +354,21 @@ const EscapesPage = () => {
         <div className="flex items-center gap-2.5">
           {!preselectedProgramId && (
             <FilterSelect
+              value={programTypeFilter}
+              onChange={(value) => {
+                setProgramTypeFilter(value);
+                setSelectedProgramId("");
+                setSelectedDemandSiteId("");
+              }}
+              options={[
+                { value: "all", label: "전체 유형" },
+                { value: "공익 활동", label: "공익 활동" },
+                { value: "역량 활동", label: "역량 활동" },
+              ]}
+            />
+          )}
+          {!preselectedProgramId && (
+            <FilterSelect
               value={selectedProgramId}
               onChange={(value) => {
                 setSelectedProgramId(value);
@@ -352,7 +376,7 @@ const EscapesPage = () => {
               }}
               options={[
                 { value: "", label: "사업단을 선택하세요" },
-                ...programs.map((program) => ({
+                ...filteredPrograms.map((program) => ({
                   value: String(program.id),
                   label: program.name,
                 })),

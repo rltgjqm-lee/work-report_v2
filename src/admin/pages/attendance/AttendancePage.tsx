@@ -22,6 +22,7 @@ const AttendancePage = () => {
   const preselectedProgramId = id ? Number(id) : null;
 
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
   const [programName, setProgramName] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -35,6 +36,14 @@ const AttendancePage = () => {
   }, [preselectedProgramId]);
 
   const programId = preselectedProgramId ?? Number(selectedProgramId);
+
+  const filteredPrograms = useMemo(
+    () =>
+      programTypeFilter === "all"
+        ? programs
+        : programs.filter((program) => program.programType === programTypeFilter),
+    [programs, programTypeFilter],
+  );
 
   useEffect(() => {
     if (!programId) return;
@@ -92,6 +101,21 @@ const AttendancePage = () => {
         <div className="flex items-center gap-2.5">
           {!preselectedProgramId && (
             <FilterSelect
+              value={programTypeFilter}
+              onChange={(value) => {
+                setProgramTypeFilter(value);
+                setSelectedProgramId("");
+                setSelectedDemandSiteId("");
+              }}
+              options={[
+                { value: "all", label: "전체 유형" },
+                { value: "공익 활동", label: "공익 활동" },
+                { value: "역량 활동", label: "역량 활동" },
+              ]}
+            />
+          )}
+          {!preselectedProgramId && (
+            <FilterSelect
               value={selectedProgramId}
               onChange={(value) => {
                 setSelectedProgramId(value);
@@ -100,7 +124,7 @@ const AttendancePage = () => {
               }}
               options={[
                 { value: "", label: "사업단을 선택하세요" },
-                ...programs.map((program) => ({
+                ...filteredPrograms.map((program) => ({
                   value: String(program.id),
                   label: program.name,
                 })),
