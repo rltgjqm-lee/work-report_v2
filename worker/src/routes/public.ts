@@ -177,6 +177,30 @@ app.post("/attendance/identify", async (c) => {
 
   const participant = rows[0];
   if (!participant) {
+    // 어느 사업단을 보고 있었는지 알려줘야 참여자가 담당자에게 바로 문의할 수 있다.
+    const programRows = await db.select().from(programs).where(eq(programs.id, body.programId));
+    const program = programRows[0];
+
+    if (program) {
+      const organizationRows = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, program.organizationId));
+      const organization = organizationRows[0];
+
+      const programTypeLabel = program.programType ?? "";
+      const orgLabel = [organization?.regionSido, organization?.regionSigungu, organization?.name]
+        .filter(Boolean)
+        .join(" ");
+
+      return c.json(
+        {
+          error: `${orgLabel} ${programTypeLabel} ${program.name} 사업에 등록이 안되어 있습니다.\n해당 기관, 사업 담당자에게 문의하여 주세요.`,
+        },
+        404,
+      );
+    }
+
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
   }
 

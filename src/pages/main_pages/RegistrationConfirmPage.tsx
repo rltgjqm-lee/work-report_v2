@@ -34,6 +34,7 @@ const RegistrationConfirmPage = ({
   onNext: () => void;
 }) => {
   const [exception, setException] = useState<ExceptionInfo | null | "loading">("loading");
+  const [orgAddress, setOrgAddress] = useState("");
 
   useEffect(() => {
     if (!formData.programId || !formData.userName) {
@@ -49,7 +50,7 @@ const RegistrationConfirmPage = ({
         // 2단계: 조회된 participantId로 현재 상태(휴무/탈락)와 사업 기간을 확인한다.
         return Promise.all([getRegistrationStatus(identified.participantId), getAffiliations()]);
       })
-      .then(([registrationStatus, { programs }]) => {
+      .then(([registrationStatus, { programs, organizations }]) => {
         if (registrationStatus.status === "DROPPED") {
           setException({
             variant: "warn",
@@ -70,6 +71,11 @@ const RegistrationConfirmPage = ({
         }
 
         const program = programs.find((p) => p.id === formData.programId);
+        const organization = organizations.find((o) => o.id === program?.organizationId);
+        setOrgAddress(
+          [organization?.regionSido, organization?.regionSigungu].filter(Boolean).join(" "),
+        );
+
         const today = todayStr();
 
         if (program && program.endDate < today) {
@@ -115,13 +121,14 @@ const RegistrationConfirmPage = ({
           <ExceptionCard variant={exception.variant}>
             <strong>{exception.title}</strong>
             <br />
-            {exception.body}
+            <span className="whitespace-pre-line">{exception.body}</span>
           </ExceptionCard>
         )}
 
         {exception === null && (
           <Card>
             <p className="text-[16px] leading-relaxed font-medium text-[#1f2937]">
+              {orgAddress && `${orgAddress} `}
               <strong className="text-[#3182f6] font-extrabold">{formData.orgName}</strong>의{" "}
               <strong className="text-[#3182f6] font-extrabold">{formData.programName}</strong>
               <br />
