@@ -146,6 +146,10 @@ const ParticipantMonthlyScheduleModal = ({
   };
 
   const handleSaveButtonClick = () => {
+    if (workDates.length === 0) {
+      alert("자동 생성 버튼을 눌러 근무일을 먼저 만들어주세요.");
+      return;
+    }
     if (isOverCap) {
       alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
