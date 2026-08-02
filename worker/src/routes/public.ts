@@ -371,7 +371,7 @@ app.post("/attendance/clock-in", async (c) => {
   }
 
   if (workDates && !workDates.includes(date)) {
-    return c.json({ error: "오늘은 근무일이 아니에요." }, 400);
+    return c.json({ error: "오늘은 근무일이 아니에요" }, 400);
   }
 
   // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 정시부터, 종료 30분 후까지만 출근을
