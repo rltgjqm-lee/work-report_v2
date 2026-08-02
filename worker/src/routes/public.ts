@@ -272,7 +272,13 @@ app.get("/attendance/today", async (c) => {
     return c.json({ error: "참여자를 지정해주세요." }, 400);
   }
 
-  const { date } = getKstNow();
+  // 💡 테스트 패널의 날짜/시간으로 출근을 등록했다면 "오늘 이미 출근했는지" 조회도
+  // 같은 날짜 기준이어야 화면이 일관되게 맞는다 — clock-in/out과 동일하게 override를 받는다.
+  const debugOverride = await readDebugOverride(c, {
+    debugDate: c.req.query("debugDate"),
+    debugTime: c.req.query("debugTime"),
+  });
+  const { date } = getKstNow(debugOverride.date, debugOverride.time);
 
   const rows = await db
     .select({

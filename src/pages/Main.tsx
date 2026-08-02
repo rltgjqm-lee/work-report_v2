@@ -113,6 +113,12 @@ const Main = () => {
     ...loadFormDraft(),
   }));
 
+  // 💡 출퇴근 날짜·시간 검증을 테스트하기 위한 override. HomePage가 패널을 그리고
+  // 출근/퇴근 등록에 쓰는데, "오늘 이미 출근했는지" 재조회(아래 getTodayAttendance)도
+  // 같은 날짜 기준이어야 화면이 어긋나지 않아서 여기(Main)에서 소유하고 내려준다.
+  const [debugDate, setDebugDate] = useState("");
+  const [debugTime, setDebugTime] = useState("");
+
   // functions
   // 💡 "확인" 누를 때까지 기다렸다가 다음 동작(예: 저장 후 홈 이동)을 이어가야 하는
   // 곳(handleStepDataSave)이 있어서, 모달을 네이티브 alert()처럼 await 가능하게
@@ -309,23 +315,30 @@ const Main = () => {
         userSignature: todayItem?.uSign || "",
         demandSignature: todayItem?.dSign || "",
       }));
-
-      // 💡 출근/퇴근의 진짜 소스는 서버(attendance_logs)다 — 브라우저 로컬 캐시가
-      // 없거나(다른 기기, 캐시 유실 등) 어긋나도 화면이 항상 실제 출퇴근 상태와
-      // 맞도록, 위에서 로컬 값으로 채운 뒤 서버 조회 결과로 다시 덮어쓴다.
-      getTodayAttendance(formData.participantId!)
-        .then(({ clockIn, clockOut }) => {
-          setFormData((prev) => ({
-            ...prev,
-            startTime: clockIn ? isoToTimeParts(clockIn) : { ampm: "AM", hour: "", minute: "" },
-            endTime: clockOut ? isoToTimeParts(clockOut) : { ampm: "PM", hour: "", minute: "" },
-          }));
-        })
-        .catch(() => {
-          // 네트워크 오류 등은 조용히 무시하고 로컬 캐시 값을 그대로 쓴다.
-        });
     };
   }, [db, formData.participantId, formData.actDate]);
+
+  // 💡 출근/퇴근의 진짜 소스는 서버(attendance_logs)다 — 브라우저 로컬 캐시가 없거나(다른
+  // 기기, 캐시 유실 등) 어긋나도 화면이 항상 실제 출퇴근 상태와 맞도록 서버 조회 결과로
+  // 덮어쓴다. 위 IndexedDB 복원 effect와 별도로 두고 debugDate/debugTime도 deps에 넣어서,
+  // 테스트 패널에서 날짜를 바꾸면 그 날짜 기준으로 바로 다시 조회되게 한다.
+  useEffect(() => {
+    if (!formData.participantId) return;
+    getTodayAttendance(formData.participantId, {
+      date: debugDate || undefined,
+      time: debugTime || undefined,
+    })
+      .then(({ clockIn, clockOut }) => {
+        setFormData((prev) => ({
+          ...prev,
+          startTime: clockIn ? isoToTimeParts(clockIn) : { ampm: "AM", hour: "", minute: "" },
+          endTime: clockOut ? isoToTimeParts(clockOut) : { ampm: "PM", hour: "", minute: "" },
+        }));
+      })
+      .catch(() => {
+        // 네트워크 오류 등은 조용히 무시하고 로컬 캐시 값을 그대로 쓴다.
+      });
+  }, [formData.participantId, debugDate, debugTime]);
 
   // 💡 근무 중(출근 완료 ~ 퇴근 전) 위치를 주기적으로 서버에 보고해 관제구역 이탈을
   // 판정받는다. 어느 화면에 있어도 계속 보고돼야 하므로 개별 페이지가 아니라 여기서 돌린다.
@@ -398,6 +411,10 @@ const Main = () => {
             onOpenWork={() => setView(VIEW_TYPE.REPORT)}
             onOpenSafety={() => setView(VIEW_TYPE.ACCIDENT)}
             onOpenSummary={() => setView(VIEW_TYPE.SUMMARY)}
+            debugDate={debugDate}
+            setDebugDate={setDebugDate}
+            debugTime={debugTime}
+            setDebugTime={setDebugTime}
           />
         )}
 

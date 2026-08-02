@@ -20,6 +20,10 @@ interface HomePageProps {
   onOpenWork: () => void;
   onOpenSafety: () => void;
   onOpenSummary: () => void;
+  debugDate: string;
+  setDebugDate: React.Dispatch<React.SetStateAction<string>>;
+  debugTime: string;
+  setDebugTime: React.Dispatch<React.SetStateAction<string>>;
 }
 
 type ModuleItemProps = {
@@ -86,14 +90,17 @@ const HomePage = ({
   onOpenWork,
   onOpenSafety,
   onOpenSummary,
+  debugDate,
+  setDebugDate,
+  debugTime,
+  setDebugTime,
 }: HomePageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
 
-  // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 테스트하기 위한 override.
-  // 개발 빌드에선 항상 보이고, 실서버에서는 통합관리자(SUPER_ADMIN)만 패널을 보여준다.
-  // 서버도 localhost 요청이거나 통합관리자 세션일 때만 실제로 반영한다.
-  const [debugDate, setDebugDate] = useState("");
-  const [debugTime, setDebugTime] = useState("");
+  // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 테스트하기 위한 override(Main이
+  // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에선 항상
+  // 보이고, 실서버에서는 통합관리자(SUPER_ADMIN)만 패널을 보여준다. 서버도 localhost
+  // 요청이거나 통합관리자 세션일 때만 실제로 반영한다.
   const { data: adminRole } = useQuery(adminRoleQueryOptions);
   const isSuperAdmin = adminRole === "SUPER_ADMIN";
 
