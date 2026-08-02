@@ -298,11 +298,24 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
       </div>
       <div className="flex gap-3 p-4">
         <div className="w-[240px] flex-none flex flex-col gap-2">
-          {locations.length === 0 && (
+          {locations.length === 0 && demandSite.baseLat === null && (
             <span className="text-[12.5px] text-[#9aa1ab]">
               지도 우측 툴바에서 원(반경) 또는 다각형을 그려 거점을 추가하세요.
             </span>
           )}
+          {demandSite.baseLat !== null &&
+            demandSite.baseLng !== null &&
+            demandSite.radius !== null && (
+              <div className="border border-[#e2e5eb] rounded-[2px] px-3 py-2 text-[12.5px] bg-[#f5f8fb]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{demandSite.name} 기본 관제구역</span>
+                  <span className="text-[#9aa1ab] text-[11px] font-semibold whitespace-nowrap">
+                    기본
+                  </span>
+                </div>
+                <div className="text-[#6b7280] mt-1">원형 · 반경 {demandSite.radius}m</div>
+              </div>
+            )}
           {locations.map((location) => (
             <div
               key={location.id}
