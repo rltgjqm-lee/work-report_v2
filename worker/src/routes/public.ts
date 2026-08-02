@@ -374,19 +374,25 @@ app.post("/attendance/clock-in", async (c) => {
     return c.json({ error: "오늘은 근무일이 아니에요." }, 400);
   }
 
-  // 배정된 조에 근무시간이 설정돼 있으면 그 시간 ±30분 범위에서만 출근을 허용한다.
-  // 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한 사업단도 있어서).
+  // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 정시부터, 종료 30분 후까지만 출근을
+  // 허용한다. 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한
+  // 사업단도 있어서).
   if (participant.groupId) {
     const groupRows = await db.select().from(groups).where(eq(groups.id, participant.groupId));
     const group = groupRows[0];
 
     if (group) {
       const nowMinutes = toMinutes(time);
-      const earliest = toMinutes(group.shiftStart) - 30;
+      const earliest = toMinutes(group.shiftStart);
       const latest = toMinutes(group.shiftEnd) + 30;
 
       if (nowMinutes < earliest) {
-        return c.json({ error: `아직 근무 시작 시간(${group.shiftStart})이 아닙니다.` }, 400);
+        // 문구는 프론트에서 조립한다(안내 모달에 시간표를 같이 보여줘야 해서) — 여기서는
+        // 판단에 필요한 코드/데이터만 내려준다.
+        return c.json(
+          { error: "TOO_EARLY", now: time, shiftStart: group.shiftStart, shiftEnd: group.shiftEnd },
+          400,
+        );
       }
       if (nowMinutes > latest) {
         return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);

@@ -3,9 +3,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
+import AttendanceTimeGuideModal from "../../components/molecule/AttendanceTimeGuideModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import {
   adminRoleQueryOptions,
+  ClockInError,
   clockInMutationOptions,
   clockOutMutationOptions,
 } from "../../utils/attendanceApi";
@@ -118,12 +120,20 @@ const HomePage = ({
   const clockInMutation = useMutation(clockInMutationOptions);
   const clockOutMutation = useMutation(clockOutMutationOptions);
 
+  // 💡 출근 시간대 안내는 일반 alert 모달로는 시간표(업무 시작/종료)를 못 보여줘서
+  // AttendanceTimeGuideModal이라는 전용 모달로 따로 띄운다.
+  const [timeGuide, setTimeGuide] = useState<{
+    now: string;
+    shiftStart: string;
+    shiftEnd: string;
+  } | null>(null);
+
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
     (async () => {
       await onSave();
       await onAlert([
-        `${pendingAttendanceInTime}에 정상적으로 출근 완료 됐어요`,
+        `${pendingAttendanceInTime}에 정상적으로 출근 완료했어요`,
         "오늘도 안전하게 활동을 진행해주세요",
       ]);
     })();
@@ -164,7 +174,7 @@ const HomePage = ({
     if (!formData.participantId) return;
     if (attendanceInDone) {
       onAlert([
-        `${formatTimeField(formData.startTime)}에 정상적으로 출근 완료 됐어요`,
+        `${formatTimeField(formData.startTime)}에 정상적으로 출근 완료했어요`,
         "오늘도 안전하게 활동을 진행해주세요",
       ]);
       return;
@@ -182,6 +192,15 @@ const HomePage = ({
           setPendingAttendanceInTime(formatTimeField(startTime));
         },
         onError: (error) => {
+          const body = error instanceof ClockInError ? error.body : null;
+          if (body?.error === "TOO_EARLY") {
+            const { now, shiftStart, shiftEnd } = body as Extract<
+              typeof body,
+              { error: "TOO_EARLY" }
+            >;
+            setTimeGuide({ now, shiftStart, shiftEnd });
+            return;
+          }
           onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다."]);
         },
       },
@@ -388,6 +407,15 @@ const HomePage = ({
           </p>
         )}
       </div>
+
+      {timeGuide && (
+        <AttendanceTimeGuideModal
+          now={timeGuide.now}
+          shiftStart={timeGuide.shiftStart}
+          shiftEnd={timeGuide.shiftEnd}
+          onConfirm={() => setTimeGuide(null)}
+        />
+      )}
     </div>
   );
 };

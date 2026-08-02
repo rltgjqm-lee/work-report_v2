@@ -175,17 +175,44 @@ const coordinatesPayload = (coordinates?: Coordinates | null) =>
       }
     : {};
 
-export const clockIn = (
+// 💡 "너무 이르다" 실패는 안내 모달에 시간표까지 같이 보여줘야 해서(HomePage의
+// AttendanceTimeGuideModal), 문구가 아니라 코드/데이터 그대로 받아서 컴포넌트로 전달한다.
+export type ClockInErrorBody =
+  { error: "TOO_EARLY"; now: string; shiftStart: string; shiftEnd: string } | { error: string };
+
+export class ClockInError extends Error {
+  body: ClockInErrorBody;
+
+  constructor(body: ClockInErrorBody) {
+    super(body.error);
+    this.body = body;
+  }
+}
+
+export const clockIn = async (
   participantId: number,
   debug?: DebugAttendanceOverride,
   coordinates?: Coordinates | null,
-) =>
-  request<{ id: number; clockIn: string }>("/public/attendance/clock-in", {
-    participantId,
-    ...coordinatesPayload(coordinates),
-    ...(debug?.date && { debugDate: debug.date }),
-    ...(debug?.time && { debugTime: debug.time }),
+): Promise<{ id: number; clockIn: string }> => {
+  const res = await fetch(`${BASE_URL}/public/attendance/clock-in`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      participantId,
+      ...coordinatesPayload(coordinates),
+      ...(debug?.date && { debugDate: debug.date }),
+      ...(debug?.time && { debugTime: debug.time }),
+    }),
   });
+  if (!res.ok) {
+    const data = await res
+      .json()
+      .catch(() => ({ error: "출근 등록에 실패했습니다." }) as ClockInErrorBody);
+    throw new ClockInError(data);
+  }
+  return res.json();
+};
 
 export const clockOut = (
   participantId: number,
