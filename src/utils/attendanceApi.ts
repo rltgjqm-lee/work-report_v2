@@ -214,17 +214,43 @@ export const clockIn = async (
   return res.json();
 };
 
-export const clockOut = (
+// 💡 "너무 이르다" 실패는 안내 모달에서 시간 부분만 강조해야 해서, 문구가 아니라
+// 코드/데이터 그대로 받아서 컴포넌트로 전달한다(ClockInError와 동일한 패턴).
+export type ClockOutErrorBody = { error: "TOO_EARLY_OUT"; shiftEnd: string } | { error: string };
+
+export class ClockOutError extends Error {
+  body: ClockOutErrorBody;
+
+  constructor(body: ClockOutErrorBody) {
+    super(body.error);
+    this.body = body;
+  }
+}
+
+export const clockOut = async (
   participantId: number,
   debug?: DebugAttendanceOverride,
   coordinates?: Coordinates | null,
-) =>
-  request<{ id: number; clockOut: string; totalMinutes: number }>("/public/attendance/clock-out", {
-    participantId,
-    ...coordinatesPayload(coordinates),
-    ...(debug?.date && { debugDate: debug.date }),
-    ...(debug?.time && { debugTime: debug.time }),
+): Promise<{ id: number; clockOut: string; totalMinutes: number }> => {
+  const res = await fetch(`${BASE_URL}/public/attendance/clock-out`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      participantId,
+      ...coordinatesPayload(coordinates),
+      ...(debug?.date && { debugDate: debug.date }),
+      ...(debug?.time && { debugTime: debug.time }),
+    }),
   });
+  if (!res.ok) {
+    const data = await res
+      .json()
+      .catch(() => ({ error: "퇴근 등록에 실패했습니다." }) as ClockOutErrorBody);
+    throw new ClockOutError(data);
+  }
+  return res.json();
+};
 
 export interface ClockInVariables {
   participantId: number;

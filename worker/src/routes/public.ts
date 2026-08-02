@@ -476,11 +476,12 @@ app.post("/attendance/clock-out", async (c) => {
 
   // 배정된 조에 근무시간이 설정돼 있으면 종료시간 10분 전부터만 퇴근을 허용한다
   // (조퇴 판정 기준과 동일한 여유). 그 전에는 아예 퇴근 등록을 막는다.
+  // 문구는 프론트에서 조립한다(시간 부분을 강조해야 해서) — 여기서는 코드/데이터만 내려준다.
   if (group) {
     const nowMinutes = toMinutes(time);
     const earliest = toMinutes(group.shiftEnd) - 10;
     if (nowMinutes < earliest) {
-      return c.json({ error: `아직 근무 종료 시간(${group.shiftEnd}) 전입니다.` }, 400);
+      return c.json({ error: "TOO_EARLY_OUT", shiftEnd: group.shiftEnd }, 400);
     }
   }
 

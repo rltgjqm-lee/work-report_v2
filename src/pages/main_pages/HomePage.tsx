@@ -4,11 +4,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import AttendanceTimeGuideModal from "../../components/molecule/AttendanceTimeGuideModal";
+import ClockOutTooEarlyModal from "../../components/molecule/ClockOutTooEarlyModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import {
   adminRoleQueryOptions,
   ClockInError,
   clockInMutationOptions,
+  ClockOutError,
   clockOutMutationOptions,
 } from "../../utils/attendanceApi";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
@@ -127,6 +129,9 @@ const HomePage = ({
     shiftStart: string;
     shiftEnd: string;
   } | null>(null);
+
+  // 💡 퇴근이 너무 이를 때도 마찬가지로 시간 부분만 강조해야 해서 전용 모달로 띄운다.
+  const [clockOutTooEarlyShiftEnd, setClockOutTooEarlyShiftEnd] = useState<string | null>(null);
 
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
@@ -256,6 +261,12 @@ const HomePage = ({
           setPendingAttendanceOutTime(formatTimeField(endTime));
         },
         onError: (error) => {
+          const body = error instanceof ClockOutError ? error.body : null;
+          if (body?.error === "TOO_EARLY_OUT") {
+            const { shiftEnd } = body as Extract<typeof body, { error: "TOO_EARLY_OUT" }>;
+            setClockOutTooEarlyShiftEnd(shiftEnd);
+            return;
+          }
           onAlert([error instanceof Error ? error.message : "퇴근 등록에 실패했습니다."]);
         },
       },
@@ -414,6 +425,13 @@ const HomePage = ({
           shiftStart={timeGuide.shiftStart}
           shiftEnd={timeGuide.shiftEnd}
           onConfirm={() => setTimeGuide(null)}
+        />
+      )}
+
+      {clockOutTooEarlyShiftEnd && (
+        <ClockOutTooEarlyModal
+          shiftEnd={clockOutTooEarlyShiftEnd}
+          onConfirm={() => setClockOutTooEarlyShiftEnd(null)}
         />
       )}
     </div>
