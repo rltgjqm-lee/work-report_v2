@@ -9,7 +9,7 @@ import {
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
-import FilterSelect from "../../components/FilterSelect";
+// import FilterSelect from "../../components/FilterSelect"; // 담당자 지정 UI와 함께 임시로 뺐다
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { DemandSite } from "../../types";
 
@@ -57,8 +57,8 @@ const DemandSiteFormModal = ({
   const createDemandSiteMutation = useMutation(createDemandSiteMutationOptions(queryClient));
   const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
 
-  // 담당자는 신규 등록 때 서버가 사업단 담당자로 자동 지정하므로, 수정할 때만 선택한다.
-  const { data: assignableAdmins = [] } = useQuery({
+  // 담당자 지정 UI는 임시로 숨겼지만(아래 주석 처리된 FormField 참고) 조회 로직은 남겨둔다.
+  useQuery({
     ...assignableDemandSiteAdminsQueryOptions(programId),
     enabled: !!editingDemandSite,
   });
@@ -152,6 +152,9 @@ const DemandSiteFormModal = ({
         </div>
       </FormField>
 
+      {/* 담당자 지정 UI는 임시로 숨긴다 — MANAGER가 programIds에 없는 수요처의 담당자로
+          지정될 수 있는 권한 불일치가 있어 정리 전까지 노출하지 않는다. 저장 로직
+          (form.contactAdminId, handleSaveButtonClick의 contactAdminId 전달)은 그대로 둔다.
       {editingDemandSite && (
         <FormField label="담당자">
           <FilterSelect
@@ -173,6 +176,7 @@ const DemandSiteFormModal = ({
           )}
         </FormField>
       )}
+      */}
 
       {/* 수요처 단위 관제구역 — 거점을 따로 안 그려도 이 원으로 이탈 판정이 된다 */}
       <FormField label={`관제 반경(m, 최소 ${MIN_RADIUS_METERS})`}>
