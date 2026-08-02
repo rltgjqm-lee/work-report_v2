@@ -1,5 +1,7 @@
 import { createPortal } from "react-dom";
 
+import Button from "../atoms/Button";
+
 interface ConfirmModalProps {
   messages?: string[];
   isOpen?: boolean;
@@ -11,9 +13,9 @@ const ConfirmModal = ({ messages, isOpen, onClose, onConfirm }: ConfirmModalProp
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 w-full h-full bg-[rgba(0,0,0,0.5)] z-[9999] flex justify-center items-center">
-      <div className="bg-white p-[30px] rounded-xl max-w-[400px] w-4/5 shadow-[0_10px_25px_rgba(0,0,0,0.2)]">
-        <div className="text-[18px] mb-[25px] leading-normal whitespace-pre-wrap break-keep text-left text-[#2c3e50]">
+    <div className="fixed inset-0 w-full h-full bg-[rgba(15,23,42,0.45)] z-[9999] flex justify-center items-center p-6">
+      <div className="bg-white rounded-[20px] px-6 pt-7 pb-[22px] w-full max-w-[340px] shadow-[0_12px_32px_rgba(20,30,50,0.24)]">
+        <div className="text-[18px] font-extrabold text-[#1f2937] leading-[1.5] whitespace-pre-wrap break-keep text-left">
           {messages?.map((message, index) => (
             <p key={index} className="mb-1 last:mb-0">
               {message}
@@ -21,19 +23,13 @@ const ConfirmModal = ({ messages, isOpen, onClose, onConfirm }: ConfirmModalProp
           ))}
         </div>
 
-        <div className="flex flex-row gap-2.5 justify-center">
-          <button
-            className="flex-1 p-[14px] text-[16px] font-bold font-sans rounded-xl cursor-pointer border-none bg-[#3182f6] text-white"
-            onClick={onConfirm}
-          >
+        <div className="flex flex-row gap-2.5 justify-center mt-5">
+          <Button variant="primary" onClick={onConfirm} className="flex-1">
             확인
-          </button>
-          <button
-            className="hidden flex-1 p-[14px] text-[16px] font-bold font-sans rounded-xl cursor-pointer bg-white text-[#222] border border-[#222]"
-            onClick={onClose}
-          >
+          </Button>
+          <Button variant="outline" onClick={onClose} className="hidden flex-1">
             취소
-          </button>
+          </Button>
         </div>
       </div>
     </div>,
