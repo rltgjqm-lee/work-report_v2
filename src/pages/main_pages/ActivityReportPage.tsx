@@ -1,6 +1,9 @@
+import { useState } from "react";
+
 import type { ActivityLogFormData } from "../../types/form";
 
 import AppBar from "../../components/molecule/AppBar";
+import ActivitySaveConfirmModal from "../../components/molecule/ActivitySaveConfirmModal";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import {
@@ -19,7 +22,7 @@ interface Page4Props {
   onBack: () => void; // 💡 홈으로 돌아가기(취소)
   onSave: () => Promise<void>; // 💡 IndexedDB 임시저장 브릿지
   onNext: () => void; // 💡 저장 후 홈으로 돌아가기
-  onAlert: (messages: string[]) => void;
+  onAlert: (messages: string[]) => Promise<void>;
 }
 
 /**
@@ -33,7 +36,9 @@ const ActivityReportPage = ({
   onNext,
   onAlert,
 }: Page4Props) => {
-  const handleSaveButtonClick = async () => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleSaveButtonClick = () => {
     if (!formData.actContent.trim()) {
       onAlert(["활동 내용을 입력해주세요."]);
       return;
@@ -42,7 +47,11 @@ const ActivityReportPage = ({
       onAlert(["활동 장소를 입력해주세요."]);
       return;
     }
-    // 💡 저장 완료 알럿을 확인(OK)하기 전까지는 홈으로 넘어가지 않도록 await로 순서를 보장한다.
+    setConfirmOpen(true);
+  };
+
+  const handleSaveConfirmButtonClick = async () => {
+    setConfirmOpen(false);
     await onSave();
     onNext();
   };
@@ -100,6 +109,14 @@ const ActivityReportPage = ({
           </button>
         </BottomBarRow>
       </BottomBar>
+
+      {confirmOpen && (
+        <ActivitySaveConfirmModal
+          actContent={formData.actContent}
+          actPlace={formData.actPlace}
+          onConfirm={handleSaveConfirmButtonClick}
+        />
+      )}
     </div>
   );
 };
