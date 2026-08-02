@@ -5,6 +5,7 @@ import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import AttendanceTimeGuideModal from "../../components/molecule/AttendanceTimeGuideModal";
 import ClockOutTooEarlyModal from "../../components/molecule/ClockOutTooEarlyModal";
+import ClockOutCompleteModal from "../../components/molecule/ClockOutCompleteModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import {
   adminRoleQueryOptions,
@@ -133,6 +134,9 @@ const HomePage = ({
   // 💡 퇴근이 너무 이를 때도 마찬가지로 시간 부분만 강조해야 해서 전용 모달로 띄운다.
   const [clockOutTooEarlyShiftEnd, setClockOutTooEarlyShiftEnd] = useState<string | null>(null);
 
+  // 💡 정상 퇴근 완료 안내도 시간 부분만 강조해야 해서 전용 모달로 띄운다.
+  const [clockOutCompleteTime, setClockOutCompleteTime] = useState<string | null>(null);
+
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
     (async () => {
@@ -149,10 +153,7 @@ const HomePage = ({
     if (!pendingAttendanceOutTime) return;
     (async () => {
       await onSave();
-      await onAlert([
-        `${pendingAttendanceOutTime}에 정상적으로 퇴근 완료 됐어요`,
-        "오늘도 수고하셨어요",
-      ]);
+      setClockOutCompleteTime(pendingAttendanceOutTime);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAttendanceOutTime]);
@@ -214,7 +215,7 @@ const HomePage = ({
 
   const handleOpenWorkButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요."]);
+      onAlert(["출근 등록을 먼저 해주세요"]);
       return;
     }
     onOpenWork();
@@ -222,30 +223,27 @@ const HomePage = ({
 
   const handleOpenSafetyButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요."]);
+      onAlert(["출근 등록을 먼저 해주세요"]);
       return;
     }
     onOpenSafety();
   };
 
-  const handleAttendanceOutButtonClick = async () => {
+  const handleAttendanceOutButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요."]);
+      onAlert(["출근 등록을 먼저 해주세요"]);
       return;
     }
     if (!isCompetencyProgram && !workDone) {
-      onAlert(["업무 일지 등록을 먼저 완료해주세요."]);
+      onAlert(["업무 일지 등록을 먼저 완료해주세요"]);
       return;
     }
     if (!isCompetencyProgram && !safetyDone) {
-      onAlert(["안전 일지 등록을 먼저 완료해주세요."]);
+      onAlert(["안전 일지 등록을 먼저 완료해주세요"]);
       return;
     }
     if (attendanceOutDone) {
-      await onAlert([
-        `${formatTimeField(formData.endTime)}에 정상적으로 퇴근 완료 됐어요`,
-        "오늘도 수고하셨어요",
-      ]);
+      setClockOutCompleteTime(formatTimeField(formData.endTime));
       return;
     }
     if (!formData.participantId) return;
@@ -275,23 +273,23 @@ const HomePage = ({
 
   const handleOpenSummaryButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요."]);
+      onAlert(["출근 등록을 먼저 해주세요"]);
       return;
     }
     if (!isCompetencyProgram && !workDone) {
-      onAlert(["업무 일지 등록을 먼저 완료해주세요."]);
+      onAlert(["업무 일지 등록을 먼저 완료해주세요"]);
       return;
     }
     if (!isCompetencyProgram && !safetyDone) {
-      onAlert(["안전 일지 등록을 먼저 완료해주세요."]);
+      onAlert(["안전 일지 등록을 먼저 완료해주세요"]);
       return;
     }
     if (!attendanceOutDone) {
-      onAlert(["퇴근 등록을 먼저 완료해주세요."]);
+      onAlert(["퇴근 등록을 먼저 완료해주세요"]);
       return;
     }
     if (signatureDone) {
-      onAlert(["오늘 서명은 이미 완료했어요."]);
+      onAlert(["오늘 서명은 이미 완료했어요"]);
       return;
     }
     onOpenSummary();
@@ -432,6 +430,13 @@ const HomePage = ({
         <ClockOutTooEarlyModal
           shiftEnd={clockOutTooEarlyShiftEnd}
           onConfirm={() => setClockOutTooEarlyShiftEnd(null)}
+        />
+      )}
+
+      {clockOutCompleteTime && (
+        <ClockOutCompleteModal
+          endTime={clockOutCompleteTime}
+          onConfirm={() => setClockOutCompleteTime(null)}
         />
       )}
     </div>
