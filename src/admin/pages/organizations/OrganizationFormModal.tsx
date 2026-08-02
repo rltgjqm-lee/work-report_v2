@@ -5,6 +5,7 @@ import {
   createOrganizationMutationOptions,
   updateOrganizationMutationOptions,
 } from "../../api/admin/organizations";
+import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
@@ -62,6 +63,22 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
   );
   const [error, setError] = useState<string | null>(null);
 
+  const handleSearchAddressButtonClick = async () => {
+    try {
+      await loadDaumPostcodeScript();
+      new window.daum!.Postcode({
+        oncomplete: (data) => {
+          setForm((form) => ({
+            ...form,
+            address: data.roadAddress || data.jibunAddress,
+          }));
+        },
+      }).open();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "주소 검색을 열 수 없습니다.");
+    }
+  };
+
   const handleSaveButtonClick = () => {
     if (form.phone && !PHONE_NUMBER_PATTERN.test(form.phone)) {
       setError("전화번호 형식이 올바르지 않습니다. 예: 02-1234-5678");
@@ -111,11 +128,18 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
         />
       </FormField>
       <FormField label="기관주소">
-        <input
-          className={inputClass}
-          value={form.address}
-          onChange={(event) => setForm((form) => ({ ...form, address: event.target.value }))}
-        />
+        <div className="flex gap-2">
+          <input
+            className={inputClass}
+            value={form.address}
+            readOnly
+            placeholder="주소 검색을 눌러 입력해주세요"
+            onClick={handleSearchAddressButtonClick}
+          />
+          <button type="button" className={btnGhostClass} onClick={handleSearchAddressButtonClick}>
+            주소 검색
+          </button>
+        </div>
       </FormField>
       <FormField label="대표자">
         <input
