@@ -9,6 +9,7 @@ import {
   participantLeaves,
   participantAnnualLeave,
   participantMonthlySchedule,
+  participantGroupOverrides,
   attendanceLogs,
   groups,
   demandSites,
@@ -206,6 +207,108 @@ app.post("/:id/group", async (c) => {
     .returning();
 
   return c.json(result[0]);
+});
+
+// 특정 날짜만 다른 조로 취급하는 임시 배정 이력 — 원래 조(participants.groupId)는 그대로 두고
+// 그날의 출퇴근 시간/근무일 판정에서만 이 조를 우선 적용한다 (worker/src/routes/public.ts 참고)
+app.get("/:id/group-overrides", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const rows = await db
+    .select({ override: participantGroupOverrides, groupName: groups.name })
+    .from(participantGroupOverrides)
+    .innerJoin(groups, eq(participantGroupOverrides.groupId, groups.id))
+    .where(eq(participantGroupOverrides.participantId, id))
+    .orderBy(desc(participantGroupOverrides.date));
+
+  return c.json(rows);
+});
+
+app.post("/:id/group-overrides", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{ date?: string; groupId?: number }>();
+  if (!body.date || !body.groupId) {
+    return c.json({ error: "날짜와 조를 지정해주세요." }, 400);
+  }
+
+  const groupRows = await db.select().from(groups).where(eq(groups.id, body.groupId));
+  const group = groupRows[0];
+  if (!group || group.programId !== found.participant.programId) {
+    return c.json({ error: "해당 사업단의 조가 아닙니다." }, 400);
+  }
+
+  const existingRows = await db
+    .select()
+    .from(participantGroupOverrides)
+    .where(
+      and(
+        eq(participantGroupOverrides.participantId, id),
+        eq(participantGroupOverrides.date, body.date),
+      ),
+    );
+  const existing = existingRows[0];
+
+  if (existing) {
+    const result = await db
+      .update(participantGroupOverrides)
+      .set({ groupId: body.groupId, createdBy: auth.id })
+      .where(eq(participantGroupOverrides.id, existing.id))
+      .returning();
+    return c.json(result[0]);
+  }
+
+  const result = await db
+    .insert(participantGroupOverrides)
+    .values({
+      participantId: id,
+      date: body.date,
+      groupId: body.groupId,
+      createdBy: auth.id,
+    })
+    .returning();
+
+  return c.json(result[0], 201);
+});
+
+app.delete("/:id/group-overrides/:date", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+  const date = c.req.param("date");
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  await db
+    .delete(participantGroupOverrides)
+    .where(
+      and(
+        eq(participantGroupOverrides.participantId, id),
+        eq(participantGroupOverrides.date, date),
+      ),
+    );
+
+  return c.json({ success: true });
 });
 
 app.post("/:id/drop", async (c) => {

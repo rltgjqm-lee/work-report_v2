@@ -11,6 +11,7 @@ import {
   groups,
   groupMonthlySchedule,
   participantMonthlySchedule,
+  participantGroupOverrides,
   demandSites,
   demandSiteLocations,
   escapeLogs,
@@ -322,6 +323,19 @@ app.post("/attendance/clock-in", async (c) => {
   const debugOverride = await readDebugOverride(c, body);
   const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
 
+  // 오늘 날짜의 조 임시 배정이 있으면 원래 조(participant.groupId) 대신 이 조를 기준으로
+  // 근무일/근무시간을 판정한다 — 관리자가 특정 날짜에만 다른 조로 옮겨둔 경우.
+  const groupOverrideRows = await db
+    .select()
+    .from(participantGroupOverrides)
+    .where(
+      and(
+        eq(participantGroupOverrides.participantId, participant.id),
+        eq(participantGroupOverrides.date, date),
+      ),
+    );
+  const effectiveGroupId = groupOverrideRows[0]?.groupId ?? participant.groupId;
+
   // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
   if (participant.status === "ON_LEAVE" && participant.leaveEnd && participant.leaveEnd < date) {
     const updated = await db
@@ -355,13 +369,13 @@ app.post("/attendance/clock-in", async (c) => {
     ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
     : null;
 
-  if (!workDates && participant.groupId) {
+  if (!workDates && effectiveGroupId) {
     const groupScheduleRows = await db
       .select()
       .from(groupMonthlySchedule)
       .where(
         and(
-          eq(groupMonthlySchedule.groupId, participant.groupId),
+          eq(groupMonthlySchedule.groupId, effectiveGroupId),
           eq(groupMonthlySchedule.yearMonth, yearMonth),
         ),
       );
@@ -377,8 +391,8 @@ app.post("/attendance/clock-in", async (c) => {
   // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 정시부터, 종료 30분 후까지만 출근을
   // 허용한다. 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한
   // 사업단도 있어서).
-  if (participant.groupId) {
-    const groupRows = await db.select().from(groups).where(eq(groups.id, participant.groupId));
+  if (effectiveGroupId) {
+    const groupRows = await db.select().from(groups).where(eq(groups.id, effectiveGroupId));
     const group = groupRows[0];
 
     if (group) {
@@ -421,7 +435,7 @@ app.post("/attendance/clock-in", async (c) => {
     .insert(attendanceLogs)
     .values({
       participantId: participant.id,
-      groupId: participant.groupId,
+      groupId: effectiveGroupId,
       programId: participant.programId,
       workDate: date,
       clockIn: iso,
