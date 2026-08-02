@@ -49,7 +49,7 @@ const ProgramDetailPage = () => {
   const [groupFilter, setGroupFilter] = useState("all");
   const [demandFilter, setDemandFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>(PROGRAM_DETAIL_TAB.GROUPS);
+  const [tab, setTab] = useState<Tab>(PROGRAM_DETAIL_TAB.DEMAND_SITES);
 
   const { data: allPrograms = [] } = useQuery(programsQueryOptions);
   const { data: program } = useQuery(programQueryOptions(programId));
