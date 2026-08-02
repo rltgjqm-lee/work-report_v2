@@ -436,6 +436,7 @@ const HomePage = ({
       {clockOutCompleteTime && (
         <ClockOutCompleteModal
           endTime={clockOutCompleteTime}
+          userName={formData.userName}
           onConfirm={() => setClockOutCompleteTime(null)}
         />
       )}
