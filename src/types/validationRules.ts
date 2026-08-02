@@ -12,6 +12,7 @@ export const PAGE1_RULES: ValidationRule[] = [
   { field: "programName", message: "(2) 참여사업명을 넣어주세요" },
   { field: "userName", message: "(3) 참여자성명을 넣어주세요" },
   { field: "demandName", message: "(4) 수요처명을 넣어주세요" },
+  { field: "gender", message: "(5) 성별을 선택해주세요" },
 ];
 
 // 💡 Page 3: 활동 일시 검증 규칙 상수
