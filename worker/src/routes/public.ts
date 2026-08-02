@@ -9,6 +9,8 @@ import {
   pushDeviceTokens,
   participants,
   groups,
+  groupMonthlySchedule,
+  participantMonthlySchedule,
   demandSites,
   demandSiteLocations,
   escapeLogs,
@@ -326,6 +328,44 @@ app.post("/attendance/clock-in", async (c) => {
 
   if (participant.status === "ON_LEAVE") {
     return c.json({ error: "휴가 중인 참여자는 출근할 수 없습니다." }, 400);
+  }
+
+  // 월간 근무 스케줄이 있으면 오늘이 근무일인지부터 확인한다 — 시간 검증보다 먼저다.
+  // 참여자 개인 스케줄이 있으면 그걸 쓰고, 없으면 조 스케줄을 쓴다. 둘 다 이번 달
+  // 레코드가 없으면(스케줄을 아직 안 만든 사업단) 이 검증은 건너뛴다.
+  const yearMonth = date.slice(0, 7);
+
+  const participantScheduleRows = await db
+    .select()
+    .from(participantMonthlySchedule)
+    .where(
+      and(
+        eq(participantMonthlySchedule.participantId, participant.id),
+        eq(participantMonthlySchedule.yearMonth, yearMonth),
+      ),
+    );
+
+  let workDates = participantScheduleRows[0]
+    ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
+    : null;
+
+  if (!workDates && participant.groupId) {
+    const groupScheduleRows = await db
+      .select()
+      .from(groupMonthlySchedule)
+      .where(
+        and(
+          eq(groupMonthlySchedule.groupId, participant.groupId),
+          eq(groupMonthlySchedule.yearMonth, yearMonth),
+        ),
+      );
+    workDates = groupScheduleRows[0]
+      ? (JSON.parse(groupScheduleRows[0].workDates) as string[])
+      : null;
+  }
+
+  if (workDates && !workDates.includes(date)) {
+    return c.json({ error: "오늘은 근무일이 아니에요." }, 400);
   }
 
   // 배정된 조에 근무시간이 설정돼 있으면 그 시간 ±30분 범위에서만 출근을 허용한다.
