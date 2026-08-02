@@ -5,6 +5,7 @@ import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import AttendanceTimeGuideModal from "../../components/molecule/AttendanceTimeGuideModal";
 import ClockOutTooEarlyModal from "../../components/molecule/ClockOutTooEarlyModal";
+import ClockInCompleteModal from "../../components/molecule/ClockInCompleteModal";
 import ClockOutCompleteModal from "../../components/molecule/ClockOutCompleteModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import {
@@ -133,14 +134,14 @@ const HomePage = ({
   // 💡 정상 퇴근 완료 안내도 시간 부분만 강조해야 해서 전용 모달로 띄운다.
   const [clockOutCompleteTime, setClockOutCompleteTime] = useState<string | null>(null);
 
+  // 💡 정상 출근 완료 안내도 시간 부분만 강조해야 해서 전용 모달로 띄운다.
+  const [clockInCompleteTime, setClockInCompleteTime] = useState<string | null>(null);
+
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
     (async () => {
       await onSave();
-      await onAlert([
-        `${pendingAttendanceInTime}에 정상적으로 출근 완료했어요`,
-        "오늘도 안전하게 활동을 진행해주세요",
-      ]);
+      setClockInCompleteTime(pendingAttendanceInTime);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAttendanceInTime]);
@@ -175,10 +176,7 @@ const HomePage = ({
   const handleAttendanceInButtonClick = () => {
     if (!formData.participantId) return;
     if (attendanceInDone) {
-      onAlert([
-        `${formatTimeField(formData.startTime)}에 정상적으로 출근 완료했어요`,
-        "오늘도 안전하게 활동을 진행해주세요",
-      ]);
+      setClockInCompleteTime(formatTimeField(formData.startTime));
       return;
     }
 
@@ -432,6 +430,13 @@ const HomePage = ({
           endTime={clockOutCompleteTime}
           userName={formData.userName}
           onConfirm={() => setClockOutCompleteTime(null)}
+        />
+      )}
+
+      {clockInCompleteTime && (
+        <ClockInCompleteModal
+          startTime={clockInCompleteTime}
+          onConfirm={() => setClockInCompleteTime(null)}
         />
       )}
     </div>
