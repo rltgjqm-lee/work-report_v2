@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { admins, adminLoginHistory, adminSessions, demandSites } from "../db/schema";
 import { getAuth, parseIdArray } from "../lib/authz";
@@ -134,7 +134,8 @@ app.post("/", async (c) => {
   return c.json(toAdminJson(result[0]), 201);
 });
 
-// 담당 이관 — 퇴사 등으로 담당자를 정리할 때, 담당 사업단을 다른 담당자에게 통째로 넘긴다.
+// 담당 이관 — 퇴사 등으로 담당자를 정리할 때, 담당 사업단들을 (한 사람에게 몰아주거나 여러
+// 사람에게 나눠) 다른 담당자들에게 넘긴다. 사업단마다 다른 담당자를 배정할 수 있다.
 // 사업단(programIds)만 옮기면 그 사업단 수요처에는 떠난 사람이 담당자로 남으므로 함께 갱신한다.
 app.put("/:id/transfer-programs", async (c) => {
   const auth = getAuth(c);
@@ -150,55 +151,96 @@ app.put("/:id/transfer-programs", async (c) => {
   if (auth.role !== ROLES.SUPER_ADMIN && from.organizationId !== auth.organizationId) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
-
-  const body = await c.req.json<{ toAdminId?: number }>();
-  if (!body.toAdminId) {
-    return c.json({ error: "이관받을 담당자를 선택해주세요." }, 400);
+  if (from.organizationId === null) {
+    return c.json({ error: "소속 기관이 없는 계정은 이관할 수 없습니다." }, 400);
   }
-  if (body.toAdminId === id) {
+
+  const body = await c.req.json<{ assignments?: { programId: number; toAdminId: number }[] }>();
+  const assignments = body.assignments ?? [];
+  if (assignments.length === 0) {
+    return c.json({ error: "이관할 사업단과 담당자를 선택해주세요." }, 400);
+  }
+  if (assignments.some((assignment) => assignment.toAdminId === id)) {
     return c.json({ error: "같은 계정으로는 이관할 수 없습니다." }, 400);
   }
 
-  const toRows = await db.select().from(admins).where(eq(admins.id, body.toAdminId));
-  const to = toRows[0];
-  if (!to) return c.json({ error: "이관받을 계정을 찾을 수 없습니다." }, 404);
-  if (to.organizationId !== from.organizationId) {
-    return c.json({ error: "같은 기관의 계정으로만 이관할 수 있습니다." }, 400);
-  }
-  if (!to.isActive) {
-    return c.json({ error: "비활성 계정으로는 이관할 수 없습니다." }, 400);
-  }
-
-  const programIds = parseIdArray(from.programIds);
-  if (programIds.length === 0) {
-    return c.json({ ok: true, programCount: 0, demandSiteCount: 0 });
+  const fromProgramIds = parseIdArray(from.programIds);
+  const assignedProgramIds = assignments.map((assignment) => assignment.programId);
+  // 일부만 배정하고 나머지를 빠뜨리면 from에 사업단이 남아 비활성화가 막히는 상태가
+  // 되므로, 담당하던 사업단 전부가 정확히 한 번씩 배정됐는지 검증한다.
+  const isExactAssignment =
+    assignedProgramIds.length === fromProgramIds.length &&
+    fromProgramIds.every((programId) => assignedProgramIds.includes(programId));
+  if (!isExactAssignment) {
+    return c.json({ error: "담당하던 사업단을 빠짐없이 배정해주세요." }, 400);
   }
 
-  // 세 갱신은 하나로 묶어서 보낸다(D1 batch = 단일 트랜잭션) — 중간에 실패해서 사업단만
-  // 넘어가고 수요처엔 떠난 사람이 남는 어긋난 상태가 생기면 관제까지 영향이 간다.
-  const [, , movedDemandSites] = await db.batch([
-    db
-      .update(admins)
-      .set({
-        programIds: JSON.stringify([...new Set([...parseIdArray(to.programIds), ...programIds])]),
-      })
-      .where(eq(admins.id, to.id)),
-    db
-      .update(admins)
-      .set({ programIds: JSON.stringify([]) })
-      .where(eq(admins.id, from.id)),
-    // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자는 사업단 담당자를 따라간다
+  const managerCandidates = await db
+    .select({ id: admins.id, programIds: admins.programIds, isActive: admins.isActive })
+    .from(admins)
+    .where(and(eq(admins.organizationId, from.organizationId), eq(admins.role, ROLES.MANAGER)));
+
+  const toAdminIds = [...new Set(assignments.map((assignment) => assignment.toAdminId))];
+  for (const toAdminId of toAdminIds) {
+    const candidate = managerCandidates.find(
+      (managerCandidate) => managerCandidate.id === toAdminId,
+    );
+    if (!candidate) return c.json({ error: "이관받을 계정을 찾을 수 없습니다." }, 404);
+    if (!candidate.isActive) return c.json({ error: "비활성 계정으로는 이관할 수 없습니다." }, 400);
+  }
+
+  const programIdToAdminId = new Map(
+    assignments.map((assignment) => [assignment.programId, assignment.toAdminId]),
+  );
+  const reassignedProgramIds = new Set(programIdToAdminId.keys());
+
+  const managerUpdates = managerCandidates.flatMap((candidate) => {
+    const currentProgramIds = parseIdArray(candidate.programIds);
+    const keep = currentProgramIds.filter((programId) => !reassignedProgramIds.has(programId));
+    const gained = [...reassignedProgramIds].filter(
+      (programId) => programIdToAdminId.get(programId) === candidate.id,
+    );
+    const nextProgramIds = [...new Set([...keep, ...gained])];
+
+    const unchanged =
+      nextProgramIds.length === currentProgramIds.length &&
+      nextProgramIds.every((programId) => currentProgramIds.includes(programId));
+    if (unchanged) return [];
+
+    return [
+      db
+        .update(admins)
+        .set({ programIds: JSON.stringify(nextProgramIds) })
+        .where(eq(admins.id, candidate.id)),
+    ];
+  });
+
+  // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자는 사업단 담당자를 따라간다.
+  // 모든 갱신은 하나로 묶어서 보낸다(D1 batch = 단일 트랜잭션) — 중간에 실패해서 일부
+  // 사업단만 넘어가고 수요처엔 떠난 사람이 남는 어긋난 상태가 생기면 관제까지 영향이 간다.
+  const demandSiteUpdates = assignments.map(({ programId, toAdminId }) =>
     db
       .update(demandSites)
-      .set({ contactAdminId: to.id })
-      .where(inArray(demandSites.programId, programIds))
+      .set({ contactAdminId: toAdminId })
+      .where(eq(demandSites.programId, programId))
       .returning({ id: demandSites.id }),
+  );
+
+  // db.batch()는 최소 1개짜리 튜플 타입을 요구해서, 항상 1개 이상 있는 demandSiteUpdates의
+  // 첫 원소를 명시적으로 꺼내 타입을 맞춘다.
+  const results = await db.batch([
+    demandSiteUpdates[0],
+    ...demandSiteUpdates.slice(1),
+    ...managerUpdates,
   ]);
+  const demandSiteCount = results
+    .slice(0, demandSiteUpdates.length)
+    .reduce((sum, result) => sum + (Array.isArray(result) ? result.length : 0), 0);
 
   return c.json({
     ok: true,
-    programCount: programIds.length,
-    demandSiteCount: movedDemandSites.length,
+    programCount: assignedProgramIds.length,
+    demandSiteCount,
   });
 });
 

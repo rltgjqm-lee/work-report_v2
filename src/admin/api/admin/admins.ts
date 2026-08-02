@@ -22,9 +22,13 @@ interface UpdateAdminVariables {
     isActive: boolean;
   }>;
 }
+export interface ProgramManagerAssignment {
+  programId: number;
+  toAdminId: number;
+}
 interface TransferAdminProgramsVariables {
   id: number;
-  toAdminId: number;
+  assignments: ProgramManagerAssignment[];
 }
 
 export const adminKeys = {
@@ -67,17 +71,18 @@ export const updateAdminMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-// 담당 이관 — 담당 사업단 전부를 다른 담당자에게 넘기고, 그 사업단의 수요처 담당자도 함께 바꾼다
-const transferAdminPrograms = (id: number, toAdminId: number) =>
+// 담당 이관 — 담당 사업단을 사업단별로 다른 담당자에게 나눠서(또는 한 사람에게 몰아서) 넘기고,
+// 그 사업단의 수요처 담당자도 함께 바꾼다
+const transferAdminPrograms = (id: number, assignments: ProgramManagerAssignment[]) =>
   request<{ ok: true; programCount: number; demandSiteCount: number }>(
     `/api/admins/${id}/transfer-programs`,
-    { method: "PUT", body: JSON.stringify({ toAdminId }) },
+    { method: "PUT", body: JSON.stringify({ assignments }) },
   );
 
 export const transferAdminProgramsMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ id, toAdminId }: TransferAdminProgramsVariables) =>
-      transferAdminPrograms(id, toAdminId),
+    mutationFn: ({ id, assignments }: TransferAdminProgramsVariables) =>
+      transferAdminPrograms(id, assignments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.all });
     },
