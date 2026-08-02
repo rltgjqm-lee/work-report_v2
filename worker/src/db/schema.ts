@@ -111,6 +111,36 @@ export const participantMonthlySchedule = sqliteTable(
   ],
 );
 
+// 참여자 날짜별 조 임시 배정 — 그날 하루만 다른 조로 취급하고, 원래 조(participants.groupId)는
+// 그대로 유지된다(다음날부터 자동으로 원래 조로 돌아옴). 출퇴근 시간 판정과 근무일 판단
+// (participantMonthlySchedule/groupMonthlySchedule 조회)이 모두 이 조 기준으로 바뀐다 —
+// /attendance/clock-in 등에서 participant.groupId보다 먼저 확인해야 한다.
+export const participantGroupOverrides = sqliteTable(
+  "participant_group_overrides",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    date: text("date").notNull(), // "YYYY-MM-DD"
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => admins.id),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("participant_group_overrides_participant_date_unique").on(
+      table.participantId,
+      table.date,
+    ),
+  ],
+);
+
 // 수요처 마스터 — 실제 위경도/반경/다각형은 하위 demandSiteLocations로 이동(수요처 1개 : 거점 여러 개)
 export const demandSites = sqliteTable("demand_sites", {
   id: integer("id").primaryKey({ autoIncrement: true }),
