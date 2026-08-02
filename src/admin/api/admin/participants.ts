@@ -20,6 +20,7 @@ export const participantKeys = {
   leaves: (id: number) => [...participantKeys.detail(id), "leaves"] as const,
   annualLeave: (id: number, year: string) =>
     [...participantKeys.detail(id), "annual-leave", year] as const,
+  groupOverrides: (id: number) => [...participantKeys.detail(id), "group-overrides"] as const,
 };
 
 export const getParticipant = (id: number) => request<ParticipantDetail>(`/api/participants/${id}`);
@@ -201,6 +202,74 @@ export const moveParticipantToGroupMutationOptions = (queryClient: QueryClient) 
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });
+
+// 특정 날짜만 다른 조로 취급하는 임시 배정 이력 — 원래 조(participants.groupId)는 그대로 두고
+// 그날의 출퇴근 시간/근무일 판정에서만 이 조를 우선 적용한다.
+export interface ParticipantGroupOverride {
+  override: {
+    id: number;
+    participantId: number;
+    date: string;
+    groupId: number;
+    createdBy: number;
+    createdAt: string;
+  };
+  groupName: string;
+}
+
+export const getParticipantGroupOverrides = (id: number) =>
+  request<ParticipantGroupOverride[]>(`/api/participants/${id}/group-overrides`);
+
+export const participantGroupOverridesQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: participantKeys.groupOverrides(id),
+    queryFn: () => getParticipantGroupOverrides(id),
+  });
+
+export interface SetParticipantGroupOverrideVariables {
+  participantId: number;
+  date: string;
+  groupId: number;
+}
+
+export const setParticipantGroupOverride = (id: number, date: string, groupId: number) =>
+  request<ParticipantGroupOverride["override"]>(`/api/participants/${id}/group-overrides`, {
+    method: "POST",
+    body: JSON.stringify({ date, groupId }),
+  });
+
+// critical: 이 참여자의 임시 배정 목록 캐시를 무효화한다 — 어느 화면에서 등록하든 항상 필요.
+export const setParticipantGroupOverrideMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId, date, groupId }: SetParticipantGroupOverrideVariables) =>
+      setParticipantGroupOverride(participantId, date, groupId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: participantKeys.groupOverrides(variables.participantId),
+      });
+    },
+  });
+
+export interface DeleteParticipantGroupOverrideVariables {
+  participantId: number;
+  date: string;
+}
+
+export const deleteParticipantGroupOverride = (id: number, date: string) =>
+  request<{ success: boolean }>(`/api/participants/${id}/group-overrides/${date}`, {
+    method: "DELETE",
+  });
+
+export const deleteParticipantGroupOverrideMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId, date }: DeleteParticipantGroupOverrideVariables) =>
+      deleteParticipantGroupOverride(participantId, date),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: participantKeys.groupOverrides(variables.participantId),
+      });
     },
   });
 

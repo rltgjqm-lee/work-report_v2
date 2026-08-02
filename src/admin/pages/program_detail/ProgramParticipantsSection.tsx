@@ -5,14 +5,13 @@ import {
   deleteParticipantMutationOptions,
   dropParticipantMutationOptions,
   endParticipantLeaveMutationOptions,
-  moveParticipantToGroupMutationOptions,
   reactivateParticipantMutationOptions,
   bulkUpdateParticipantStatusMutationOptions,
 } from "../../api/admin/participants";
-import { programKeys } from "../../api/admin/programs";
 import ParticipantLeaveAddModal from "./ParticipantLeaveAddModal";
 import AnnualLeaveModal from "./AnnualLeaveModal";
 import ParticipantMonthlyScheduleModal from "./ParticipantMonthlyScheduleModal";
+import ParticipantGroupAssignModal from "./ParticipantGroupAssignModal";
 import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
@@ -73,11 +72,9 @@ const ProgramParticipantsSection = ({
     name: string;
   } | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(null);
+  const [groupAssignTarget, setGroupAssignTarget] = useState<Participant | null>(null);
 
   const queryClient = useQueryClient();
-  const moveParticipantToGroupMutation = useMutation(
-    moveParticipantToGroupMutationOptions(queryClient),
-  );
   const dropParticipantMutation = useMutation(dropParticipantMutationOptions(queryClient));
   const endParticipantLeaveMutation = useMutation(endParticipantLeaveMutationOptions(queryClient));
   const reactivateParticipantMutation = useMutation(
@@ -93,23 +90,6 @@ const ProgramParticipantsSection = ({
       current.includes(participantId)
         ? current.filter((id) => id !== participantId)
         : [...current, participantId],
-    );
-  };
-
-  const handleGroupSelectChange = (participantId: number, groupId: string) => {
-    if (!groupId) {
-      // 미배정으로 되돌리는 API는 없다 — 방금 브라우저가 반영한 선택을 원래 값으로
-      // 되돌리기 위해 참여자 목록을 다시 불러온다.
-      queryClient.invalidateQueries({ queryKey: programKeys.detail(programId) });
-      return;
-    }
-    moveParticipantToGroupMutation.mutate(
-      { participantId, programId, groupId: Number(groupId) },
-      {
-        onSuccess: () => alert("조가 변경되었습니다."),
-        onError: (error) =>
-          alert(error instanceof Error ? error.message : "조 배정에 실패했습니다."),
-      },
     );
   };
 
@@ -296,19 +276,12 @@ const ProgramParticipantsSection = ({
                   {participant.demandName}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                  <FilterSelect
-                    value={String(participant.groupId ?? "")}
-                    onChange={(value) => handleGroupSelectChange(participant.id, value)}
-                    options={[
-                      { value: "", label: "미배정" },
-                      ...groups
-                        .filter((group) => group.isActive || group.id === participant.groupId)
-                        .map((group) => ({
-                          value: String(group.id),
-                          label: group.name,
-                        })),
-                    ]}
-                  />
+                  <button
+                    className="text-left text-[#1e3a5f] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    onClick={() => setGroupAssignTarget(participant)}
+                  >
+                    {groups.find((group) => group.id === participant.groupId)?.name ?? "미배정"}
+                  </button>
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                   {statusLabel[participant.status]}
@@ -392,6 +365,15 @@ const ProgramParticipantsSection = ({
           participant={scheduleTarget}
           group={groups.find((group) => group.id === scheduleTarget.groupId)}
           onClose={() => setScheduleTarget(null)}
+        />
+      )}
+
+      {groupAssignTarget && (
+        <ParticipantGroupAssignModal
+          participant={groupAssignTarget}
+          programId={programId}
+          groups={groups}
+          onClose={() => setGroupAssignTarget(null)}
         />
       )}
     </div>
