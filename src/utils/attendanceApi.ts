@@ -1,6 +1,7 @@
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
-import { queryOptions } from "@tanstack/react-query";
+import { mutationOptions, queryOptions } from "@tanstack/react-query";
 
+import { readCurrentCoordinates } from "./geolocation";
 import type { Coordinates } from "./geolocation";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -38,6 +39,15 @@ export const getCurrentAdminRole = async (): Promise<string | null> => {
     return null;
   }
 };
+
+export const adminRoleKeys = {
+  all: ["admin-role"] as const,
+};
+
+export const adminRoleQueryOptions = queryOptions({
+  queryKey: adminRoleKeys.all,
+  queryFn: getCurrentAdminRole,
+});
 
 // 오늘 실제 출퇴근 기록(서버 attendance_logs)을 조회 — 홈 화면의 출근/퇴근 상태는
 // 브라우저 로컬 캐시가 아니라 이 값을 기준으로 맞춘다(캐시가 없거나 어긋나도 정확하도록).
@@ -182,6 +192,32 @@ export const clockOut = (
     ...(debug?.date && { debugDate: debug.date }),
     ...(debug?.time && { debugTime: debug.time }),
   });
+
+export interface ClockInVariables {
+  participantId: number;
+  debug?: DebugAttendanceOverride;
+}
+
+// 💡 위치 측위(최대 10초)까지 mutationFn 안에 넣어서, useMutation의 isPending이 측위부터
+// 서버 등록까지 전체 구간을 커버하게 한다 — 화면은 그동안 버튼만 잠그면 된다.
+export const clockInMutationOptions = mutationOptions({
+  mutationFn: async ({ participantId, debug }: ClockInVariables) => {
+    const coordinates = await readCurrentCoordinates();
+    return clockIn(participantId, debug, coordinates);
+  },
+});
+
+export interface ClockOutVariables {
+  participantId: number;
+  debug?: DebugAttendanceOverride;
+}
+
+export const clockOutMutationOptions = mutationOptions({
+  mutationFn: async ({ participantId, debug }: ClockOutVariables) => {
+    const coordinates = await readCurrentCoordinates();
+    return clockOut(participantId, debug, coordinates);
+  },
+});
 
 // 근무 중 위치 보고의 응답. escaped=true면 관제구역을 벗어난 상태이고,
 // uncertain=true면 GPS 오차가 커서 서버가 이탈 판정을 보류한 것이다(둘은 배타적).

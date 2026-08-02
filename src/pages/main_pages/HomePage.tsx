@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { clockIn, clockOut, getCurrentAdminRole } from "../../utils/attendanceApi";
-import { readCurrentCoordinates } from "../../utils/geolocation";
+import {
+  adminRoleQueryOptions,
+  clockInMutationOptions,
+  clockOutMutationOptions,
+} from "../../utils/attendanceApi";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 
 interface HomePageProps {
@@ -25,10 +29,8 @@ type ModuleItemProps = {
   status: string;
   done: boolean;
   highlighted?: boolean;
-  // 출퇴근은 위치 측위를 기다리는 동안 최대 10초까지 걸릴 수 있어서, 버튼을 잠그고
-  // 진행 중임을 보여줘야 참여자가 여러 번 누르지 않는다.
-  busy?: boolean;
-  busyLabel?: string;
+  isPending?: boolean;
+  pendingLabel?: string;
   onClick: () => void;
 };
 
@@ -39,8 +41,8 @@ const ModuleItem = ({
   status,
   done,
   highlighted,
-  busy,
-  busyLabel,
+  isPending,
+  pendingLabel,
   onClick,
 }: ModuleItemProps) => (
   <div
@@ -54,19 +56,19 @@ const ModuleItem = ({
       </div>
       <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
       <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">
-        {busy ? (busyLabel ?? status) : status}
+        {isPending ? (pendingLabel ?? status) : status}
       </div>
     </div>
     <button
       onClick={onClick}
-      disabled={busy}
+      disabled={isPending}
       className={`flex-none h-[42px] px-5 rounded-xl border-none text-[15px] font-extrabold ${
-        busy
+        isPending
           ? "bg-[#f2f4f6] text-[#9ca3af] cursor-default"
           : `cursor-pointer ${done ? "bg-[#f2f4f6] text-[#4e5968]" : "bg-[#3182f6] text-white"}`
       }`}
     >
-      {busy ? "확인 중" : done ? "확인" : "등록"}
+      {isPending ? "확인 중" : done ? "확인" : "등록"}
     </button>
   </div>
 );
@@ -87,23 +89,27 @@ const HomePage = ({
 }: HomePageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
 
-  // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 실제 날짜·시각을 기다리지
-  // 않고 테스트하기 위한 override. 개발 빌드에선 항상 보이고, 배포된 곳에서는
-  // 통합관리자(SUPER_ADMIN)로 로그인한 세션일 때만 패널을 보여준다 — 서버도
-  // localhost 요청이거나 통합관리자 세션일 때만 실제로 반영한다(readDebugOverride).
+  // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 테스트하기 위한 override.
+  // 개발 빌드에선 항상 보이고, 실서버에서는 통합관리자(SUPER_ADMIN)만 패널을 보여준다.
+  // 서버도 localhost 요청이거나 통합관리자 세션일 때만 실제로 반영한다.
   const [debugDate, setDebugDate] = useState("");
   const [debugTime, setDebugTime] = useState("");
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-  useEffect(() => {
-    getCurrentAdminRole().then((role) => setIsSuperAdmin(role === "SUPER_ADMIN"));
-  }, []);
+  const { data: adminRole } = useQuery(adminRoleQueryOptions);
+  const isSuperAdmin = adminRole === "SUPER_ADMIN";
 
   // 💡 출근 등록은 별도 페이지 없이 즉시 서버에 기록하고 컨펌 모달로 결과만 보여준다.
   // setFormData 직후 곧바로 onSave()를 부르면 onSave가 아직 갱신 전 formData를 클로저로
   // 물고 있어서 방금 기록한 시각을 저장하지 못한다 — 상태 반영 → 재렌더까지 기다렸다가
   // effect에서 저장한다.
   const [pendingAttendanceInTime, setPendingAttendanceInTime] = useState<string | null>(null);
+  const [pendingAttendanceOutTime, setPendingAttendanceOutTime] = useState<string | null>(null);
+
+  // 💡 출퇴근 등록 시 현재 위치를 같이 보낸다.
+  // mutationFn 안에서 측위(최대 10초)까지 하므로 isPending이 그 구간 전체를 커버한다.
+  //  — 위치를 못 읽으면(권한 거부/실내) null로 진행한다
+  //  - 출퇴근시 서버에 위치를 기록만 하고 위치로 출퇴근을 막지 않는다
+  const clockInMutation = useMutation(clockInMutationOptions);
+  const clockOutMutation = useMutation(clockOutMutationOptions);
 
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
@@ -116,8 +122,6 @@ const HomePage = ({
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAttendanceInTime]);
-
-  const [pendingAttendanceOutTime, setPendingAttendanceOutTime] = useState<string | null>(null);
 
   useEffect(() => {
     if (!pendingAttendanceOutTime) return;
@@ -136,9 +140,9 @@ const HomePage = ({
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
+
     return `${year}.${month}.${day}`;
   }, []);
-
   const programLabel = formData.programType ? `${formData.programType} 사업` : "";
 
   const attendanceInDone = formData.startTime.hour !== "";
@@ -147,43 +151,36 @@ const HomePage = ({
   const safetyDone = formData.accidentChecked;
   const signatureDone = !!formData.userSignature;
 
-  // 💡 출퇴근 등록 시 현재 위치를 같이 보낸다. 측위에 최대 10초가 걸릴 수 있어서 그동안
-  // 버튼을 잠그고, 위치를 못 읽으면(권한 거부/실내) null로 그냥 진행한다 — 1단계는
-  // 기록만 하고 위치로 출퇴근을 막지 않는다.
-  const [attendanceSubmitting, setAttendanceSubmitting] = useState<"in" | "out" | null>(null);
-
-  const handleAttendanceInButtonClick = async () => {
+  // 💡 모듈은 순서대로 진행해야 한다.
+  // — 출근 전엔 업무/안전/퇴근/전체확인 불가능 하고, 공익활동은 업무·안전을 마쳐야 퇴근·전체확인으로 넘어갈 수 있다.
+  const handleAttendanceInButtonClick = () => {
+    if (!formData.participantId) return;
     if (attendanceInDone) {
-      await onAlert([
+      onAlert([
         `${formatTimeField(formData.startTime)}에 정상적으로 출근 완료 됐어요`,
         "오늘도 안전하게 활동을 진행해주세요",
       ]);
       return;
     }
-    if (!formData.participantId) return;
-    setAttendanceSubmitting("in");
-    try {
-      const coordinates = await readCurrentCoordinates();
-      const result = await clockIn(
-        formData.participantId,
-        {
-          date: debugDate || undefined,
-          time: debugTime || undefined,
+
+    clockInMutation.mutate(
+      {
+        participantId: formData.participantId,
+        debug: { date: debugDate || undefined, time: debugTime || undefined },
+      },
+      {
+        onSuccess: (result) => {
+          const startTime = isoToTimeParts(result.clockIn);
+          setFormData((prev) => ({ ...prev, startTime }));
+          setPendingAttendanceInTime(formatTimeField(startTime));
         },
-        coordinates,
-      );
-      const startTime = isoToTimeParts(result.clockIn);
-      setFormData((prev) => ({ ...prev, startTime }));
-      setPendingAttendanceInTime(formatTimeField(startTime));
-    } catch (error) {
-      onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다."]);
-    } finally {
-      setAttendanceSubmitting(null);
-    }
+        onError: (error) => {
+          onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다."]);
+        },
+      },
+    );
   };
 
-  // 💡 설계상 모듈은 순서대로 진행해야 한다 — 출근 전엔 업무/안전/퇴근/전체확인 모두
-  // 막고, 공익활동은 업무·안전을 마쳐야 퇴근·전체확인으로 넘어갈 수 있다.
   const handleOpenWorkButtonClick = () => {
     if (!attendanceInDone) {
       onAlert(["출근 등록을 먼저 해주세요."]);
@@ -221,25 +218,22 @@ const HomePage = ({
       return;
     }
     if (!formData.participantId) return;
-    setAttendanceSubmitting("out");
-    try {
-      const coordinates = await readCurrentCoordinates();
-      const result = await clockOut(
-        formData.participantId,
-        {
-          date: debugDate || undefined,
-          time: debugTime || undefined,
+    clockOutMutation.mutate(
+      {
+        participantId: formData.participantId,
+        debug: { date: debugDate || undefined, time: debugTime || undefined },
+      },
+      {
+        onSuccess: (result) => {
+          const endTime = isoToTimeParts(result.clockOut);
+          setFormData((prev) => ({ ...prev, endTime }));
+          setPendingAttendanceOutTime(formatTimeField(endTime));
         },
-        coordinates,
-      );
-      const endTime = isoToTimeParts(result.clockOut);
-      setFormData((prev) => ({ ...prev, endTime }));
-      setPendingAttendanceOutTime(formatTimeField(endTime));
-    } catch (error) {
-      onAlert([error instanceof Error ? error.message : "퇴근 등록에 실패했습니다."]);
-    } finally {
-      setAttendanceSubmitting(null);
-    }
+        onError: (error) => {
+          onAlert([error instanceof Error ? error.message : "퇴근 등록에 실패했습니다."]);
+        },
+      },
+    );
   };
 
   const handleOpenSummaryButtonClick = () => {
@@ -323,8 +317,8 @@ const HomePage = ({
             attendanceInDone ? `${formatTimeField(formData.startTime)} 출근했어요` : "출근 전이에요"
           }
           done={attendanceInDone}
-          busy={attendanceSubmitting === "in"}
-          busyLabel="위치를 확인하고 있어요"
+          isPending={clockInMutation.isPending}
+          pendingLabel="위치를 확인하고 있어요"
           onClick={handleAttendanceInButtonClick}
         />
 
@@ -366,8 +360,8 @@ const HomePage = ({
             attendanceOutDone ? `${formatTimeField(formData.endTime)} 퇴근했어요` : "퇴근 전이에요"
           }
           done={attendanceOutDone}
-          busy={attendanceSubmitting === "out"}
-          busyLabel="위치를 확인하고 있어요"
+          isPending={clockOutMutation.isPending}
+          pendingLabel="위치를 확인하고 있어요"
           onClick={handleAttendanceOutButtonClick}
         />
 
