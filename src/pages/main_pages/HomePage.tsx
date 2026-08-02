@@ -39,7 +39,6 @@ type ModuleItemProps = {
   done: boolean;
   highlighted?: boolean;
   isPending?: boolean;
-  pendingLabel?: string;
   onClick: () => void;
 };
 
@@ -51,7 +50,6 @@ const ModuleItem = ({
   done,
   highlighted,
   isPending,
-  pendingLabel,
   onClick,
 }: ModuleItemProps) => (
   <div
@@ -64,9 +62,7 @@ const ModuleItem = ({
         {index}. {category}
       </div>
       <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
-      <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">
-        {isPending ? (pendingLabel ?? status) : status}
-      </div>
+      <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">{status}</div>
     </div>
     <button
       onClick={onClick}
@@ -353,7 +349,6 @@ const HomePage = ({
           }
           done={attendanceInDone}
           isPending={clockInMutation.isPending}
-          pendingLabel="위치를 확인하고 있어요"
           onClick={handleAttendanceInButtonClick}
         />
 
@@ -396,7 +391,6 @@ const HomePage = ({
           }
           done={attendanceOutDone}
           isPending={clockOutMutation.isPending}
-          pendingLabel="위치를 확인하고 있어요"
           onClick={handleAttendanceOutButtonClick}
         />
 
