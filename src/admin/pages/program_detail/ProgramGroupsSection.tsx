@@ -4,7 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateGroupMutationOptions } from "../../api/admin/groups";
 import GroupAddModal from "./GroupAddModal";
 import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
-import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
+import StatusChip from "../../components/chip/StatusChip";
+import { btnGhostClass, zoneCardBtnClass, zoneCardFooterClass } from "../../uiClasses";
 import type { Group } from "../../types";
 
 interface ProgramGroupsSectionProps {
@@ -44,30 +45,35 @@ const ProgramGroupsSection = ({ programId, groups }: ProgramGroupsSectionProps) 
           + 조 추가
         </button>
       </div>
-      <div className="flex flex-wrap gap-2.5 px-5 py-4">
+      <div className="flex flex-wrap gap-3 px-5 py-4">
         {groups.length === 0 && (
           <span className="text-[13px] text-[#9aa1ab]">등록된 조가 없습니다.</span>
         )}
         {groups.map((group) => (
           <div
             key={group.id}
-            className="flex items-center gap-2.5 border border-[#e2e5eb] rounded-[2px] px-3 py-2 text-[13px]"
+            className="w-[220px] bg-white border border-[#e2e5eb] rounded-lg p-3.5"
           >
-            <span className="font-semibold">{group.name}</span>
-            <span className="text-[#6b7280]">
-              {group.shiftStart}~{group.shiftEnd}
-            </span>
-            <span className="text-[#9aa1ab]">{group.participantCount}명</span>
-            <span className="text-[#9aa1ab]">{group.isActive ? "활성" : "비활성"}</span>
-            <button className={rowActionBtnClass} onClick={() => setScheduleTarget(group)}>
-              수정
-            </button>
-            <button
-              className={rowActionBtnClass}
-              onClick={() => handleToggleActiveButtonClick(group)}
-            >
-              {group.isActive ? "비활성화" : "활성화"}
-            </button>
+            <div className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#1f2937]">
+              {group.name}
+              <StatusChip variant={group.isActive ? "ok" : "pending"}>
+                {group.isActive ? "활성" : "비활성"}
+              </StatusChip>
+            </div>
+            <div className="text-[12px] text-[#8b94a3] mt-1.5">
+              {group.shiftStart}~{group.shiftEnd} · {group.participantCount}명
+            </div>
+            <div className={zoneCardFooterClass}>
+              <button className={zoneCardBtnClass} onClick={() => setScheduleTarget(group)}>
+                수정
+              </button>
+              <button
+                className={zoneCardBtnClass}
+                onClick={() => handleToggleActiveButtonClick(group)}
+              >
+                {group.isActive ? "비활성화" : "활성화"}
+              </button>
+            </div>
           </div>
         ))}
       </div>
