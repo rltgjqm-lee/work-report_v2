@@ -2,9 +2,9 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, inArray } from "drizzle-orm";
 
-import { groups, programs, participants, groupMonthlySchedule } from "../db/schema";
-import { canAccessGroup, getAuth } from "../lib/authz";
-import type { Env } from "../types";
+import { groups, programs, participants, groupMonthlySchedule } from "../../db/schema";
+import { canAccessGroup, getAuth } from "../../lib/authz";
+import type { Env } from "../../types";
 
 const app = new Hono<Env>();
 

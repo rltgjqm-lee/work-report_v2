@@ -14,10 +14,10 @@ import {
   participantLeaves,
   participantAnnualLeave,
   participantTrainingLogs,
-} from "../db/schema";
-import { canAccessProgram, getAuth } from "../lib/authz";
-import { getHolidayName } from "../lib/koreanHolidays";
-import type { Env } from "../types";
+} from "../../db/schema";
+import { canAccessProgram, getAuth } from "../../lib/authz";
+import { getHolidayName } from "../../lib/koreanHolidays";
+import type { Env } from "../../types";
 
 const app = new Hono<Env>();
 

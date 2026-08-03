@@ -2,10 +2,10 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { desc, eq, sql } from "drizzle-orm";
 
-import { safetyAlerts, disasterPushLogs, programs, pushSubscriptions } from "../db/schema";
-import { hasMinRole, canAccessProgram, getAuth } from "../lib/authz";
-import { sendWebPush } from "../lib/webPush";
-import { ROLES, type Env } from "../types";
+import { safetyAlerts, disasterPushLogs, programs, pushSubscriptions } from "../../db/schema";
+import { hasMinRole, canAccessProgram, getAuth } from "../../lib/authz";
+import { sendWebPush } from "../../lib/webPush";
+import { ROLES, type Env } from "../../types";
 
 const app = new Hono<Env>();
 

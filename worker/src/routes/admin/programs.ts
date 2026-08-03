@@ -15,10 +15,10 @@ import {
   escapeLogs,
   participantEscapeMeta,
   pushSubscriptions,
-} from "../db/schema";
-import { canAccessProgram, getAuth, hasMinRole, parseIdArray } from "../lib/authz";
-import { getKstNow } from "../lib/kst";
-import { ROLES, type Env } from "../types";
+} from "../../db/schema";
+import { canAccessProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
+import { getKstNow } from "../../lib/kst";
+import { ROLES, type Env } from "../../types";
 
 const app = new Hono<Env>();
 

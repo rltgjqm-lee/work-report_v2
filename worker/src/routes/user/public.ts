@@ -18,18 +18,18 @@ import {
   participantEscapeMeta,
   attendanceLogs,
   activityLogs,
-} from "../db/schema";
-import { getKstNow } from "../lib/kst";
-import { readDebugOverride } from "../lib/debugTime";
+} from "../../db/schema";
+import { getKstNow } from "../../lib/kst";
+import { readDebugOverride } from "../../lib/debugTime";
 import {
   buildDemandSiteAreas,
   checkPositionAgainstDemandSite,
   distanceOutsideAreasM,
   distanceToNearestArea,
   isInsideArea,
-} from "../lib/geofence";
-import { sendWebPush } from "../lib/webPush";
-import type { Env } from "../types";
+} from "../../lib/geofence";
+import { sendWebPush } from "../../lib/webPush";
+import type { Env } from "../../types";
 
 const app = new Hono<Env>();
 

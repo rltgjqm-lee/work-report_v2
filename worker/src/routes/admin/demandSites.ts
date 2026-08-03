@@ -10,9 +10,9 @@ import {
   demandSiteSchedules,
   programs,
   groups,
-} from "../db/schema";
-import { canAccessProgram, getAuth, parseIdArray } from "../lib/authz";
-import { ROLES, type Env } from "../types";
+} from "../../db/schema";
+import { canAccessProgram, getAuth, parseIdArray } from "../../lib/authz";
+import { ROLES, type Env } from "../../types";
 
 const app = new Hono<Env>();
 

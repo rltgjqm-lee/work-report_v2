@@ -2,9 +2,9 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { desc, eq, sql } from "drizzle-orm";
 
-import { safetyAlerts, disasterPushLogs } from "../db/schema";
-import { hasMinRole, getAuth } from "../lib/authz";
-import { ROLES, type Env } from "../types";
+import { safetyAlerts, disasterPushLogs } from "../../db/schema";
+import { hasMinRole, getAuth } from "../../lib/authz";
+import { ROLES, type Env } from "../../types";
 
 const app = new Hono<Env>();
 

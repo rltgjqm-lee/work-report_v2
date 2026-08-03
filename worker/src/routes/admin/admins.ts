@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { and, desc, eq } from "drizzle-orm";
 
-import { admins, adminLoginHistory, adminSessions, demandSites } from "../db/schema";
-import { getAuth, parseIdArray } from "../lib/authz";
-import { hashPassword } from "../lib/password";
-import { tryConsumePasswordResetBudget } from "../lib/passwordResetRateLimit";
-import { ROLES, type AdminRole, type Env } from "../types";
+import { admins, adminLoginHistory, adminSessions, demandSites } from "../../db/schema";
+import { getAuth, parseIdArray } from "../../lib/authz";
+import { hashPassword } from "../../lib/password";
+import { tryConsumePasswordResetBudget } from "../../lib/passwordResetRateLimit";
+import { ROLES, type AdminRole, type Env } from "../../types";
 
 const app = new Hono<Env>();
 

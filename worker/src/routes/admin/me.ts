@@ -2,15 +2,15 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 
-import { admins } from "../db/schema";
-import { getAuth } from "../lib/authz";
-import { hashPassword, verifyPassword } from "../lib/password";
+import { admins } from "../../db/schema";
+import { getAuth } from "../../lib/authz";
+import { hashPassword, verifyPassword } from "../../lib/password";
 import {
   isPasswordChangeLocked,
   recordPasswordChangeFailure,
   clearPasswordChangeFailures,
-} from "../lib/passwordChangeRateLimit";
-import type { Env } from "../types";
+} from "../../lib/passwordChangeRateLimit";
+import type { Env } from "../../types";
 
 const app = new Hono<Env>();
 
