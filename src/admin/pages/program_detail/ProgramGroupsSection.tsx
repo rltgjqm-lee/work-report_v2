@@ -11,13 +11,14 @@ import type { Group } from "../../types";
 interface ProgramGroupsSectionProps {
   programId: number;
   groups: Group[];
+  programEndDate: string;
 }
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지의 조 관리 섹션입니다.
  *
  */
-const ProgramGroupsSection = ({ programId, groups }: ProgramGroupsSectionProps) => {
+const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGroupsSectionProps) => {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [scheduleTarget, setScheduleTarget] = useState<Group | null>(null);
 
@@ -79,11 +80,19 @@ const ProgramGroupsSection = ({ programId, groups }: ProgramGroupsSectionProps) 
       </div>
 
       {groupModalOpen && (
-        <GroupAddModal onClose={() => setGroupModalOpen(false)} programId={programId} />
+        <GroupAddModal
+          onClose={() => setGroupModalOpen(false)}
+          programId={programId}
+          programEndDate={programEndDate}
+        />
       )}
 
       {scheduleTarget && (
-        <GroupMonthlyScheduleModal group={scheduleTarget} onClose={() => setScheduleTarget(null)} />
+        <GroupMonthlyScheduleModal
+          group={scheduleTarget}
+          programEndDate={programEndDate}
+          onClose={() => setScheduleTarget(null)}
+        />
       )}
     </div>
   );

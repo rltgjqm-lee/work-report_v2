@@ -25,6 +25,7 @@ const emptyForm = {
 interface GroupAddModalProps {
   onClose: () => void;
   programId: number;
+  programEndDate: string;
 }
 
 /**
@@ -32,7 +33,7 @@ interface GroupAddModalProps {
  * 월간 근무 스케줄도 같이 지정할 수 있고(선택), 근무일을 하나도 안 고르면
  * 스케줄 없이 조만 만들어져서 나중에 "수정"으로 따로 설정해도 된다.
  */
-const GroupAddModal = ({ onClose, programId }: GroupAddModalProps) => {
+const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
   const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
@@ -84,7 +85,10 @@ const GroupAddModal = ({ onClose, programId }: GroupAddModalProps) => {
 
       return;
     }
-    setWorkDates(generateWorkPattern(yearMonth, workDays, restDays));
+    // 💡 자동 생성은 그 달 전체를 기준으로 만들어지니, 사업단 종료일 이후 날짜는
+    // 걸러낸다 — 종료일 이후 근무일이 그대로 잡히면 이미 끝난 사업에 근무일이 남는다.
+    const generated = generateWorkPattern(yearMonth, workDays, restDays);
+    setWorkDates(generated.filter((date) => date <= programEndDate));
   };
 
   const handleSaveButtonClick = () => {
@@ -240,6 +244,7 @@ const GroupAddModal = ({ onClose, programId }: GroupAddModalProps) => {
             yearMonth={yearMonth}
             selectedDates={workDates}
             onToggleDate={handleToggleDate}
+            maxDate={programEndDate}
           />
         </FormField>
 
@@ -249,6 +254,7 @@ const GroupAddModal = ({ onClose, programId }: GroupAddModalProps) => {
           선택된 근무일: {workDates.length}일 · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}
           시간 / 상한 {maxMonthlyHours}시간
           {isOverCap && " (상한 초과)"}
+          {" · "}사업단 종료일({programEndDate}) 이후는 선택할 수 없어요
         </div>
       </div>
     </SlideModal>

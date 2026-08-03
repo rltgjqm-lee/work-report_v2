@@ -5,6 +5,7 @@ import {
   groupMonthlyScheduleQueryOptions,
   updateGroupMonthlyScheduleMutationOptions,
 } from "../../api/admin/monthlySchedule";
+import { updateGroupMutationOptions } from "../../api/admin/groups";
 import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
@@ -21,13 +22,25 @@ const toMinutes = (hhmm: string): number => {
 interface GroupMonthlyScheduleModalProps {
   onClose: () => void;
   group: Group;
+  programEndDate: string;
 }
 
 /**
- * 관리자 페이지 > 사업단 상세 페이지에서 조의 월간 근무일 스케줄을 설정하는 모달입니다.
- * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정합니다.
+ * 관리자 페이지 > 사업단 상세 페이지에서 조 기본 정보와 월간 근무일 스케줄을 함께
+ * 수정하는 모달입니다. 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서
+ * 설정합니다.
  */
-const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModalProps) => {
+const GroupMonthlyScheduleModal = ({
+  onClose,
+  group,
+  programEndDate,
+}: GroupMonthlyScheduleModalProps) => {
+  const [form, setForm] = useState({
+    name: group.name,
+    description: group.description ?? "",
+    shiftStart: group.shiftStart,
+    shiftEnd: group.shiftEnd,
+  });
   const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
@@ -52,12 +65,14 @@ const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModal
     }
   }, [schedule, isError]);
 
+  const updateGroupMutation = useMutation(updateGroupMutationOptions(queryClient));
   const updateGroupMonthlyScheduleMutation = useMutation(
     updateGroupMonthlyScheduleMutationOptions(queryClient),
   );
 
-  // 조 근무시간(shiftStart~shiftEnd) 기준 하루 근무분 — 근무일 수와 곱해서 월 상한 초과를 미리 막는다
-  const shiftMinutesPerDay = Math.max(0, toMinutes(group.shiftEnd) - toMinutes(group.shiftStart));
+  // 근무 시작/종료시간은 이제 이 모달에서 바로 고칠 수 있어서, group prop이 아니라
+  // 지금 입력 중인 값(form) 기준으로 하루 근무분을 계산해야 상한 검증이 어긋나지 않는다.
+  const shiftMinutesPerDay = Math.max(0, toMinutes(form.shiftEnd) - toMinutes(form.shiftStart));
   const maxMonthlyMinutes = Math.round(Number(maxMonthlyHours) * 60) || 0;
   const projectedMinutes = workDates.length * shiftMinutesPerDay;
   const isOverCap = maxMonthlyMinutes > 0 && projectedMinutes > maxMonthlyMinutes;
@@ -92,28 +107,53 @@ const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModal
 
       return;
     }
-    setWorkDates(generateWorkPattern(yearMonth, workDays, restDays));
+    // 💡 자동 생성은 그 달 전체를 기준으로 만들어지니, 사업단 종료일 이후 날짜는
+    // 걸러낸다 — 종료일 이후 근무일이 그대로 잡히면 이미 끝난 사업에 근무일이 남는다.
+    const generated = generateWorkPattern(yearMonth, workDays, restDays);
+    setWorkDates(generated.filter((date) => date <= programEndDate));
   };
 
   const handleSaveButtonClick = () => {
-    if (workDates.length === 0) {
-      alert("자동 생성 버튼을 눌러 근무일을 먼저 만들어주세요.");
+    if (!form.name || !form.shiftStart || !form.shiftEnd) {
+      alert("조 이름과 근무시간을 입력해주세요.");
       return;
     }
     if (isOverCap) {
       alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
     }
-    updateGroupMonthlyScheduleMutation.mutate(
+
+    updateGroupMutation.mutate(
+      { id: group.id, programId: group.programId, data: form },
       {
-        groupId: group.id,
-        yearMonth,
-        workDates,
-        maxMonthlyMinutes: Math.round(Number(maxMonthlyHours) * 60),
-      },
-      {
-        onSuccess: () => onClose(),
-        onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
+        onSuccess: () => {
+          // 근무일을 하나도 안 골랐으면(자동 생성 안 함) 조 정보만 저장하고 끝낸다 —
+          // 스케줄은 나중에 다시 이 모달로 설정해도 된다.
+          if (workDates.length === 0) {
+            onClose();
+            return;
+          }
+
+          updateGroupMonthlyScheduleMutation.mutate(
+            {
+              groupId: group.id,
+              yearMonth,
+              workDates,
+              maxMonthlyMinutes: Math.round(Number(maxMonthlyHours) * 60),
+            },
+            {
+              onSuccess: () => onClose(),
+              onError: (error) =>
+                alert(
+                  error instanceof Error
+                    ? `조 정보는 수정됐지만 월간 스케줄 저장에 실패했습니다: ${error.message}`
+                    : "조 정보는 수정됐지만 월간 스케줄 저장에 실패했습니다.",
+                ),
+            },
+          );
+        },
+        onError: (error) =>
+          alert(error instanceof Error ? error.message : "조 정보 수정에 실패했습니다."),
       },
     );
   };
@@ -121,7 +161,7 @@ const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModal
   return (
     <SlideModal
       isOpen
-      title={`${group.name} — 월간 근무 스케줄`}
+      title={`${group.name} — 조 수정`}
       onClose={onClose}
       footer={
         <>
@@ -134,67 +174,114 @@ const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModal
         </>
       }
     >
-      <FormField label="월">
+      <FormField label="조 이름">
         <input
-          type="month"
           className={inputClass}
-          value={yearMonth}
-          onChange={(event) => setYearMonth(event.target.value)}
+          value={form.name}
+          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
-
-      <FormField label="월 근무시간 상한(시간)">
+      <FormField label="설명">
         <input
-          type="number"
-          min={0}
           className={inputClass}
-          value={maxMonthlyHours}
-          onChange={(event) => setMaxMonthlyHours(event.target.value)}
+          value={form.description}
+          onChange={(event) => setForm((f) => ({ ...f, description: event.target.value }))}
         />
       </FormField>
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <FormField label="근무 시작시간">
+            <input
+              type="time"
+              step={600}
+              className={inputClass}
+              value={form.shiftStart}
+              onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
+            />
+          </FormField>
+        </div>
+        <div className="flex-1">
+          <FormField label="근무 종료시간">
+            <input
+              type="time"
+              step={600}
+              className={inputClass}
+              value={form.shiftEnd}
+              onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
+            />
+          </FormField>
+        </div>
+      </div>
 
-      <FormField label="패턴 자동생성 (예: 1근무 2휴무)">
-        <div className="flex items-center gap-2 flex-nowrap">
+      <div className="border-t border-[#eceef1] pt-4 flex flex-col gap-4">
+        <div className="text-[13px] font-bold text-[#1f2937]">
+          월간 근무 스케줄 (선택 — 지금 안 바꿔도 나중에 다시 이 모달로 수정할 수 있어요)
+        </div>
+
+        <FormField label="월">
           <input
-            type="number"
-            min={1}
-            className={compactInputClass}
-            value={patternWorkDays}
-            onChange={(event) => setPatternWorkDays(event.target.value)}
+            type="month"
+            className={inputClass}
+            value={yearMonth}
+            onChange={(event) => setYearMonth(event.target.value)}
           />
-          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 근무 /</span>
+        </FormField>
+
+        <FormField label="월 근무시간 상한(시간)">
           <input
             type="number"
             min={0}
-            className={compactInputClass}
-            value={patternRestDays}
-            onChange={(event) => setPatternRestDays(event.target.value)}
+            className={inputClass}
+            value={maxMonthlyHours}
+            onChange={(event) => setMaxMonthlyHours(event.target.value)}
           />
-          <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 휴무</span>
-          <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
-            자동 생성
-          </button>
+        </FormField>
+
+        <FormField label="패턴 자동생성 (예: 1근무 2휴무)">
+          <div className="flex items-center gap-2 flex-nowrap">
+            <input
+              type="number"
+              min={1}
+              className={compactInputClass}
+              value={patternWorkDays}
+              onChange={(event) => setPatternWorkDays(event.target.value)}
+            />
+            <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 근무 /</span>
+            <input
+              type="number"
+              min={0}
+              className={compactInputClass}
+              value={patternRestDays}
+              onChange={(event) => setPatternRestDays(event.target.value)}
+            />
+            <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 휴무</span>
+            <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
+              자동 생성
+            </button>
+          </div>
+        </FormField>
+
+        <FormField label="근무일 (클릭해서 선택/해제)">
+          {isFetching ? (
+            <div className="text-[13px] text-[#9aa1ab] py-4 text-center">불러오는 중...</div>
+          ) : (
+            <MonthlyScheduleCalendar
+              yearMonth={yearMonth}
+              selectedDates={workDates}
+              onToggleDate={handleToggleDate}
+              maxDate={programEndDate}
+            />
+          )}
+        </FormField>
+
+        <div
+          className={`text-[12px] ${isOverCap ? "text-[#e94b4b] font-semibold" : "text-[#9aa1ab]"}`}
+        >
+          선택된 근무일: {workDates.length}일 · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}
+          시간 / 상한 {maxMonthlyHours}시간
+          {isOverCap && " (상한 초과)"}
+          {" · "}사업단 종료일({programEndDate}) 이후는 선택할 수 없어요
         </div>
-      </FormField>
-
-      <FormField label="근무일 (클릭해서 선택/해제)">
-        {isFetching ? (
-          <div className="text-[13px] text-[#9aa1ab] py-4 text-center">불러오는 중...</div>
-        ) : (
-          <MonthlyScheduleCalendar
-            yearMonth={yearMonth}
-            selectedDates={workDates}
-            onToggleDate={handleToggleDate}
-          />
-        )}
-      </FormField>
-
-      <div
-        className={`text-[12px] ${isOverCap ? "text-[#e94b4b] font-semibold" : "text-[#9aa1ab]"}`}
-      >
-        선택된 근무일: {workDates.length}일 · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}
-        시간 / 상한 {maxMonthlyHours}시간
-        {isOverCap && " (상한 초과)"}
       </div>
     </SlideModal>
   );

@@ -188,7 +188,11 @@ const ProgramDetailPage = () => {
       <TabBar tabs={PROGRAM_DETAIL_TABS} active={tab} onChange={setTab} />
 
       {tab === PROGRAM_DETAIL_TAB.GROUPS && (
-        <ProgramGroupsSection programId={programId} groups={groups} />
+        <ProgramGroupsSection
+          programId={programId}
+          groups={groups}
+          programEndDate={program.endDate}
+        />
       )}
 
       {tab === PROGRAM_DETAIL_TAB.DEMAND_SITES && (

@@ -4,6 +4,7 @@ interface MonthlyScheduleCalendarProps {
   yearMonth: string; // "YYYY-MM"
   selectedDates: string[]; // ["YYYY-MM-DD", ...]
   onToggleDate: (date: string) => void;
+  maxDate?: string; // "YYYY-MM-DD" — 사업단 종료일. 이 날짜 이후는 선택 자체를 막는다.
 }
 
 /**
@@ -14,6 +15,7 @@ const MonthlyScheduleCalendar = ({
   yearMonth,
   selectedDates,
   onToggleDate,
+  maxDate,
 }: MonthlyScheduleCalendarProps) => {
   const [year, month] = yearMonth.split("-").map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -41,16 +43,20 @@ const MonthlyScheduleCalendar = ({
 
         const dateString = `${yearMonth}-${String(day).padStart(2, "0")}`;
         const isSelected = selectedDateSet.has(dateString);
+        const isPastProgramEnd = !!maxDate && dateString > maxDate;
 
         return (
           <button
             key={dateString}
             type="button"
+            disabled={isPastProgramEnd}
             onClick={() => onToggleDate(dateString)}
             className={`h-8 rounded-[6px] text-[12px] border transition-colors ${
-              isSelected
-                ? "bg-[#3182f6] text-white border-[#3182f6] font-semibold"
-                : "bg-white text-[#374151] border-[#e2e5eb] hover:bg-[#f5f8fb]"
+              isPastProgramEnd
+                ? "bg-[#f2f4f6] text-[#c2c8d1] border-[#eceef1] cursor-not-allowed"
+                : isSelected
+                  ? "bg-[#3182f6] text-white border-[#3182f6] font-semibold"
+                  : "bg-white text-[#374151] border-[#e2e5eb] hover:bg-[#f5f8fb]"
             }`}
           >
             {day}
