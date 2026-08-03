@@ -194,11 +194,10 @@ const DemandSiteFormModal = ({
             checked={form.baseAreaEnabled}
             onChange={(event) => setForm((f) => ({ ...f, baseAreaEnabled: event.target.checked }))}
           />
-          주소 기반 기본 원을 관제구역으로 사용
+          입력한 주소를 중심으로 한 원형 구역을 기본 관제구역으로 설정
         </label>
         <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
-          끄면 좌표/반경은 그대로 남지만 이탈 판정에서는 빠집니다 — 거점 관리에서 그린 다각형만
-          관제구역으로 쓰고 싶을 때 사용하세요.
+          다각형 관제구역 사용시 체크를 해제하세요
         </p>
       </FormField>
 
@@ -212,10 +211,6 @@ const DemandSiteFormModal = ({
           disabled={!form.baseAreaEnabled}
           onChange={(event) => setForm((f) => ({ ...f, radius: event.target.value }))}
         />
-        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
-          관제 중심은 위 주소 위치로 잡힙니다. 주소가 없으면 이 수요처는 관제되지 않습니다 — 거점
-          관리에서 구역을 직접 그려도 됩니다.
-        </p>
       </FormField>
     </SlideModal>
   );
