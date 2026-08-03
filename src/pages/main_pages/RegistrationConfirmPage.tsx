@@ -89,7 +89,12 @@ const RegistrationConfirmPage = ({
         : "복귀 후 다시 이용해 주세요.",
     };
   } else if (identified.program) {
-    const today = new Date().toISOString().slice(0, 10);
+    // 💡 toISOString()은 UTC 기준이라 자정~오전 9시(KST) 사이엔 실제보다 하루 이른 날짜로
+    // 잘못 계산된다 — 참여자 기기는 한국에 있다고 가정하고 로컬 날짜를 그대로 쓴다.
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate(),
+    ).padStart(2, "0")}`;
 
     if (identified.program.endDate < today) {
       exception = {
