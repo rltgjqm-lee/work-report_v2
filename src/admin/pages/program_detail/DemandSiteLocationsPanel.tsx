@@ -9,8 +9,18 @@ import {
   createDemandSiteLocationMutationOptions,
   deleteDemandSiteLocationMutationOptions,
   demandSiteLocationsQueryOptions,
+  promoteDemandSiteLocationMutationOptions,
+  updateDemandSiteMutationOptions,
 } from "../../api/admin/demandSites";
-import { btnGhostClass, btnPrimaryClass, inputClass, rowActionBtnClass } from "../../uiClasses";
+import {
+  btnGhostClass,
+  btnPrimaryClass,
+  inputClass,
+  panelLinkActionClass,
+  zoneCardBtnClass,
+  zoneCardBtnDangerClass,
+  zoneCardFooterClass,
+} from "../../uiClasses";
 import { geocodeAddress } from "../../utils/geocodeAddress";
 import type { DemandSite, DemandSiteLocationShape } from "../../types";
 
@@ -30,6 +40,7 @@ const SHAPE_TYPE: Record<"RADIUS" | "POLYGON", DemandSiteLocationShape> = {
 
 interface DemandSiteLocationsPanelProps {
   demandSite: DemandSite;
+  programId: number;
   onClose: () => void;
 }
 
@@ -42,7 +53,11 @@ interface PendingShape {
  * 수요처 하위 거점(원형/다각형 관제구역)을 지도에서 직접 그려 추가/삭제하는 편집기입니다.
  * L툴바로 원(반경)과 다각형을 그리면 그 자리에서 이름을 물어보고 저장합니다.
  */
-const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPanelProps) => {
+const DemandSiteLocationsPanel = ({
+  demandSite,
+  programId,
+  onClose,
+}: DemandSiteLocationsPanelProps) => {
   const [pendingShape, setPendingShape] = useState<PendingShape | null>(null);
   const [pendingName, setPendingName] = useState("");
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +75,16 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
   const deleteDemandSiteLocationMutation = useMutation(
     deleteDemandSiteLocationMutationOptions(queryClient),
   );
+  const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
+  const promoteDemandSiteLocationMutation = useMutation(
+    promoteDemandSiteLocationMutationOptions(queryClient),
+  );
+
+  // 기본 관제구역(원)도 거점 개수에 포함한다 — 거점이 이거 하나뿐이면 끄는 순간
+  // 관제구역이 0개가 되므로, 다른 거점이 하나라도 더 있을 때만 비활성화/기본 설정을 허용한다.
+  const hasBaseArea =
+    demandSite.baseLat !== null && demandSite.baseLng !== null && demandSite.radius !== null;
+  const canManageMultipleZones = (hasBaseArea ? 1 : 0) + locations.length >= 2;
 
   // 거점이 하나도 없으면 지도가 기본 좌표(전국 한복판)에 머물러서 어디에 그려야 할지
   // 알 수 없다. 수요처 관제 좌표(없으면 주소)를 기준으로 옮겨준다 — 실패해도 조용히 넘어간다.
@@ -150,15 +175,18 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
 
     // 수요처 자체에 잡아둔 기본 관제구역 — 거점과 구분되게 점선으로 깔아준다.
     // 여기서 편집하진 않고(수요처 수정 모달에서 관리), 어디까지가 관제 범위인지 보여준다.
+    // 사용 안 함으로 꺼둔 경우엔 회색으로 표시해 실제 관제엔 안 쓰인다는 걸 구분해준다.
     if (demandSite.baseLat !== null && demandSite.baseLng !== null && demandSite.radius !== null) {
       L.circle([demandSite.baseLat, demandSite.baseLng], {
         radius: demandSite.radius,
-        color: "#3182f6",
+        color: demandSite.baseAreaEnabled ? "#3182f6" : "#9aa1ab",
         weight: 2,
         dashArray: "6 4",
         fillOpacity: 0.06,
       })
-        .bindTooltip(`${demandSite.name} 기본 관제구역`)
+        .bindTooltip(
+          `${demandSite.name} 기본 관제구역${demandSite.baseAreaEnabled ? "" : " (사용 안 함)"}`,
+        )
         .addTo(layerGroup);
     }
 
@@ -186,6 +214,32 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
     }
   }, [locations, demandSite]);
+
+  const handleToggleBaseAreaButtonClick = () => {
+    updateDemandSiteMutation.mutate(
+      { id: demandSite.id, programId, data: { baseAreaEnabled: !demandSite.baseAreaEnabled } },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
+  };
+
+  const handlePromoteButtonClick = (locationId: number) => {
+    if (
+      !confirm(
+        "이 거점을 기본 관제구역으로 설정하시겠습니까? 이 거점은 삭제되고, 기존 기본 관제구역은 이 값으로 바뀝니다.",
+      )
+    ) {
+      return;
+    }
+
+    promoteDemandSiteLocationMutation.mutate(
+      { locationId, demandSiteId: demandSite.id, programId },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
+  };
 
   const handleDeleteButtonClick = (locationId: number) => {
     if (!confirm("이 거점을 삭제하시겠습니까?")) return;
@@ -276,28 +330,30 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
   };
 
   return (
-    <div className="border border-[#e2e5eb] rounded-[2px] mt-2.5 bg-[#fafbfc]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#eceef1]">
+    <div className="bg-[#f8f9fb] border-t border-b border-[#e2e5eb] p-5">
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <span className="text-[13px] font-bold">{demandSite.name} — 거점/관제구역 편집</span>
-          <div className="text-[12px] text-[#6b7280] mt-0.5">
+          <div className="text-[14px] font-bold text-[#1f2937]">
+            {demandSite.name} — 거점/관제구역 편집
+          </div>
+          <div className="text-[12.5px] text-[#8b94a3] mt-[3px]">
             {demandSite.address ||
               "등록된 주소 없음 — 수요처 정보에서 주소를 넣으면 지도가 그 위치로 이동합니다."}
           </div>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex items-center gap-3.5">
           {demandSite.address && (
-            <button className={rowActionBtnClass} onClick={handleFindAddressButtonClick}>
+            <button className={panelLinkActionClass} onClick={handleFindAddressButtonClick}>
               주소로 찾기
             </button>
           )}
-          <button className={rowActionBtnClass} onClick={onClose}>
+          <button className={panelLinkActionClass} onClick={onClose}>
             저장 닫기
           </button>
         </div>
       </div>
-      <div className="flex gap-3 p-4">
-        <div className="w-[240px] flex-none flex flex-col gap-2">
+      <div className="flex gap-5 items-start">
+        <div className="w-[220px] flex-none flex flex-col gap-2">
           {locations.length === 0 && demandSite.baseLat === null && (
             <span className="text-[12.5px] text-[#9aa1ab]">
               지도 우측 툴바에서 원(반경) 또는 다각형을 그려 거점을 추가하세요.
@@ -306,41 +362,65 @@ const DemandSiteLocationsPanel = ({ demandSite, onClose }: DemandSiteLocationsPa
           {demandSite.baseLat !== null &&
             demandSite.baseLng !== null &&
             demandSite.radius !== null && (
-              <div className="border border-[#e2e5eb] rounded-[2px] px-3 py-2 text-[12.5px] bg-[#f5f8fb]">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold">{demandSite.name} 기본 관제구역</span>
-                  <span className="text-[#9aa1ab] text-[11px] font-semibold whitespace-nowrap">
-                    기본
+              <div
+                className={`bg-white border border-[#e2e5eb] rounded-lg p-3.5 ${
+                  demandSite.baseAreaEnabled ? "" : "opacity-60"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#1f2937]">
+                  {demandSite.name} 기본 관제구역
+                  <span
+                    className={`text-[10.5px] font-bold px-1.5 py-0.5 rounded-[3px] whitespace-nowrap ${
+                      demandSite.baseAreaEnabled
+                        ? "bg-[#eaf0f7] text-[#3a6ea8]"
+                        : "bg-[#eef1f5] text-[#5b6472]"
+                    }`}
+                  >
+                    {demandSite.baseAreaEnabled ? "기본" : "사용 안 함"}
                   </span>
                 </div>
-                <div className="text-[#6b7280] mt-1">원형 · 반경 {demandSite.radius}m</div>
+                <div className="text-[12px] text-[#8b94a3] mt-1.5">
+                  원형 · 반경 {demandSite.radius}m
+                </div>
+                {(!demandSite.baseAreaEnabled || canManageMultipleZones) && (
+                  <div className={zoneCardFooterClass}>
+                    <button className={zoneCardBtnClass} onClick={handleToggleBaseAreaButtonClick}>
+                      {demandSite.baseAreaEnabled ? "비활성화" : "활성화"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           {locations.map((location) => (
-            <div
-              key={location.id}
-              className="border border-[#e2e5eb] rounded-[2px] px-3 py-2 text-[12.5px]"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold">{location.name}</span>
+            <div key={location.id} className="bg-white border border-[#e2e5eb] rounded-lg p-3.5">
+              <div className="text-[13.5px] font-bold text-[#1f2937]">{location.name}</div>
+              <div className="text-[12px] text-[#8b94a3] mt-1.5">
+                {location.shapeType === SHAPE_TYPE.RADIUS
+                  ? `원형 · 반경 ${location.radius}m`
+                  : `다각형 · 좌표 ${location.polygon?.length ?? 0}개`}
+              </div>
+              <div className={zoneCardFooterClass}>
+                {canManageMultipleZones && location.shapeType === SHAPE_TYPE.RADIUS && (
+                  <button
+                    className={zoneCardBtnClass}
+                    onClick={() => handlePromoteButtonClick(location.id)}
+                  >
+                    기본으로 설정
+                  </button>
+                )}
                 <button
-                  className="border border-[#f3c6c2] bg-[#fdecea] text-[#b42318] text-xs font-semibold px-2 py-1 rounded-[2px] cursor-pointer hover:bg-[#fbdedb]"
+                  className={zoneCardBtnDangerClass}
                   onClick={() => handleDeleteButtonClick(location.id)}
                 >
                   삭제
                 </button>
-              </div>
-              <div className="text-[#6b7280] mt-1">
-                {location.shapeType === SHAPE_TYPE.RADIUS
-                  ? `원형 · 반경 ${location.radius}m`
-                  : `다각형 · 좌표 ${location.polygon?.length ?? 0}개`}
               </div>
             </div>
           ))}
         </div>
         <div
           ref={mapContainerRef}
-          className="flex-1 h-[640px] border border-[#e2e5eb] rounded-[2px]"
+          className="flex-1 h-[640px] border border-[#e2e5eb] rounded-lg"
         />
       </div>
 

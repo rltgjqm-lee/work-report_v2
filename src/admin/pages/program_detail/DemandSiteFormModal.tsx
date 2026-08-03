@@ -21,6 +21,7 @@ const emptyForm = {
   address: "",
   contactAdminId: "",
   radius: String(MIN_RADIUS_METERS),
+  baseAreaEnabled: true,
 };
 
 interface DemandSiteFormModalProps {
@@ -50,6 +51,7 @@ const DemandSiteFormModal = ({
               ? ""
               : String(editingDemandSite.contactAdminId),
           radius: String(editingDemandSite.radius ?? MIN_RADIUS_METERS),
+          baseAreaEnabled: editingDemandSite.baseAreaEnabled,
         }
       : emptyForm,
   );
@@ -90,12 +92,10 @@ const DemandSiteFormModal = ({
       name: form.name,
       address: form.address || undefined,
       radius: Number(form.radius),
+      baseAreaEnabled: form.baseAreaEnabled,
     };
-    const onSettled = {
-      onSuccess: () => onClose(),
-      onError: (error: unknown) =>
-        alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
-    };
+    const onError = (error: unknown) =>
+      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
 
     if (editingDemandSite) {
       updateDemandSiteMutation.mutate(
@@ -107,10 +107,13 @@ const DemandSiteFormModal = ({
             contactAdminId: form.contactAdminId ? Number(form.contactAdminId) : null,
           },
         },
-        onSettled,
+        { onSuccess: () => onClose(), onError },
       );
     } else {
-      createDemandSiteMutation.mutate({ programId, ...payload }, onSettled);
+      createDemandSiteMutation.mutate(
+        { programId, ...payload },
+        { onSuccess: () => onClose(), onError },
+      );
     }
   };
 
@@ -179,6 +182,21 @@ const DemandSiteFormModal = ({
       */}
 
       {/* 수요처 단위 관제구역 — 거점을 따로 안 그려도 이 원으로 이탈 판정이 된다 */}
+      <FormField label="기본 관제구역 사용">
+        <label className="flex items-center gap-1.5 text-[13px] text-[#374151]">
+          <input
+            type="checkbox"
+            checked={form.baseAreaEnabled}
+            onChange={(event) => setForm((f) => ({ ...f, baseAreaEnabled: event.target.checked }))}
+          />
+          주소 기반 기본 원을 관제구역으로 사용
+        </label>
+        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+          끄면 좌표/반경은 그대로 남지만 이탈 판정에서는 빠집니다 — 거점 관리에서 그린 다각형만
+          관제구역으로 쓰고 싶을 때 사용하세요.
+        </p>
+      </FormField>
+
       <FormField label={`관제 반경(m, 최소 ${MIN_RADIUS_METERS})`}>
         <input
           type="number"
@@ -186,6 +204,7 @@ const DemandSiteFormModal = ({
           value={form.radius}
           min={MIN_RADIUS_METERS}
           step={100}
+          disabled={!form.baseAreaEnabled}
           onChange={(event) => setForm((f) => ({ ...f, radius: event.target.value }))}
         />
         <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">

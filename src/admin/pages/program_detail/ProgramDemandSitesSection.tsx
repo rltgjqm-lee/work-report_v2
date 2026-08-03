@@ -1,14 +1,12 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  updateDemandSiteMutationOptions,
-  deleteDemandSiteScheduleMutationOptions,
-} from "../../api/admin/demandSites";
+import { updateDemandSiteMutationOptions } from "../../api/admin/demandSites";
 import DemandSiteFormModal from "./DemandSiteFormModal";
-import DemandSiteScheduleAddModal from "./DemandSiteScheduleAddModal";
 import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
-import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
+import DemandSiteGroupAssignModal from "./DemandSiteGroupAssignModal";
+import StatusChip from "../../components/chip/StatusChip";
+import { btnGhostClass, rowActionBtnClass, zoneWorktimeTagClass } from "../../uiClasses";
 import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
 
 interface ProgramDemandSitesSectionProps {
@@ -30,14 +28,10 @@ const ProgramDemandSitesSection = ({
 }: ProgramDemandSitesSectionProps) => {
   const [demandSiteModalOpen, setDemandSiteModalOpen] = useState(false);
   const [editingDemandSite, setEditingDemandSite] = useState<DemandSite | null>(null);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [scheduleTargetSiteId, setScheduleTargetSiteId] = useState<number | null>(null);
+  const [groupAssignTarget, setGroupAssignTarget] = useState<DemandSite | null>(null);
   const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
-  const deleteDemandSiteScheduleMutation = useMutation(
-    deleteDemandSiteScheduleMutationOptions(queryClient),
-  );
 
   const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
 
@@ -63,22 +57,6 @@ const ProgramDemandSitesSection = ({
     );
   };
 
-  const handleAddScheduleButtonClick = (siteId: number) => {
-    setScheduleTargetSiteId(siteId);
-    setScheduleModalOpen(true);
-  };
-
-  const handleDeleteScheduleButtonClick = (scheduleId: number, demandSiteId: number) => {
-    if (!confirm("이 근무시간을 삭제하시겠습니까?")) return;
-
-    deleteDemandSiteScheduleMutation.mutate(
-      { scheduleId, demandSiteId },
-      {
-        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
-      },
-    );
-  };
-
   return (
     <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
@@ -87,84 +65,123 @@ const ProgramDemandSitesSection = ({
           + 수요처 추가
         </button>
       </div>
-      <div className="flex flex-col gap-3 px-5 py-4">
-        {demandSites.length === 0 && (
-          <span className="text-[13px] text-[#9aa1ab]">등록된 수요처가 없습니다.</span>
-        )}
 
-        {demandSites.map((demandSite) => (
-          <div key={demandSite.id} className="border border-[#e2e5eb] rounded-[2px] px-4 py-3">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <span className="font-semibold text-[13px]">{demandSite.name}</span>
-                <span className="ml-2 text-xs text-[#6b7280]">
-                  {demandSite.isActive ? "활성" : "비활성"}
-                </span>
-              </div>
-              <div className="flex gap-1.5">
-                <button
-                  className={rowActionBtnClass}
-                  onClick={() =>
-                    setExpandedSiteId((current) =>
-                      current === demandSite.id ? null : demandSite.id,
-                    )
-                  }
-                >
-                  {expandedSiteId === demandSite.id ? "거점 편집 닫기" : "거점 관리"}
-                </button>
-                <button
-                  className={rowActionBtnClass}
-                  onClick={() => handleEditButtonClick(demandSite)}
-                >
-                  수정
-                </button>
-                <button
-                  className={rowActionBtnClass}
-                  onClick={() => handleToggleActiveButtonClick(demandSite)}
-                >
-                  {demandSite.isActive ? "비활성화" : "활성화"}
-                </button>
-              </div>
-            </div>
-            <div className="text-xs text-[#6b7280] mt-1">
-              {demandSite.address && <span>{demandSite.address}</span>}
-
-              {/* 계정 연결 이전에 자유 입력으로 쌓인 값(contactPerson)은 대체로 보여준다 */}
-              {(demandSite.contactAdminName ?? demandSite.contactPerson) && (
-                <span> · 담당자 {demandSite.contactAdminName ?? demandSite.contactPerson}</span>
-              )}
-            </div>
-            <div className="flex items-center flex-wrap gap-1.5 mt-2.5">
-              {(demandSiteSchedules[demandSite.id] ?? []).map((schedule) => (
-                <span
-                  key={schedule.id}
-                  className="flex items-center gap-1.5 border border-[#e2e5eb] rounded-[2px] px-2.5 py-1 text-[12.5px]"
-                >
-                  {schedule.groupName} {schedule.shiftStart}~{schedule.shiftEnd}
-                  <button
-                    className="bg-transparent border-none text-[#9aa1ab] cursor-pointer hover:text-[#b42318]"
-                    onClick={() => handleDeleteScheduleButtonClick(schedule.id, demandSite.id)}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              <button
-                className={rowActionBtnClass}
-                onClick={() => handleAddScheduleButtonClick(demandSite.id)}
-              >
-                + 근무시간
-              </button>
-            </div>
-
-            {expandedSiteId === demandSite.id && (
-              <DemandSiteLocationsPanel
-                demandSite={demandSite}
-                onClose={() => setExpandedSiteId(null)}
-              />
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1230px] table-fixed border-collapse">
+          <thead>
+            <tr>
+              <th className="w-[32px] bg-[#f7f8fa] px-2 py-[11px] border-b border-[#e2e5eb]" />
+              <th className="w-[160px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                수요처명
+              </th>
+              <th className="w-[250px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                주소
+              </th>
+              <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                담당자
+              </th>
+              <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                조
+              </th>
+              <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                근무시간
+              </th>
+              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                상태
+              </th>
+              <th className="w-[220px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+            </tr>
+          </thead>
+          <tbody>
+            {demandSites.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-5 py-4 text-[13px] text-[#9aa1ab]">
+                  등록된 수요처가 없습니다.
+                </td>
+              </tr>
             )}
-          </div>
-        ))}
+
+            {demandSites.map((demandSite) => (
+              <Fragment key={demandSite.id}>
+                <tr className="hover:bg-[#f8fafc]">
+                  <td className="px-2 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <button
+                      className="w-6 h-6 border-none bg-transparent text-[#6b7280] text-xs cursor-pointer p-0"
+                      onClick={() =>
+                        setExpandedSiteId((current) =>
+                          current === demandSite.id ? null : demandSite.id,
+                        )
+                      }
+                    >
+                      {expandedSiteId === demandSite.id ? "▾" : "▸"}
+                    </button>
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    {demandSite.name}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    {demandSite.address}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    {/* 계정 연결 이전에 자유 입력으로 쌓인 값(contactPerson)은 대체로 보여준다 */}
+                    {demandSite.contactAdminName ?? demandSite.contactPerson}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <button
+                      className="text-left text-[#1e3a5f] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                      onClick={() => setGroupAssignTarget(demandSite)}
+                    >
+                      {(demandSiteSchedules[demandSite.id] ?? []).length > 0
+                        ? (demandSiteSchedules[demandSite.id] ?? [])
+                            .map((schedule) => schedule.groupName)
+                            .join(", ")
+                        : "조 배정"}
+                    </button>
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <div className="flex flex-col gap-1.5">
+                      {(demandSiteSchedules[demandSite.id] ?? []).map((schedule) => (
+                        <span key={schedule.id} className={zoneWorktimeTagClass}>
+                          {schedule.shiftStart} ~ {schedule.shiftEnd} ({schedule.groupName})
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <StatusChip variant={demandSite.isActive ? "ok" : "pending"}>
+                      {demandSite.isActive ? "활성" : "비활성"}
+                    </StatusChip>
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <button
+                      className={rowActionBtnClass}
+                      onClick={() => handleEditButtonClick(demandSite)}
+                    >
+                      수정
+                    </button>
+                    <button
+                      className={rowActionBtnClass}
+                      onClick={() => handleToggleActiveButtonClick(demandSite)}
+                    >
+                      {demandSite.isActive ? "비활성화" : "활성화"}
+                    </button>
+                  </td>
+                </tr>
+                {expandedSiteId === demandSite.id && (
+                  <tr>
+                    <td colSpan={8} className="p-3 bg-white border-b border-[#e2e5eb]">
+                      <DemandSiteLocationsPanel
+                        demandSite={demandSite}
+                        programId={programId}
+                        onClose={() => setExpandedSiteId(null)}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {demandSiteModalOpen && (
@@ -175,11 +192,11 @@ const ProgramDemandSitesSection = ({
         />
       )}
 
-      {scheduleModalOpen && (
-        <DemandSiteScheduleAddModal
-          onClose={() => setScheduleModalOpen(false)}
-          targetSiteId={scheduleTargetSiteId}
+      {groupAssignTarget && (
+        <DemandSiteGroupAssignModal
+          demandSite={groupAssignTarget}
           activeGroups={activeGroups}
+          onClose={() => setGroupAssignTarget(null)}
         />
       )}
     </div>
