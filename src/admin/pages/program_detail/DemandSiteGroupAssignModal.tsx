@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -8,7 +9,7 @@ import {
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
-import { btnGhostClass } from "../../uiClasses";
+import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
 import type { DemandSite, Group } from "../../types";
 
 interface DemandSiteGroupAssignModalProps {
@@ -20,6 +21,7 @@ interface DemandSiteGroupAssignModalProps {
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 수요처에 배치할 조를 관리하는 모달입니다.
  * 근무시간은 조 자체 값(groups.shiftStart/shiftEnd)을 그대로 보여주기만 한다.
+ * 조를 고르거나 빼는 건 로컬에서만 반영되고, "저장"을 눌러야 실제로 등록/삭제된다.
  */
 const DemandSiteGroupAssignModal = ({
   onClose,
@@ -28,7 +30,9 @@ const DemandSiteGroupAssignModal = ({
 }: DemandSiteGroupAssignModalProps) => {
   const queryClient = useQueryClient();
 
-  const { data: schedules = [] } = useQuery(demandSiteSchedulesQueryOptions(demandSite.id));
+  const { data: schedules = [], isSuccess: schedulesLoaded } = useQuery(
+    demandSiteSchedulesQueryOptions(demandSite.id),
+  );
   const createDemandSiteScheduleMutation = useMutation(
     createDemandSiteScheduleMutationOptions(queryClient),
   );
@@ -36,26 +40,65 @@ const DemandSiteGroupAssignModal = ({
     deleteDemandSiteScheduleMutationOptions(queryClient),
   );
 
+  const [stagedGroupIds, setStagedGroupIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (schedulesLoaded) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 조회된 초기값을 편집 가능한 로컬 상태로 동기화
+      setStagedGroupIds(schedules.map((schedule) => schedule.groupId));
+    }
+  }, [schedulesLoaded, schedules]);
+
   const handleGroupSelectChange = (groupId: string) => {
     if (!groupId) return;
 
-    createDemandSiteScheduleMutation.mutate(
-      { demandSiteId: demandSite.id, data: { groupId: Number(groupId) } },
-      {
-        onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
-      },
-    );
+    setStagedGroupIds((current) => [...current, Number(groupId)]);
   };
 
-  const handleDeleteButtonClick = (scheduleId: number) => {
-    if (!confirm("이 조 배치를 삭제하시겠습니까?")) return;
+  const handleRemoveButtonClick = (groupId: number) => {
+    setStagedGroupIds((current) => current.filter((id) => id !== groupId));
+  };
 
-    deleteDemandSiteScheduleMutation.mutate(
-      { scheduleId, demandSiteId: demandSite.id },
-      {
-        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
-      },
-    );
+  const findGroupDisplay = (groupId: number) => {
+    const activeGroup = activeGroups.find((group) => group.id === groupId);
+    if (activeGroup) {
+      return {
+        name: activeGroup.name,
+        shiftStart: activeGroup.shiftStart,
+        shiftEnd: activeGroup.shiftEnd,
+      };
+    }
+    // 배정된 뒤 비활성화된 조는 activeGroups엔 없으니, 저장된 스케줄 쪽 값으로 대신 보여준다.
+    const schedule = schedules.find((schedule) => schedule.groupId === groupId);
+    return schedule
+      ? { name: schedule.groupName, shiftStart: schedule.shiftStart, shiftEnd: schedule.shiftEnd }
+      : null;
+  };
+
+  const handleSaveButtonClick = async () => {
+    const originalGroupIds = schedules.map((schedule) => schedule.groupId);
+    const toAdd = stagedGroupIds.filter((groupId) => !originalGroupIds.includes(groupId));
+    const toRemove = schedules.filter((schedule) => !stagedGroupIds.includes(schedule.groupId));
+
+    try {
+      await Promise.all([
+        ...toAdd.map((groupId) =>
+          createDemandSiteScheduleMutation.mutateAsync({
+            demandSiteId: demandSite.id,
+            data: { groupId },
+          }),
+        ),
+        ...toRemove.map((schedule) =>
+          deleteDemandSiteScheduleMutation.mutateAsync({
+            scheduleId: schedule.id,
+            demandSiteId: demandSite.id,
+          }),
+        ),
+      ]);
+      onClose();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    }
   };
 
   return (
@@ -64,9 +107,14 @@ const DemandSiteGroupAssignModal = ({
       title={`${demandSite.name} — 조 배정`}
       onClose={onClose}
       footer={
-        <button className={btnGhostClass} onClick={onClose}>
-          닫기
-        </button>
+        <>
+          <button className={btnGhostClass} onClick={onClose}>
+            취소
+          </button>
+          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+            저장
+          </button>
+        </>
       }
     >
       <FormField label="배치할 조">
@@ -77,36 +125,41 @@ const DemandSiteGroupAssignModal = ({
           options={[
             { value: "", label: "선택하세요" },
             ...activeGroups
-              .filter((group) => !schedules.some((schedule) => schedule.groupId === group.id))
+              .filter((group) => !stagedGroupIds.includes(group.id))
               .map((group) => ({ value: String(group.id), label: group.name })),
           ]}
         />
       </FormField>
 
       <FormField label="배치된 조">
-        {schedules.length === 0 ? (
+        {stagedGroupIds.length === 0 ? (
           <p className="text-[12.5px] text-[#9aa1ab]">아직 배치된 조가 없습니다.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
-            {schedules.map((schedule) => (
-              <li
-                key={schedule.id}
-                className="flex items-center justify-between gap-2 text-[13px] px-3 py-2 border border-[#e2e5eb] rounded-[2px]"
-              >
-                <span>
-                  {schedule.groupName}{" "}
-                  <span className="text-[#8b94a3]">
-                    ({schedule.shiftStart}~{schedule.shiftEnd})
-                  </span>
-                </span>
-                <button
-                  className="bg-transparent border-none text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:underline"
-                  onClick={() => handleDeleteButtonClick(schedule.id)}
+            {stagedGroupIds.map((groupId) => {
+              const display = findGroupDisplay(groupId);
+              if (!display) return null;
+
+              return (
+                <li
+                  key={groupId}
+                  className="flex items-center justify-between gap-2 text-[13px] px-3 py-2 border border-[#e2e5eb] rounded-[2px]"
                 >
-                  삭제
-                </button>
-              </li>
-            ))}
+                  <span>
+                    {display.name}{" "}
+                    <span className="text-[#8b94a3]">
+                      ({display.shiftStart}~{display.shiftEnd})
+                    </span>
+                  </span>
+                  <button
+                    className="bg-transparent border-none text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:underline"
+                    onClick={() => handleRemoveButtonClick(groupId)}
+                  >
+                    삭제
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </FormField>
