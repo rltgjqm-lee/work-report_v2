@@ -87,6 +87,11 @@ const DemandSiteFormModal = ({
 
       return;
     }
+    if (!form.address) {
+      alert("주소를 입력해주세요.");
+
+      return;
+    }
     // 관제 중심 좌표는 서버가 주소로 채운다 — 여기선 반경만 보낸다
     const payload = {
       name: form.name,
