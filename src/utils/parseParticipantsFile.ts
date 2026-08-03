@@ -1,8 +1,12 @@
 export type ParsedParticipantRow = {
   name: string;
+  gender?: "남성" | "여성";
   demandSiteId?: number;
   groupId?: number;
 };
+
+const parseGender = (value: string): "남성" | "여성" | undefined =>
+  value === "남성" || value === "여성" ? value : undefined;
 
 type GroupOption = { id: number; name: string };
 type DemandSiteOption = { id: number; name: string };
@@ -48,7 +52,7 @@ const parseXlsx = async (
   const rows: ParsedParticipantRow[] = [];
 
   // 1행: 헤더, 2행: 주의사항 (downloadAddParticipantsTemplate 양식과 동일한 구조) → 3행부터 데이터
-  // 열 순서: 순번(1), 이름(2), 수요처(3), 조(4)
+  // 열 순서: 순번(1), 이름(2), 수요처(3), 조(4), 성별(5)
   for (let rowNumber = 3; rowNumber <= worksheet.rowCount; rowNumber++) {
     const row = worksheet.getRow(rowNumber);
     const name = toText(row.getCell(2).value);
@@ -56,9 +60,11 @@ const parseXlsx = async (
 
     const demandSiteName = toText(row.getCell(3).value);
     const groupName = toText(row.getCell(4).value);
+    const genderText = toText(row.getCell(5).value);
 
     rows.push({
       name,
+      gender: genderText ? parseGender(genderText) : undefined,
       demandSiteId: demandSiteName ? resolveDemandSiteId(demandSiteName, demandSites) : undefined,
       groupId: groupName ? resolveGroupId(groupName, groups) : undefined,
     });

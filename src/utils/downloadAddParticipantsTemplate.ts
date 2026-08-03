@@ -31,8 +31,8 @@ export async function downloadAddParticipantsTemplate(
     },
   };
 
-  // 4. 1행 헤더 입력 (A1 ~ D1)
-  const headerRow = worksheet.addRow(["순번", "이름", "수요처(목록선택)", "조"]);
+  // 4. 1행 헤더 입력 (A1 ~ E1)
+  const headerRow = worksheet.addRow(["순번", "이름", "수요처(목록선택)", "조", "성별(목록선택)"]);
   headerRow.height = 25;
   headerRow.eachCell((cell: Cell) => {
     cell.style = headerStyle as Style;
@@ -43,7 +43,7 @@ export async function downloadAddParticipantsTemplate(
     "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만 입력해 주세요.\n• 동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요\n  (예: 홍길동1, 홍길동2).";
   const noticeRow = worksheet.addRow([noticeText]);
   noticeRow.height = 78; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 78로 확장
-  worksheet.mergeCells("A2:D2");
+  worksheet.mergeCells("A2:E2");
 
   noticeRow.getCell(1).style = {
     font: {
@@ -62,6 +62,7 @@ export async function downloadAddParticipantsTemplate(
     { key: "name", width: 18, numFmt: "@" },
     { key: "demandSite", width: 22, numFmt: "@" },
     { key: "group", width: 18, numFmt: "@" },
+    { key: "gender", width: 14, numFmt: "@" },
   ];
 
   // 6-1. 조 목록을 숨김 시트에 적어두고 E열 드롭다운 검증에서 참조한다
@@ -93,6 +94,7 @@ export async function downloadAddParticipantsTemplate(
       name: "",
       demandSite: "",
       group: "",
+      gender: "",
     });
 
     row.eachCell((cell: Cell, colNumber: number) => {
@@ -134,6 +136,16 @@ export async function downloadAddParticipantsTemplate(
         error: "목록에 있는 조 이름만 선택할 수 있어요.",
       };
     }
+
+    // 💡 E열(성별)은 "남성"/"여성" 둘뿐이라 별도 숨김 시트 없이 인라인 목록으로 검증한다
+    row.getCell(5).dataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: ['"남성,여성"'],
+      showErrorMessage: true,
+      errorTitle: "잘못된 성별",
+      error: "남성 또는 여성만 선택할 수 있어요.",
+    };
   }
 
   // 8. 시트 보호 활성화

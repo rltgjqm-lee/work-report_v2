@@ -341,6 +341,7 @@ app.post("/:id/participants", async (c) => {
 
   const body = await c.req.json<{
     name?: string;
+    gender?: "남성" | "여성";
     demandSiteId?: number;
     groupId?: number;
     birthYear?: number;
@@ -364,6 +365,7 @@ app.post("/:id/participants", async (c) => {
     .values({
       programId,
       name: body.name,
+      gender: body.gender,
       demandSiteId: body.demandSiteId,
       groupId: body.groupId,
       birthYear: body.birthYear,
@@ -388,6 +390,7 @@ app.post("/:id/participants/bulk", async (c) => {
   const body = await c.req.json<{
     participants?: {
       name?: string;
+      gender?: "남성" | "여성";
       demandSiteId?: number;
       groupId?: number;
       birthYear?: number;
@@ -416,6 +419,7 @@ app.post("/:id/participants/bulk", async (c) => {
       rows.map((row) => ({
         programId,
         name: row.name!,
+        gender: row.gender,
         demandSiteId: row.demandSiteId,
         groupId: row.groupId,
         birthYear: row.birthYear,

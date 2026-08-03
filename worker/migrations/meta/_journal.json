@@ -330,6 +330,13 @@
       "when": 1785729417443,
       "tag": "0046_backfill_inactive_demand_sites_without_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1785801350800,
+      "tag": "0047_flat_namorita",
+      "breakpoints": true
     }
   ]
 }

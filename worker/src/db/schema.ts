@@ -218,6 +218,7 @@ export const participants = sqliteTable("participants", {
     .references(() => programs.id),
   groupId: integer("group_id").references(() => groups.id),
   name: text("name").notNull(),
+  gender: text("gender").$type<"남성" | "여성">(),
   demandName: text("demand_name"),
   // 실제 demand_sites 연결 — 이탈 관제(geofencing)에서 참여자가 있어야 할 위경도/반경을 알아내는 데 쓴다.
   // demandName(자유 텍스트)은 수요처를 아직 안 만든 사업단을 위해 그대로 남겨둔다.

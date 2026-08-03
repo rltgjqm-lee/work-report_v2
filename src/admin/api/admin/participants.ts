@@ -53,6 +53,7 @@ export interface AddParticipantVariables {
   programId: number;
   data: {
     name: string;
+    gender?: "남성" | "여성";
     demandSiteId?: number;
     groupId?: number;
     birthYear?: number;
@@ -109,6 +110,7 @@ export interface BulkAddParticipantsVariables {
   data: {
     participants: {
       name: string;
+      gender?: "남성" | "여성";
       demandSiteId?: number;
       groupId?: number;
     }[];

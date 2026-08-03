@@ -13,8 +13,15 @@ import type { DemandSite, Group } from "../../types";
 import { downloadAddParticipantsTemplate } from "../../../utils/downloadAddParticipantsTemplate";
 import { parseParticipantsFile } from "../../../utils/parseParticipantsFile";
 
+const GENDER_OPTIONS = [
+  { value: "", label: "선택 안 함" },
+  { value: "남성", label: "남성" },
+  { value: "여성", label: "여성" },
+];
+
 const emptyForm = {
   name: "",
+  gender: "",
   demandSiteId: "",
   groupId: "",
 };
@@ -70,6 +77,7 @@ const ParticipantAddModal = ({
           programId,
           data: {
             name: form.name,
+            gender: form.gender ? (form.gender as "남성" | "여성") : undefined,
             demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
             groupId: form.groupId ? Number(form.groupId) : undefined,
           },
@@ -151,6 +159,14 @@ const ParticipantAddModal = ({
           <br />
           (예: 홍길동1, 홍길동2).
         </p>
+      </FormField>
+      <FormField label="성별">
+        <FilterSelect
+          className="w-full"
+          value={form.gender}
+          onChange={(value) => setForm((f) => ({ ...f, gender: value }))}
+          options={GENDER_OPTIONS}
+        />
       </FormField>
       <FormField label="수요처">
         <FilterSelect

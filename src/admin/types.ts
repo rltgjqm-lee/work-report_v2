@@ -105,6 +105,7 @@ export type Participant = {
   programId: number;
   groupId: number | null;
   name: string;
+  gender: "남성" | "여성" | null;
   demandName: string | null;
   demandSiteId: number | null;
   birthYear: number | null;
