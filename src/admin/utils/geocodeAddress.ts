@@ -4,9 +4,8 @@ import { request } from "../api/client";
  * 주소 문자열을 위경도로 바꿉니다. 찾지 못하면 null을 돌려줍니다.
  *
  */
-// 실제 조회는 서버(GET /api/demand-sites/geocode)가 OpenStreetMap Nominatim에 대신 물어본다 —
-// Nominatim이 CORS 헤더를 안 내려줘서 브라우저에서 직접 부르면 막힌다.
-// 국내 주소는 도로 단위까지만 잡히는 경우가 많으니 "대략 이 근처" 용도로만 쓴다.
+// 실제 조회는 서버(GET /api/demand-sites/geocode)가 juso.go.kr(행정안전부 주소정보지원서비스)에
+// 대신 물어본다 — CORS 헤더를 안 내려줘서 브라우저에서 직접 부르면 막힌다.
 export const geocodeAddress = async (
   address: string,
 ): Promise<{ lat: number; lng: number } | null> => {

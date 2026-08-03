@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, getTableColumns } from "drizzle-orm";
+import proj4 from "proj4";
 
 import {
   admins,
@@ -30,10 +31,12 @@ type DemandSiteBody = {
   isActive?: boolean;
 };
 
-// 주소 → 좌표. 브라우저에서 바로 부르면 CORS에 걸려서 서버에서 대신 조회한다.
+// 주소 → 좌표(대략치). 브라우저에서 바로 부르면 CORS에 걸려서 서버에서 대신 조회한다.
 // OpenStreetMap Nominatim은 API 키가 없는 대신 앱을 식별하는 User-Agent를 요구한다.
-// 국내 주소는 도로 단위까지만 잡히는 경우가 많아 최소 반경으로 오차를 흡수한다.
-const geocodeAddress = async (address: string) => {
+// 국내 주소는 도로 단위까지만 잡히는 경우가 많아 최소 반경으로 오차를 흡수한다 —
+// 거점 편집 지도의 "주소로 찾기"(지도를 대충 그 근처로 옮기는 용도)에서만 쓰고,
+// 실제 관제구역 중심(baseLat/baseLng)은 아래 resolveDemandSiteCoordinate로 더 정확하게 잡는다.
+const geocodeAddressApprox = async (address: string) => {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(address)}`,
@@ -46,10 +49,112 @@ const geocodeAddress = async (address: string) => {
 
     return { lat: Number(results[0].lat), lng: Number(results[0].lon) };
   } catch {
-    // 지오코딩 실패로 수요처 저장 자체가 막히면 안 된다 — 좌표 없이 저장하고,
-    // 관리자는 거점 관리에서 구역을 직접 그리면 된다.
     return null;
   }
+};
+
+// juso.go.kr 좌표제공 API는 좌표를 EPSG:5179(중부원점, GRS80 TM)로 내려준다 — Leaflet
+// 지도와 DB(baseLat/baseLng)는 WGS84 위경도 기준이라 proj4로 직접 변환해야 한다.
+const EPSG_5179 =
+  "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
+
+type JusoRoadAddressIdentifier = {
+  admCd: string;
+  rnMgtSn: string;
+  udrtYn: string;
+  buldMnnm: string;
+  buldSlno: string;
+};
+
+// juso.go.kr 좌표제공 API(addrCoordApi.do)는 주소 문자열이 아니라 이 식별자들을 받는다.
+const fetchJusoCoordinate = async (identifier: JusoRoadAddressIdentifier, jusoApiKey: string) => {
+  const url = new URL("https://www.juso.go.kr/addrlink/addrCoordApi.do");
+  url.searchParams.set("confmKey", jusoApiKey);
+  url.searchParams.set("resultType", "json");
+  url.searchParams.set("admCd", identifier.admCd);
+  url.searchParams.set("rnMgtSn", identifier.rnMgtSn);
+  url.searchParams.set("udrtYn", identifier.udrtYn);
+  url.searchParams.set("buldMnnm", identifier.buldMnnm);
+  url.searchParams.set("buldSlno", identifier.buldSlno);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.error("fetchJusoCoordinate: HTTP 오류", response.status);
+    return null;
+  }
+
+  const body = (await response.json()) as {
+    results: {
+      common: { errorCode: string; errorMessage: string };
+      juso: { entX: string; entY: string }[] | null;
+    };
+  };
+  if (body.results.common.errorCode !== "0" || !body.results.juso?.length) {
+    console.error("fetchJusoCoordinate: juso.go.kr 응답 오류/매칭 없음", {
+      identifier,
+      common: body.results.common,
+    });
+    return null;
+  }
+
+  const coordinate = body.results.juso[0];
+  const x = Number(coordinate.entX);
+  const y = Number(coordinate.entY);
+  if (!x || !y) {
+    console.error("fetchJusoCoordinate: 좌표 값이 비정상", coordinate);
+    return null;
+  }
+
+  const [lng, lat] = proj4(EPSG_5179, "WGS84", [x, y]);
+  return { lat, lng };
+};
+
+// 도로명주소 검색 API(addrLinkApi.do)로 juso.go.kr 자체 식별자를 받는다 — 좌표제공
+// API(addrCoordApi.do)와 승인키가 서로 다르다(신청 단위로 키가 따로 나온다).
+const findRoadAddressIdentifier = async (
+  address: string,
+  jusoSearchApiKey: string,
+): Promise<JusoRoadAddressIdentifier | null> => {
+  try {
+    const url = new URL("https://www.juso.go.kr/addrlink/addrLinkApi.do");
+    url.searchParams.set("confmKey", jusoSearchApiKey);
+    url.searchParams.set("currentPage", "1");
+    url.searchParams.set("countPerPage", "1");
+    url.searchParams.set("keyword", address);
+    url.searchParams.set("resultType", "json");
+
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    const body = (await response.json()) as {
+      results: {
+        common: { errorCode: string; errorMessage: string };
+        juso: JusoRoadAddressIdentifier[] | null;
+      };
+    };
+    if (body.results.common.errorCode !== "0" || !body.results.juso?.length) {
+      console.error("findRoadAddressIdentifier: 검색 API 응답 오류", body.results.common);
+      return null;
+    }
+
+    return body.results.juso[0];
+  } catch (error) {
+    console.error("findRoadAddressIdentifier: 예외 발생", error);
+    return null;
+  }
+};
+
+// 주소 → 관제구역 중심 좌표. 검색 API로 도로명주소 식별자를 찾고, 그 식별자로
+// 좌표제공 API를 호출해 EPSG:5179 좌표를 받아 WGS84로 변환한다. 실패로 수요처 저장
+// 자체가 막히면 안 되므로 못 찾으면 null — 관리자는 거점 관리에서 구역을 직접 그리면 된다.
+const resolveDemandSiteCoordinate = async (
+  address: string,
+  { coordApiKey, searchApiKey }: { coordApiKey: string; searchApiKey: string },
+) => {
+  const identifier = await findRoadAddressIdentifier(address, searchApiKey);
+  if (!identifier) return null;
+
+  return fetchJusoCoordinate(identifier, coordApiKey);
 };
 
 // 수요처 기본 관제구역도 거점과 같은 최소 반경 규칙을 따른다.
@@ -133,13 +238,14 @@ const findProgramManagerId = async (
   return manager?.id ?? null;
 };
 
-// 주소 → 좌표 조회. Nominatim이 CORS 헤더를 안 내려줘서 브라우저에서 직접 못 부른다 —
-// 거점 편집 지도의 "주소로 찾기"가 이 경로로 우회한다.
+// 주소 → 대략적인 좌표 조회. Nominatim이 CORS 헤더를 안 내려줘서 브라우저에서 직접
+// 못 부른다 — 거점 편집 지도의 "주소로 찾기"(지도를 그 근처로 옮기는 용도)가 이
+// 경로로 우회한다. 정확한 좌표가 필요한 관제구역 중심은 POST/PUT에서 따로 잡는다.
 app.get("/geocode", async (c) => {
   const address = c.req.query("address");
   if (!address) return c.json({ error: "주소를 입력해주세요." }, 400);
 
-  const point = await geocodeAddress(address);
+  const point = await geocodeAddressApprox(address);
   if (!point) return c.json({ error: "주소를 찾을 수 없습니다." }, 404);
 
   return c.json(point);
@@ -208,7 +314,10 @@ app.post("/", async (c) => {
   // 좌표를 직접 보내지 않았으면 주소로 잡아준다
   const point =
     body.baseLat == null && body.baseLng == null && body.address
-      ? await geocodeAddress(body.address)
+      ? await resolveDemandSiteCoordinate(body.address, {
+          coordApiKey: c.env.JUSO_API_KEY,
+          searchApiKey: c.env.JUSO_SEARCH_API_KEY,
+        })
       : null;
 
   const result = await db
@@ -251,7 +360,12 @@ app.put("/:id", async (c) => {
     body.baseLng == null &&
     !!address &&
     (address !== existing.address || existing.baseLat === null);
-  const point = shouldGeocode ? await geocodeAddress(address) : null;
+  const point = shouldGeocode
+    ? await resolveDemandSiteCoordinate(address, {
+        coordApiKey: c.env.JUSO_API_KEY,
+        searchApiKey: c.env.JUSO_SEARCH_API_KEY,
+      })
+    : null;
 
   const nextBaseArea = !address
     ? { baseLat: null, baseLng: null, radius: null }
