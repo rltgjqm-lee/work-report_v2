@@ -1,0 +1,1 @@
+ALTER TABLE `demand_sites` ADD `base_area_enabled` integer DEFAULT true NOT NULL;

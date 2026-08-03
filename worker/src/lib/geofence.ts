@@ -72,11 +72,17 @@ export const buildDemandSiteAreas = (
     baseLat: number | null;
     baseLng: number | null;
     radius: number | null;
+    baseAreaEnabled: boolean;
   },
   locations: GeofenceArea[],
 ): GeofenceArea[] => {
   const areas: GeofenceArea[] = [...locations];
-  if (demandSite.baseLat !== null && demandSite.baseLng !== null && demandSite.radius !== null) {
+  if (
+    demandSite.baseAreaEnabled &&
+    demandSite.baseLat !== null &&
+    demandSite.baseLng !== null &&
+    demandSite.radius !== null
+  ) {
     areas.push({
       shapeType: "RADIUS",
       baseLat: demandSite.baseLat,

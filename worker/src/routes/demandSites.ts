@@ -28,6 +28,8 @@ type DemandSiteBody = {
   baseLat?: number | null;
   baseLng?: number | null;
   radius?: number | null;
+  // false면 좌표/반경이 있어도 관제 판정에서 뺀다(다각형 거점만 쓰고 싶은 경우)
+  baseAreaEnabled?: boolean;
   isActive?: boolean;
 };
 
@@ -184,8 +186,6 @@ const normalizeBaseArea = (
 
 type ScheduleBody = {
   groupId?: number;
-  shiftStart?: string;
-  shiftEnd?: string;
 };
 
 type LocationBody = {
@@ -327,6 +327,11 @@ app.post("/", async (c) => {
       name: body.name,
       address: body.address,
       contactAdminId: body.contactAdminId ?? (await findProgramManagerId(db, program)),
+      baseAreaEnabled: body.baseAreaEnabled ?? true,
+      // 조를 하나도 안 배정한 채로는 활성화할 수 없다 — 지금 사업단 운영 순서상
+      // 수요처를 먼저 만들고 조는 나중에 배정하므로, 새로 만든 수요처는 항상 비활성으로
+      // 시작해서 조를 배정한 뒤 관리자가 직접 활성화하게 한다(아래 PUT의 검증 참고).
+      isActive: false,
       ...normalizeBaseArea(
         point ? point.lat : body.baseLat,
         point ? point.lng : body.baseLng,
@@ -375,6 +380,19 @@ app.put("/:id", async (c) => {
         radius: body.radius === undefined ? existing.radius : body.radius,
       };
 
+  // 조를 하나도 안 배정한 수요처는 활성화할 수 없다 — 이미 활성 상태를 유지하는 건
+  // 막지 않고(다른 필드 수정 시 body.isActive를 안 보낼 수도 있음), 꺼진 걸 켜려는
+  // 시도만 검증한다.
+  if (body.isActive === true && !existing.isActive) {
+    const scheduleRows = await db
+      .select({ id: demandSiteSchedules.id })
+      .from(demandSiteSchedules)
+      .where(eq(demandSiteSchedules.demandSiteId, id));
+    if (scheduleRows.length === 0) {
+      return c.json({ error: "조를 먼저 배정해주세요." }, 400);
+    }
+  }
+
   const result = await db
     .update(demandSites)
     .set({
@@ -384,6 +402,7 @@ app.put("/:id", async (c) => {
       contactAdminId:
         body.contactAdminId === undefined ? existing.contactAdminId : body.contactAdminId,
       ...normalizeBaseArea(nextBaseArea.baseLat, nextBaseArea.baseLng, nextBaseArea.radius),
+      baseAreaEnabled: body.baseAreaEnabled ?? existing.baseAreaEnabled,
       isActive: body.isActive ?? existing.isActive,
     })
     .where(eq(demandSites.id, id))
@@ -530,6 +549,50 @@ app.delete("/locations/:locationId", async (c) => {
   return c.json({ success: true });
 });
 
+// 직접 그린 원형 거점을 수요처의 "기본 관제구역"으로 승격한다 — 자동 지오코딩된 원이
+// 부정확할 때 손으로 정확히 그린 원으로 교체하는 용도. 다각형 거점은 기본 관제구역이
+// 원 하나만 지원해서(demand_sites.baseLat/baseLng/radius) 승격할 수 없다.
+app.post("/locations/:locationId/promote", async (c) => {
+  const auth = getAuth(c);
+  const locationId = Number(c.req.param("locationId"));
+  const db = drizzle(c.env.DB);
+
+  const locationRows = await db
+    .select()
+    .from(demandSiteLocations)
+    .where(eq(demandSiteLocations.id, locationId));
+  const location = locationRows[0];
+  if (!location) return c.json({ error: "위치 정보를 찾을 수 없습니다." }, 404);
+  if (location.shapeType !== "RADIUS") {
+    return c.json({ error: "원형 거점만 기본 관제구역으로 설정할 수 있습니다." }, 400);
+  }
+
+  const siteRows = await db
+    .select()
+    .from(demandSites)
+    .where(eq(demandSites.id, location.demandSiteId));
+  const site = siteRows[0];
+  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
+
+  const program = await loadAccessibleProgram(db, auth, site.programId);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+
+  await db.batch([
+    db
+      .update(demandSites)
+      .set({
+        baseLat: location.baseLat,
+        baseLng: location.baseLng,
+        radius: location.radius,
+        baseAreaEnabled: true,
+      })
+      .where(eq(demandSites.id, site.id)),
+    db.delete(demandSiteLocations).where(eq(demandSiteLocations.id, locationId)),
+  ]);
+
+  return c.json({ success: true });
+});
+
 app.get("/:id/schedules", async (c) => {
   const auth = getAuth(c);
   const id = Number(c.req.param("id"));
@@ -542,14 +605,16 @@ app.get("/:id/schedules", async (c) => {
   const program = await loadAccessibleProgram(db, auth, site.programId);
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
+  // 근무시간은 조 자체 값을 그대로 보여준다(demandSiteSchedules에는 안 남아있음) —
+  // 수요처별로 다른 시간을 저장했다가 실제 출퇴근 판정(조 기준)과 어긋나던 문제를 없앴다.
   const rows = await db
     .select({
       id: demandSiteSchedules.id,
       demandSiteId: demandSiteSchedules.demandSiteId,
       groupId: demandSiteSchedules.groupId,
       groupName: groups.name,
-      shiftStart: demandSiteSchedules.shiftStart,
-      shiftEnd: demandSiteSchedules.shiftEnd,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
     })
     .from(demandSiteSchedules)
     .innerJoin(groups, eq(demandSiteSchedules.groupId, groups.id))
@@ -571,8 +636,18 @@ app.post("/:id/schedules", async (c) => {
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<ScheduleBody>();
-  if (!body.groupId || !body.shiftStart || !body.shiftEnd) {
-    return c.json({ error: "조와 근무 시작 시간, 종료 시간을 모두 지정해주세요." }, 400);
+  if (!body.groupId) {
+    return c.json({ error: "조를 지정해주세요." }, 400);
+  }
+
+  const existingRows = await db
+    .select()
+    .from(demandSiteSchedules)
+    .where(
+      and(eq(demandSiteSchedules.demandSiteId, id), eq(demandSiteSchedules.groupId, body.groupId)),
+    );
+  if (existingRows[0]) {
+    return c.json({ error: "이미 배치된 조입니다." }, 400);
   }
 
   const result = await db
@@ -580,48 +655,10 @@ app.post("/:id/schedules", async (c) => {
     .values({
       demandSiteId: id,
       groupId: body.groupId,
-      shiftStart: body.shiftStart,
-      shiftEnd: body.shiftEnd,
     })
     .returning();
 
   return c.json(result[0], 201);
-});
-
-app.put("/schedules/:scheduleId", async (c) => {
-  const auth = getAuth(c);
-  const scheduleId = Number(c.req.param("scheduleId"));
-  const db = drizzle(c.env.DB);
-
-  const scheduleRows = await db
-    .select()
-    .from(demandSiteSchedules)
-    .where(eq(demandSiteSchedules.id, scheduleId));
-  const schedule = scheduleRows[0];
-  if (!schedule) return c.json({ error: "근무 일정을 찾을 수 없습니다." }, 404);
-
-  const siteRows = await db
-    .select()
-    .from(demandSites)
-    .where(eq(demandSites.id, schedule.demandSiteId));
-  const site = siteRows[0];
-  if (!site) return c.json({ error: "수요처를 찾을 수 없습니다." }, 404);
-
-  const program = await loadAccessibleProgram(db, auth, site.programId);
-  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
-
-  const body = await c.req.json<ScheduleBody>();
-
-  const result = await db
-    .update(demandSiteSchedules)
-    .set({
-      shiftStart: body.shiftStart ?? schedule.shiftStart,
-      shiftEnd: body.shiftEnd ?? schedule.shiftEnd,
-    })
-    .where(eq(demandSiteSchedules.id, scheduleId))
-    .returning();
-
-  return c.json(result[0]);
 });
 
 app.delete("/schedules/:scheduleId", async (c) => {

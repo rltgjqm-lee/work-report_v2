@@ -67,6 +67,8 @@ export type DemandSite = {
   baseLat: number | null;
   baseLng: number | null;
   radius: number | null;
+  // false면 좌표/반경이 있어도 관제 판정에서 빠진다(다각형 거점만 쓰고 싶은 경우)
+  baseAreaEnabled: boolean;
   isActive: boolean;
   createdAt: string;
 };

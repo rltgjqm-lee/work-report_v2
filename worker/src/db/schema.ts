@@ -158,6 +158,10 @@ export const demandSites = sqliteTable("demand_sites", {
   baseLat: real("base_lat"),
   baseLng: real("base_lng"),
   radius: integer("radius"),
+  // false면 baseLat/baseLng/radius가 있어도 관제 판정(buildDemandSiteAreas)에서 뺀다.
+  // 다각형 거점만 쓰고 싶은 수요처를 위한 토글 — 주소/좌표 자체는 남겨둬서 다시 켤 때
+  // 재지오코딩이 필요 없다.
+  baseAreaEnabled: integer("base_area_enabled", { mode: "boolean" }).notNull().default(true),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
@@ -184,21 +188,28 @@ export const demandSiteLocations = sqliteTable("demand_site_locations", {
     .default(sql`(current_timestamp)`),
 });
 
-// 수요처 x 조 조합별 근무시간
-export const demandSiteSchedules = sqliteTable("demand_site_schedules", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  demandSiteId: integer("demand_site_id")
-    .notNull()
-    .references(() => demandSites.id),
-  groupId: integer("group_id")
-    .notNull()
-    .references(() => groups.id),
-  shiftStart: text("shift_start").notNull(),
-  shiftEnd: text("shift_end").notNull(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
-});
+// 수요처에 배치된 조 매핑 — 근무시간은 조 자체의 값(groups.shiftStart/shiftEnd)을
+// 그대로 따른다. 예전엔 이 표에 수요처별로 다른 시간을 따로 저장했지만, 실제 출퇴근
+// 판정(worker/src/routes/public.ts)은 항상 groups.shiftStart/shiftEnd만 봐서 두 값이
+// 어긋날 수 있었다 — 조 시간 하나로 통일했다.
+export const demandSiteSchedules = sqliteTable(
+  "demand_site_schedules",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    demandSiteId: integer("demand_site_id")
+      .notNull()
+      .references(() => demandSites.id),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("demand_site_schedules_site_group_unique").on(table.demandSiteId, table.groupId),
+  ],
+);
 
 export const participants = sqliteTable("participants", {
   id: integer("id").primaryKey({ autoIncrement: true }),

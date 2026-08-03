@@ -47,6 +47,7 @@ export interface CreateDemandSiteVariables {
   baseLat?: number | null;
   baseLng?: number | null;
   radius?: number | null;
+  baseAreaEnabled?: boolean;
 }
 
 export const createDemandSite = (data: CreateDemandSiteVariables) =>
@@ -73,6 +74,7 @@ export interface UpdateDemandSiteVariables {
     baseLat: number | null;
     baseLng: number | null;
     radius: number | null;
+    baseAreaEnabled: boolean;
     isActive: boolean;
   }>;
 }
@@ -103,7 +105,7 @@ export const demandSiteSchedulesQueryOptions = (demandSiteId: number) =>
 
 export interface CreateDemandSiteScheduleVariables {
   demandSiteId: number;
-  data: { groupId: number; shiftStart: string; shiftEnd: string };
+  data: { groupId: number };
 }
 
 export const createDemandSiteSchedule = (
@@ -124,15 +126,6 @@ export const createDemandSiteScheduleMutationOptions = (queryClient: QueryClient
         queryKey: demandSiteKeys.schedules(variables.demandSiteId),
       });
     },
-  });
-
-export const updateDemandSiteSchedule = (
-  scheduleId: number,
-  data: Partial<{ shiftStart: string; shiftEnd: string }>,
-) =>
-  request<DemandSiteSchedule>(`/api/demand-sites/schedules/${scheduleId}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
   });
 
 export interface DeleteDemandSiteScheduleVariables {
@@ -227,5 +220,29 @@ export const deleteDemandSiteLocationMutationOptions = (queryClient: QueryClient
       deleteDemandSiteLocation(locationId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: demandSiteKeys.locations(variables.demandSiteId) });
+    },
+  });
+
+export interface PromoteDemandSiteLocationVariables {
+  locationId: number;
+  demandSiteId: number;
+  programId: number;
+}
+
+// 직접 그린 원형 거점을 수요처의 기본 관제구역으로 승격 — 그 거점은 삭제되고
+// demandSites.baseLat/baseLng/radius가 그 값으로 바뀐다(worker의 /locations/:id/promote 참고).
+export const promoteDemandSiteLocation = (locationId: number) =>
+  request<{ success: boolean }>(`/api/demand-sites/locations/${locationId}/promote`, {
+    method: "POST",
+  });
+
+export const promoteDemandSiteLocationMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ locationId }: PromoteDemandSiteLocationVariables) =>
+      promoteDemandSiteLocation(locationId),
+    onSuccess: (_data, variables) => {
+      // critical: 거점 목록(승격된 거점 삭제됨)과 수요처 자체(기본 관제구역 좌표 변경됨) 둘 다 갱신
+      queryClient.invalidateQueries({ queryKey: demandSiteKeys.locations(variables.demandSiteId) });
+      queryClient.invalidateQueries({ queryKey: demandSiteKeys.byProgram(variables.programId) });
     },
   });
