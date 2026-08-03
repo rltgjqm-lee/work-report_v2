@@ -10,9 +10,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { Group } from "../../types";
-
-const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
 
 const toMinutes = (hhmm: string): number => {
   const [hour, minute] = hhmm.split(":").map(Number);
@@ -29,7 +28,7 @@ interface GroupMonthlyScheduleModalProps {
  * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정합니다.
  */
 const GroupMonthlyScheduleModal = ({ onClose, group }: GroupMonthlyScheduleModalProps) => {
-  const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
+  const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
   const [patternWorkDays, setPatternWorkDays] = useState("1");

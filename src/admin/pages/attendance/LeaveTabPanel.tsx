@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getLeaves, getLeaveStats } from "../../api/admin/programs";
 import MonthPicker from "../../components/MonthPicker";
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { LeaveRow, LeaveStats } from "../../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
@@ -35,7 +36,7 @@ interface LeaveTabPanelProps {
  *
  */
 const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(getLocalYearMonth());
   const [leaves, setLeaves] = useState<LeaveRow[]>([]);
   const [stats, setStats] = useState<LeaveStats>(emptyStats);
 

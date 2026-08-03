@@ -15,6 +15,7 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import StatusChip from "../../components/chip/StatusChip";
 import SubTabBar from "../../components/bar/SubTabBar";
+import { getLocalToday } from "../../../utils/timeFormat";
 import {
   btnGhostClass,
   btnPrimaryClass,
@@ -58,7 +59,7 @@ const emptyTrainingForm = {
 const emptyLogForm = {
   participantId: "",
   trainingId: "",
-  attendDate: new Date().toISOString().slice(0, 10),
+  attendDate: getLocalToday(),
   attendHours: "",
 };
 

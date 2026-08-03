@@ -8,6 +8,7 @@ import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { IdentifyError, identifyParticipantQueryOptions } from "../../utils/attendanceApi";
+import { getLocalToday } from "../../utils/timeFormat";
 import type { ActivityLogFormData } from "../../types/form";
 
 type ExceptionInfo = {
@@ -89,12 +90,7 @@ const RegistrationConfirmPage = ({
         : "복귀 후 다시 이용해 주세요.",
     };
   } else if (identified.program) {
-    // 💡 toISOString()은 UTC 기준이라 자정~오전 9시(KST) 사이엔 실제보다 하루 이른 날짜로
-    // 잘못 계산된다 — 참여자 기기는 한국에 있다고 가정하고 로컬 날짜를 그대로 쓴다.
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-      now.getDate(),
-    ).padStart(2, "0")}`;
+    const today = getLocalToday();
 
     if (identified.program.endDate < today) {
       exception = {

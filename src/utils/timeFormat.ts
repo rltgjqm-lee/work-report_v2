@@ -2,6 +2,21 @@ import type { ActivityLogFormData } from "../types/form";
 
 type TimeParts = ActivityLogFormData["startTime"];
 
+// 💡 이 프로젝트는 사용자가 전부 한국(KST)에 있다고 가정한다. new Date().toISOString()은
+// UTC 기준이라 자정~오전 9시(KST) 사이엔 실제보다 하루/한 달 이른 값으로 잘못 계산되므로,
+// "오늘 날짜"/"이번 달"이 필요한 곳에서는 항상 이 두 함수처럼 로컬 Date getter를 써야 한다.
+export const getLocalToday = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
+  ).padStart(2, "0")}`;
+};
+
+export const getLocalYearMonth = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+};
+
 // "AM 09:00" 같은 폼 표기를 "09:00" 24시간제 문자열로 변환. 아직 출근/퇴근 전이라
 // hour가 비어있으면(모듈 미완료) 빈 문자열을 돌려준다 — "NaN:" 같은 값이 저장되는 걸 방지.
 export const formatTimeField = (time: TimeParts): string => {

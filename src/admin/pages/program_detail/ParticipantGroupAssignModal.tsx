@@ -11,9 +11,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass, rowActionBtnClass } from "../../uiClasses";
+import { getLocalToday } from "../../../utils/timeFormat";
 import type { Group, Participant } from "../../types";
-
-const getToday = () => new Date().toISOString().slice(0, 10);
 
 type AssignMode = "TEMPORARY" | "PERMANENT";
 
@@ -41,7 +40,7 @@ const ParticipantGroupAssignModal = ({
   groups,
 }: ParticipantGroupAssignModalProps) => {
   const [mode, setMode] = useState<AssignMode>("TEMPORARY");
-  const [date, setDate] = useState(getToday);
+  const [date, setDate] = useState(getLocalToday);
   const [temporaryGroupId, setTemporaryGroupId] = useState("");
   const [permanentGroupId, setPermanentGroupId] = useState(String(participant.groupId ?? ""));
   const queryClient = useQueryClient();

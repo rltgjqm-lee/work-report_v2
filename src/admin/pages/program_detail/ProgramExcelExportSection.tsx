@@ -19,6 +19,7 @@ import {
   exportNameClass,
   monthSelectClass,
 } from "../../uiClasses";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 
 interface ProgramExcelExportSectionProps {
   programId: number;
@@ -32,8 +33,6 @@ type ExcelExportItem = {
   desc: string;
   download: ((programId: number, month: string) => void) | null;
 };
-
-const currentMonth = () => new Date().toISOString().slice(0, 7);
 
 const PUBLIC_INTEREST_ITEMS: ExcelExportItem[] = [
   {
@@ -120,7 +119,7 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
     <div className={exportGridClass}>
       {items.map((item) => {
         const ready = item.download !== null;
-        const month = months[item.key] ?? currentMonth();
+        const month = months[item.key] ?? getLocalYearMonth();
         const isDownloading =
           downloadMutation.isPending && downloadMutation.variables?.item.key === item.key;
 

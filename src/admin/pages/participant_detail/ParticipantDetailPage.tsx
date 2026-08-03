@@ -11,6 +11,7 @@ import {
 import MonthPicker from "../../components/MonthPicker";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import { btnPrimaryClass } from "../../uiClasses";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type {
   AnnualLeave,
   AttendanceStats,
@@ -53,7 +54,7 @@ const ParticipantDetailPage = () => {
   const navigate = useNavigate();
   const participantId = Number(id);
 
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(getLocalYearMonth());
   const [payrollModalOpen, setPayrollModalOpen] = useState(false);
 
   const { data: participant } = useQuery(participantQueryOptions(participantId));

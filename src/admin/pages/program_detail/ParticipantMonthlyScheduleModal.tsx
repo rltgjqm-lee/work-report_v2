@@ -12,9 +12,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { Group, Participant } from "../../types";
-
-const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
 
 const toMinutes = (hhmm: string): number => {
   const [hour, minute] = hhmm.split(":").map(Number);
@@ -36,7 +35,7 @@ const ParticipantMonthlyScheduleModal = ({
   participant,
   group,
 }: ParticipantMonthlyScheduleModalProps) => {
-  const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
+  const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
   const [hasOverride, setHasOverride] = useState(false);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("");

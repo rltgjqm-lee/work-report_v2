@@ -613,7 +613,7 @@ app.get("/:id/leaves/stats", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
-  const year = c.req.query("year") ?? new Date().getFullYear().toString();
+  const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
 
   const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];

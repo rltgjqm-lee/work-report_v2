@@ -20,7 +20,12 @@ import {
   startLocationReporting,
   type LocationReportState,
 } from "../utils/locationReporting";
-import { formatTimeField, hhmmToTimeParts, isoToTimeParts } from "../utils/timeFormat";
+import {
+  formatTimeField,
+  getLocalToday,
+  hhmmToTimeParts,
+  isoToTimeParts,
+} from "../utils/timeFormat";
 
 const VIEW_TYPE = {
   AFFILIATION: "affiliation",
@@ -279,7 +284,7 @@ const Main = () => {
 
   useEffect(() => {
     if (!db || !formData.participantId) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalToday();
     const isSameParticipant = lastLoadedParticipantIdRef.current === formData.participantId;
     if (formData.actDate === today && isSameParticipant) return;
     lastLoadedParticipantIdRef.current = formData.participantId;

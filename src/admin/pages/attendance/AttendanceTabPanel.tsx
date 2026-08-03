@@ -6,6 +6,7 @@ import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   btnGhostClass,
   btnPrimaryClass,
@@ -54,7 +55,7 @@ interface AttendanceTabPanelProps {
  *
  */
 const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelProps) => {
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(getLocalYearMonth());
   const [dayFilter, setDayFilter] = useState("all");
   const [logs, setLogs] = useState<AttendanceRow[]>([]);
   const [stats, setStats] = useState<AttendanceStats>(emptyStats);

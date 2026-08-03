@@ -8,8 +8,7 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
-
-const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 
 const toMinutes = (hhmm: string): number => {
   const [hour, minute] = hhmm.split(":").map(Number);
@@ -35,7 +34,7 @@ interface GroupAddModalProps {
  */
 const GroupAddModal = ({ onClose, programId }: GroupAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
-  const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
+  const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
   const [patternWorkDays, setPatternWorkDays] = useState("1");
