@@ -30,9 +30,6 @@ export const zoneCardBtnClass =
   "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-[#f2f4f6] text-[#4e5968] cursor-pointer border-none whitespace-nowrap hover:bg-[#e7eaee]";
 export const zoneCardBtnDangerClass =
   "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-[#fbe9e9] text-[#c0392b] cursor-pointer border-none whitespace-nowrap hover:bg-[#f7dcdc]";
-// 관리자 페이지.dc.html의 .zone-worktime-tag — 관제 구역 표의 근무시간 칸에서 시간을 태그로 보여준다.
-export const zoneWorktimeTagClass =
-  "inline-flex justify-center text-[12px] font-semibold text-[#4e5968] bg-[#f2f4f6] px-[11px] py-1.5 rounded-full whitespace-nowrap";
 export const countChipClass = "text-xs text-[#6b7280] font-medium whitespace-nowrap";
 // 밑줄 강조형 탭(관리자 페이지.dc.html 디자인) — pill형 탭이 필요하면 별도로 쓸 것.
 // border-none은 border-style:none이라 border-b-2(너비)를 줘도 안 그려진다 — border-0(너비 0)으로

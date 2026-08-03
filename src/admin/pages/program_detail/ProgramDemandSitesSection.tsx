@@ -6,7 +6,7 @@ import DemandSiteFormModal from "./DemandSiteFormModal";
 import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
 import DemandSiteGroupAssignModal from "./DemandSiteGroupAssignModal";
 import StatusChip from "../../components/chip/StatusChip";
-import { btnGhostClass, rowActionBtnClass, zoneWorktimeTagClass } from "../../uiClasses";
+import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
 import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
 
 interface ProgramDemandSitesSectionProps {
@@ -139,9 +139,14 @@ const ProgramDemandSitesSection = ({
                     </button>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                    <div className="flex flex-col gap-1.5">
-                      {(demandSiteSchedules[demandSite.id] ?? []).map((schedule) => (
-                        <span key={schedule.id} className={zoneWorktimeTagClass}>
+                    <div className="flex flex-col">
+                      {(demandSiteSchedules[demandSite.id] ?? []).map((schedule, index) => (
+                        <span
+                          key={schedule.id}
+                          className={`py-1 whitespace-nowrap ${
+                            index === 0 ? "" : "border-t border-[#eef0f3]"
+                          }`}
+                        >
                           {schedule.shiftStart} ~ {schedule.shiftEnd} ({schedule.groupName})
                         </span>
                       ))}
