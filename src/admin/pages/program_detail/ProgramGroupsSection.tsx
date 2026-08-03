@@ -60,7 +60,7 @@ const ProgramGroupsSection = ({ programId, groups }: ProgramGroupsSectionProps) 
             <span className="text-[#9aa1ab]">{group.participantCount}명</span>
             <span className="text-[#9aa1ab]">{group.isActive ? "활성" : "비활성"}</span>
             <button className={rowActionBtnClass} onClick={() => setScheduleTarget(group)}>
-              월간 스케줄
+              수정
             </button>
             <button
               className={rowActionBtnClass}
