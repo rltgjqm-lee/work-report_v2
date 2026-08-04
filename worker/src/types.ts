@@ -25,6 +25,8 @@ export type Env = {
     VAPID_PRIVATE_KEY: string;
     VAPID_SUBJECT: string;
     DISASTER_API_KEY: string;
+    // Firebase 서비스 계정 키(JSON 전체를 문자열로) — FCM HTTP v1 API 인증용(JWT 서명 후 액세스 토큰 발급).
+    FCM_SERVICE_ACCOUNT_KEY: string;
     // juso.go.kr(행정안전부 주소정보지원서비스)는 API 종류별로 승인키가 따로 나온다 —
     // JUSO_API_KEY는 좌표제공 API(addrCoordApi.do), JUSO_SEARCH_API_KEY는 도로명주소
     // 검색 API(addrLinkApi.do) 전용이라 서로 안 바꿔 쓴다.
