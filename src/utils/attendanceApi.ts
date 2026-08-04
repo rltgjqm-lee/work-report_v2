@@ -9,13 +9,9 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // credentials: "include" — 이 브라우저에 관리자 콘솔 로그인 세션 쿠키가 있으면 같이
 // 실려가서, 서버가 출퇴근 테스트용 날짜/시간 override를 통합관리자에게만 허용하는 데 쓴다.
 // 일반 참여자는 그 쿠키가 없으니 그냥 무시될 뿐 평소 동작엔 영향이 없다.
-const request = async <T>(
-  path: string,
-  body: object,
-  method: "POST" | "PATCH" = "POST",
-): Promise<T> => {
+const request = async <T>(path: string, body: object): Promise<T> => {
   const res = await fetch(`${BASE_URL}${path}`, {
-    method,
+    method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
