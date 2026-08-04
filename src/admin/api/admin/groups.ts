@@ -61,3 +61,9 @@ export const updateGroupMutationOptions = (queryClient: QueryClient) =>
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
     },
   });
+
+export const bulkAssignGroup = (participantIds: number[], groupId: number) =>
+  request<{ updated: number }>("/api/groups/bulk-assign", {
+    method: "POST",
+    body: JSON.stringify({ participantIds, groupId }),
+  });

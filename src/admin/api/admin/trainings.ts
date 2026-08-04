@@ -60,6 +60,15 @@ export const createTrainingLog = (data: {
     body: JSON.stringify(data),
   });
 
+export const updateTrainingLog = (
+  id: number,
+  data: Partial<{ attendDate: string; attendHours: number }>,
+) =>
+  request<ParticipantTrainingLog>(`/api/trainings/logs/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
 export const cancelTrainingLog = (id: number) =>
   request<ParticipantTrainingLog>(`/api/trainings/logs/${id}`, {
     method: "DELETE",
