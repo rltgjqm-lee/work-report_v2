@@ -1,8 +1,8 @@
 import ExcelJS from "exceljs";
 
-export type CapacityAttendanceMarker = "HOLIDAY" | "WEEKEND" | "PRESENT" | "ABSENT" | "NONE";
+type CapacityAttendanceMarker = "HOLIDAY" | "WEEKEND" | "PRESENT" | "ABSENT" | "NONE";
 
-export interface CapacityAttendanceDay {
+interface CapacityAttendanceDay {
   day: number;
   date: string;
   marker: CapacityAttendanceMarker;

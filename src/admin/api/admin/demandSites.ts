@@ -9,7 +9,7 @@ import type {
   LatLngPoint,
 } from "../../types";
 
-export const demandSiteKeys = {
+const demandSiteKeys = {
   all: ["demand-sites"] as const,
   byProgram: (programId: number) => [...demandSiteKeys.all, "program", programId] as const,
   schedules: (demandSiteId: number) => [...demandSiteKeys.all, "schedules", demandSiteId] as const,
@@ -29,7 +29,7 @@ export const demandSitesQueryOptions = (programId: number) =>
 
 // 수요처 담당자로 지정할 수 있는 계정(담당자 역할) — 계정 관리 화면과 달리
 // 부관리자/담당자도 조회할 수 있고 id/이름만 내려온다.
-export const listAssignableDemandSiteAdmins = (programId: number) =>
+const listAssignableDemandSiteAdmins = (programId: number) =>
   request<{ id: number; name: string | null }[]>(
     `/api/demand-sites/assignable-admins?programId=${programId}`,
   );
@@ -40,7 +40,7 @@ export const assignableDemandSiteAdminsQueryOptions = (programId: number) =>
     queryFn: () => listAssignableDemandSiteAdmins(programId),
   });
 
-export interface CreateDemandSiteVariables {
+interface CreateDemandSiteVariables {
   programId: number;
   name: string;
   address?: string;
@@ -50,7 +50,7 @@ export interface CreateDemandSiteVariables {
   baseAreaEnabled?: boolean;
 }
 
-export const createDemandSite = (data: CreateDemandSiteVariables) =>
+const createDemandSite = (data: CreateDemandSiteVariables) =>
   request<DemandSite>("/api/demand-sites", {
     method: "POST",
     body: JSON.stringify(data),
@@ -79,7 +79,7 @@ export interface UpdateDemandSiteVariables {
   }>;
 }
 
-export const updateDemandSite = (id: number, data: UpdateDemandSiteVariables["data"]) =>
+const updateDemandSite = (id: number, data: UpdateDemandSiteVariables["data"]) =>
   request<DemandSite>(`/api/demand-sites/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -94,7 +94,7 @@ export const updateDemandSiteMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-export const listDemandSiteSchedules = (demandSiteId: number) =>
+const listDemandSiteSchedules = (demandSiteId: number) =>
   request<DemandSiteSchedule[]>(`/api/demand-sites/${demandSiteId}/schedules`);
 
 export const demandSiteSchedulesQueryOptions = (demandSiteId: number) =>
@@ -108,7 +108,7 @@ export interface CreateDemandSiteScheduleVariables {
   data: { groupId: number };
 }
 
-export const createDemandSiteSchedule = (
+const createDemandSiteSchedule = (
   demandSiteId: number,
   data: CreateDemandSiteScheduleVariables["data"],
 ) =>
@@ -133,7 +133,7 @@ export interface DeleteDemandSiteScheduleVariables {
   demandSiteId: number;
 }
 
-export const deleteDemandSiteSchedule = (scheduleId: number) =>
+const deleteDemandSiteSchedule = (scheduleId: number) =>
   request<{ success: boolean }>(`/api/demand-sites/schedules/${scheduleId}`, {
     method: "DELETE",
   });
@@ -149,7 +149,7 @@ export const deleteDemandSiteScheduleMutationOptions = (queryClient: QueryClient
     },
   });
 
-export const listDemandSiteLocations = (demandSiteId: number) =>
+const listDemandSiteLocations = (demandSiteId: number) =>
   request<DemandSiteLocation[]>(`/api/demand-sites/${demandSiteId}/locations`);
 
 export const demandSiteLocationsQueryOptions = (demandSiteId: number) =>
@@ -170,7 +170,7 @@ export interface CreateDemandSiteLocationVariables {
   };
 }
 
-export const createDemandSiteLocation = (
+const createDemandSiteLocation = (
   demandSiteId: number,
   data: CreateDemandSiteLocationVariables["data"],
 ) =>
@@ -188,28 +188,12 @@ export const createDemandSiteLocationMutationOptions = (queryClient: QueryClient
     },
   });
 
-export const updateDemandSiteLocation = (
-  locationId: number,
-  data: Partial<{
-    name: string;
-    shapeType: DemandSiteLocationShape;
-    baseLat: number;
-    baseLng: number;
-    radius: number;
-    polygon: LatLngPoint[];
-  }>,
-) =>
-  request<DemandSiteLocation>(`/api/demand-sites/locations/${locationId}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
-
 export interface DeleteDemandSiteLocationVariables {
   locationId: number;
   demandSiteId: number;
 }
 
-export const deleteDemandSiteLocation = (locationId: number) =>
+const deleteDemandSiteLocation = (locationId: number) =>
   request<{ success: boolean }>(`/api/demand-sites/locations/${locationId}`, {
     method: "DELETE",
   });
@@ -231,7 +215,7 @@ export interface PromoteDemandSiteLocationVariables {
 
 // 직접 그린 원형 거점을 수요처의 기본 관제구역으로 승격 — 그 거점은 삭제되고
 // demandSites.baseLat/baseLng/radius가 그 값으로 바뀐다(worker의 /locations/:id/promote 참고).
-export const promoteDemandSiteLocation = (locationId: number) =>
+const promoteDemandSiteLocation = (locationId: number) =>
   request<{ success: boolean }>(`/api/demand-sites/locations/${locationId}/promote`, {
     method: "POST",
   });

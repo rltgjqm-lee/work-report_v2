@@ -102,7 +102,7 @@ export type PositionCheck = {
   distanceM: number | null;
 };
 
-export const UNKNOWN_POSITION: PositionCheck = {
+const UNKNOWN_POSITION: PositionCheck = {
   inside: null,
   distanceM: null,
 };

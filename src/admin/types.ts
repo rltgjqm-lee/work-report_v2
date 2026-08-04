@@ -98,7 +98,7 @@ export type DemandSiteLocation = {
   createdAt: string;
 };
 
-export type ParticipantStatus = "ACTIVE" | "DROPPED" | "ON_LEAVE";
+type ParticipantStatus = "ACTIVE" | "DROPPED" | "ON_LEAVE";
 
 export type Participant = {
   id: number;
@@ -165,7 +165,7 @@ export type Admin = {
   createdAt: string;
 };
 
-export type AttendanceStatus = "NORMAL" | "LATE" | "EARLY_LEAVE" | "INVALID";
+type AttendanceStatus = "NORMAL" | "LATE" | "EARLY_LEAVE" | "INVALID";
 
 export type AttendanceLog = {
   id: number;
@@ -270,7 +270,7 @@ export type AnnualLeave = {
   remainingDays: number;
 };
 
-export type LeaveMonthlyStat = {
+type LeaveMonthlyStat = {
   month: string;
   totalLeaves: number;
   paidLeaves: number;
@@ -358,7 +358,7 @@ export type ProjectTraining = {
   createdAt: string;
 };
 
-export type TrainingLogStatus = "COMPLETED" | "CANCELLED";
+type TrainingLogStatus = "COMPLETED" | "CANCELLED";
 
 export type ParticipantTrainingLog = {
   id: number;

@@ -3,13 +3,13 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 import { request } from "../client";
 import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../../types";
 
-export const escapeKeys = {
+const escapeKeys = {
   all: ["escapes"] as const,
   byProgram: (programId: number, status: EscapeStatus) =>
     [...escapeKeys.all, "program", programId, status] as const,
 };
 
-export const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
+const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
   request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);
 
 export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
@@ -18,12 +18,12 @@ export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
     queryFn: () => getEscapes(programId, status),
   });
 
-export const liveWorkerKeys = {
+const liveWorkerKeys = {
   all: ["live-workers"] as const,
   byProgram: (programId: number) => [...liveWorkerKeys.all, programId] as const,
 };
 
-export const getLiveWorkers = (programId: number) =>
+const getLiveWorkers = (programId: number) =>
   request<LiveWorker[]>(`/api/programs/${programId}/workers/live`);
 
 export const liveWorkersQueryOptions = (programId: number) =>
@@ -38,7 +38,7 @@ export interface ResolveEscapeVariables {
   memo?: string;
 }
 
-export const resolveEscape = (id: number, memo?: string) =>
+const resolveEscape = (id: number, memo?: string) =>
   request<EscapeLog>(`/api/escapes/${id}/resolve`, {
     method: "POST",
     body: JSON.stringify({ memo }),
@@ -59,7 +59,7 @@ export interface MarkEscapeAlertedVariables {
   programId: number;
 }
 
-export const markEscapeAlerted = (id: number) =>
+const markEscapeAlerted = (id: number) =>
   request<EscapeLog>(`/api/escapes/${id}/alerted`, { method: "POST" });
 
 export const markEscapeAlertedMutationOptions = (queryClient: QueryClient) =>

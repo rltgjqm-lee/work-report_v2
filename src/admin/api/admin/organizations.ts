@@ -3,7 +3,7 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 import { request } from "../client";
 import type { Organization } from "../../types";
 
-export const organizationKeys = {
+const organizationKeys = {
   all: ["organizations"] as const,
   detail: (id: number) => [...organizationKeys.all, id] as const,
 };
@@ -12,14 +12,14 @@ export interface UpdateOrganizationVariables {
   data: Partial<Omit<Organization, "id" | "createdAt">>;
 }
 
-export const listOrganizations = () => request<Organization[]>("/api/organizations");
+const listOrganizations = () => request<Organization[]>("/api/organizations");
 
 export const organizationsQueryOptions = queryOptions({
   queryKey: organizationKeys.all,
   queryFn: listOrganizations,
 });
 
-export const getOrganization = (id: number) => request<Organization>(`/api/organizations/${id}`);
+const getOrganization = (id: number) => request<Organization>(`/api/organizations/${id}`);
 
 export const organizationQueryOptions = (id: number) =>
   queryOptions({

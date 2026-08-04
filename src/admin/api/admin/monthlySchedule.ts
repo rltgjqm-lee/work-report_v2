@@ -3,13 +3,13 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 import { request } from "../client";
 import type { GroupMonthlySchedule, ParticipantMonthlySchedule } from "../../types";
 
-export const groupMonthlyScheduleKeys = {
+const groupMonthlyScheduleKeys = {
   all: ["group-monthly-schedule"] as const,
   detail: (groupId: number, month: string) =>
     [...groupMonthlyScheduleKeys.all, groupId, month] as const,
 };
 
-export const getGroupMonthlySchedule = (groupId: number, month: string) =>
+const getGroupMonthlySchedule = (groupId: number, month: string) =>
   request<GroupMonthlySchedule>(`/api/groups/${groupId}/monthly-schedule?month=${month}`);
 
 export const groupMonthlyScheduleQueryOptions = (groupId: number, month: string) =>
@@ -25,7 +25,7 @@ export interface UpdateGroupMonthlyScheduleVariables {
   maxMonthlyMinutes: number;
 }
 
-export const updateGroupMonthlySchedule = (
+const updateGroupMonthlySchedule = (
   groupId: number,
   data: { yearMonth: string; workDates: string[]; maxMonthlyMinutes: number },
 ) =>
@@ -50,13 +50,13 @@ export const updateGroupMonthlyScheduleMutationOptions = (queryClient: QueryClie
     },
   });
 
-export const participantMonthlyScheduleKeys = {
+const participantMonthlyScheduleKeys = {
   all: ["participant-monthly-schedule"] as const,
   detail: (participantId: number, month: string) =>
     [...participantMonthlyScheduleKeys.all, participantId, month] as const,
 };
 
-export const getParticipantMonthlySchedule = (participantId: number, month: string) =>
+const getParticipantMonthlySchedule = (participantId: number, month: string) =>
   request<ParticipantMonthlySchedule>(
     `/api/participants/${participantId}/monthly-schedule?month=${month}`,
   );
@@ -74,7 +74,7 @@ export interface UpdateParticipantMonthlyScheduleVariables {
   maxMonthlyMinutes: number | null;
 }
 
-export const updateParticipantMonthlySchedule = (
+const updateParticipantMonthlySchedule = (
   participantId: number,
   data: {
     yearMonth: string;
@@ -111,7 +111,7 @@ export interface DeleteParticipantMonthlyScheduleVariables {
   yearMonth: string;
 }
 
-export const deleteParticipantMonthlySchedule = (participantId: number, month: string) =>
+const deleteParticipantMonthlySchedule = (participantId: number, month: string) =>
   request<{ success: boolean }>(
     `/api/participants/${participantId}/monthly-schedule?month=${month}`,
     { method: "DELETE" },

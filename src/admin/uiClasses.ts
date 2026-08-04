@@ -30,7 +30,6 @@ export const zoneCardBtnClass =
   "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-[#f2f4f6] text-[#4e5968] cursor-pointer border-none whitespace-nowrap hover:bg-[#e7eaee]";
 export const zoneCardBtnDangerClass =
   "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-[#fbe9e9] text-[#c0392b] cursor-pointer border-none whitespace-nowrap hover:bg-[#f7dcdc]";
-export const countChipClass = "text-xs text-[#6b7280] font-medium whitespace-nowrap";
 // 밑줄 강조형 탭(관리자 페이지.dc.html 디자인) — pill형 탭이 필요하면 별도로 쓸 것.
 // border-none은 border-style:none이라 border-b-2(너비)를 줘도 안 그려진다 — border-0(너비 0)으로
 // 좌/우/위만 리셋하고 아래쪽만 border-b-2로 두께를 올려야 밑줄이 실제로 보인다.

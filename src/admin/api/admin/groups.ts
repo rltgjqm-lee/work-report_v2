@@ -8,8 +8,7 @@ export const groupKeys = {
   byProgram: (programId: number) => [...groupKeys.all, "program", programId] as const,
 };
 
-export const listGroups = (programId: number) =>
-  request<Group[]>(`/api/programs/${programId}/groups`);
+const listGroups = (programId: number) => request<Group[]>(`/api/programs/${programId}/groups`);
 
 export const groupsQueryOptions = (programId: number) =>
   queryOptions({
@@ -27,7 +26,7 @@ export interface CreateGroupVariables {
   };
 }
 
-export const createGroup = (programId: number, data: CreateGroupVariables["data"]) =>
+const createGroup = (programId: number, data: CreateGroupVariables["data"]) =>
   request<Group>(`/api/programs/${programId}/groups`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -47,7 +46,7 @@ export interface UpdateGroupVariables {
   data: Partial<Pick<Group, "name" | "description" | "shiftStart" | "shiftEnd" | "isActive">>;
 }
 
-export const updateGroup = (id: number, data: UpdateGroupVariables["data"]) =>
+const updateGroup = (id: number, data: UpdateGroupVariables["data"]) =>
   request<Group>(`/api/groups/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -61,10 +60,4 @@ export const updateGroupMutationOptions = (queryClient: QueryClient) =>
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
     },
-  });
-
-export const bulkAssignGroup = (participantIds: number[], groupId: number) =>
-  request<{ updated: number }>("/api/groups/bulk-assign", {
-    method: "POST",
-    body: JSON.stringify({ participantIds, groupId }),
   });

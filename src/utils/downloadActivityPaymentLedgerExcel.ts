@@ -36,7 +36,7 @@ const DATA_ROW_HEIGHT = 18.95;
  * 생년월일/은행/계좌번호/비고/교육/치매검진은 담당자가 수기로 채우도록 빈 칸으로 둔다
  * (교육/치매검진은 추후 정산 페이지에서 입력하는 값이라 지금은 계산하지 않는다).
  */
-export const addActivityPaymentLedgerSheet = (
+const addActivityPaymentLedgerSheet = (
   workbook: ExcelJS.Workbook,
   sheetName: string,
   header: ActivityPaymentLedgerHeader,

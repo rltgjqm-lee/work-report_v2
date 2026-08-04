@@ -25,7 +25,7 @@ const request = async <T>(path: string, body: object): Promise<T> => {
 
 // 참여자 앱에서 "테스트용 날짜/시간" 패널을 실서버에서도 통합관리자에게만 보여주기
 // 위한 체크 — 관리자 세션 쿠키가 없거나 만료됐으면 조용히 null을 돌려준다.
-export const getCurrentAdminRole = async (): Promise<string | null> => {
+const getCurrentAdminRole = async (): Promise<string | null> => {
   try {
     const res = await fetch(`${BASE_URL}/api/me`, { credentials: "include" });
     if (!res.ok) return null;
@@ -36,7 +36,7 @@ export const getCurrentAdminRole = async (): Promise<string | null> => {
   }
 };
 
-export const adminRoleKeys = {
+const adminRoleKeys = {
   all: ["admin-role"] as const,
 };
 
@@ -98,7 +98,7 @@ export class IdentifyError extends Error {
   }
 }
 
-export const identifyParticipant = async (
+const identifyParticipant = async (
   programId: number,
   name: string,
 ): Promise<IdentifiedParticipant> => {
@@ -117,7 +117,7 @@ export const identifyParticipant = async (
   return res.json();
 };
 
-export const identifyParticipantKeys = {
+const identifyParticipantKeys = {
   all: ["identify-participant"] as const,
   byProgramAndName: (programId: number, name: string) =>
     [...identifyParticipantKeys.all, programId, name] as const,
@@ -185,7 +185,7 @@ export class ClockInError extends Error {
   }
 }
 
-export const clockIn = async (
+const clockIn = async (
   participantId: number,
   debug?: DebugAttendanceOverride,
   coordinates?: Coordinates | null,
@@ -223,7 +223,7 @@ export class ClockOutError extends Error {
   }
 }
 
-export const clockOut = async (
+const clockOut = async (
   participantId: number,
   debug?: DebugAttendanceOverride,
   coordinates?: Coordinates | null,
@@ -312,23 +312,4 @@ export const reportLocation = (participantId: number, coordinates: Coordinates) 
   return Capacitor.isNativePlatform()
     ? postViaNativeHttp<LocationReportResult>("/public/location", body)
     : request<LocationReportResult>("/public/location", body);
-};
-
-// signatureDataUrl은 캔버스가 만든 base64 data URL이지만, 여기서 바로 바이너리로
-// 되돌려서 서버에는 base64를 거치지 않고 진짜 PNG 바이트로 전송한다.
-export const signAttendance = async (
-  participantId: number,
-  signatureDataUrl: string,
-): Promise<{ id: number; signatureKey: string }> => {
-  const blob = await (await fetch(signatureDataUrl)).blob();
-  const res = await fetch(`${BASE_URL}/public/attendance/sign?participantId=${participantId}`, {
-    method: "POST",
-    headers: { "Content-Type": blob.type || "image/png" },
-    body: blob,
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}) as { error?: string });
-    throw new Error(data.error || "요청에 실패했습니다.");
-  }
-  return res.json();
 };

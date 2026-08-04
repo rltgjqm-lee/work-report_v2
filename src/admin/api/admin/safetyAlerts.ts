@@ -3,9 +3,9 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 import { request } from "../client";
 import type { SafetyAlert } from "../../types";
 
-export const listSafetyAlerts = () => request<SafetyAlert[]>("/api/safety-alerts");
+const listSafetyAlerts = () => request<SafetyAlert[]>("/api/safety-alerts");
 
-export const safetyAlertsKeys = {
+const safetyAlertsKeys = {
   all: ["safety-alerts"] as const,
 };
 
@@ -14,12 +14,12 @@ export const safetyAlertsQueryOptions = queryOptions({
   queryFn: listSafetyAlerts,
 });
 
-export interface SendTestSafetyAlertVariables {
+interface SendTestSafetyAlertVariables {
   message: string;
   programId: number;
 }
 
-export const sendTestSafetyAlert = (data: SendTestSafetyAlertVariables) =>
+const sendTestSafetyAlert = (data: SendTestSafetyAlertVariables) =>
   request<{
     ok: true;
     alertId: string;

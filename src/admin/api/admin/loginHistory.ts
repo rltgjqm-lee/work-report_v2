@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { request } from "../client";
 
-export type LoginHistoryEntry = {
+type LoginHistoryEntry = {
   id: number;
   email: string;
   adminName: string | null;
@@ -11,9 +11,9 @@ export type LoginHistoryEntry = {
   createdAt: string;
 };
 
-export const listLoginHistory = () => request<LoginHistoryEntry[]>("/api/admins/login-history");
+const listLoginHistory = () => request<LoginHistoryEntry[]>("/api/admins/login-history");
 
-export const loginHistoryKeys = {
+const loginHistoryKeys = {
   all: ["login-history"] as const,
 };
 

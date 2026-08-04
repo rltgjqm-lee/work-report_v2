@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 
 import { labelClass, selectClass } from "../atoms/classes";
 
-export type DropdownOption = {
+type DropdownOption = {
   value: string;
   label: string;
   disabled?: boolean;

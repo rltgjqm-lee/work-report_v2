@@ -37,7 +37,7 @@ const VIEW_TYPE = {
   SIGNATURE: "signature",
 } as const;
 
-export type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
+type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
 
 // 💡 폼 데이터를 IndexedDB의 ActivityLogItem 한 건으로 변환.
 // preserve로 기존 레코드의 serverId만 이어받는다(있으면 다음 동기화 때 수정 API를 씀).

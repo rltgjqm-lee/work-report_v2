@@ -1,4 +1,4 @@
-export interface DaumPostcodeResult {
+interface DaumPostcodeResult {
   roadAddress: string;
   jibunAddress: string;
   address: string;

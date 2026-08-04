@@ -23,9 +23,6 @@ export const textareaClass =
 export const selectClass =
   "appearance-none w-full box-border h-[54px] border-[1.5px] border-[#e5e8eb] rounded-2xl pl-2.5 pr-9 text-[17px] font-sans text-[#1f2937] font-semibold bg-[#f9fafb]";
 
-export const totalClass =
-  "bg-[#eef6ff] rounded-2xl p-4 text-center text-[18px] text-[#3182f6] font-extrabold";
-
 export const btnPrimaryClass =
   "w-full h-[58px] bg-[#3182f6] text-white border-none rounded-2xl text-[18px] font-extrabold font-sans cursor-pointer disabled:bg-[#e5e8eb] disabled:text-[#b0b8c1] disabled:cursor-not-allowed";
 
@@ -52,5 +49,3 @@ export const sigBoxClass =
 
 export const sigClearClass =
   "absolute top-3 right-3 bg-[#fef2f2] text-[#e94b4b] text-[14px] font-bold px-3.5 py-2 rounded-[10px] border-none cursor-pointer";
-
-export const checkRowClass = "flex items-start gap-3 text-[16px] font-semibold text-[#1f2937]";

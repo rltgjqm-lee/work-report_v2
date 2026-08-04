@@ -12,7 +12,7 @@ import type {
   ParticipantMonthlyAttendance,
 } from "../../types";
 
-export const participantKeys = {
+const participantKeys = {
   all: ["participants"] as const,
   detail: (id: number) => [...participantKeys.all, id] as const,
   attendance: (id: number, month: string) =>
@@ -23,7 +23,7 @@ export const participantKeys = {
   groupOverrides: (id: number) => [...participantKeys.detail(id), "group-overrides"] as const,
 };
 
-export const getParticipant = (id: number) => request<ParticipantDetail>(`/api/participants/${id}`);
+const getParticipant = (id: number) => request<ParticipantDetail>(`/api/participants/${id}`);
 
 export const participantQueryOptions = (id: number) =>
   queryOptions({
@@ -31,7 +31,7 @@ export const participantQueryOptions = (id: number) =>
     queryFn: () => getParticipant(id),
   });
 
-export const getParticipantAttendance = (id: number, month: string) =>
+const getParticipantAttendance = (id: number, month: string) =>
   request<ParticipantMonthlyAttendance>(`/api/participants/${id}/attendance?month=${month}`);
 
 export const participantAttendanceQueryOptions = (id: number, month: string) =>
@@ -40,7 +40,7 @@ export const participantAttendanceQueryOptions = (id: number, month: string) =>
     queryFn: () => getParticipantAttendance(id, month),
   });
 
-export const getParticipantLeaves = (id: number) =>
+const getParticipantLeaves = (id: number) =>
   request<ParticipantLeave[]>(`/api/participants/${id}/leaves`);
 
 export const participantLeavesQueryOptions = (id: number) =>
@@ -60,7 +60,7 @@ export interface AddParticipantVariables {
   };
 }
 
-export const addParticipant = (programId: number, data: AddParticipantVariables["data"]) =>
+const addParticipant = (programId: number, data: AddParticipantVariables["data"]) =>
   request<Participant>(`/api/programs/${programId}/participants`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -77,7 +77,7 @@ export const addParticipantMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-export const deleteParticipant = (programId: number, participantId: number) =>
+const deleteParticipant = (programId: number, participantId: number) =>
   request<{ success: boolean }>(`/api/programs/${programId}/participants/${participantId}`, {
     method: "DELETE",
   });
@@ -117,10 +117,7 @@ export interface BulkAddParticipantsVariables {
   };
 }
 
-export const bulkAddParticipants = (
-  programId: number,
-  data: BulkAddParticipantsVariables["data"],
-) =>
+const bulkAddParticipants = (programId: number, data: BulkAddParticipantsVariables["data"]) =>
   request<Participant[]>(`/api/programs/${programId}/participants/bulk`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -160,7 +157,7 @@ export interface UpdateParticipantVariables {
   >;
 }
 
-export const updateParticipant = (id: number, data: UpdateParticipantVariables["data"]) =>
+const updateParticipant = (id: number, data: UpdateParticipantVariables["data"]) =>
   request<Participant>(`/api/participants/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -191,7 +188,7 @@ export interface MoveParticipantToGroupVariables {
   groupId: number;
 }
 
-export const moveParticipantToGroup = (id: number, groupId: number) =>
+const moveParticipantToGroup = (id: number, groupId: number) =>
   request<Participant>(`/api/participants/${id}/group`, {
     method: "POST",
     body: JSON.stringify({ groupId }),
@@ -221,7 +218,7 @@ export interface ParticipantGroupOverride {
   groupName: string;
 }
 
-export const getParticipantGroupOverrides = (id: number) =>
+const getParticipantGroupOverrides = (id: number) =>
   request<ParticipantGroupOverride[]>(`/api/participants/${id}/group-overrides`);
 
 export const participantGroupOverridesQueryOptions = (id: number) =>
@@ -236,7 +233,7 @@ export interface SetParticipantGroupOverrideVariables {
   groupId: number;
 }
 
-export const setParticipantGroupOverride = (id: number, date: string, groupId: number) =>
+const setParticipantGroupOverride = (id: number, date: string, groupId: number) =>
   request<ParticipantGroupOverride["override"]>(`/api/participants/${id}/group-overrides`, {
     method: "POST",
     body: JSON.stringify({ date, groupId }),
@@ -259,7 +256,7 @@ export interface DeleteParticipantGroupOverrideVariables {
   date: string;
 }
 
-export const deleteParticipantGroupOverride = (id: number, date: string) =>
+const deleteParticipantGroupOverride = (id: number, date: string) =>
   request<{ success: boolean }>(`/api/participants/${id}/group-overrides/${date}`, {
     method: "DELETE",
   });
@@ -281,7 +278,7 @@ export interface DropParticipantVariables {
   dropReason?: string;
 }
 
-export const dropParticipant = (id: number, dropReason?: string) =>
+const dropParticipant = (id: number, dropReason?: string) =>
   request<Participant>(`/api/participants/${id}/drop`, {
     method: "POST",
     body: JSON.stringify({ dropReason }),
@@ -306,7 +303,7 @@ export interface RegisterParticipantLeaveVariables {
   reason?: string;
 }
 
-export const registerParticipantLeave = (
+const registerParticipantLeave = (
   id: number,
   data: {
     leaveStart: string;
@@ -341,7 +338,7 @@ export interface EndParticipantLeaveVariables {
   programId: number;
 }
 
-export const endParticipantLeave = (id: number) =>
+const endParticipantLeave = (id: number) =>
   request<Participant>(`/api/participants/${id}/leave/end`, {
     method: "POST",
   });
@@ -361,7 +358,7 @@ export interface ReactivateParticipantVariables {
   programId: number;
 }
 
-export const reactivateParticipant = (id: number) =>
+const reactivateParticipant = (id: number) =>
   request<Participant>(`/api/participants/${id}/reactivate`, {
     method: "POST",
   });
@@ -376,7 +373,7 @@ export const reactivateParticipantMutationOptions = (queryClient: QueryClient) =
     },
   });
 
-export const getAnnualLeave = (id: number, year: string) =>
+const getAnnualLeave = (id: number, year: string) =>
   request<AnnualLeave>(`/api/participants/${id}/annual-leave?year=${year}`);
 
 export const participantAnnualLeaveQueryOptions = (id: number, year: string) =>
@@ -391,7 +388,7 @@ export interface SetAnnualLeaveVariables {
   totalDays: number;
 }
 
-export const setAnnualLeave = (id: number, data: { year: string; totalDays: number }) =>
+const setAnnualLeave = (id: number, data: { year: string; totalDays: number }) =>
   request<AnnualLeave>(`/api/participants/${id}/annual-leave`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -417,7 +414,7 @@ export interface BulkUpdateParticipantStatusVariables {
   dropReason?: string;
 }
 
-export const bulkUpdateParticipantStatus = (
+const bulkUpdateParticipantStatus = (
   programId: number,
   data: {
     participantIds: number[];

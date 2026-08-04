@@ -42,7 +42,7 @@ export const programQueryOptions = (id: number) =>
     queryFn: () => getProgram(id),
   });
 
-export const createProgram = (data: Partial<Omit<Program, "id" | "createdAt">>) =>
+const createProgram = (data: Partial<Omit<Program, "id" | "createdAt">>) =>
   request<Program>("/api/programs", {
     method: "POST",
     body: JSON.stringify(data),
@@ -61,7 +61,7 @@ export interface UpdateProgramVariables {
   data: Partial<Omit<Program, "id" | "createdAt" | "organizationId">>;
 }
 
-export const updateProgram = (id: number, data: UpdateProgramVariables["data"]) =>
+const updateProgram = (id: number, data: UpdateProgramVariables["data"]) =>
   request<Program>(`/api/programs/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -81,7 +81,7 @@ export interface SetProgramManagerVariables {
 }
 
 // 사업단 담당자 지정
-export const setProgramManager = (programId: number, adminId: number | null) =>
+const setProgramManager = (programId: number, adminId: number | null) =>
   request<{ ok: true; adminId: number | null }>(`/api/programs/${programId}/manager`, {
     method: "PUT",
     body: JSON.stringify({ adminId }),

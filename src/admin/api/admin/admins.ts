@@ -35,7 +35,7 @@ export const adminKeys = {
   all: ["admins"] as const,
 };
 
-export const listAdmins = () => request<Admin[]>("/api/admins");
+const listAdmins = () => request<Admin[]>("/api/admins");
 
 export const adminsQueryOptions = queryOptions({
   queryKey: adminKeys.all,

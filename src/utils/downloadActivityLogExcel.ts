@@ -1,11 +1,5 @@
 import ExcelJS from "exceljs";
-import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
-
-interface ExportExcelArgs {
-  filteredLogs: ActivityLogItem[];
-  formData: ActivityLogFormData;
-  fileName: string;
-}
+import type { ActivityLogItem } from "../types/form";
 
 export interface ActivityLogSheetHeader {
   orgName: string;
@@ -230,36 +224,4 @@ export const addActivityLogSheet = (
     horizontal: "left",
     vertical: "middle",
   };
-};
-
-/**
- * 💡 활동 일지 데이터를 바탕으로 국문 서식의 ExcelJS 보고서를 생성하고 다운로드합니다.
- */
-export const downloadActivityLogExcel = async ({
-  filteredLogs,
-  formData,
-  fileName,
-}: ExportExcelArgs): Promise<void> => {
-  const workbook = new ExcelJS.Workbook();
-  addActivityLogSheet(
-    workbook,
-    "공익활동일지",
-    {
-      orgName: formData.orgName,
-      programName: formData.programName,
-      participantName: formData.userName,
-      demandName: formData.demandName,
-    },
-    filteredLogs,
-  );
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(link.href); // 메모리 누수 방지용 해제 추가
 };
