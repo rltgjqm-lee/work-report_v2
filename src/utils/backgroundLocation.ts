@@ -58,8 +58,8 @@ export const startBackgroundLocationWatch = ({
     {
       // backgroundMessage가 있어야 백그라운드에서도 좌표가 들어온다 —
       // 안드로이드에선 이 문구가 상주 알림 본문으로 그대로 보인다.
-      backgroundMessage: "퇴근을 등록하면 위치 확인이 끝납니다.",
-      backgroundTitle: "근무 중 위치를 확인하고 있어요",
+      backgroundMessage: "퇴근을 등록하면 종료됩니다.",
+      backgroundTitle: "안전을 위해 위치를 확인하고 있어요",
       requestPermissions: true,
       // 오래된 좌표로 이탈을 판정하면 안 되므로 GPS 확정 좌표만 받는다
       stale: false,
