@@ -293,18 +293,40 @@ app.post("/attendance/clock-in", async (c) => {
 
   const debugOverride = await readDebugOverride(c, body);
   const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
+  const yearMonth = date.slice(0, 7);
 
-  // 오늘 날짜의 조 임시 배정이 있으면 원래 조(participant.groupId) 대신 이 조를 기준으로
-  // 근무일/근무시간을 판정한다 — 관리자가 특정 날짜에만 다른 조로 옮겨둔 경우.
-  const groupOverrideRows = await db
-    .select()
-    .from(participantGroupOverrides)
-    .where(
-      and(
-        eq(participantGroupOverrides.participantId, participant.id),
-        eq(participantGroupOverrides.date, date),
+  // 서로 의존관계가 없는 조회 4개를 한 번에 실행해서 왕복 횟수를 줄인다 — 순차 실행 시
+  // 출근 버튼을 누르고 나서 이 조회들의 지연시간이 그대로 누적됐다.
+  const [groupOverrideRows, participantScheduleRows, existing, position] = await Promise.all([
+    // 오늘 날짜의 조 임시 배정이 있으면 원래 조(participant.groupId) 대신 이 조를 기준으로
+    // 근무일/근무시간을 판정한다 — 관리자가 특정 날짜에만 다른 조로 옮겨둔 경우.
+    db
+      .select()
+      .from(participantGroupOverrides)
+      .where(
+        and(
+          eq(participantGroupOverrides.participantId, participant.id),
+          eq(participantGroupOverrides.date, date),
+        ),
       ),
-    );
+    db
+      .select()
+      .from(participantMonthlySchedule)
+      .where(
+        and(
+          eq(participantMonthlySchedule.participantId, participant.id),
+          eq(participantMonthlySchedule.yearMonth, yearMonth),
+        ),
+      ),
+    db
+      .select()
+      .from(attendanceLogs)
+      .where(
+        and(eq(attendanceLogs.participantId, participant.id), eq(attendanceLogs.workDate, date)),
+      ),
+    checkPositionAgainstDemandSite(db, participant.demandSiteId, body.lat, body.lng),
+  ]);
+
   const effectiveGroupId = groupOverrideRows[0]?.groupId ?? participant.groupId;
 
   // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
@@ -324,35 +346,34 @@ app.post("/attendance/clock-in", async (c) => {
   // 월간 근무 스케줄이 있으면 오늘이 근무일인지부터 확인한다 — 시간 검증보다 먼저다.
   // 참여자 개인 스케줄이 있으면 그걸 쓰고, 없으면 조 스케줄을 쓴다. 둘 다 이번 달
   // 레코드가 없으면(스케줄을 아직 안 만든 사업단) 이 검증은 건너뛴다.
-  const yearMonth = date.slice(0, 7);
-
-  const participantScheduleRows = await db
-    .select()
-    .from(participantMonthlySchedule)
-    .where(
-      and(
-        eq(participantMonthlySchedule.participantId, participant.id),
-        eq(participantMonthlySchedule.yearMonth, yearMonth),
-      ),
-    );
-
   let workDates = participantScheduleRows[0]
     ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
     : null;
 
-  if (!workDates && effectiveGroupId) {
-    const groupScheduleRows = await db
-      .select()
-      .from(groupMonthlySchedule)
-      .where(
-        and(
-          eq(groupMonthlySchedule.groupId, effectiveGroupId),
-          eq(groupMonthlySchedule.yearMonth, yearMonth),
-        ),
-      );
-    workDates = groupScheduleRows[0]
-      ? (JSON.parse(groupScheduleRows[0].workDates) as string[])
-      : null;
+  // effectiveGroupId가 있어야 하는 조회 2개(조 스케줄 대체, 조 근무시간)도 서로
+  // 독립적이라 한 번에 실행한다.
+  let group: typeof groups.$inferSelect | undefined;
+  if (effectiveGroupId) {
+    const [groupScheduleRows, groupRows] = await Promise.all([
+      workDates
+        ? Promise.resolve([])
+        : db
+            .select()
+            .from(groupMonthlySchedule)
+            .where(
+              and(
+                eq(groupMonthlySchedule.groupId, effectiveGroupId),
+                eq(groupMonthlySchedule.yearMonth, yearMonth),
+              ),
+            ),
+      db.select().from(groups).where(eq(groups.id, effectiveGroupId)),
+    ]);
+    if (!workDates) {
+      workDates = groupScheduleRows[0]
+        ? (JSON.parse(groupScheduleRows[0].workDates) as string[])
+        : null;
+    }
+    group = groupRows[0];
   }
 
   if (workDates && !workDates.includes(date)) {
@@ -362,45 +383,27 @@ app.post("/attendance/clock-in", async (c) => {
   // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 정시부터, 종료 30분 후까지만 출근을
   // 허용한다. 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한
   // 사업단도 있어서).
-  if (effectiveGroupId) {
-    const groupRows = await db.select().from(groups).where(eq(groups.id, effectiveGroupId));
-    const group = groupRows[0];
+  if (group) {
+    const nowMinutes = toMinutes(time);
+    const earliest = toMinutes(group.shiftStart);
+    const latest = toMinutes(group.shiftEnd) + 30;
 
-    if (group) {
-      const nowMinutes = toMinutes(time);
-      const earliest = toMinutes(group.shiftStart);
-      const latest = toMinutes(group.shiftEnd) + 30;
-
-      if (nowMinutes < earliest) {
-        // 문구는 프론트에서 조립한다(안내 모달에 시간표를 같이 보여줘야 해서) — 여기서는
-        // 판단에 필요한 코드/데이터만 내려준다.
-        return c.json(
-          { error: "TOO_EARLY", now: time, shiftStart: group.shiftStart, shiftEnd: group.shiftEnd },
-          400,
-        );
-      }
-      if (nowMinutes > latest) {
-        return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);
-      }
+    if (nowMinutes < earliest) {
+      // 문구는 프론트에서 조립한다(안내 모달에 시간표를 같이 보여줘야 해서) — 여기서는
+      // 판단에 필요한 코드/데이터만 내려준다.
+      return c.json(
+        { error: "TOO_EARLY", now: time, shiftStart: group.shiftStart, shiftEnd: group.shiftEnd },
+        400,
+      );
+    }
+    if (nowMinutes > latest) {
+      return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);
     }
   }
 
-  const existing = await db
-    .select()
-    .from(attendanceLogs)
-    .where(
-      and(eq(attendanceLogs.participantId, participant.id), eq(attendanceLogs.workDate, date)),
-    );
   if (existing.length > 0) {
     return c.json({ error: "이미 출근 처리되었습니다." }, 400);
   }
-
-  const position = await checkPositionAgainstDemandSite(
-    db,
-    participant.demandSiteId,
-    body.lat,
-    body.lng,
-  );
 
   const result = await db
     .insert(attendanceLogs)
