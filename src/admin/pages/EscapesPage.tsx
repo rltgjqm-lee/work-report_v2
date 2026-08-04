@@ -114,8 +114,9 @@ const EscapesPage = () => {
           baseArea: null,
         }));
 
-        // 거점을 안 그린 수요처도 기본 관제구역이 잡혀 있으면 지도에 나와야 한다
+        // 거점을 안 그린 수요처도 기본 관제구역이 활성화되어 있으면 지도에 나와야 한다
         if (
+          demandSite.baseAreaEnabled &&
           demandSite.baseLat !== null &&
           demandSite.baseLng !== null &&
           demandSite.radius !== null

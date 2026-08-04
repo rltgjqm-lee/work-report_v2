@@ -5,6 +5,7 @@ import {
   programs,
   organizations,
   pushSubscriptions,
+  pushDeviceTokens,
   safetyAlerts,
   disasterPushLogs,
   disasterApiCallLog,
@@ -12,6 +13,7 @@ import {
 } from "../db/schema";
 import { fetchDisasterMessagesPage, type DisasterMessage } from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
+import { getFcmAccessToken, sendFcmPush } from "../lib/fcmPush";
 import { getKstNow } from "../lib/kst";
 import { isWeekendOrHoliday } from "../lib/koreanHolidays";
 import type { Env } from "../types";
@@ -134,15 +136,32 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
         .select()
         .from(pushSubscriptions)
         .where(inArray(pushSubscriptions.programId, programIds));
+      const deviceTokens = await db
+        .select()
+        .from(pushDeviceTokens)
+        .where(inArray(pushDeviceTokens.programId, programIds));
 
       if (subscriptions.length > 0) {
         await db.insert(pendingPushes).values(
           subscriptions.map((sub) => ({
             programId: sub.programId,
             messageId: message.id,
+            channel: "web" as const,
             endpoint: sub.endpoint,
             p256dh: sub.p256dh,
             auth: sub.auth,
+            body: message.message,
+          })),
+        );
+      }
+
+      if (deviceTokens.length > 0) {
+        await db.insert(pendingPushes).values(
+          deviceTokens.map((device) => ({
+            programId: device.programId,
+            messageId: message.id,
+            channel: "fcm" as const,
+            token: device.token,
             body: message.message,
           })),
         );
@@ -171,33 +190,59 @@ const drainPushQueue = async (db: DB, env: Env["Bindings"]): Promise<void> => {
     .orderBy(pendingPushes.id)
     .limit(MAX_PUSHES_PER_RUN);
 
+  // FCM 액세스 토큰은 큐에 fcm 채널 항목이 하나라도 있을 때만, 실행당 한 번만 발급해서 재사용한다.
+  let fcmAuth: { accessToken: string; projectId: string } | null = null;
+  if (queued.some((item) => item.channel === "fcm")) {
+    try {
+      fcmAuth = await getFcmAccessToken(env.FCM_SERVICE_ACCOUNT_KEY);
+    } catch (err) {
+      console.error("FCM 액세스 토큰 발급 실패:", err);
+    }
+  }
+
   for (const item of queued) {
     try {
-      const result = await sendWebPush(
-        {
-          endpoint: item.endpoint,
-          keys: { p256dh: item.p256dh, auth: item.auth },
-        },
-        { title: "🚨 재난문자", body: item.body },
-        { privateJWK: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT },
-      );
+      const result =
+        item.channel === "fcm"
+          ? fcmAuth && item.token
+            ? await sendFcmPush(fcmAuth.projectId, fcmAuth.accessToken, item.token, {
+                title: "🚨 재난문자",
+                body: item.body,
+              })
+            : { ok: false as const, expired: false, status: 0 }
+          : await sendWebPush(
+              {
+                endpoint: item.endpoint as string,
+                keys: { p256dh: item.p256dh as string, auth: item.auth as string },
+              },
+              { title: "🚨 재난문자", body: item.body },
+              { privateJWK: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT },
+            );
 
       await db.insert(disasterPushLogs).values({
         programId: item.programId,
         messageId: item.messageId,
+        channel: item.channel,
         endpoint: item.endpoint,
+        token: item.token,
         success: result.ok,
       });
 
       if (!result.ok && result.expired) {
-        await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, item.endpoint));
+        if (item.channel === "fcm" && item.token) {
+          await db.delete(pushDeviceTokens).where(eq(pushDeviceTokens.token, item.token));
+        } else if (item.endpoint) {
+          await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, item.endpoint));
+        }
       }
     } catch (err) {
       console.error("푸시 발송 중 오류:", err);
       await db.insert(disasterPushLogs).values({
         programId: item.programId,
         messageId: item.messageId,
+        channel: item.channel,
         endpoint: item.endpoint,
+        token: item.token,
         success: false,
       });
     } finally {

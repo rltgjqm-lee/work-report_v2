@@ -338,6 +338,7 @@ const HomePage = ({
           </div>
         )}
 
+        {/* 업무·안전 모듈은 역량활동에는 표시되지 않는다 */}
         <ModuleItem
           index={moduleIndex++}
           category="출근"
@@ -401,12 +402,6 @@ const HomePage = ({
           highlighted
           onClick={handleOpenSummaryButtonClick}
         />
-
-        {isCompetencyProgram && (
-          <p className="text-center text-[13px] text-[#9ca3af] font-semibold">
-            *업무·안전 모듈은 역량활동에는 표시되지 않아요
-          </p>
-        )}
       </div>
 
       {timeGuide && (

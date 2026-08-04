@@ -282,6 +282,11 @@ const ProgramParticipantsSection = ({
                   >
                     {groups.find((group) => group.id === participant.groupId)?.name ?? "미배정"}
                   </button>
+                  {participant.todayGroupOverride && (
+                    <span className="ml-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                      오늘만 {participant.todayGroupOverride.groupName}
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                   {statusLabel[participant.status]}

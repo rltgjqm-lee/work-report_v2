@@ -159,7 +159,6 @@ const resolveDemandSiteCoordinate = async (
   return fetchJusoCoordinate(identifier, coordApiKey);
 };
 
-// 수요처 기본 관제구역도 거점과 같은 최소 반경 규칙을 따른다.
 // 셋 중 하나라도 비면 관제구역 없음(null)으로 정리한다.
 const normalizeBaseArea = (
   baseLat: number | null | undefined,
@@ -180,7 +179,7 @@ const normalizeBaseArea = (
   return {
     baseLat,
     baseLng,
-    radius: Math.max(Math.round(radius), MIN_RADIUS_METERS),
+    radius: Math.round(radius),
   };
 };
 

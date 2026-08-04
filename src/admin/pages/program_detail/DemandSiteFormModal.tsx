@@ -201,12 +201,11 @@ const DemandSiteFormModal = ({
         </p>
       </FormField>
 
-      <FormField label={`관제 반경(m, 최소 ${MIN_RADIUS_METERS})`}>
+      <FormField label="관제 반경(m)">
         <input
           type="number"
           className={inputClass}
           value={form.radius}
-          min={MIN_RADIUS_METERS}
           step={100}
           disabled={!form.baseAreaEnabled}
           onChange={(event) => setForm((f) => ({ ...f, radius: event.target.value }))}

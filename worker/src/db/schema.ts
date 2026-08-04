@@ -435,9 +435,12 @@ export const pendingPushes = sqliteTable("pending_pushes", {
     .notNull()
     .references(() => programs.id),
   messageId: text("message_id").notNull(),
-  endpoint: text("endpoint").notNull(),
-  p256dh: text("p256dh").notNull(),
-  auth: text("auth").notNull(),
+  // "web"(Web Push: endpoint/p256dh/auth 사용) | "fcm"(네이티브 앱: token 사용)
+  channel: text("channel").$type<"web" | "fcm">().notNull().default("web"),
+  endpoint: text("endpoint"),
+  p256dh: text("p256dh"),
+  auth: text("auth"),
+  token: text("token"),
   body: text("body").notNull(),
   createdAt: text("created_at")
     .notNull()
@@ -473,7 +476,10 @@ export const disasterPushLogs = sqliteTable("disaster_push_logs", {
     .notNull()
     .references(() => programs.id),
   messageId: text("message_id").notNull(),
-  endpoint: text("endpoint").notNull(),
+  // "web"(Web Push) | "fcm"(네이티브 앱)
+  channel: text("channel").$type<"web" | "fcm">().notNull().default("web"),
+  endpoint: text("endpoint"),
+  token: text("token"),
   success: integer("success", { mode: "boolean" }).notNull(),
   sentAt: text("sent_at")
     .notNull()

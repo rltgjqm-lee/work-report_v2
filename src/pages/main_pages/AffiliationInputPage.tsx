@@ -12,6 +12,7 @@ import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { subscribeToPush } from "../../utils/pushSubscription";
+import { registerNativePush } from "../../utils/nativePushRegistration";
 import { affiliationsQueryOptions } from "../../utils/affiliationsApi";
 import { demandSitesQueryOptions } from "../../utils/demandSitesApi";
 
@@ -266,10 +267,7 @@ const AffiliationInputPage = ({
 
     if (selectedProgramId) {
       subscribeToPush(Number(selectedProgramId));
-      // 💡 registerNativePush(네이티브 FCM 등록)는 잠시 뺐다 — android/app/google-services.json이
-      // 없어 Firebase 미초기화 상태인데 PushNotifications.register()를 부르면 네이티브에서
-      // 잡히지 않는 IllegalStateException이 앱 프로세스를 그대로 죽인다("다음" 버튼 크래시 원인).
-      // google-services.json을 추가한 뒤 다시 켠다.
+      registerNativePush(Number(selectedProgramId));
     }
 
     onNext();

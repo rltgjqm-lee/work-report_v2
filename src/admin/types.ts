@@ -125,6 +125,8 @@ export type Participant = {
   industrialAccidentInsuranceEnrolled: boolean;
   weeklyHolidayHours: number;
   createdAt: string;
+  // 오늘 하루만 다른 조로 임시 배정된 경우에만 값이 있다 (participants.groupId는 그대로 유지됨)
+  todayGroupOverride: { groupId: number; groupName: string } | null;
 };
 
 export type Group = {

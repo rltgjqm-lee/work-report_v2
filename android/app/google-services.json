@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "332795764998",
+    "project_id": "work-report-ba8c8",
+    "storage_bucket": "work-report-ba8c8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:332795764998:android:088b0e1518b3f3fdc47e87",
+        "android_client_info": {
+          "package_name": "com.workreport.senioractivity"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVct11VnPwxuC6MmQbTSPPVaNE72oNkDU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
