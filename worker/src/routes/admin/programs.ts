@@ -8,6 +8,7 @@ import {
   participants,
   participantLeaves,
   participantAnnualLeave,
+  participantGroupOverrides,
   groups,
   demandSites,
   attendanceLogs,
@@ -85,11 +86,41 @@ app.get("/:id", async (c) => {
     .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
     .where(eq(participants.programId, id));
 
+  // 오늘 하루만 다른 조로 임시 배정된 참여자가 있으면 목록에서 바로 보이도록 같이 내려준다.
+  const { date: today } = getKstNow();
+  const todayOverrideRows =
+    participantRows.length === 0
+      ? []
+      : await db
+          .select({
+            participantId: participantGroupOverrides.participantId,
+            groupId: participantGroupOverrides.groupId,
+            groupName: groups.name,
+          })
+          .from(participantGroupOverrides)
+          .innerJoin(groups, eq(participantGroupOverrides.groupId, groups.id))
+          .where(
+            and(
+              eq(participantGroupOverrides.date, today),
+              inArray(
+                participantGroupOverrides.participantId,
+                participantRows.map((row) => row.id),
+              ),
+            ),
+          );
+  const todayOverrideByParticipantId = new Map(
+    todayOverrideRows.map((override) => [override.participantId, override]),
+  );
+
   const resolvedParticipants = participantRows.map((row) => {
     const { demandSiteName, ...participant } = row;
+    const todayOverride = todayOverrideByParticipantId.get(participant.id);
     return {
       ...participant,
       demandName: participant.demandName ?? demandSiteName ?? null,
+      todayGroupOverride: todayOverride
+        ? { groupId: todayOverride.groupId, groupName: todayOverride.groupName }
+        : null,
     };
   });
 

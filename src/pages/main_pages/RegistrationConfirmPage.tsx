@@ -131,13 +131,13 @@ const RegistrationConfirmPage = ({
 
         {exception === null && (
           <Card>
-            <p className="text-[16px] leading-relaxed font-medium text-[#1f2937]">
+            <p className="text-[16px] leading-relaxed font-medium text-[#1f2937] break-keep">
               {orgAddress && `${orgAddress} `}
               <strong className="text-[#3182f6] font-extrabold">{formData.orgName}</strong>의{" "}
               <strong className="text-[#3182f6] font-extrabold">{formData.programName}</strong>
               <br />
               <strong className="text-[#3182f6] font-extrabold">
-                {formData.userName}({formData.gender})
+                {formData.userName}님({formData.gender})
               </strong>{" "}
               맞으신가요?
               <br />
