@@ -350,6 +350,9 @@ app.post("/:id/participants", async (c) => {
   if (!body.name) {
     return c.json({ error: "이름을 입력해주세요." }, 400);
   }
+  if (body.gender !== "남성" && body.gender !== "여성") {
+    return c.json({ error: "성별을 선택해주세요." }, 400);
+  }
   if (body.demandSiteId) {
     const demandSiteRows = await db
       .select()
@@ -406,6 +409,9 @@ app.post("/:id/participants/bulk", async (c) => {
   rows.forEach((row, index) => {
     if (!row.name) {
       errors.push({ index, error: "이름을 입력해주세요." });
+    }
+    if (row.gender !== "남성" && row.gender !== "여성") {
+      errors.push({ index, error: "성별을 선택해주세요." });
     }
   });
 

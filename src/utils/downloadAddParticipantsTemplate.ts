@@ -32,7 +32,13 @@ export async function downloadAddParticipantsTemplate(
   };
 
   // 4. 1행 헤더 입력 (A1 ~ E1)
-  const headerRow = worksheet.addRow(["순번", "이름", "수요처(목록선택)", "조", "성별(목록선택)"]);
+  const headerRow = worksheet.addRow([
+    "순번",
+    "이름",
+    "수요처(목록선택)",
+    "조",
+    "성별(필수·목록선택)",
+  ]);
   headerRow.height = 25;
   headerRow.eachCell((cell: Cell) => {
     cell.style = headerStyle as Style;
@@ -40,9 +46,9 @@ export async function downloadAddParticipantsTemplate(
 
   // 5. 2행 주의사항 입력 (요청하신 줄바꿈 적용 및 높이 조절)
   const noticeText =
-    "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만 입력해 주세요.\n• 동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요\n  (예: 홍길동1, 홍길동2).";
+    "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만 입력해 주세요.\n• 동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요\n  (예: 홍길동1, 홍길동2).\n• [성별]은 필수입니다 — 비어있으면 등록되지 않아요.";
   const noticeRow = worksheet.addRow([noticeText]);
-  noticeRow.height = 78; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 78로 확장
+  noticeRow.height = 92; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 확장(성별 필수 안내 한 줄 추가)
   worksheet.mergeCells("A2:E2");
 
   noticeRow.getCell(1).style = {
@@ -137,14 +143,17 @@ export async function downloadAddParticipantsTemplate(
       };
     }
 
-    // 💡 E열(성별)은 "남성"/"여성" 둘뿐이라 별도 숨김 시트 없이 인라인 목록으로 검증한다
+    // 💡 E열(성별)은 "남성"/"여성" 둘뿐이라 별도 숨김 시트 없이 인라인 목록으로 검증한다.
+    // 필수 항목이라 allowBlank: false로 둬서 빈 채로 남겨도 되는 것처럼 보이지 않게 한다
+    // (실제 필수 검증은 업로드 시 parseParticipantsFile/서버에서 한다 — 엑셀 자체는
+    // 이미 값이 있던 셀을 지울 때만 이 표시가 뜨고, 애초에 안 건드린 빈 셀은 못 잡는다).
     row.getCell(5).dataValidation = {
       type: "list",
-      allowBlank: true,
+      allowBlank: false,
       formulae: ['"남성,여성"'],
       showErrorMessage: true,
       errorTitle: "잘못된 성별",
-      error: "남성 또는 여성만 선택할 수 있어요.",
+      error: "남성 또는 여성만 선택할 수 있어요. (필수 항목입니다)",
     };
   }
 

@@ -14,7 +14,7 @@ import { downloadAddParticipantsTemplate } from "../../../utils/downloadAddParti
 import { parseParticipantsFile } from "../../../utils/parseParticipantsFile";
 
 const GENDER_OPTIONS = [
-  { value: "", label: "선택 안 함" },
+  { value: "", label: "선택하세요" },
   { value: "남성", label: "남성" },
   { value: "여성", label: "여성" },
 ];
@@ -63,9 +63,18 @@ const ParticipantAddModal = ({
 
           return;
         }
+        const missingGenderNames = rows.filter((row) => !row.gender).map((row) => row.name);
+        if (missingGenderNames.length > 0) {
+          alert(
+            `성별을 입력하지 않았거나 잘못 입력한 참여자가 있습니다: ${missingGenderNames.join(", ")}`,
+          );
+
+          return;
+        }
         await bulkAddParticipantsMutation.mutateAsync({
           programId,
-          data: { participants: rows },
+          // 💡 바로 위에서 성별 누락 행이 없는지 이미 검증했으니 단언해도 안전하다
+          data: { participants: rows.map((row) => ({ ...row, gender: row.gender! })) },
         });
       } else {
         if (!form.name) {
@@ -73,11 +82,16 @@ const ParticipantAddModal = ({
 
           return;
         }
+        if (!form.gender) {
+          alert("성별을 선택해주세요.");
+
+          return;
+        }
         await addParticipantMutation.mutateAsync({
           programId,
           data: {
             name: form.name,
-            gender: form.gender ? (form.gender as "남성" | "여성") : undefined,
+            gender: form.gender as "남성" | "여성",
             demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
             groupId: form.groupId ? Number(form.groupId) : undefined,
           },
