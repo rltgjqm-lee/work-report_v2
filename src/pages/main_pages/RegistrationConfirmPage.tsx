@@ -9,6 +9,8 @@ import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { IdentifyError, identifyParticipantQueryOptions } from "../../utils/attendanceApi";
 import { getLocalToday } from "../../utils/timeFormat";
+import { subscribeToPush } from "../../utils/pushSubscription";
+import { registerNativePush } from "../../utils/nativePushRegistration";
 import type { ActivityLogFormData } from "../../types/form";
 
 type ExceptionInfo = {
@@ -44,8 +46,10 @@ const RegistrationConfirmPage = ({
   let exception: ExceptionInfo | null | "loading";
 
   useEffect(() => {
-    if (!participantId) return;
+    if (!participantId || !formData.programId) return;
     onChange("participantId", participantId);
+    subscribeToPush(formData.programId, participantId);
+    registerNativePush(formData.programId, participantId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participantId]);
 

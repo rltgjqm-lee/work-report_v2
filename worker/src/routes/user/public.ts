@@ -85,15 +85,25 @@ app.get("/programs/:id/demand-sites", async (c) => {
   return c.json(rows);
 });
 
+// 등록확인 화면에서 출근 식별(이름 확인)을 마친 뒤에만 호출되므로, 구독은 항상
+// 참여자와 연결된 상태로 만들어진다 — 재난문자 대상 선정이 이 사람의 실제 근무
+// 스케줄(조/월간스케줄/휴무)을 바로 판단할 수 있게 하기 위함.
 app.post("/push-subscriptions", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     programId?: number;
+    participantId?: number;
     endpoint?: string;
     keys?: { p256dh?: string; auth?: string };
   }>();
 
-  if (!body.programId || !body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {
+  if (
+    !body.programId ||
+    !body.participantId ||
+    !body.endpoint ||
+    !body.keys?.p256dh ||
+    !body.keys?.auth
+  ) {
     return c.json({ error: "푸시 구독 정보가 올바르지 않습니다." }, 400);
   }
 
@@ -101,6 +111,7 @@ app.post("/push-subscriptions", async (c) => {
     .insert(pushSubscriptions)
     .values({
       programId: body.programId,
+      participantId: body.participantId,
       endpoint: body.endpoint,
       p256dh: body.keys.p256dh,
       auth: body.keys.auth,
@@ -109,6 +120,7 @@ app.post("/push-subscriptions", async (c) => {
       target: pushSubscriptions.endpoint,
       set: {
         programId: body.programId,
+        participantId: body.participantId,
         p256dh: body.keys.p256dh,
         auth: body.keys.auth,
       },
@@ -116,30 +128,6 @@ app.post("/push-subscriptions", async (c) => {
     .returning();
 
   return c.json(result[0], 201);
-});
-
-// 최초 구독 등록(위) 시점엔 아직 참여자가 특정되지 않아 programId로만 저장된다.
-// 출근 식별(identify) 이후 이 엔드포인트로 구독을 참여자 한 명에 연결해야
-// 이탈 경고처럼 그 사람에게만 보내야 하는 푸시(1단계)가 가능해진다.
-app.post("/push-subscriptions/link-participant", async (c) => {
-  const db = drizzle(c.env.DB);
-  const body = await c.req.json<{
-    endpoint?: string;
-    participantId?: number;
-  }>();
-
-  if (!body.endpoint || !body.participantId) {
-    return c.json({ error: "푸시 구독 정보와 참여자를 지정해주세요." }, 400);
-  }
-
-  const result = await db
-    .update(pushSubscriptions)
-    .set({ participantId: body.participantId })
-    .where(eq(pushSubscriptions.endpoint, body.endpoint))
-    .returning();
-
-  if (!result[0]) return c.json({ error: "푸시 구독 정보를 찾을 수 없습니다." }, 404);
-  return c.json(result[0]);
 });
 
 // 참여자 셀프 근태체크 — 이름으로 본인 확인 (동명이인은 등록 시 이름에 "1", "2"를
@@ -209,57 +197,40 @@ app.post("/attendance/identify", async (c) => {
 });
 
 // 하이브리드 앱(Capacitor)이 발급받은 네이티브 푸시 토큰(FCM/APNs) 등록.
-// push-subscriptions(Web Push)와 동일한 흐름 — 실제 FCM 발송 연동 전까지는 저장만 한다.
+// 등록확인 화면에서 출근 식별(이름 확인)을 마친 뒤에만 호출되므로, push-subscriptions와
+// 마찬가지로 토큰은 항상 참여자와 연결된 상태로 만들어진다.
 app.post("/push-device-tokens", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
     programId?: number;
+    participantId?: number;
     platform?: "android" | "ios";
     token?: string;
   }>();
 
-  if (!body.programId || !body.platform || !body.token) {
-    return c.json({ error: "사업단, 플랫폼, 푸시 토큰을 모두 지정해주세요." }, 400);
+  if (!body.programId || !body.participantId || !body.platform || !body.token) {
+    return c.json({ error: "사업단, 참여자, 플랫폼, 푸시 토큰을 모두 지정해주세요." }, 400);
   }
 
   const result = await db
     .insert(pushDeviceTokens)
     .values({
       programId: body.programId,
+      participantId: body.participantId,
       platform: body.platform,
       token: body.token,
     })
     .onConflictDoUpdate({
       target: pushDeviceTokens.token,
-      set: { programId: body.programId, platform: body.platform },
+      set: {
+        programId: body.programId,
+        participantId: body.participantId,
+        platform: body.platform,
+      },
     })
     .returning();
 
   return c.json(result[0], 201);
-});
-
-// 최초 등록(위) 시점엔 아직 참여자가 특정되지 않아 programId로만 저장된다.
-// 출근 식별(identify) 이후 이 엔드포인트로 토큰을 참여자 한 명에 연결한다
-// (push-subscriptions/link-participant와 동일한 패턴).
-app.post("/push-device-tokens/link-participant", async (c) => {
-  const db = drizzle(c.env.DB);
-  const body = await c.req.json<{
-    token?: string;
-    participantId?: number;
-  }>();
-
-  if (!body.token || !body.participantId) {
-    return c.json({ error: "푸시 토큰과 참여자를 지정해주세요." }, 400);
-  }
-
-  const result = await db
-    .update(pushDeviceTokens)
-    .set({ participantId: body.participantId })
-    .where(eq(pushDeviceTokens.token, body.token))
-    .returning();
-
-  if (!result[0]) return c.json({ error: "푸시 토큰을 찾을 수 없습니다." }, 404);
-  return c.json(result[0]);
 });
 
 // 참여자용 앱의 홈 화면은 오늘 출퇴근 여부를 브라우저 로컬(IndexedDB) 캐시로만 판단하는데,

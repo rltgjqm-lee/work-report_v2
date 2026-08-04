@@ -14,6 +14,7 @@ import {
 import { fetchDisasterMessagesPage, type DisasterMessage } from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
 import { getFcmAccessToken, sendFcmPush } from "../lib/fcmPush";
+import { isParticipantScheduledNow } from "../lib/scheduling";
 import { getKstNow } from "../lib/kst";
 import { isWeekendOrHoliday } from "../lib/koreanHolidays";
 import type { Env } from "../types";
@@ -119,6 +120,22 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
     .from(programs)
     .innerJoin(organizations, eq(programs.organizationId, organizations.id));
 
+  // 구독/토큰은 항상 출근 식별을 마친 뒤에만 만들어지므로(등록확인 화면에서 참여자와
+  // 연결해서 생성) participantId는 항상 있다고 본다 — 그 참여자의 실제 스케줄(조 임시배정/
+  // 월간 스케줄/휴무/조 근무시간)로 지금 근무 중인지 판단해서, 개인적으로 퇴근했으면
+  // 더는 오지 않게 한다. 같은 실행 안에서 메시지가 여러 건이어도 참여자별 조회는
+  // 한 번만 하도록 캐싱한다.
+  const scheduleCache = new Map<number, Promise<boolean>>();
+  const isEligible = (participantId: number | null) => {
+    if (participantId === null) return Promise.resolve(false);
+    let cached = scheduleCache.get(participantId);
+    if (!cached) {
+      cached = isParticipantScheduledNow(db, participantId, date, time);
+      scheduleCache.set(participantId, cached);
+    }
+    return cached;
+  };
+
   for (const message of newMessages) {
     const matchingPrograms = programsWithOrg.filter(({ program, org }) => {
       if (!org.regionSido || !org.regionSigungu) return false;
@@ -126,20 +143,29 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
         return false;
       }
       if (date < program.startDate || date > program.endDate) return false;
-      if (time < program.startTime || time > program.endTime) return false;
       return true;
     });
 
     if (matchingPrograms.length > 0) {
       const programIds = matchingPrograms.map(({ program }) => program.id);
-      const subscriptions = await db
+
+      const allSubscriptions = await db
         .select()
         .from(pushSubscriptions)
         .where(inArray(pushSubscriptions.programId, programIds));
-      const deviceTokens = await db
+      const allDeviceTokens = await db
         .select()
         .from(pushDeviceTokens)
         .where(inArray(pushDeviceTokens.programId, programIds));
+
+      const subscriptions = [];
+      for (const sub of allSubscriptions) {
+        if (await isEligible(sub.participantId)) subscriptions.push(sub);
+      }
+      const deviceTokens = [];
+      for (const device of allDeviceTokens) {
+        if (await isEligible(device.participantId)) deviceTokens.push(device);
+      }
 
       if (subscriptions.length > 0) {
         await db.insert(pendingPushes).values(

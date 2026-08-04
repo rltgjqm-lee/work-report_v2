@@ -11,8 +11,6 @@ import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
-import { subscribeToPush } from "../../utils/pushSubscription";
-import { registerNativePush } from "../../utils/nativePushRegistration";
 import { affiliationsQueryOptions } from "../../utils/affiliationsApi";
 import { demandSitesQueryOptions } from "../../utils/demandSitesApi";
 
@@ -263,11 +261,6 @@ const AffiliationInputPage = ({
     if (errors.length > 0) {
       onAlert(errors);
       return;
-    }
-
-    if (selectedProgramId) {
-      subscribeToPush(Number(selectedProgramId));
-      registerNativePush(Number(selectedProgramId));
     }
 
     onNext();

@@ -9,8 +9,9 @@ const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
   return outputArray;
 };
 
-// 💡 사업단 선택 시 호출 — 재난문자 Web Push 구독을 등록한다 (실패해도 초기설정 저장 흐름은 막지 않음)
-export const subscribeToPush = async (programId: number): Promise<void> => {
+// 💡 등록확인 화면에서 출근 식별(이름 확인)에 성공하면 호출 — 이 시점엔 참여자가 이미
+// 확정돼 있으므로 구독을 처음부터 그 참여자와 연결해서 만든다(실패해도 흐름은 막지 않음).
+export const subscribeToPush = async (programId: number, participantId: number): Promise<void> => {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
@@ -32,6 +33,7 @@ export const subscribeToPush = async (programId: number): Promise<void> => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         programId,
+        participantId,
         endpoint: json.endpoint,
         keys: { p256dh: json.keys?.p256dh, auth: json.keys?.auth },
       }),

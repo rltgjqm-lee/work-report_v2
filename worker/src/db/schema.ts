@@ -395,9 +395,9 @@ export const pushSubscriptions = sqliteTable("push_subscriptions", {
   programId: integer("program_id")
     .notNull()
     .references(() => programs.id),
-  // 최초 구독 시점(참여자 식별 전)엔 비어있고, 출근 식별 이후 연결된다.
-  // 재난문자(프로그램 전체 브로드캐스트)는 이 값이 없어도 되지만, 이탈 경고처럼
-  // 특정 참여자 한 명에게만 보내야 하는 푸시는 이 값으로 대상을 찾는다.
+  // 등록확인 화면에서 출근 식별(이름 확인)을 마친 뒤에만 구독이 만들어지므로 항상 채워진다.
+  // 재난문자 대상 선정(checkDisasterAlerts)이 이 값으로 참여자의 실제 근무 스케줄을 조회하고,
+  // 이탈 경고처럼 특정 참여자 한 명에게만 보내야 하는 푸시도 이 값으로 대상을 찾는다.
   participantId: integer("participant_id").references(() => participants.id),
   endpoint: text("endpoint").notNull().unique(),
   p256dh: text("p256dh").notNull(),
@@ -410,14 +410,13 @@ export const pushSubscriptions = sqliteTable("push_subscriptions", {
 // 하이브리드 앱(Capacitor)에서 발급받은 네이티브 푸시 토큰(FCM/APNs).
 // pushSubscriptions(Web Push endpoint+keys)와 별도 테이블인 이유: 네이티브 토큰은
 // 구조가 다르고(문자열 토큰 하나), 실제 발송도 Web Push가 아니라 FCM API를 거쳐야 해서다.
-// 현재는 토큰 저장까지만 구현 — FCM 발송 연동은 Firebase 프로젝트 자격증명이 준비된 뒤 별도 작업.
 export const pushDeviceTokens = sqliteTable("push_device_tokens", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   programId: integer("program_id")
     .notNull()
     .references(() => programs.id),
-  // pushSubscriptions와 동일하게, 최초 등록 시점(참여자 식별 전)엔 비어있고
-  // 출근 식별 이후 연결된다.
+  // pushSubscriptions와 동일하게, 등록확인 화면에서 출근 식별을 마친 뒤에만 만들어지므로
+  // 항상 채워진다.
   participantId: integer("participant_id").references(() => participants.id),
   platform: text("platform").$type<"android" | "ios">().notNull(),
   token: text("token").notNull().unique(),
