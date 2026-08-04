@@ -35,7 +35,7 @@ export async function downloadAddParticipantsTemplate(
   const headerRow = worksheet.addRow([
     "순번",
     "이름",
-    "수요처(목록선택)",
+    "수요처(필수·목록선택)",
     "조",
     "성별(필수·목록선택)",
   ]);
@@ -46,9 +46,9 @@ export async function downloadAddParticipantsTemplate(
 
   // 5. 2행 주의사항 입력 (요청하신 줄바꿈 적용 및 높이 조절)
   const noticeText =
-    "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만 입력해 주세요.\n• 동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요\n  (예: 홍길동1, 홍길동2).\n• [성별]은 필수입니다 — 비어있으면 등록되지 않아요.";
+    "⚠️ 주의사항:\n• 헤더는 수정하지 마세요.\n• [순번]은 숫자만 입력해 주세요.\n• 동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요\n  (예: 홍길동1, 홍길동2).\n• [수요처]는 필수입니다 — 비어있으면 등록되지 않아요.\n• [성별]은 필수입니다 — 비어있으면 등록되지 않아요.";
   const noticeRow = worksheet.addRow([noticeText]);
-  noticeRow.height = 92; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 확장(성별 필수 안내 한 줄 추가)
+  noticeRow.height = 105; // 💡 줄바꿈 텍스트가 잘리지 않도록 행 높이를 확장(수요처 필수 안내 한 줄 추가)
   worksheet.mergeCells("A2:E2");
 
   noticeRow.getCell(1).style = {
@@ -119,15 +119,17 @@ export async function downloadAddParticipantsTemplate(
       }
     });
 
-    // 💡 C열(수요처)은 등록된 수요처 이름 중에서만 고르도록 드롭다운 검증을 건다 (미입력 시 미배정)
+    // 💡 C열(수요처)은 등록된 수요처 이름 중에서만 고르도록 드롭다운 검증을 건다.
+    // 필수 항목이라 allowBlank: false로 둔다 — 성별과 동일하게, 실제 필수 검증은
+    // 업로드 시 parseParticipantsFile/서버에서 한다.
     if (demandSiteListRange) {
       row.getCell(3).dataValidation = {
         type: "list",
-        allowBlank: true,
+        allowBlank: false,
         formulae: [demandSiteListRange],
         showErrorMessage: true,
         errorTitle: "잘못된 수요처 이름",
-        error: "목록에 있는 수요처 이름만 선택할 수 있어요.",
+        error: "목록에 있는 수요처 이름만 선택할 수 있어요. (필수 항목입니다)",
       };
     }
 

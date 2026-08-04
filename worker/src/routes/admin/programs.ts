@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, getTableColumns, inArray, isNull, like, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray, isNull, like, ne, sql } from "drizzle-orm";
 
 import {
   admins,
@@ -384,14 +384,30 @@ app.post("/:id/participants", async (c) => {
   if (body.gender !== "남성" && body.gender !== "여성") {
     return c.json({ error: "성별을 선택해주세요." }, 400);
   }
-  if (body.demandSiteId) {
-    const demandSiteRows = await db
-      .select()
-      .from(demandSites)
-      .where(eq(demandSites.id, body.demandSiteId));
-    if (demandSiteRows[0]?.programId !== programId) {
-      return c.json({ error: "해당 사업단의 수요처가 아닙니다." }, 400);
-    }
+  if (!body.demandSiteId) {
+    return c.json({ error: "수요처를 선택해주세요." }, 400);
+  }
+  const demandSiteRows = await db
+    .select()
+    .from(demandSites)
+    .where(eq(demandSites.id, body.demandSiteId));
+  if (demandSiteRows[0]?.programId !== programId) {
+    return c.json({ error: "해당 사업단의 수요처가 아닙니다." }, 400);
+  }
+
+  const duplicateRows = await db
+    .select()
+    .from(participants)
+    .where(
+      and(
+        eq(participants.programId, programId),
+        eq(participants.name, body.name),
+        eq(participants.gender, body.gender),
+        ne(participants.status, "DROPPED"),
+      ),
+    );
+  if (duplicateRows.length > 0) {
+    return c.json({ error: "이름과 성별이 같은 참여자가 이미 등록되어 있습니다." }, 400);
   }
 
   const result = await db
@@ -436,6 +452,15 @@ app.post("/:id/participants/bulk", async (c) => {
     return c.json({ error: "등록할 참여자가 없습니다." }, 400);
   }
 
+  const existingParticipants = await db
+    .select({ name: participants.name, gender: participants.gender })
+    .from(participants)
+    .where(and(eq(participants.programId, programId), ne(participants.status, "DROPPED")));
+  const existingKeys = new Set(
+    existingParticipants.map((participant) => `${participant.name}|${participant.gender}`),
+  );
+  const seenInBatch = new Set<string>();
+
   const errors: { index: number; error: string }[] = [];
   rows.forEach((row, index) => {
     if (!row.name) {
@@ -444,10 +469,23 @@ app.post("/:id/participants/bulk", async (c) => {
     if (row.gender !== "남성" && row.gender !== "여성") {
       errors.push({ index, error: "성별을 선택해주세요." });
     }
+    if (!row.demandSiteId) {
+      errors.push({ index, error: "수요처를 선택해주세요." });
+    }
+    if (row.name && (row.gender === "남성" || row.gender === "여성")) {
+      const key = `${row.name}|${row.gender}`;
+      if (existingKeys.has(key) || seenInBatch.has(key)) {
+        errors.push({ index, error: "이름과 성별이 같은 참여자가 이미 등록되어 있습니다." });
+      }
+      seenInBatch.add(key);
+    }
   });
 
   if (errors.length > 0) {
-    return c.json({ error: "입력값을 확인해주세요.", details: errors }, 400);
+    const summary = errors
+      .map(({ index, error }) => `${rows[index]?.name || `${index + 1}번째 행`}: ${error}`)
+      .join(", ");
+    return c.json({ error: `입력값을 확인해주세요 — ${summary}`, details: errors }, 400);
   }
 
   const result = await db

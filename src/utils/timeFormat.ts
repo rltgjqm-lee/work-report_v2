@@ -32,6 +32,18 @@ export const formatTimeField = (time: TimeParts): string => {
 export const isoToTimeParts = (iso: string): TimeParts =>
   hhmmToTimeParts(`${iso.slice(11, 13)}:${iso.slice(14, 16)}`);
 
+// 서버가 돌려주는 ISO 시각("...T09:05:00.000Z", KST 벽시계 시각을 UTC로 표기만 한 값)을
+// "09:05:00" 같은 24시간제 시각 문자열로 변환한다. new Date(iso).toLocaleTimeString()을
+// 쓰면 이미 KST인 값을 브라우저가 다시 KST로 변환해 9시간이 이중으로 더해지므로,
+// isoToTimeParts처럼 문자열을 그대로 슬라이스해서 읽어야 한다.
+export const isoToKstTimeString = (iso: string): string =>
+  `${iso.slice(11, 13)}:${iso.slice(14, 16)}:${iso.slice(17, 19)}`;
+
+// 위와 같은 이유로, 초 단위는 불필요하고 "MM/DD HH:MM"처럼 분까지만 보여주고 싶은 곳
+// (이탈 감지시각 등)에 쓴다.
+export const isoToKstMinuteString = (iso: string): string =>
+  `${iso.slice(5, 7)}/${iso.slice(8, 10)} ${iso.slice(11, 13)}:${iso.slice(14, 16)}`;
+
 // "09:05" 같은 24시간제 문자열(IndexedDB의 ActivityLogItem.start/end)을 폼의
 // {ampm,hour,minute} 구조로 되돌린다 — 홈 진입 시 오늘 레코드를 다시 불러올 때 씀.
 export const hhmmToTimeParts = (time: string): TimeParts => {

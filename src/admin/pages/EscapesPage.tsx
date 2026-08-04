@@ -12,6 +12,7 @@ import {
   resolveEscapeMutationOptions,
 } from "../api/admin/escapes";
 import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api/admin/demandSites";
+import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
 import type { DemandSiteLocation, EscapeRow, EscapeStatus, LiveWorker } from "../types";
@@ -295,9 +296,7 @@ const EscapesPage = () => {
           `상태: ${worker.status === "ESCAPE" ? "이탈중" : "정상"}<br/>` +
           `이탈횟수: ${worker.alertCount}회<br/>` +
           `수요처: ${worker.demandSiteName}<br/>` +
-          `마지막 위치: ${
-            worker.lastLocationAt ? new Date(worker.lastLocationAt).toLocaleTimeString() : "-"
-          }`,
+          `마지막 위치: ${worker.lastLocationAt ? isoToKstTimeString(worker.lastLocationAt) : "-"}`,
       );
       marker.addTo(layer);
     });
@@ -480,7 +479,7 @@ const EscapesPage = () => {
                           }
                         >
                           <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
-                            {row.escape.detectedAt}
+                            {isoToKstMinuteString(row.escape.detectedAt)}
                           </td>
                           <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3]">
                             {row.participantName}

@@ -202,7 +202,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] table-fixed border-collapse">
+          <table className="w-full min-w-[1270px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -229,7 +229,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   상태
                 </th>
-                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[260px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   비고
                 </th>
                 <th className="w-[150px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />

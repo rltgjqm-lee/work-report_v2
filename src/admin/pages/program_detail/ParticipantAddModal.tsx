@@ -71,6 +71,16 @@ const ParticipantAddModal = ({
 
           return;
         }
+        const missingDemandSiteNames = rows
+          .filter((row) => !row.demandSiteId)
+          .map((row) => row.name);
+        if (missingDemandSiteNames.length > 0) {
+          alert(
+            `수요처를 입력하지 않았거나 잘못 입력한 참여자가 있습니다: ${missingDemandSiteNames.join(", ")}`,
+          );
+
+          return;
+        }
         await bulkAddParticipantsMutation.mutateAsync({
           programId,
           // 💡 바로 위에서 성별 누락 행이 없는지 이미 검증했으니 단언해도 안전하다
@@ -84,6 +94,11 @@ const ParticipantAddModal = ({
         }
         if (!form.gender) {
           alert("성별을 선택해주세요.");
+
+          return;
+        }
+        if (!form.demandSiteId) {
+          alert("수요처를 선택해주세요.");
 
           return;
         }
@@ -188,7 +203,7 @@ const ParticipantAddModal = ({
           value={form.demandSiteId}
           onChange={(value) => setForm((f) => ({ ...f, demandSiteId: value }))}
           options={[
-            { value: "", label: "미배정" },
+            { value: "", label: "선택하세요" },
             ...activeDemandSites.map((demandSite) => ({
               value: String(demandSite.id),
               label: demandSite.name,
@@ -209,6 +224,7 @@ const ParticipantAddModal = ({
             })),
           ]}
         />
+        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">조는 나중에 다시 수정할 수 있어요.</p>
       </FormField>
     </SlideModal>
   );

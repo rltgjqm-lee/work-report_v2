@@ -234,7 +234,7 @@ const ProgramParticipantsSection = ({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] table-fixed border-collapse">
+        <table className="w-full min-w-[1000px] table-fixed border-collapse">
           <thead>
             <tr>
               <th className="w-[40px] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]" />
@@ -243,6 +243,9 @@ const ProgramParticipantsSection = ({
               </th>
               <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                 이름
+              </th>
+              <th className="w-[60px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                성별
               </th>
               <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                 수요처명
@@ -271,6 +274,9 @@ const ProgramParticipantsSection = ({
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                   {participant.name}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  {participant.gender ?? "-"}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
                   {participant.demandName}
