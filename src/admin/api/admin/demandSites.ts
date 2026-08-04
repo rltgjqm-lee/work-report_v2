@@ -188,6 +188,24 @@ export const createDemandSiteLocationMutationOptions = (queryClient: QueryClient
     },
   });
 
+// 💡 거점 위치 "수정" UI는 아직 없음 — 만들지 여부 아직 결정 안 됨. 그때까지 클라이언트에서
+// 안 쓰이는 상태로 남아있는 게 정상.
+export const updateDemandSiteLocation = (
+  locationId: number,
+  data: Partial<{
+    name: string;
+    shapeType: DemandSiteLocationShape;
+    baseLat: number;
+    baseLng: number;
+    radius: number;
+    polygon: LatLngPoint[];
+  }>,
+) =>
+  request<DemandSiteLocation>(`/api/demand-sites/locations/${locationId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+
 export interface DeleteDemandSiteLocationVariables {
   locationId: number;
   demandSiteId: number;
