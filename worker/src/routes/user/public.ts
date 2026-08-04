@@ -14,6 +14,7 @@ import {
   participantGroupOverrides,
   demandSites,
   demandSiteLocations,
+  demandSiteSchedules,
   escapeLogs,
   participantEscapeMeta,
   attendanceLogs,
@@ -350,11 +351,11 @@ app.post("/attendance/clock-in", async (c) => {
     ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
     : null;
 
-  // effectiveGroupId가 있어야 하는 조회 2개(조 스케줄 대체, 조 근무시간)도 서로
-  // 독립적이라 한 번에 실행한다.
+  // effectiveGroupId가 있어야 하는 조회 3개(조 스케줄 대체, 조 근무시간, 수요처 배정 여부)도
+  // 서로 독립적이라 한 번에 실행한다.
   let group: typeof groups.$inferSelect | undefined;
   if (effectiveGroupId) {
-    const [groupScheduleRows, groupRows] = await Promise.all([
+    const [groupScheduleRows, groupRows, demandSiteScheduleRows] = await Promise.all([
       workDates
         ? Promise.resolve([])
         : db
@@ -367,6 +368,17 @@ app.post("/attendance/clock-in", async (c) => {
               ),
             ),
       db.select().from(groups).where(eq(groups.id, effectiveGroupId)),
+      participant.demandSiteId
+        ? db
+            .select()
+            .from(demandSiteSchedules)
+            .where(
+              and(
+                eq(demandSiteSchedules.demandSiteId, participant.demandSiteId),
+                eq(demandSiteSchedules.groupId, effectiveGroupId),
+              ),
+            )
+        : Promise.resolve([]),
     ]);
     if (!workDates) {
       workDates = groupScheduleRows[0]
@@ -374,6 +386,13 @@ app.post("/attendance/clock-in", async (c) => {
         : null;
     }
     group = groupRows[0];
+
+    // 참여자의 수요처에 지금 조가 배정돼 있지 않으면 출근을 막는다 — 조 자체는
+    // 배정돼 있어도(participants.groupId) 그 조가 이 수요처에서 근무하는 조가
+    // 아닐 수 있다(관리자가 조를 바꾸면서 수요처 배정을 갱신하지 않은 경우 등).
+    if (participant.demandSiteId && demandSiteScheduleRows.length === 0) {
+      return c.json({ error: "수요처에 배정되지 않은 조입니다. 관리자에게 문의해주세요." }, 400);
+    }
   }
 
   if (workDates && !workDates.includes(date)) {

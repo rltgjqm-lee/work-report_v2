@@ -7,6 +7,7 @@ import {
   participantMonthlySchedule,
   groupMonthlySchedule,
   groups,
+  demandSiteSchedules,
 } from "../db/schema";
 
 type DB = ReturnType<typeof drizzle>;
@@ -50,6 +51,19 @@ export const isParticipantScheduledNow = async (
     );
   const effectiveGroupId = overrideRows[0]?.groupId ?? participant.groupId;
   if (!effectiveGroupId) return false;
+
+  if (participant.demandSiteId) {
+    const demandSiteScheduleRows = await db
+      .select()
+      .from(demandSiteSchedules)
+      .where(
+        and(
+          eq(demandSiteSchedules.demandSiteId, participant.demandSiteId),
+          eq(demandSiteSchedules.groupId, effectiveGroupId),
+        ),
+      );
+    if (demandSiteScheduleRows.length === 0) return false;
+  }
 
   const yearMonth = date.slice(0, 7);
   const participantScheduleRows = await db
