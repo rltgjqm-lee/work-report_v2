@@ -148,22 +148,22 @@ const AttendancePage = () => {
         </div>
       </div>
 
+      <TabBar
+        tabs={[
+          ["attendance", "근태"],
+          ["training", "교육"],
+          ["leave", "휴가 현황"],
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
+
       {!programId ? (
         <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
           조회할 사업단을 선택해주세요.
         </div>
       ) : (
         <>
-          <TabBar
-            tabs={[
-              ["attendance", "근태"],
-              ["training", "교육"],
-              ["leave", "휴가 현황"],
-            ]}
-            active={tab}
-            onChange={setTab}
-          />
-
           {tab === "attendance" && (
             <AttendanceTabPanel programId={programId} participantIds={filteredParticipantIds} />
           )}
