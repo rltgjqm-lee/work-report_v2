@@ -494,16 +494,24 @@ app.post("/attendance/clock-out", async (c) => {
   // 배정된 조에 근무시간이 설정돼 있으면 종료시간 10분 전부터만 퇴근을 허용한다
   // (조퇴 판정 기준과 동일한 여유). 그 전에는 아예 퇴근 등록을 막는다.
   // 문구는 프론트에서 조립한다(시간 부분을 강조해야 해서) — 여기서는 코드/데이터만 내려준다.
+  const nowMinutes = toMinutes(time);
   if (group) {
-    const nowMinutes = toMinutes(time);
     const earliest = toMinutes(group.shiftEnd) - 10;
     if (nowMinutes < earliest) {
       return c.json({ error: "TOO_EARLY_OUT", shiftEnd: group.shiftEnd }, 400);
     }
   }
 
+  // 위 검증을 통과했다면(조가 있는 한) 종료시각 10분 전~종료시각 사이에 누른 것이다 —
+  // 이 구간은 실제로 누른 시각이 아니라 조 근무종료시각으로 인정한다(자동퇴근과 동일 기준).
+  // 종료시각을 지나서 누르면(야근 등) 실제 시각을 그대로 쓴다.
+  const effectiveClockOut =
+    group && nowMinutes < toMinutes(group.shiftEnd)
+      ? `${log.workDate}T${group.shiftEnd}:00.000Z`
+      : iso;
+
   const totalMinutes = Math.floor(
-    (new Date(iso).getTime() - new Date(log.clockIn).getTime()) / 60000,
+    (new Date(effectiveClockOut).getTime() - new Date(log.clockIn).getTime()) / 60000,
   );
 
   // 배정된 조의 근무시간이 있으면 지각/조퇴를 자동 판정한다 (±10분 여유)
@@ -544,7 +552,7 @@ app.post("/attendance/clock-out", async (c) => {
   const result = await db
     .update(attendanceLogs)
     .set({
-      clockOut: iso,
+      clockOut: effectiveClockOut,
       totalMinutes,
       status,
       note,
