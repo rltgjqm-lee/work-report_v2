@@ -20,6 +20,7 @@ import { requireAdmin } from "./lib/authz";
 import { checkDisasterAlerts } from "./scheduled/checkDisasterAlerts";
 import { checkSignalLoss } from "./scheduled/checkSignalLoss";
 import { returnFromLeave } from "./scheduled/returnFromLeave";
+import { autoClockOut } from "./scheduled/autoClockOut";
 import type { Env } from "./types";
 
 const app = new Hono<Env>();
@@ -68,5 +69,6 @@ export default {
     ctx.waitUntil(checkDisasterAlerts(env));
     ctx.waitUntil(checkSignalLoss(env));
     ctx.waitUntil(returnFromLeave(env));
+    ctx.waitUntil(autoClockOut(env));
   },
 };
