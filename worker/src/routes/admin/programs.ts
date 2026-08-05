@@ -11,6 +11,7 @@ import {
   participantGroupOverrides,
   groups,
   demandSites,
+  demandSiteSchedules,
   attendanceLogs,
   activityLogs,
   escapeLogs,
@@ -387,12 +388,32 @@ app.post("/:id/participants", async (c) => {
   if (!body.demandSiteId) {
     return c.json({ error: "수요처를 선택해주세요." }, 400);
   }
+  if (!body.groupId) {
+    return c.json({ error: "조를 선택해주세요." }, 400);
+  }
   const demandSiteRows = await db
     .select()
     .from(demandSites)
     .where(eq(demandSites.id, body.demandSiteId));
   if (demandSiteRows[0]?.programId !== programId) {
     return c.json({ error: "해당 사업단의 수요처가 아닙니다." }, 400);
+  }
+  // 조와 수요처가 각각 유효해도, 그 조가 이 수요처에서 근무하도록 배정돼있지 않으면
+  // 출근 시점에야 뒤늦게 드러난다(public.ts) — 등록 시점에 미리 막는다.
+  const scheduleRows = await db
+    .select({ id: demandSiteSchedules.id })
+    .from(demandSiteSchedules)
+    .where(
+      and(
+        eq(demandSiteSchedules.demandSiteId, body.demandSiteId),
+        eq(demandSiteSchedules.groupId, body.groupId),
+      ),
+    );
+  if (scheduleRows.length === 0) {
+    return c.json(
+      { error: "이 조는 해당 수요처에 배정되지 않았습니다. 먼저 수요처에서 조를 배정해주세요." },
+      400,
+    );
   }
 
   const duplicateRows = await db
@@ -461,6 +482,20 @@ app.post("/:id/participants/bulk", async (c) => {
   );
   const seenInBatch = new Set<string>();
 
+  // 조와 수요처가 각각 유효해도, 그 조가 이 수요처에서 근무하도록 배정돼있지 않으면
+  // 출근 시점에야 뒤늦게 드러난다(public.ts) — 등록 시점에 미리 막는다.
+  const scheduleRows = await db
+    .select({
+      demandSiteId: demandSiteSchedules.demandSiteId,
+      groupId: demandSiteSchedules.groupId,
+    })
+    .from(demandSiteSchedules)
+    .innerJoin(demandSites, eq(demandSiteSchedules.demandSiteId, demandSites.id))
+    .where(eq(demandSites.programId, programId));
+  const assignedPairs = new Set(
+    scheduleRows.map((schedule) => `${schedule.demandSiteId}|${schedule.groupId}`),
+  );
+
   const errors: { index: number; error: string }[] = [];
   rows.forEach((row, index) => {
     if (!row.name) {
@@ -471,6 +506,16 @@ app.post("/:id/participants/bulk", async (c) => {
     }
     if (!row.demandSiteId) {
       errors.push({ index, error: "수요처를 선택해주세요." });
+    }
+    if (!row.groupId) {
+      errors.push({ index, error: "조를 선택해주세요." });
+    }
+    if (
+      row.demandSiteId &&
+      row.groupId &&
+      !assignedPairs.has(`${row.demandSiteId}|${row.groupId}`)
+    ) {
+      errors.push({ index, error: "이 조는 해당 수요처에 배정되지 않았습니다." });
     }
     if (row.name && (row.gender === "남성" || row.gender === "여성")) {
       const key = `${row.name}|${row.gender}`;
