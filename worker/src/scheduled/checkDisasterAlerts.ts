@@ -107,7 +107,17 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
   const messages = await fetchTodaysMessagesWithBudget(db, env, date);
   if (messages.length === 0) return;
 
-  const processedRows = await db.select({ alertId: safetyAlerts.alertId }).from(safetyAlerts);
+  // safetyAlerts는 계속 쌓이기만 하는 이력 테이블이라 전체를 읽으면 갈수록 읽기 비용이
+  // 커진다 — alertId가 PK라 오늘 조회한 메시지 id만 IN으로 좁혀서 인덱스 조회로 끝낸다.
+  const processedRows = await db
+    .select({ alertId: safetyAlerts.alertId })
+    .from(safetyAlerts)
+    .where(
+      inArray(
+        safetyAlerts.alertId,
+        messages.map((message) => message.id),
+      ),
+    );
   const processedIds = new Set(processedRows.map((r) => r.alertId));
   const newMessages = messages.filter((m) => !processedIds.has(m.id));
   if (newMessages.length === 0) return;
