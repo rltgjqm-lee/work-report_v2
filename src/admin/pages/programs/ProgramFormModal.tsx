@@ -12,6 +12,15 @@ import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import { ROLES, type Admin, type Organization, type Program, type Role } from "../../types";
 
+// 담당자 선택 목록에 담당자(MANAGER)와 부관리자(SUB_ADMIN)가 섞여 나오므로
+// 이름만으로는 구분이 안 돼 역할을 같이 표시한다.
+const ROLE_LABEL: Record<Role, string> = {
+  [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",
+  [ROLES.ORGANIZATION_ADMIN]: "기관 관리자",
+  [ROLES.SUB_ADMIN]: "부관리자",
+  [ROLES.MANAGER]: "담당자",
+};
+
 const emptyForm = {
   organizationId: "",
   name: "",
@@ -183,7 +192,7 @@ const ProgramFormModal = ({
         </FormField>
       )}
 
-      {/* 담당자 (담당자 역할 관리자 계정) */}
+      {/* 담당자 (담당자 또는 부관리자 역할 관리자 계정) */}
       <FormField label={editingProgram ? "담당자" : "담당자 (필수)"}>
         {assignableManagerAdmins.length === 0 ? (
           <p className="text-[12.5px] text-[#9aa1ab]">
@@ -200,7 +209,7 @@ const ProgramFormModal = ({
               { value: "", label: "선택하세요" },
               ...assignableManagerAdmins.map((managerAdmin) => ({
                 value: String(managerAdmin.id),
-                label: managerAdmin.name ?? managerAdmin.email,
+                label: `${managerAdmin.name ?? managerAdmin.email} (${ROLE_LABEL[managerAdmin.role]})`,
               })),
             ]}
           />

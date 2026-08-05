@@ -230,7 +230,7 @@ const AdminsPage = () => {
           candidates={admins.filter(
             (adminRow) =>
               adminRow.id !== transferTarget.id &&
-              adminRow.role === ROLES.MANAGER &&
+              (adminRow.role === ROLES.MANAGER || adminRow.role === ROLES.SUB_ADMIN) &&
               adminRow.isActive &&
               adminRow.organizationId === transferTarget.organizationId,
           )}

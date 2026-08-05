@@ -7,7 +7,16 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
-import type { Admin } from "../../types";
+import { ROLES, type Admin, type Role } from "../../types";
+
+// 이관 후보로 담당자(MANAGER)와 부관리자(SUB_ADMIN)가 섞여 나오므로
+// 이름만으로는 구분이 안 돼 역할을 같이 표시한다.
+const ROLE_LABEL: Record<Role, string> = {
+  [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",
+  [ROLES.ORGANIZATION_ADMIN]: "기관 관리자",
+  [ROLES.SUB_ADMIN]: "부관리자",
+  [ROLES.MANAGER]: "담당자",
+};
 
 interface TransferProgramsModalProps {
   onClose: () => void;
@@ -81,7 +90,7 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
     { value: "", label: "선택하세요" },
     ...candidates.map((candidate) => ({
       value: String(candidate.id),
-      label: candidate.name ?? candidate.email,
+      label: `${candidate.name ?? candidate.email} (${ROLE_LABEL[candidate.role]})`,
     })),
   ];
 
@@ -108,7 +117,7 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
 
       {candidates.length === 0 ? (
         <p className="text-[12.5px] text-[#9aa1ab]">
-          이관받을 수 있는 다른 담당자 계정이 없습니다. 담당자 계정을 먼저 발급해주세요.
+          이관받을 수 있는 다른 담당자/부관리자 계정이 없습니다. 계정을 먼저 발급해주세요.
         </p>
       ) : (
         <>

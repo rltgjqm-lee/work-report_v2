@@ -335,7 +335,9 @@ export const admins = sqliteTable("admins", {
   name: text("name"),
   role: text("role").$type<AdminRole>().notNull().default(ROLES.MANAGER),
   organizationId: integer("organization_id").references(() => organizations.id),
-  // MANAGER: 담당 사업단(복수) id 배열을 JSON 문자열로 저장 (예: "[1,2,3]")
+  // MANAGER/SUB_ADMIN: 담당 사업단(복수) id 배열을 JSON 문자열로 저장 (예: "[1,2,3]")
+  // — 부관리자도 사업단 담당자로 지정될 수 있어, SUB_ADMIN 계정이 groupIds와
+  // programIds를 동시에 가질 수 있다.
   programIds: text("program_ids"),
   // SUB_ADMIN: 담당 조(복수) id 배열을 JSON 문자열로 저장
   groupIds: text("group_ids"),

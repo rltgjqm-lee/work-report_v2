@@ -35,8 +35,14 @@ const OrganizationDetailPanel = ({
     [admins, organizationId],
   );
   // 사업단 담당자로 지정할 수 있는 계정 — ProgramsPage.tsx와 동일한 방식으로 찾는다.
+  // 담당자(MANAGER)뿐 아니라 부관리자(SUB_ADMIN)도 사업단 담당자가 될 수 있다.
   const managerAdmins = useMemo(
-    () => admins.filter((adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive),
+    () =>
+      admins.filter(
+        (adminRow) =>
+          (adminRow.role === ROLES.MANAGER || adminRow.role === ROLES.SUB_ADMIN) &&
+          adminRow.isActive,
+      ),
     [admins],
   );
   const managerAdminName = (programId: number) => {

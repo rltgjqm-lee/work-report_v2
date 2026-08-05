@@ -27,7 +27,7 @@ export const demandSitesQueryOptions = (programId: number) =>
     queryFn: () => listDemandSites(programId),
   });
 
-// 수요처 담당자로 지정할 수 있는 계정(담당자 역할) — 계정 관리 화면과 달리
+// 수요처 담당자로 지정할 수 있는 계정(담당자/부관리자 역할) — 계정 관리 화면과 달리
 // 부관리자/담당자도 조회할 수 있고 id/이름만 내려온다.
 const listAssignableDemandSiteAdmins = (programId: number) =>
   request<{ id: number; name: string | null }[]>(

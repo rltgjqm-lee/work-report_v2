@@ -47,8 +47,14 @@ const ProgramsPage = () => {
   });
   // 사업단 담당자로 지정할 수 있는 계정 — 서버가 권한에 맞는 범위(슈퍼 관리자는 전체,
   // 기관 관리자는 자기 기관)만 내려주므로 여기선 역할/활성 여부만 걸러낸다.
+  // 담당자(MANAGER)뿐 아니라 부관리자(SUB_ADMIN)도 사업단 담당자가 될 수 있다.
   const managerAdmins = useMemo(
-    () => admins.filter((adminRow) => adminRow.role === ROLES.MANAGER && adminRow.isActive),
+    () =>
+      admins.filter(
+        (adminRow) =>
+          (adminRow.role === ROLES.MANAGER || adminRow.role === ROLES.SUB_ADMIN) &&
+          adminRow.isActive,
+      ),
     [admins],
   );
 

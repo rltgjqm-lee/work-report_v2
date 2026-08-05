@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { admins, adminLoginHistory, adminSessions, demandSites } from "../../db/schema";
 import { getAuth, parseIdArray } from "../../lib/authz";
@@ -178,7 +178,12 @@ app.put("/:id/transfer-programs", async (c) => {
   const managerCandidates = await db
     .select({ id: admins.id, programIds: admins.programIds, isActive: admins.isActive })
     .from(admins)
-    .where(and(eq(admins.organizationId, from.organizationId), eq(admins.role, ROLES.MANAGER)));
+    .where(
+      and(
+        eq(admins.organizationId, from.organizationId),
+        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
+      ),
+    );
 
   const toAdminIds = [...new Set(assignments.map((assignment) => assignment.toAdminId))];
   for (const toAdminId of toAdminIds) {

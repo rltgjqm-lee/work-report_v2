@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import proj4 from "proj4";
 
 import {
@@ -213,8 +213,9 @@ const loadAccessibleProgram = async (
   return program;
 };
 
-// 사업단 담당자 = 그 사업단을 담당(programIds)하는 MANAGER 계정. 수요처를 새로 만들 때
-// 담당자를 따로 고르지 않고 이 사람을 그대로 물려받는다. 사업단 담당자는 한 명이므로 첫 건만 쓴다.
+// 사업단 담당자 = 그 사업단을 담당(programIds)하는 MANAGER 또는 SUB_ADMIN 계정. 수요처를
+// 새로 만들 때 담당자를 따로 고르지 않고 이 사람을 그대로 물려받는다. 사업단 담당자는
+// 한 명이므로 첫 건만 쓴다.
 const findProgramManagerId = async (
   db: ReturnType<typeof drizzle>,
   program: typeof programs.$inferSelect,
@@ -225,7 +226,7 @@ const findProgramManagerId = async (
     .where(
       and(
         eq(admins.organizationId, program.organizationId),
-        eq(admins.role, ROLES.MANAGER),
+        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
         eq(admins.isActive, true),
       ),
     );
@@ -290,7 +291,7 @@ app.get("/assignable-admins", async (c) => {
     .where(
       and(
         eq(admins.organizationId, program.organizationId),
-        eq(admins.role, ROLES.MANAGER),
+        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
         eq(admins.isActive, true),
       ),
     );

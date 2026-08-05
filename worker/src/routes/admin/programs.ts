@@ -175,9 +175,9 @@ app.post("/", async (c) => {
   return c.json(result[0], 201);
 });
 
-// 사업단 담당자 지정 — 담당자는 MANAGER 계정의 programIds로 표현되므로, 이전 담당자에게서
-// 떼어내고 새 담당자에게 붙이는 걸 한 번에 처리한다. 소속 수요처 담당자도 같이 갈아끼운다:
-// 사업단 담당자가 바뀌면 그 사업단 수요처 담당자도 따라가는 게 자연스럽다.
+// 사업단 담당자 지정 — 담당자는 MANAGER 또는 SUB_ADMIN 계정의 programIds로 표현되므로,
+// 이전 담당자에게서 떼어내고 새 담당자에게 붙이는 걸 한 번에 처리한다. 소속 수요처 담당자도
+// 같이 갈아끼운다: 사업단 담당자가 바뀌면 그 사업단 수요처 담당자도 따라가는 게 자연스럽다.
 app.put("/:id/manager", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -196,13 +196,18 @@ app.put("/:id/manager", async (c) => {
   const managerCandidates = await db
     .select({ id: admins.id, programIds: admins.programIds })
     .from(admins)
-    .where(and(eq(admins.organizationId, program.organizationId), eq(admins.role, ROLES.MANAGER)));
+    .where(
+      and(
+        eq(admins.organizationId, program.organizationId),
+        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
+      ),
+    );
 
   if (
     nextManagerId !== null &&
     !managerCandidates.some((candidate) => candidate.id === nextManagerId)
   ) {
-    return c.json({ error: "이 기관의 담당자 계정이 아닙니다." }, 400);
+    return c.json({ error: "이 기관의 담당자 또는 부관리자 계정이 아닙니다." }, 400);
   }
 
   const managerUpdates = managerCandidates.flatMap((candidate) => {
