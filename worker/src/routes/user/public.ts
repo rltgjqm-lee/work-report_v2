@@ -331,6 +331,15 @@ app.post("/attendance/clock-in", async (c) => {
 
   const effectiveGroupId = groupOverrideRows[0]?.groupId ?? participant.groupId;
 
+  // 조가 없으면 근무시간(shiftStart/shiftEnd) 기준이 없어서 아래 시간/스케줄 검증이 전부
+  // 스킵된다 — 조 편성 전인 사업단을 위해 참여자 등록 자체는 허용하지만, 출근은 막는다.
+  if (!effectiveGroupId) {
+    return c.json(
+      { error: "조가 배정되지 않아 출근할 수 없습니다. 관리자에게 문의해주세요." },
+      400,
+    );
+  }
+
   // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
   if (participant.status === "ON_LEAVE" && participant.leaveEnd && participant.leaveEnd < date) {
     const updated = await db
