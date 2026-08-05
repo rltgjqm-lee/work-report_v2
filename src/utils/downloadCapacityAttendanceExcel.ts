@@ -31,13 +31,6 @@ const WEEKEND_FILL: ExcelJS.Fill = {
   fgColor: { argb: "FFD9D9D9" },
 };
 
-// 월/일 칸의 대각선은 border.diagonal만으로는 일부 뷰어(구글 시트 등)에서 xlsx를
-// 가져올 때 안 그려지는 경우가 있어서, 눈에 보장되게 투명 배경 사선 이미지를 덧대 그린다.
-// (80x80 투명 PNG, 좌하단→우상단 검정 사선 2px — border.diagonal도 같이 남겨서
-// 제대로 지원하는 뷰어에서는 이중으로 그려지지 않고 자연스럽게 보인다)
-const DIAGONAL_LINE_PNG_BASE64 =
-  "iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAwklEQVR4nO3QsQ0AIAzAsP7/NKyIDbLaUh7IDD/WEY/WGPjtnmfgA/MC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzAvMC8wLzIvMi84IN94mIhsE0YXMAAAAASUVORK5CYII=";
-
 // 시트명은 31자 제한 + \ / ? * [ ] : 사용 불가, 동명이인은 (2), (3)으로 구분
 const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
   const base = name.replace(/[\\/?*[\]:]/g, "").slice(0, 31) || "참여자";
@@ -51,7 +44,7 @@ const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
   return candidate;
 };
 
-// 열 순서(반쪽당 5열): 월/일(대각선 분할 칸) · 근무시작시간 · 근무종료시간 · 결근 · 참여자서명
+// 열 순서(반쪽당 5열): 날짜 · 근무시작시간 · 근무종료시간 · 결근 · 참여자서명
 const COL_COUNT_PER_HALF = 5;
 
 const addCapacityAttendanceSheet = (
@@ -67,18 +60,6 @@ const addCapacityAttendanceSheet = (
 
   const halfWidths = [10, 11, 11, 7, 11];
   sheet.columns = [...halfWidths, ...halfWidths].map((width) => ({ width }));
-
-  const diagonalImageId = workbook.addImage({
-    base64: `data:image/png;base64,${DIAGONAL_LINE_PNG_BASE64}`,
-    extension: "png",
-  });
-  // rowSpan=1이면 데이터 행(1행짜리) 칸, 2면 헤더의 월/일 병합 칸(2행짜리) 크기에 맞춘다
-  const drawDiagonal = (colIndex: number, rowIndex: number, rowSpan: 1 | 2) => {
-    sheet.addImage(diagonalImageId, {
-      tl: { col: colIndex, row: rowIndex },
-      ext: { width: 68, height: rowSpan === 2 ? 44 : 19 },
-    });
-  };
 
   const colLetter = (colNumber: number) => {
     let n = colNumber;
@@ -119,11 +100,7 @@ const addCapacityAttendanceSheet = (
   [0, COL_COUNT_PER_HALF].forEach((offset) => {
     const c = (index: number) => colLetter(offset + index + 1);
     sheet.mergeCells(`${c(0)}${HEADER_ROW_1}:${c(0)}${HEADER_ROW_2}`);
-    sheet.getCell(`${c(0)}${HEADER_ROW_1}`).value = "월\n일";
-    sheet.getCell(`${c(0)}${HEADER_ROW_1}`).border = {
-      diagonal: { up: true, style: "thin", color: { argb: "FF000000" } },
-    };
-    drawDiagonal(offset, HEADER_ROW_1 - 1, 2);
+    sheet.getCell(`${c(0)}${HEADER_ROW_1}`).value = "날짜";
 
     sheet.mergeCells(`${c(1)}${HEADER_ROW_1}:${c(2)}${HEADER_ROW_1}`);
     sheet.getCell(`${c(1)}${HEADER_ROW_1}`).value = "출근";
@@ -151,11 +128,7 @@ const addCapacityAttendanceSheet = (
   const writeDayCell = (rowIdx: number, offset: number, day: CapacityAttendanceDay) => {
     const c = (index: number) => colLetter(offset + index + 1);
     const dayCell = sheet.getCell(`${c(0)}${rowIdx}`);
-    dayCell.value = `${monthNum}\n${day.day}`;
-    dayCell.border = {
-      diagonal: { up: true, style: "thin", color: { argb: "FF000000" } },
-    };
-    drawDiagonal(offset, rowIdx - 1, 1);
+    dayCell.value = `${monthNum}월 ${day.day}일`;
 
     if (day.marker === "HOLIDAY") {
       const cell = sheet.getCell(`${c(4)}${rowIdx}`);
