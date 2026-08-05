@@ -209,6 +209,40 @@ app.post("/:id/group", async (c) => {
   return c.json(result[0]);
 });
 
+// 개별 참여자 수요처 배정/변경
+app.post("/:id/demand-site", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{ demandSiteId?: number }>();
+  if (!body.demandSiteId) return c.json({ error: "수요처를 지정해주세요." }, 400);
+
+  const demandSiteRows = await db
+    .select()
+    .from(demandSites)
+    .where(eq(demandSites.id, body.demandSiteId));
+  const demandSite = demandSiteRows[0];
+  if (!demandSite || demandSite.programId !== found.participant.programId) {
+    return c.json({ error: "해당 사업단의 수요처가 아닙니다." }, 400);
+  }
+
+  const result = await db
+    .update(participants)
+    // demandName(자유 텍스트)이 남아있으면 join으로 채운 수요처명을 가려버리므로 같이 비운다.
+    .set({ demandSiteId: body.demandSiteId, demandName: null })
+    .where(eq(participants.id, id))
+    .returning();
+
+  return c.json(result[0]);
+});
+
 // 특정 날짜만 다른 조로 취급하는 임시 배정 이력 — 원래 조(participants.groupId)는 그대로 두고
 // 그날의 출퇴근 시간/근무일 판정에서만 이 조를 우선 적용한다 (worker/src/routes/public.ts 참고)
 app.get("/:id/group-overrides", async (c) => {

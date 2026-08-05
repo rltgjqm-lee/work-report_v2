@@ -12,12 +12,13 @@ import ParticipantLeaveAddModal from "./ParticipantLeaveAddModal";
 import AnnualLeaveModal from "./AnnualLeaveModal";
 import ParticipantMonthlyScheduleModal from "./ParticipantMonthlyScheduleModal";
 import ParticipantGroupAssignModal from "./ParticipantGroupAssignModal";
+import ParticipantDemandSiteAssignModal from "./ParticipantDemandSiteAssignModal";
 import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
 import { usePagination } from "../../hooks/usePagination";
 import { rowActionBtnClass } from "../../uiClasses";
-import type { Group, Participant } from "../../types";
+import type { DemandSite, Group, Participant } from "../../types";
 
 const statusLabel: Record<string, string> = {
   ACTIVE: "활동중",
@@ -29,6 +30,7 @@ interface ProgramParticipantsSectionProps {
   programId: number;
   participants: Participant[];
   groups: Group[];
+  demandSites: DemandSite[];
   search: string;
   onSearchChange: (value: string) => void;
   demandOptions: string[];
@@ -48,6 +50,7 @@ const ProgramParticipantsSection = ({
   programId,
   participants,
   groups,
+  demandSites,
   search,
   onSearchChange,
   demandOptions,
@@ -73,6 +76,7 @@ const ProgramParticipantsSection = ({
   } | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(null);
   const [groupAssignTarget, setGroupAssignTarget] = useState<Participant | null>(null);
+  const [demandSiteAssignTarget, setDemandSiteAssignTarget] = useState<Participant | null>(null);
 
   const queryClient = useQueryClient();
   const dropParticipantMutation = useMutation(dropParticipantMutationOptions(queryClient));
@@ -273,7 +277,12 @@ const ProgramParticipantsSection = ({
                   {participant.name}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
-                  {participant.demandName}
+                  <button
+                    className="text-left text-[#1e3a5f] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    onClick={() => setDemandSiteAssignTarget(participant)}
+                  >
+                    {participant.demandName ?? "미배정"}
+                  </button>
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
                   <button
@@ -379,6 +388,15 @@ const ProgramParticipantsSection = ({
           programId={programId}
           groups={groups}
           onClose={() => setGroupAssignTarget(null)}
+        />
+      )}
+
+      {demandSiteAssignTarget && (
+        <ParticipantDemandSiteAssignModal
+          participant={demandSiteAssignTarget}
+          programId={programId}
+          demandSites={demandSites}
+          onClose={() => setDemandSiteAssignTarget(null)}
         />
       )}
     </div>

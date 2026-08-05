@@ -207,6 +207,27 @@ export const moveParticipantToGroupMutationOptions = (queryClient: QueryClient) 
     },
   });
 
+export interface MoveParticipantToDemandSiteVariables {
+  participantId: number;
+  programId: number;
+  demandSiteId: number;
+}
+
+export const moveParticipantToDemandSite = (id: number, demandSiteId: number) =>
+  request<Participant>(`/api/participants/${id}/demand-site`, {
+    method: "POST",
+    body: JSON.stringify({ demandSiteId }),
+  });
+
+export const moveParticipantToDemandSiteMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId, demandSiteId }: MoveParticipantToDemandSiteVariables) =>
+      moveParticipantToDemandSite(participantId, demandSiteId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+    },
+  });
+
 // 특정 날짜만 다른 조로 취급하는 임시 배정 이력 — 원래 조(participants.groupId)는 그대로 두고
 // 그날의 출퇴근 시간/근무일 판정에서만 이 조를 우선 적용한다.
 export interface ParticipantGroupOverride {

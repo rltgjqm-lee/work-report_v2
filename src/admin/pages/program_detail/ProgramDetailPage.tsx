@@ -209,6 +209,7 @@ const ProgramDetailPage = () => {
           programId={programId}
           participants={filtered}
           groups={groups}
+          demandSites={demandSites}
           search={search}
           onSearchChange={setSearch}
           demandOptions={demandOptions}
