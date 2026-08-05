@@ -30,6 +30,7 @@ import {
   isInsideArea,
 } from "../../lib/geofence";
 import { sendWebPush } from "../../lib/webPush";
+import { getFcmAccessToken, sendFcmPush } from "../../lib/fcmPush";
 import type { Env } from "../../types";
 
 const app = new Hono<Env>();
@@ -754,8 +755,13 @@ app.post("/location", async (c) => {
         alertCount: newAlertCount,
       });
 
-      // 1단계(1회 이탈)만 참여자 본인에게 웹푸시 — 2·3단계는 관리자 콘솔 "이탈 현황" 화면에서 확인
+      // 1단계(1회 이탈)만 참여자 본인에게 푸시(웹+네이티브 앱) — 2·3단계는 관리자 콘솔 "이탈 현황" 화면에서 확인
       if (newAlertCount === 1) {
+        const escapePushPayload = {
+          title: "⚠️ 이탈 경고",
+          body: `${demandSite.name} 활동 구역을 벗어났습니다.`,
+        };
+
         const subscriptions = await db
           .select()
           .from(pushSubscriptions)
@@ -767,10 +773,7 @@ app.post("/location", async (c) => {
               endpoint: subscription.endpoint,
               keys: { p256dh: subscription.p256dh, auth: subscription.auth },
             },
-            {
-              title: "⚠️ 이탈 경고",
-              body: `${demandSite.name} 활동 구역을 벗어났습니다.`,
-            },
+            escapePushPayload,
             {
               privateJWK: c.env.VAPID_PRIVATE_KEY,
               subject: c.env.VAPID_SUBJECT,
@@ -780,6 +783,32 @@ app.post("/location", async (c) => {
             await db
               .delete(pushSubscriptions)
               .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+          }
+        }
+
+        const deviceTokens = await db
+          .select()
+          .from(pushDeviceTokens)
+          .where(eq(pushDeviceTokens.participantId, participant.id));
+
+        if (deviceTokens.length > 0) {
+          try {
+            const fcmAuth = await getFcmAccessToken(c.env.FCM_SERVICE_ACCOUNT_KEY);
+            for (const deviceToken of deviceTokens) {
+              const result = await sendFcmPush(
+                fcmAuth.projectId,
+                fcmAuth.accessToken,
+                deviceToken.token,
+                escapePushPayload,
+              );
+              if (!result.ok && result.expired) {
+                await db
+                  .delete(pushDeviceTokens)
+                  .where(eq(pushDeviceTokens.token, deviceToken.token));
+              }
+            }
+          } catch (error) {
+            console.error("이탈 경고 FCM 발송 실패:", error);
           }
         }
       }
