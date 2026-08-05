@@ -81,6 +81,14 @@ const ParticipantAddModal = ({
 
           return;
         }
+        const missingGroupNames = rows.filter((row) => !row.groupId).map((row) => row.name);
+        if (missingGroupNames.length > 0) {
+          alert(
+            `조를 입력하지 않았거나 잘못 입력한 참여자가 있습니다: ${missingGroupNames.join(", ")}`,
+          );
+
+          return;
+        }
         await bulkAddParticipantsMutation.mutateAsync({
           programId,
           // 💡 바로 위에서 성별 누락 행이 없는지 이미 검증했으니 단언해도 안전하다
@@ -99,6 +107,11 @@ const ParticipantAddModal = ({
         }
         if (!form.demandSiteId) {
           alert("수요처를 선택해주세요.");
+
+          return;
+        }
+        if (!form.groupId) {
+          alert("조를 선택해주세요.");
 
           return;
         }
@@ -217,14 +230,16 @@ const ParticipantAddModal = ({
           value={form.groupId}
           onChange={(value) => setForm((f) => ({ ...f, groupId: value }))}
           options={[
-            { value: "", label: "미배정" },
+            { value: "", label: "선택하세요" },
             ...activeGroups.map((group) => ({
               value: String(group.id),
               label: group.name,
             })),
           ]}
         />
-        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">조는 나중에 다시 수정할 수 있어요.</p>
+        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+          선택한 수요처에 배정된 조여야 저장됩니다. 조는 나중에 다시 수정할 수 있어요.
+        </p>
       </FormField>
     </SlideModal>
   );
