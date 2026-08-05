@@ -351,6 +351,13 @@
       "when": 1785912711121,
       "tag": "0049_blue_ego",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1785925640937,
+      "tag": "0050_opposite_kylun",
+      "breakpoints": true
     }
   ]
 }

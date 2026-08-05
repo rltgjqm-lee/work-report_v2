@@ -594,6 +594,9 @@ export const attendanceLogs = sqliteTable(
   (table) => [
     index("idx_attendance_participant_date").on(table.participantId, table.workDate),
     index("idx_attendance_program_date").on(table.programId, table.workDate),
+    // autoClockOut이 매분 "아직 퇴근 안 한 근태"를 찾는 쿼리용 — clockOut이 대부분(마감된
+    // 근태) NOT NULL이라 이 인덱스로 열려있는 소수만 바로 골라낸다.
+    index("idx_attendance_open").on(table.clockOut, table.workDate),
   ],
 );
 

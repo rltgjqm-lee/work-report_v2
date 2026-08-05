@@ -1,0 +1,1 @@
+CREATE INDEX `idx_attendance_open` ON `attendance_logs` (`clock_out`,`work_date`);
