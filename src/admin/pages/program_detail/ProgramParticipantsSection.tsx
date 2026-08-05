@@ -145,6 +145,7 @@ const ProgramParticipantsSection = ({
     deleteParticipantMutation.mutate(
       { programId, participantId, name },
       {
+        onSuccess: () => alert(`'${name}' 님을 삭제했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
       },
     );
