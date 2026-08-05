@@ -344,6 +344,13 @@
       "when": 1785809108685,
       "tag": "0048_premium_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1785912711121,
+      "tag": "0049_blue_ego",
+      "breakpoints": true
     }
   ]
 }
