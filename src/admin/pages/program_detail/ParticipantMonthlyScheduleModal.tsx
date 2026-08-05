@@ -189,6 +189,11 @@ const ParticipantMonthlyScheduleModal = ({
         )
       }
     >
+      <div className="text-[12px] text-[#6b7280] bg-[#f7f8fa] border border-[#e2e5eb] rounded-[2px] px-3 py-2.5">
+        여기서 바꾸는 건 근무 요일뿐입니다. 근무 시간은 소속 조를 그대로 따릅니다
+        {group ? ` (${group.shiftStart}~${group.shiftEnd})` : ""}.
+      </div>
+
       <FormField label="월">
         <input
           type="month"
