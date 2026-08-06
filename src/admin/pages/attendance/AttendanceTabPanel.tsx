@@ -60,6 +60,14 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   const [logs, setLogs] = useState<AttendanceRow[]>([]);
   const [stats, setStats] = useState<AttendanceStats>(emptyStats);
 
+  // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다.
+  // 렌더링 도중 상태를 조정해서 effect의 연쇄 렌더링을 피한다.
+  const [prevMonth, setPrevMonth] = useState(month);
+  if (month !== prevMonth) {
+    setPrevMonth(month);
+    setDayFilter("all");
+  }
+
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
@@ -76,8 +84,6 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   };
 
   useEffect(refresh, [programId, month]);
-  // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다
-  useEffect(() => setDayFilter("all"), [month]);
 
   const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
@@ -161,6 +167,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   return (
     <div>
       <div className="flex items-center justify-end gap-2.5 mb-3">
+        <MonthPicker value={month} onChange={setMonth} />
         <FilterSelect
           value={dayFilter}
           onChange={setDayFilter}
@@ -172,7 +179,6 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
             }),
           ]}
         />
-        <MonthPicker value={month} onChange={setMonth} />
       </div>
 
       <div className="grid grid-cols-5 mb-5">
