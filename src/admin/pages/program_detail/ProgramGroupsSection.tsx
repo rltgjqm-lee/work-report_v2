@@ -4,9 +4,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateGroupMutationOptions } from "../../api/admin/groups";
 import GroupAddModal from "./GroupAddModal";
 import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
-import StatusChip from "../../components/chip/StatusChip";
+import ItemCard from "../../components/ItemCard";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, zoneCardBtnClass, zoneCardFooterClass } from "../../uiClasses";
+import { btnGhostClass } from "../../uiClasses";
 import type { Group } from "../../types";
 
 interface ProgramGroupsSectionProps {
@@ -49,36 +49,34 @@ const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGrou
           + 조 추가
         </button>
       </div>
-      <div className="flex flex-wrap gap-3 px-5 py-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 px-5 py-4">
         {groups.length === 0 && (
           <span className="text-[13px] text-[#9aa1ab]">등록된 조가 없습니다.</span>
         )}
         {groups.map((group) => (
-          <div
+          <ItemCard
             key={group.id}
-            className="w-[220px] bg-white border border-[#e2e5eb] rounded-lg p-3.5"
-          >
-            <div className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#1f2937]">
-              {group.name}
-              <StatusChip variant={group.isActive ? "ok" : "pending"}>
-                {group.isActive ? "활성" : "비활성"}
-              </StatusChip>
-            </div>
-            <div className="text-[12px] text-[#8b94a3] mt-1.5">
-              {group.shiftStart}~{group.shiftEnd} · {group.participantCount}명
-            </div>
-            <div className={zoneCardFooterClass}>
-              <button className={zoneCardBtnClass} onClick={() => setScheduleTarget(group)}>
-                수정
-              </button>
-              <button
-                className={zoneCardBtnClass}
-                onClick={() => handleToggleActiveButtonClick(group)}
-              >
-                {group.isActive ? "비활성화" : "활성화"}
-              </button>
-            </div>
-          </div>
+            title={group.name}
+            badge={{
+              variant: group.isActive ? "ok" : "pending",
+              label: group.isActive ? "활성" : "비활성",
+            }}
+            infoLine={
+              <>
+                <div>{group.participantCount}명</div>
+                <div className="text-[13.5px] font-bold text-[#1f2937] mt-1.5 mb-1">
+                  {group.shiftStart}~{group.shiftEnd}
+                </div>
+              </>
+            }
+            actions={[
+              { label: "수정", onClick: () => setScheduleTarget(group) },
+              {
+                label: group.isActive ? "비활성화" : "활성화",
+                onClick: () => handleToggleActiveButtonClick(group),
+              },
+            ]}
+          />
         ))}
       </div>
 

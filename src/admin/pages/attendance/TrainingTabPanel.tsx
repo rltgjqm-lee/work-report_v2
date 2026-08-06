@@ -10,6 +10,7 @@ import {
   updateTraining,
 } from "../../api/admin/trainings";
 import FilterSelect from "../../components/FilterSelect";
+import ItemCard from "../../components/ItemCard";
 import SearchInput from "../../components/SearchInput";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
@@ -265,42 +266,39 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
               {trainings.map((training) => (
-                <div
+                <ItemCard
                   key={training.id}
-                  className="bg-white border border-[#e2e5eb] rounded-lg p-[18px] flex flex-col"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="text-[15px] font-bold">{training.name}</span>
-                    <StatusChip variant={training.isActive ? "ok" : "pending"}>
-                      {training.isActive ? "활성" : "비활성"}
-                    </StatusChip>
-                  </div>
-                  <div className="text-[13px] text-[#6b7280] leading-relaxed mb-3.5">
-                    {CATEGORY_LABEL[training.category]} · {PAY_MODE_LABEL[training.payMode]}
-                    {training.trainingDate && ` · ${training.trainingDate}`}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {training.isRequired && (
-                      <span className="text-[11.5px] font-semibold text-[#5b6472] bg-[#f3f4f6] px-2.5 py-1 rounded-full">
-                        필수교육
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex justify-end gap-1 mt-auto pt-3 border-t border-[#eceef1]">
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={() => handleEditTrainingButtonClick(training)}
-                    >
-                      수정
-                    </button>
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={() => handleToggleTrainingActiveButtonClick(training)}
-                    >
-                      {training.isActive ? "비활성화" : "활성화"}
-                    </button>
-                  </div>
-                </div>
+                  title={training.name}
+                  badge={{
+                    variant: training.isActive ? "ok" : "pending",
+                    label: training.isActive ? "활성" : "비활성",
+                  }}
+                  infoLine={
+                    <>
+                      <div className="text-[13px] text-[#6b7280] leading-[1.6]">
+                        {CATEGORY_LABEL[training.category]} · {PAY_MODE_LABEL[training.payMode]}
+                      </div>
+                      {(training.trainingDate || (training.startTime && training.endTime)) && (
+                        <div className="text-[13.5px] font-bold text-[#1f2937] mt-1.5 mb-3">
+                          {training.trainingDate}
+                          {training.trainingDate && training.startTime && training.endTime && " "}
+                          {training.startTime && training.endTime
+                            ? `${training.startTime}~${training.endTime}`
+                            : ""}
+                        </div>
+                      )}
+                    </>
+                  }
+                  size="comfortable"
+                  tags={training.isRequired ? ["필수교육"] : undefined}
+                  actions={[
+                    { label: "수정", onClick: () => handleEditTrainingButtonClick(training) },
+                    {
+                      label: training.isActive ? "비활성화" : "활성화",
+                      onClick: () => handleToggleTrainingActiveButtonClick(training),
+                    },
+                  ]}
+                />
               ))}
             </div>
           )}
