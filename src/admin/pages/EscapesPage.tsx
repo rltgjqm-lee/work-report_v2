@@ -15,6 +15,7 @@ import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api
 import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
+import { useToast } from "../context/useToast";
 import type { DemandSiteLocation, EscapeRow, EscapeStatus, LiveWorker } from "../types";
 
 // 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
@@ -52,6 +53,7 @@ const EscapesPage = () => {
   const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
   const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -316,6 +318,7 @@ const EscapesPage = () => {
     resolveEscapeMutation.mutate(
       { escapeId, programId, memo: memo || undefined },
       {
+        onSuccess: () => showToast(`'${participantName}' 님의 이탈을 확인 처리했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -327,7 +330,10 @@ const EscapesPage = () => {
     resolveEscapeMutation.mutate(
       { escapeId: criticalEscape.escape.id, programId },
       {
-        onSuccess: () => setCriticalEscape(null),
+        onSuccess: () => {
+          showToast(`'${criticalEscape.participantName}' 님의 이탈을 확인 처리했습니다.`);
+          setCriticalEscape(null);
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

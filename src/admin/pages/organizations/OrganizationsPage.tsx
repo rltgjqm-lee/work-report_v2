@@ -11,6 +11,7 @@ import OrganizationDetailPanel from "./OrganizationDetailPanel";
 import SearchInput from "../../components/SearchInput";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
+import { useToast } from "../../context/useToast";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
 import { ROLES, type Organization } from "../../types";
 
@@ -23,6 +24,7 @@ const OrganizationsPage = () => {
   const role = admin?.role;
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { data: organizations = [] } = useQuery(organizationsQueryOptions);
 
   const [search, setSearch] = useState("");
@@ -64,6 +66,7 @@ const OrganizationsPage = () => {
     updateOrganizationMutation.mutate(
       { id: organization.id, data: { isActive: !organization.isActive } },
       {
+        onSuccess: () => showToast(`'${organization.name}' 기관을 ${actionLabel}했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

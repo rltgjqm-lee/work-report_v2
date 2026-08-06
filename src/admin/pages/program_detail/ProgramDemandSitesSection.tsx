@@ -6,6 +6,7 @@ import DemandSiteFormModal from "./DemandSiteFormModal";
 import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
 import DemandSiteGroupAssignModal from "./DemandSiteGroupAssignModal";
 import StatusChip from "../../components/chip/StatusChip";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
 import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
 
@@ -31,6 +32,7 @@ const ProgramDemandSitesSection = ({
   const [groupAssignTarget, setGroupAssignTarget] = useState<DemandSite | null>(null);
   const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
 
   const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
@@ -52,6 +54,7 @@ const ProgramDemandSitesSection = ({
     updateDemandSiteMutation.mutate(
       { id: demandSite.id, programId, data: { isActive: !demandSite.isActive } },
       {
+        onSuccess: () => showToast(`'${demandSite.name}' 수요처를 ${actionLabel}했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

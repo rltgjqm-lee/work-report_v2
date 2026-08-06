@@ -21,6 +21,7 @@ import {
   zoneCardBtnDangerClass,
   zoneCardFooterClass,
 } from "../../uiClasses";
+import { useToast } from "../../context/useToast";
 import { geocodeAddress } from "../../utils/geocodeAddress";
 import type { DemandSite, DemandSiteLocationShape } from "../../types";
 
@@ -65,6 +66,7 @@ const DemandSiteLocationsPanel = ({
   const drawnLayerRef = useRef<L.FeatureGroup | null>(null);
   const searchMarkerRef = useRef<L.Marker | null>(null);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: locations = [], isSuccess: locationsLoaded } = useQuery(
     demandSiteLocationsQueryOptions(demandSite.id),
@@ -216,9 +218,13 @@ const DemandSiteLocationsPanel = ({
   }, [locations, demandSite]);
 
   const handleToggleBaseAreaButtonClick = () => {
+    const nextEnabled = !demandSite.baseAreaEnabled;
+
     updateDemandSiteMutation.mutate(
-      { id: demandSite.id, programId, data: { baseAreaEnabled: !demandSite.baseAreaEnabled } },
+      { id: demandSite.id, programId, data: { baseAreaEnabled: nextEnabled } },
       {
+        onSuccess: () =>
+          showToast(`기본 관제구역 사용을 ${nextEnabled ? "켰습니다" : "껐습니다"}.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -236,6 +242,7 @@ const DemandSiteLocationsPanel = ({
     promoteDemandSiteLocationMutation.mutate(
       { locationId, demandSiteId: demandSite.id, programId },
       {
+        onSuccess: () => showToast("기본 관제구역으로 설정했습니다."),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -247,6 +254,7 @@ const DemandSiteLocationsPanel = ({
     deleteDemandSiteLocationMutation.mutate(
       { locationId, demandSiteId: demandSite.id },
       {
+        onSuccess: () => showToast("거점을 삭제했습니다."),
         onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
       },
     );
@@ -288,6 +296,7 @@ const DemandSiteLocationsPanel = ({
       { demandSiteId: demandSite.id, data },
       {
         onSuccess: () => {
+          showToast(`'${pendingName}' 거점을 추가했습니다.`);
           setPendingShape(null);
           setPendingName("");
         },

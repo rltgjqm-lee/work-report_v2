@@ -9,6 +9,7 @@ import {
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
 import type { DemandSite, Group } from "../../types";
 
@@ -29,6 +30,7 @@ const DemandSiteGroupAssignModal = ({
   activeGroups,
 }: DemandSiteGroupAssignModalProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: schedules = [], isSuccess: schedulesLoaded } = useQuery(
     demandSiteSchedulesQueryOptions(demandSite.id),
@@ -95,6 +97,7 @@ const DemandSiteGroupAssignModal = ({
           }),
         ),
       ]);
+      showToast("배치된 조를 저장했습니다.");
       onClose();
     } catch (error) {
       alert(error instanceof Error ? error.message : "저장에 실패했습니다.");

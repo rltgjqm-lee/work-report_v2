@@ -11,6 +11,7 @@ import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { Group, Participant } from "../../types";
@@ -42,6 +43,7 @@ const ParticipantMonthlyScheduleModal = ({
   const [patternWorkDays, setPatternWorkDays] = useState("1");
   const [patternRestDays, setPatternRestDays] = useState("2");
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: participantSchedule, isFetching: isParticipantScheduleFetching } = useQuery(
     participantMonthlyScheduleQueryOptions(participant.id, yearMonth),
@@ -105,7 +107,10 @@ const ParticipantMonthlyScheduleModal = ({
     deleteParticipantMonthlyScheduleMutation.mutate(
       { participantId: participant.id, yearMonth },
       {
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+          showToast("개인 예외를 삭제하고 조 스케줄을 따르도록 되돌렸습니다.");
+          onClose();
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -161,7 +166,10 @@ const ParticipantMonthlyScheduleModal = ({
         maxMonthlyMinutes: maxMonthlyHours ? Math.round(Number(maxMonthlyHours) * 60) : null,
       },
       {
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+          showToast("개인 월간 스케줄을 저장했습니다.");
+          onClose();
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
       },
     );

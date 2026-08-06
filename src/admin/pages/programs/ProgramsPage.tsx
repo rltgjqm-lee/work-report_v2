@@ -16,6 +16,7 @@ import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
+import { useToast } from "../../context/useToast";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
 import { ROLES, type Program } from "../../types";
 
@@ -29,6 +30,7 @@ const ProgramsPage = () => {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const [instFilter, setInstFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -126,6 +128,7 @@ const ProgramsPage = () => {
     updateProgramMutation.mutate(
       { id: program.id, data: { isActive: !program.isActive } },
       {
+        onSuccess: () => showToast(`'${program.name}' 사업단을 ${actionLabel}했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

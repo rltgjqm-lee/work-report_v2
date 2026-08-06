@@ -10,6 +10,7 @@ import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { Group } from "../../types";
@@ -47,6 +48,7 @@ const GroupMonthlyScheduleModal = ({
   const [patternWorkDays, setPatternWorkDays] = useState("1");
   const [patternRestDays, setPatternRestDays] = useState("2");
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const {
     data: schedule,
@@ -130,6 +132,7 @@ const GroupMonthlyScheduleModal = ({
           // 근무일을 하나도 안 골랐으면(자동 생성 안 함) 조 정보만 저장하고 끝낸다 —
           // 스케줄은 나중에 다시 이 모달로 설정해도 된다.
           if (workDates.length === 0) {
+            showToast("조 정보를 수정했습니다.");
             onClose();
             return;
           }
@@ -142,7 +145,10 @@ const GroupMonthlyScheduleModal = ({
               maxMonthlyMinutes: Math.round(Number(maxMonthlyHours) * 60),
             },
             {
-              onSuccess: () => onClose(),
+              onSuccess: () => {
+                showToast("조 정보와 월간 스케줄을 수정했습니다.");
+                onClose();
+              },
               onError: (error) =>
                 alert(
                   error instanceof Error

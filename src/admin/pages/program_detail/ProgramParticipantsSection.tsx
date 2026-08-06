@@ -17,6 +17,7 @@ import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
 import { usePagination } from "../../hooks/usePagination";
+import { useToast } from "../../context/useToast";
 import { rowActionBtnClass } from "../../uiClasses";
 import type { DemandSite, Group, Participant } from "../../types";
 
@@ -79,6 +80,7 @@ const ProgramParticipantsSection = ({
   const [demandSiteAssignTarget, setDemandSiteAssignTarget] = useState<Participant | null>(null);
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const dropParticipantMutation = useMutation(dropParticipantMutationOptions(queryClient));
   const endParticipantLeaveMutation = useMutation(endParticipantLeaveMutationOptions(queryClient));
   const reactivateParticipantMutation = useMutation(
@@ -115,15 +117,17 @@ const ProgramParticipantsSection = ({
     dropParticipantMutation.mutate(
       { participantId, programId, dropReason: reason || undefined },
       {
+        onSuccess: () => showToast(`'${name}' 님을 참여종료 처리했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
   };
 
-  const handleEndLeaveButtonClick = (participantId: number) => {
+  const handleEndLeaveButtonClick = (participantId: number, name: string) => {
     endParticipantLeaveMutation.mutate(
       { participantId, programId },
       {
+        onSuccess: () => showToast(`'${name}' 님의 휴무를 종료했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -135,6 +139,7 @@ const ProgramParticipantsSection = ({
     reactivateParticipantMutation.mutate(
       { participantId, programId },
       {
+        onSuccess: () => showToast(`'${name}' 님을 다시 활동중 상태로 되돌렸습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -145,7 +150,7 @@ const ProgramParticipantsSection = ({
     deleteParticipantMutation.mutate(
       { programId, participantId, name },
       {
-        onSuccess: () => alert(`'${name}' 님을 삭제했습니다.`),
+        onSuccess: () => showToast(`'${name}' 님을 삭제했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
       },
     );
@@ -163,7 +168,10 @@ const ProgramParticipantsSection = ({
         dropReason: reason || undefined,
       },
       {
-        onSuccess: () => setSelectedParticipantIds([]),
+        onSuccess: () => {
+          showToast(`${selectedParticipantIds.length}명을 일괄 참여종료 처리했습니다.`);
+          setSelectedParticipantIds([]);
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -175,7 +183,10 @@ const ProgramParticipantsSection = ({
     bulkUpdateParticipantStatusMutation.mutate(
       { programId, participantIds: selectedParticipantIds, status: "ACTIVE" },
       {
-        onSuccess: () => setSelectedParticipantIds([]),
+        onSuccess: () => {
+          showToast(`${selectedParticipantIds.length}명을 일괄 재활성화했습니다.`);
+          setSelectedParticipantIds([]);
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -341,7 +352,7 @@ const ProgramParticipantsSection = ({
                   {participant.status === "ON_LEAVE" && (
                     <button
                       className={rowActionBtnClass}
-                      onClick={() => handleEndLeaveButtonClick(participant.id)}
+                      onClick={() => handleEndLeaveButtonClick(participant.id, participant.name)}
                     >
                       복귀
                     </button>

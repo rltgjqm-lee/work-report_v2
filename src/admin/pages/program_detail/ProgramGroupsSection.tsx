@@ -5,6 +5,7 @@ import { updateGroupMutationOptions } from "../../api/admin/groups";
 import GroupAddModal from "./GroupAddModal";
 import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
 import StatusChip from "../../components/chip/StatusChip";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, zoneCardBtnClass, zoneCardFooterClass } from "../../uiClasses";
 import type { Group } from "../../types";
 
@@ -23,6 +24,7 @@ const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGrou
   const [scheduleTarget, setScheduleTarget] = useState<Group | null>(null);
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const updateGroupMutation = useMutation(updateGroupMutationOptions(queryClient));
 
   const handleToggleActiveButtonClick = (group: Group) => {
@@ -33,6 +35,7 @@ const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGrou
     updateGroupMutation.mutate(
       { id: group.id, programId, data: { isActive: !group.isActive } },
       {
+        onSuccess: () => showToast(`'${group.name}' 조를 ${actionLabel}했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

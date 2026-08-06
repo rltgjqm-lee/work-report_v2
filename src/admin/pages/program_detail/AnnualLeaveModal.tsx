@@ -7,6 +7,7 @@ import {
 } from "../../api/admin/participants";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 
 const currentYear = new Date().getFullYear().toString();
@@ -28,6 +29,7 @@ interface AnnualLeaveModalProps {
 const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
   const [form, setForm] = useState(emptyForm);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: balance } = useQuery({
     ...participantAnnualLeaveQueryOptions(target?.id ?? 0, currentYear),
@@ -45,6 +47,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
     setAnnualLeaveMutation.mutate(
       { participantId: target.id, year: form.year, totalDays: Number(form.totalDays) },
       {
+        onSuccess: () => showToast("연차 설정을 저장했습니다."),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

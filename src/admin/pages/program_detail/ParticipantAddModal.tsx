@@ -8,6 +8,7 @@ import {
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { DemandSite, Group } from "../../types";
 import { downloadAddParticipantsTemplate } from "../../../utils/downloadAddParticipantsTemplate";
@@ -47,6 +48,7 @@ const ParticipantAddModal = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const addParticipantMutation = useMutation(addParticipantMutationOptions(queryClient));
   const bulkAddParticipantsMutation = useMutation(bulkAddParticipantsMutationOptions(queryClient));
 
@@ -94,6 +96,7 @@ const ParticipantAddModal = ({
           // 💡 바로 위에서 성별 누락 행이 없는지 이미 검증했으니 단언해도 안전하다
           data: { participants: rows.map((row) => ({ ...row, gender: row.gender! })) },
         });
+        showToast(`참여자 ${rows.length}명을 일괄 등록했습니다.`);
       } else {
         if (!form.name) {
           alert("이름을 입력해주세요.");
@@ -124,6 +127,7 @@ const ParticipantAddModal = ({
             groupId: form.groupId ? Number(form.groupId) : undefined,
           },
         });
+        showToast(`'${form.name}' 님을 참여자로 등록했습니다.`);
       }
       onClose();
     } catch (error) {

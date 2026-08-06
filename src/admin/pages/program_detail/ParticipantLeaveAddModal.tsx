@@ -5,6 +5,7 @@ import { registerParticipantLeaveMutationOptions } from "../../api/admin/partici
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { LeaveType } from "../../types";
 
@@ -32,6 +33,7 @@ const ParticipantLeaveAddModal = ({
 }: ParticipantLeaveAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const registerParticipantLeaveMutation = useMutation(
     registerParticipantLeaveMutationOptions(queryClient),
   );
@@ -53,7 +55,10 @@ const ParticipantLeaveAddModal = ({
         reason: form.reason || undefined,
       },
       {
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+          showToast(target ? `'${target.name}' 님의 휴무를 등록했습니다.` : "휴무를 등록했습니다.");
+          onClose();
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

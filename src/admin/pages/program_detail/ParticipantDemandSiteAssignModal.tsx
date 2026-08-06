@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { moveParticipantToDemandSiteMutationOptions } from "../../api/admin/participants";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
 import type { DemandSite, Participant } from "../../types";
 
@@ -25,6 +26,7 @@ const ParticipantDemandSiteAssignModal = ({
 }: ParticipantDemandSiteAssignModalProps) => {
   const [demandSiteId, setDemandSiteId] = useState(String(participant.demandSiteId ?? ""));
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const moveParticipantToDemandSiteMutation = useMutation(
     moveParticipantToDemandSiteMutationOptions(queryClient),
@@ -39,7 +41,7 @@ const ParticipantDemandSiteAssignModal = ({
       { participantId: participant.id, programId, demandSiteId: Number(demandSiteId) },
       {
         onSuccess: () => {
-          alert("수요처가 변경되었습니다.");
+          showToast("수요처가 변경되었습니다.");
           onClose();
         },
         onError: (error) =>

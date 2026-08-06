@@ -6,6 +6,7 @@ import { programsByOrganizationQueryOptions } from "../../api/admin/programs";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
 import { ROLES, type Admin, type Role } from "../../types";
 
@@ -33,6 +34,7 @@ interface TransferProgramsModalProps {
 // 새로 마운트되면서 초기값이 자연스럽게 적용된다 — 별도 리셋 effect가 필요 없다.
 const TransferProgramsModal = ({ onClose, target, candidates }: TransferProgramsModalProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const transferAdminProgramsMutation = useMutation(
     transferAdminProgramsMutationOptions(queryClient),
   );
@@ -75,7 +77,7 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
       {
         // UI 한정: 이관 결과 안내와 모달 닫기는 이 화면에서만 의미 있다.
         onSuccess: (result) => {
-          alert(
+          showToast(
             `사업단 ${result.programCount}개, 수요처 ${result.demandSiteCount}곳의 담당자를 변경했습니다.`,
           );
           onClose();

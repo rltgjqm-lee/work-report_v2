@@ -5,6 +5,7 @@ import { updateParticipantMutationOptions } from "../../api/admin/participants";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { ParticipantDetail } from "../../types";
 
@@ -29,6 +30,7 @@ const ParticipantPayrollSettingsModal = ({
   participant,
 }: ParticipantPayrollSettingsModalProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const updateParticipantMutation = useMutation(updateParticipantMutationOptions(queryClient));
   const [form, setForm] = useState({
     hourlyWage: String(participant.hourlyWage ?? participant.programHourlyWage),
@@ -67,7 +69,10 @@ const ParticipantPayrollSettingsModal = ({
         },
       },
       {
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+          showToast("급여 관련 설정을 저장했습니다.");
+          onClose();
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
       },
     );

@@ -9,6 +9,7 @@ import {
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import { ROLES, type Admin, type Organization, type Program, type Role } from "../../types";
 
@@ -52,6 +53,7 @@ const ProgramFormModal = ({
   managerAdmins,
 }: ProgramFormModalProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const createProgramMutation = useMutation(createProgramMutationOptions(queryClient));
   const updateProgramMutation = useMutation(updateProgramMutationOptions(queryClient));
   const setProgramManagerMutation = useMutation(setProgramManagerMutationOptions(queryClient));
@@ -147,6 +149,7 @@ const ProgramFormModal = ({
         const createdProgram = await createProgramMutation.mutateAsync(payload);
         await saveManagerAdmin(createdProgram.id);
       }
+      showToast(editingProgram ? "사업단 정보를 수정했습니다." : "사업단을 추가했습니다.");
       onClose();
     } catch (error) {
       setError(error instanceof Error ? error.message : "저장에 실패했습니다.");

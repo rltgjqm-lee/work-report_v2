@@ -9,6 +9,7 @@ import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import { KOREAN_REGIONS, SIDO_LIST } from "../../data/koreanRegions";
 import type { Organization } from "../../types";
@@ -43,6 +44,7 @@ interface OrganizationFormModalProps {
  */
 const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFormModalProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const createOrganizationMutation = useMutation(createOrganizationMutationOptions(queryClient));
   const updateOrganizationMutation = useMutation(updateOrganizationMutationOptions(queryClient));
   const [form, setForm] = useState(
@@ -92,7 +94,10 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
     }
 
     const saveCallbacks = {
-      onSuccess: () => onClose(),
+      onSuccess: () => {
+        showToast(editingOrganization ? "기관 정보를 수정했습니다." : "기관을 추가했습니다.");
+        onClose();
+      },
       onError: (error: unknown) =>
         setError(error instanceof Error ? error.message : "저장에 실패했습니다."),
     };

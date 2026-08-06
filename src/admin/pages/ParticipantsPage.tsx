@@ -9,6 +9,7 @@ import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
 import { usePagination } from "../hooks/usePagination";
+import { useToast } from "../context/useToast";
 import { rowActionBtnClass } from "../uiClasses";
 import type { Participant } from "../types";
 
@@ -34,6 +35,7 @@ const PROGRAM_FILTER = {
 const ParticipantsPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [programFilter, setProgramFilter] = useState<string>(PROGRAM_FILTER.ALL);
   const [demandSiteFilter, setDemandSiteFilter] = useState<string>(DEMAND_SITE.ALL);
@@ -134,7 +136,7 @@ const ParticipantsPage = () => {
     deleteParticipantMutation.mutate(
       { programId: row.programId, participantId: row.id, name: row.name },
       {
-        onSuccess: () => alert(`'${row.name}' 님을 삭제했습니다.`),
+        onSuccess: () => showToast(`'${row.name}' 님을 삭제했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
       },
     );

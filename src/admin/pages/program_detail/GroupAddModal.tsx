@@ -7,6 +7,7 @@ import { generateWorkPattern } from "../../utils/generateWorkPattern";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 
@@ -42,6 +43,7 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
   const [patternRestDays, setPatternRestDays] = useState("2");
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const createGroupMutation = useMutation(createGroupMutationOptions(queryClient));
   const updateGroupMonthlyScheduleMutation = useMutation(
     updateGroupMonthlyScheduleMutationOptions(queryClient),
@@ -108,6 +110,7 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
           // 근무일을 하나도 안 골랐으면 월간 스케줄 없이 조만 만들고 끝낸다 — 나중에
           // "수정"으로 따로 설정해도 된다.
           if (workDates.length === 0) {
+            showToast(`'${form.name}' 조를 추가했습니다.`);
             onClose();
             return;
           }
@@ -120,7 +123,10 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
               maxMonthlyMinutes: Math.round(Number(maxMonthlyHours) * 60),
             },
             {
-              onSuccess: () => onClose(),
+              onSuccess: () => {
+                showToast(`'${form.name}' 조를 추가했습니다.`);
+                onClose();
+              },
               onError: (error) =>
                 alert(
                   error instanceof Error

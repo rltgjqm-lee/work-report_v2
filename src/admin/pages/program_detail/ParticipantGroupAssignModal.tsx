@@ -10,6 +10,7 @@ import {
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass, rowActionBtnClass } from "../../uiClasses";
 import { getLocalToday } from "../../../utils/timeFormat";
 import type { Group, Participant } from "../../types";
@@ -44,6 +45,7 @@ const ParticipantGroupAssignModal = ({
   const [temporaryGroupId, setTemporaryGroupId] = useState("");
   const [permanentGroupId, setPermanentGroupId] = useState(String(participant.groupId ?? ""));
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: overrides = [], isFetching: isOverridesFetching } = useQuery({
     ...participantGroupOverridesQueryOptions(participant.id),
@@ -71,7 +73,10 @@ const ParticipantGroupAssignModal = ({
     setOverrideMutation.mutate(
       { participantId: participant.id, date, groupId: Number(temporaryGroupId) },
       {
-        onSuccess: () => setTemporaryGroupId(""),
+        onSuccess: () => {
+          showToast("임시 배정을 등록했습니다.");
+          setTemporaryGroupId("");
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
       },
     );
@@ -82,6 +87,7 @@ const ParticipantGroupAssignModal = ({
     deleteOverrideMutation.mutate(
       { participantId: participant.id, date: overrideDate },
       {
+        onSuccess: () => showToast("임시 배정을 삭제했습니다."),
         onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
       },
     );
@@ -96,7 +102,7 @@ const ParticipantGroupAssignModal = ({
       { participantId: participant.id, programId, groupId: Number(permanentGroupId) },
       {
         onSuccess: () => {
-          alert("조가 변경되었습니다.");
+          showToast("조가 변경되었습니다.");
           onClose();
         },
         onError: (error) =>

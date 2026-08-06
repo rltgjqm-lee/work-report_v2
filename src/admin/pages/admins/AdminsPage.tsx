@@ -8,6 +8,7 @@ import ResetPasswordModal from "./ResetPasswordModal";
 import TransferProgramsModal from "./TransferProgramsModal";
 import SearchInput from "../../components/SearchInput";
 import { useAuth } from "../../context/useAuth";
+import { useToast } from "../../context/useToast";
 import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
 import { ROLES, type Admin, type Role } from "../../types";
 
@@ -39,6 +40,7 @@ const AdminsPage = () => {
   const role = admin?.role;
   const assignableRoles = role ? ASSIGNABLE_ROLES[role] : [];
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: admins = [] } = useQuery(adminsQueryOptions);
   const { data: organizations = [] } = useQuery({
@@ -93,6 +95,8 @@ const AdminsPage = () => {
     updateAdminMutation.mutate(
       { id: adminRow.id, data: { isActive: !adminRow.isActive } },
       {
+        onSuccess: () =>
+          showToast(`'${adminRow.name ?? adminRow.email}' 계정을 ${actionLabel}했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );

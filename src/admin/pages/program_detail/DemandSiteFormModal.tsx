@@ -10,6 +10,7 @@ import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 // import FilterSelect from "../../components/FilterSelect"; // 담당자 지정 UI와 함께 임시로 뺐다
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import type { DemandSite } from "../../types";
 
@@ -56,6 +57,7 @@ const DemandSiteFormModal = ({
       : emptyForm,
   );
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const createDemandSiteMutation = useMutation(createDemandSiteMutationOptions(queryClient));
   const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
 
@@ -101,6 +103,10 @@ const DemandSiteFormModal = ({
     };
     const onError = (error: unknown) =>
       alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    const onSuccess = () => {
+      showToast(editingDemandSite ? "수요처 정보를 수정했습니다." : "수요처를 추가했습니다.");
+      onClose();
+    };
 
     if (editingDemandSite) {
       updateDemandSiteMutation.mutate(
@@ -112,13 +118,10 @@ const DemandSiteFormModal = ({
             contactAdminId: form.contactAdminId ? Number(form.contactAdminId) : null,
           },
         },
-        { onSuccess: () => onClose(), onError },
+        { onSuccess, onError },
       );
     } else {
-      createDemandSiteMutation.mutate(
-        { programId, ...payload },
-        { onSuccess: () => onClose(), onError },
-      );
+      createDemandSiteMutation.mutate({ programId, ...payload }, { onSuccess, onError });
     }
   };
 

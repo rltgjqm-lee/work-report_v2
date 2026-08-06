@@ -4,6 +4,7 @@ import { useState } from "react";
 import { resetAdminPassword } from "../../api/admin/admins";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 
 interface ResetPasswordModalProps {
@@ -24,6 +25,7 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // 비밀번호 재설정은 admins 목록에 표시되는 데이터를 바꾸지 않아서(무효화할 캐시가 없음)
   // 다른 뮤테이션처럼 API 파일에 mutationOptions를 따로 만들지 않고 여기서 바로 쓴다.
@@ -48,7 +50,10 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
     resetAdminPasswordMutation.mutate(
       { id: target.id, newPassword },
       {
-        onSuccess: () => onClose(),
+        onSuccess: () => {
+          showToast(`'${target.name}' 님의 비밀번호를 재설정했습니다.`);
+          onClose();
+        },
         onError: (error) =>
           setError(error instanceof Error ? error.message : "재설정에 실패했습니다."),
       },

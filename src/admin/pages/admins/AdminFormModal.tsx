@@ -5,6 +5,7 @@ import { createAdminMutationOptions, updateAdminMutationOptions } from "../../ap
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
+import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import { ROLES, type Admin, type Organization, type Role } from "../../types";
 
@@ -40,6 +41,7 @@ const AdminFormModal = ({
   organizations,
 }: AdminFormModalProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const createAdminMutation = useMutation(createAdminMutationOptions(queryClient));
   const updateAdminMutation = useMutation(updateAdminMutationOptions(queryClient));
   // 총괄 관리자 계정은 소속 기관이 없어서, 기본 역할이 총괄이면 모달을 열자마자
@@ -72,7 +74,10 @@ const AdminFormModal = ({
 
     // UI 한정: 저장 성공하면 이 모달을 닫고, 실패하면 폼에 에러 메시지를 보여준다.
     const saveCallbacks = {
-      onSuccess: () => onClose(),
+      onSuccess: () => {
+        showToast(editingAdmin ? "계정 정보를 수정했습니다." : "계정을 발급했습니다.");
+        onClose();
+      },
       onError: (error: unknown) =>
         setError(error instanceof Error ? error.message : "저장에 실패했습니다."),
     };
