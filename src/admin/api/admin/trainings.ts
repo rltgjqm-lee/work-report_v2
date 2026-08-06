@@ -15,6 +15,9 @@ export const createTraining = (data: {
   programId: number;
   name: string;
   category: TrainingCategory;
+  trainingDate?: string;
+  startTime?: string;
+  endTime?: string;
   isPaid?: boolean;
   payMode?: TrainingPayMode;
   hours?: number;
@@ -31,6 +34,9 @@ export const updateTraining = (
   data: Partial<{
     name: string;
     category: TrainingCategory;
+    trainingDate: string;
+    startTime: string;
+    endTime: string;
     isPaid: boolean;
     payMode: TrainingPayMode;
     hours: number;

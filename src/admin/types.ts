@@ -351,6 +351,9 @@ export type ProjectTraining = {
   programId: number;
   name: string;
   category: TrainingCategory;
+  trainingDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   isPaid: boolean;
   payMode: TrainingPayMode;
   hours: number | null;

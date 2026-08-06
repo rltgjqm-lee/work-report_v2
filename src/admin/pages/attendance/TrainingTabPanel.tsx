@@ -48,12 +48,24 @@ type SubTab = "definitions" | "logs" | "summary";
 
 const emptyTrainingForm = {
   name: "",
-  category: "PRE" as TrainingCategory,
+  category: "" as TrainingCategory | "",
+  trainingDate: "",
   isPaid: false,
-  payMode: "NONE" as TrainingPayMode,
-  hours: "",
+  payMode: "" as TrainingPayMode | "",
+  startTime: "",
+  endTime: "",
   dailyWage: "",
   isRequired: false,
+};
+
+// 시작/종료 시각(HH:MM)으로부터 교육 시간을 계산한다. 종료가 시작보다 빠르면 무효로 본다.
+const computeTrainingHours = (startTime: string, endTime: string): number | undefined => {
+  if (!startTime || !endTime) return undefined;
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+  const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+
+  return minutes > 0 ? minutes / 60 : undefined;
 };
 
 const emptyLogForm = {
@@ -119,9 +131,11 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     setTrainingForm({
       name: training.name,
       category: training.category,
+      trainingDate: training.trainingDate ?? "",
       isPaid: training.isPaid,
       payMode: training.payMode,
-      hours: training.hours !== null ? String(training.hours) : "",
+      startTime: training.startTime ?? "",
+      endTime: training.endTime ?? "",
       dailyWage: training.dailyWage !== null ? String(training.dailyWage) : "",
       isRequired: training.isRequired,
     });
@@ -145,13 +159,21 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
 
       return;
     }
+    if (!trainingForm.category || !trainingForm.payMode) {
+      alert("구분과 지급방식을 선택해주세요.");
+
+      return;
+    }
     try {
       const payload = {
         name: trainingForm.name,
         category: trainingForm.category,
+        trainingDate: trainingForm.trainingDate || undefined,
         isPaid: trainingForm.isPaid,
         payMode: trainingForm.payMode,
-        hours: trainingForm.hours ? Number(trainingForm.hours) : undefined,
+        startTime: trainingForm.startTime || undefined,
+        endTime: trainingForm.endTime || undefined,
+        hours: computeTrainingHours(trainingForm.startTime, trainingForm.endTime),
         dailyWage: trainingForm.dailyWage ? Number(trainingForm.dailyWage) : undefined,
         isRequired: trainingForm.isRequired,
       };
@@ -255,6 +277,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                   </div>
                   <div className="text-[13px] text-[#6b7280] leading-relaxed mb-3.5">
                     {CATEGORY_LABEL[training.category]} · {PAY_MODE_LABEL[training.payMode]}
+                    {training.trainingDate && ` · ${training.trainingDate}`}
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {training.isRequired && (
@@ -454,38 +477,93 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               }
             />
           </FormField>
-          <FormField label="구분">
-            <select
-              className={selectClass}
-              value={trainingForm.category}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <FormField label="구분">
+                <FilterSelect
+                  className="w-full"
+                  value={trainingForm.category}
+                  onChange={(value) =>
+                    setTrainingForm((f) => ({
+                      ...f,
+                      category: value as TrainingCategory | "",
+                    }))
+                  }
+                  options={[
+                    { value: "", label: "선택하세요" },
+                    { value: "PRE", label: "사전" },
+                    { value: "DURING", label: "기간중" },
+                  ]}
+                />
+              </FormField>
+            </div>
+            <div className="flex-1">
+              <FormField label="지급방식">
+                <FilterSelect
+                  className="w-full"
+                  value={trainingForm.payMode}
+                  onChange={(value) =>
+                    setTrainingForm((f) => ({
+                      ...f,
+                      payMode: value as TrainingPayMode | "",
+                    }))
+                  }
+                  options={[
+                    { value: "", label: "선택하세요" },
+                    { value: "NONE", label: "미지급(기록만)" },
+                    { value: "WORK", label: "근무시간 합산" },
+                    { value: "HOURLY", label: "시간당 별도지급" },
+                    { value: "DAILY", label: "일당 별도지급" },
+                  ]}
+                />
+              </FormField>
+            </div>
+          </div>
+          <FormField label="교육날짜(선택)">
+            <input
+              type="date"
+              className={inputClass}
+              value={trainingForm.trainingDate}
               onChange={(event) =>
                 setTrainingForm((f) => ({
                   ...f,
-                  category: event.target.value as TrainingCategory,
+                  trainingDate: event.target.value,
                 }))
               }
-            >
-              <option value="PRE">사전</option>
-              <option value="DURING">기간중</option>
-            </select>
+            />
           </FormField>
-          <FormField label="지급방식">
-            <select
-              className={selectClass}
-              value={trainingForm.payMode}
-              onChange={(event) =>
-                setTrainingForm((f) => ({
-                  ...f,
-                  payMode: event.target.value as TrainingPayMode,
-                }))
-              }
-            >
-              <option value="NONE">미지급(기록만)</option>
-              <option value="WORK">근무시간 합산</option>
-              <option value="HOURLY">시간당 별도지급</option>
-              <option value="DAILY">일당 별도지급</option>
-            </select>
-          </FormField>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <FormField label="시작시간(선택)">
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={trainingForm.startTime}
+                  onChange={(event) =>
+                    setTrainingForm((f) => ({
+                      ...f,
+                      startTime: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+            <div className="flex-1">
+              <FormField label="종료시간(선택)">
+                <input
+                  type="time"
+                  className={inputClass}
+                  value={trainingForm.endTime}
+                  onChange={(event) =>
+                    setTrainingForm((f) => ({
+                      ...f,
+                      endTime: event.target.value,
+                    }))
+                  }
+                />
+              </FormField>
+            </div>
+          </div>
           {trainingForm.payMode === "DAILY" && (
             <FormField label="일당(원)">
               <input
@@ -501,19 +579,6 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               />
             </FormField>
           )}
-          <FormField label="기준 시간(선택)">
-            <input
-              type="number"
-              className={inputClass}
-              value={trainingForm.hours}
-              onChange={(event) =>
-                setTrainingForm((f) => ({
-                  ...f,
-                  hours: event.target.value,
-                }))
-              }
-            />
-          </FormField>
           <label className="flex items-center gap-2 text-[13px]">
             <input
               type="checkbox"

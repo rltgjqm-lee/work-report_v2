@@ -59,6 +59,9 @@ app.post("/", async (c) => {
     programId?: number;
     name?: string;
     category?: "PRE" | "DURING";
+    trainingDate?: string;
+    startTime?: string;
+    endTime?: string;
     isPaid?: boolean;
     payMode?: "WORK" | "HOURLY" | "DAILY" | "NONE";
     hours?: number;
@@ -80,6 +83,9 @@ app.post("/", async (c) => {
       programId: body.programId,
       name: body.name,
       category: body.category,
+      trainingDate: body.trainingDate,
+      startTime: body.startTime,
+      endTime: body.endTime,
       isPaid: body.isPaid ?? false,
       payMode: body.payMode ?? "NONE",
       hours: body.hours,
@@ -106,6 +112,9 @@ app.put("/:id", async (c) => {
   const body = await c.req.json<{
     name?: string;
     category?: "PRE" | "DURING";
+    trainingDate?: string;
+    startTime?: string;
+    endTime?: string;
     isPaid?: boolean;
     payMode?: "WORK" | "HOURLY" | "DAILY" | "NONE";
     hours?: number;
@@ -119,6 +128,9 @@ app.put("/:id", async (c) => {
     .set({
       name: body.name ?? existing.name,
       category: body.category ?? existing.category,
+      trainingDate: body.trainingDate ?? existing.trainingDate,
+      startTime: body.startTime ?? existing.startTime,
+      endTime: body.endTime ?? existing.endTime,
       isPaid: body.isPaid ?? existing.isPaid,
       payMode: body.payMode ?? existing.payMode,
       hours: body.hours ?? existing.hours,

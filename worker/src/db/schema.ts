@@ -610,10 +610,14 @@ export const projectTrainings = sqliteTable("project_trainings", {
     .references(() => programs.id),
   name: text("name").notNull(),
   category: text("category").$type<"PRE" | "DURING">().notNull(),
+  trainingDate: text("training_date"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   isPaid: integer("is_paid", { mode: "boolean" }).notNull().default(false),
   // WORK: 근무시간으로 합산(주휴수당 포함) / HOURLY: 시간×시급 별도지급
   // DAILY: 고정 일당 별도지급 / NONE: 기록만, 급여 미반영
   payMode: text("pay_mode").$type<"WORK" | "HOURLY" | "DAILY" | "NONE">().notNull().default("NONE"),
+  // startTime~endTime으로부터 계산된 시간(선택 시). 이수 등록 시 attendHours 기본값으로 쓰인다.
   hours: real("hours"),
   dailyWage: integer("daily_wage"),
   isRequired: integer("is_required", { mode: "boolean" }).notNull().default(false),

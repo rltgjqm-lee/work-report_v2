@@ -358,6 +358,20 @@
       "when": 1785925640937,
       "tag": "0050_opposite_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1785990109695,
+      "tag": "0051_clumsy_shiver_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1785991015524,
+      "tag": "0052_marvelous_crystal",
+      "breakpoints": true
     }
   ]
 }
