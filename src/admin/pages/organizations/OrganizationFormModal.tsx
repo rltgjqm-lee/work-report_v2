@@ -12,6 +12,7 @@ import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
 import { KOREAN_REGIONS, SIDO_LIST } from "../../data/koreanRegions";
+import { ORGANIZATION_TYPES } from "../../data/organizationTypes";
 import type { Organization } from "../../types";
 
 // 휴대폰(010-1234-5678), 유선(02-123-4567, 031-123-4567 등 지역번호 1~2자리),
@@ -223,16 +224,14 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
       <div className="flex gap-3">
         <div className="flex-1">
           <FormField label="기관유형">
-            <input
-              className={inputClass}
-              placeholder="예: 시니어클럽, 노인복지관"
+            <FilterSelect
+              className="w-full"
               value={form.organizationType}
-              onChange={(event) =>
-                setForm((form) => ({
-                  ...form,
-                  organizationType: event.target.value,
-                }))
-              }
+              onChange={(value) => setForm((form) => ({ ...form, organizationType: value }))}
+              options={[
+                { value: "", label: "선택하세요" },
+                ...ORGANIZATION_TYPES.map((type) => ({ value: type.value, label: type.label })),
+              ]}
             />
           </FormField>
         </div>
