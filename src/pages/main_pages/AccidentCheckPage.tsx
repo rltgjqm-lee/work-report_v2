@@ -72,20 +72,24 @@ const AccidentCheckPage = ({
       <div className={bodyClass}>
         <label className={labelClass + " px-1"}>오늘 다치신 곳이 있으신가요?</label>
         <div
-          className={choiceCardClass(formData.hasAccident === true)}
+          className={choiceCardClass(formData.accidentChecked && formData.hasAccident === true)}
           onClick={() => handleAccidentToggleButtonClick(true)}
         >
-          <span className={choiceRadioClass(formData.hasAccident === true)}>
-            {formData.hasAccident === true ? "✓" : ""}
+          <span
+            className={choiceRadioClass(formData.accidentChecked && formData.hasAccident === true)}
+          >
+            {formData.accidentChecked && formData.hasAccident === true ? "✓" : ""}
           </span>
           예, 있었습니다
         </div>
         <div
-          className={choiceCardClass(formData.hasAccident === false)}
+          className={choiceCardClass(formData.accidentChecked && formData.hasAccident === false)}
           onClick={() => handleAccidentToggleButtonClick(false)}
         >
-          <span className={choiceRadioClass(formData.hasAccident === false)}>
-            {formData.hasAccident === false ? "✓" : ""}
+          <span
+            className={choiceRadioClass(formData.accidentChecked && formData.hasAccident === false)}
+          >
+            {formData.accidentChecked && formData.hasAccident === false ? "✓" : ""}
           </span>
           아니요, 없었습니다
         </div>
