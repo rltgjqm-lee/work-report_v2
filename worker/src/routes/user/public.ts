@@ -409,12 +409,14 @@ app.post("/attendance/clock-in", async (c) => {
     return c.json({ error: "오늘은 근무일이 아니에요" }, 400);
   }
 
-  // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 정시부터, 종료 30분 후까지만 출근을
+  // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 15분 전부터, 종료 30분 후까지만 출근을
   // 허용한다. 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한
   // 사업단도 있어서).
+  let effectiveClockIn = iso;
   if (group) {
     const nowMinutes = toMinutes(time);
-    const earliest = toMinutes(group.shiftStart);
+    const shiftStartMinutes = toMinutes(group.shiftStart);
+    const earliest = shiftStartMinutes - 15;
     const latest = toMinutes(group.shiftEnd) + 30;
 
     if (nowMinutes < earliest) {
@@ -427,6 +429,12 @@ app.post("/attendance/clock-in", async (c) => {
     }
     if (nowMinutes > latest) {
       return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);
+    }
+
+    // 근무 시작 전(15분 여유 구간)에 눌렀으면 실제 시각이 아니라 정시로 기록한다 —
+    // 일찍 왔다고 근무시간이 더 인정되면 안 된다(퇴근의 effectiveClockOut과 동일 취지).
+    if (nowMinutes < shiftStartMinutes) {
+      effectiveClockIn = `${date}T${group.shiftStart}:00.000Z`;
     }
   }
 
@@ -441,7 +449,7 @@ app.post("/attendance/clock-in", async (c) => {
       groupId: effectiveGroupId,
       programId: participant.programId,
       workDate: date,
-      clockIn: iso,
+      clockIn: effectiveClockIn,
       clockInLat: body.lat ?? null,
       clockInLng: body.lng ?? null,
       clockInAccuracy: body.accuracy ?? null,
