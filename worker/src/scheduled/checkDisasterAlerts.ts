@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like, sql } from "drizzle-orm";
 
 import {
   programs,
@@ -11,7 +11,11 @@ import {
   disasterApiCallLog,
   pendingPushes,
 } from "../db/schema";
-import { fetchDisasterMessagesPage, type DisasterMessage } from "../lib/disasterMsgApi";
+import {
+  fetchDisasterMessagesPage,
+  MAX_ROWS_PER_PAGE,
+  type DisasterMessage,
+} from "../lib/disasterMsgApi";
 import { sendWebPush } from "../lib/webPush";
 import { getFcmAccessToken, sendFcmPush } from "../lib/fcmPush";
 import { isParticipantScheduledNow } from "../lib/scheduling";
@@ -69,17 +73,26 @@ const tryConsumeApiCallBudget = async (db: DB, date: string): Promise<boolean> =
   return true;
 };
 
-// crtDt=오늘(KST)로 페이지를 이어가며 그날치 재난문자를 전부 모은다.
-// 호출마다 일일 예산을 확인하고, 예산이 소진되면 그 자리에서 멈춘다(이미 모은 것까지는 처리).
-const fetchTodaysMessagesWithBudget = async (
+// crtDt=오늘(KST) 응답은 오름차순 누적이라, 오늘 이미 safety_alerts에 쌓아둔 개수만큼은
+// 이전에 다 받은 페이지다 — 그 다음 페이지부터만 이어받으면 매분 오늘치 전체를 처음부터
+// 다시 받지 않아도 된다. 호출마다 일일 예산을 확인하고, 예산이 소진되면 그 자리에서 멈춘다.
+const fetchNewMessagesWithBudget = async (
   db: DB,
   env: Env["Bindings"],
   date: string,
 ): Promise<DisasterMessage[]> => {
   const crtDt = date.replaceAll("-", "");
+
+  // sentAt은 "YYYY/MM/DD HH:MM:SS" 텍스트라 오늘 날짜 프리픽스로 이미 받아둔 개수를 센다.
+  const [{ knownCount }] = await db
+    .select({ knownCount: sql<number>`count(*)` })
+    .from(safetyAlerts)
+    .where(like(safetyAlerts.sentAt, `${date.replaceAll("-", "/")}%`));
+  const startPage = Math.floor(knownCount / MAX_ROWS_PER_PAGE) + 1;
+
   const collected: DisasterMessage[] = [];
 
-  for (let pageNo = 1; pageNo <= MAX_PAGES_PER_RUN; pageNo++) {
+  for (let pageNo = startPage; pageNo < startPage + MAX_PAGES_PER_RUN; pageNo++) {
     const allowed = await tryConsumeApiCallBudget(db, date);
     if (!allowed) {
       console.error(
@@ -95,30 +108,44 @@ const fetchTodaysMessagesWithBudget = async (
     );
     collected.push(...messages);
 
-    if (collected.length >= totalCount || messages.length === 0) break;
+    if (pageNo * MAX_ROWS_PER_PAGE >= totalCount || messages.length === 0) break;
   }
 
   return collected;
 };
 
+// D1은 쿼리 하나당 바인딩 파라미터를 100개까지만 허용한다 — 폭염특보처럼 하루치
+// 재난문자가 그 이상 쌓이는 날은 IN(...)에 다 넣으면 쿼리 자체가 거부된다.
+const D1_MAX_BOUND_PARAMS = 100;
+
+const chunk = <T>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+};
+
 // 1단계: 새 재난문자를 조회해서 지역/근무시간에 매칭되는 구독을 대기열에 적재만 한다
 const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> => {
   const { date } = getKstNow();
-  const messages = await fetchTodaysMessagesWithBudget(db, env, date);
+  const messages = await fetchNewMessagesWithBudget(db, env, date);
   if (messages.length === 0) return;
 
   // safetyAlerts는 계속 쌓이기만 하는 이력 테이블이라 전체를 읽으면 갈수록 읽기 비용이
   // 커진다 — alertId가 PK라 오늘 조회한 메시지 id만 IN으로 좁혀서 인덱스 조회로 끝낸다.
-  const processedRows = await db
-    .select({ alertId: safetyAlerts.alertId })
-    .from(safetyAlerts)
-    .where(
-      inArray(
-        safetyAlerts.alertId,
-        messages.map((message) => message.id),
-      ),
-    );
-  const processedIds = new Set(processedRows.map((r) => r.alertId));
+  // 위 D1 파라미터 한도 때문에 100개씩 나눠서 조회한다.
+  const processedIds = new Set<string>();
+  for (const idChunk of chunk(
+    messages.map((message) => message.id),
+    D1_MAX_BOUND_PARAMS,
+  )) {
+    const processedRows = await db
+      .select({ alertId: safetyAlerts.alertId })
+      .from(safetyAlerts)
+      .where(inArray(safetyAlerts.alertId, idChunk));
+    processedRows.forEach((row) => processedIds.add(row.alertId));
+  }
   const newMessages = messages.filter((m) => !processedIds.has(m.id));
   if (newMessages.length === 0) return;
 
