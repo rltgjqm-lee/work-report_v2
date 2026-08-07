@@ -70,7 +70,7 @@ const DemandSiteGroupAssignModal = ({
         shiftEnd: activeGroup.shiftEnd,
       };
     }
-    // 배정된 뒤 비활성화된 조는 activeGroups엔 없으니, 저장된 스케줄 쪽 값으로 대신 보여준다.
+    // 배정된 뒤 비활성화된 조는 activeGroups엔 없으니, 저장된 근무일 쪽 값으로 대신 보여준다.
     const schedule = schedules.find((schedule) => schedule.groupId === groupId);
     return schedule
       ? { name: schedule.groupName, shiftStart: schedule.shiftStart, shiftEnd: schedule.shiftEnd }

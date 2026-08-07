@@ -28,8 +28,8 @@ interface ParticipantMonthlyScheduleModalProps {
 }
 
 /**
- * 관리자 페이지 > 사업단 상세 페이지에서 참여자 개인의 월간 근무 스케줄 예외를
- * 설정하는 모달입니다. 예외가 없으면 조 기본 스케줄을 그대로 따릅니다.
+ * 관리자 페이지 > 사업단 상세 페이지에서 참여자 개인의 월간 근무일 예외를
+ * 설정하는 모달입니다. 예외가 없으면 조 기본 근무일을 그대로 따릅니다.
  */
 const ParticipantMonthlyScheduleModal = ({
   onClose,
@@ -167,7 +167,7 @@ const ParticipantMonthlyScheduleModal = ({
       },
       {
         onSuccess: () => {
-          showToast("개인 월간 스케줄을 저장했습니다.");
+          showToast("개인 월간 근무일을 저장했습니다.");
           onClose();
         },
         onError: (error) => alert(error instanceof Error ? error.message : "저장에 실패했습니다."),

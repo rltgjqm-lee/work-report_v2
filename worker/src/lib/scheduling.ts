@@ -13,7 +13,7 @@ import {
 type DB = ReturnType<typeof drizzle>;
 
 // 특정 참여자가 지금(date, time) 실제로 근무 중이어야 하는지 판단한다.
-// /attendance/clock-in의 조 임시배정(participantGroupOverrides) → 월간 스케줄
+// /attendance/clock-in의 조 임시배정(participantGroupOverrides) → 월간 근무일
 // (참여자 개인 → 조 기본값) → 조 근무시간(groups.shiftStart/shiftEnd) 판정을 그대로
 // 재사용한다 — 재난문자 대상 선정처럼 읽기 전용으로만 쓰는 곳에서 이 규칙이 갈라지면
 // "출근 가능한 시간인데 알림은 안 온다" 같은 불일치가 생기기 때문.

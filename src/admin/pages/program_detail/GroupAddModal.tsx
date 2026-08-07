@@ -31,8 +31,8 @@ interface GroupAddModalProps {
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 조를 추가하는 모달입니다.
- * 월간 근무 스케줄도 같이 지정할 수 있고(선택), 근무일을 하나도 안 고르면
- * 스케줄 없이 조만 만들어져서 나중에 "수정"으로 따로 설정해도 된다.
+ * 월간 근무 근무일도 같이 지정할 수 있고(선택), 근무일을 하나도 안 고르면
+ * 근무일 없이 조만 만들어져서 나중에 "수정"으로 따로 설정해도 된다.
  */
 const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
@@ -107,7 +107,7 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
       { programId, data: form },
       {
         onSuccess: (created) => {
-          // 근무일을 하나도 안 골랐으면 월간 스케줄 없이 조만 만들고 끝낸다 — 나중에
+          // 근무일을 하나도 안 골랐으면 월간 근무일 없이 조만 만들고 끝낸다 — 나중에
           // "수정"으로 따로 설정해도 된다.
           if (workDates.length === 0) {
             showToast(`'${form.name}' 조를 추가했습니다.`);
@@ -130,8 +130,8 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
               onError: (error) =>
                 alert(
                   error instanceof Error
-                    ? `조는 등록됐지만 월간 스케줄 저장에 실패했습니다: ${error.message}`
-                    : "조는 등록됐지만 월간 스케줄 저장에 실패했습니다.",
+                    ? `조는 등록됐지만 월간 근무일 저장에 실패했습니다: ${error.message}`
+                    : "조는 등록됐지만 월간 근무일 저장에 실패했습니다.",
                 ),
             },
           );
@@ -199,7 +199,7 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
 
       <div className="border-t border-[#eceef1] pt-4 flex flex-col gap-4">
         <div className="text-[13px] font-bold text-[#1f2937]">
-          월간 근무 스케줄 (선택 — 지금 안 정해도 나중에 수정할 수 있어요)
+          월간 근무일 (선택 — 지금 안 정해도 나중에 수정할 수 있어요)
         </div>
 
         <FormField label="월">

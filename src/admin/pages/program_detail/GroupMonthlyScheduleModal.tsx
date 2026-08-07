@@ -27,9 +27,8 @@ interface GroupMonthlyScheduleModalProps {
 }
 
 /**
- * 관리자 페이지 > 사업단 상세 페이지에서 조 기본 정보와 월간 근무일 스케줄을 함께
- * 수정하는 모달입니다. 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서
- * 설정합니다.
+ * 관리자 페이지 > 사업단 상세 페이지에서 조 기본 정보와 월간 근무일을 함께 수정하는 모달입니다.
+ * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정합니다.
  */
 const GroupMonthlyScheduleModal = ({
   onClose,
@@ -129,8 +128,6 @@ const GroupMonthlyScheduleModal = ({
       { id: group.id, programId: group.programId, data: form },
       {
         onSuccess: () => {
-          // 근무일을 하나도 안 골랐으면(자동 생성 안 함) 조 정보만 저장하고 끝낸다 —
-          // 스케줄은 나중에 다시 이 모달로 설정해도 된다.
           if (workDates.length === 0) {
             showToast("조 정보를 수정했습니다.");
             onClose();
@@ -146,14 +143,14 @@ const GroupMonthlyScheduleModal = ({
             },
             {
               onSuccess: () => {
-                showToast("조 정보와 월간 스케줄을 수정했습니다.");
+                showToast("조 정보와 월간 근무일을 수정했습니다.");
                 onClose();
               },
               onError: (error) =>
                 alert(
                   error instanceof Error
-                    ? `조 정보는 수정됐지만 월간 스케줄 저장에 실패했습니다: ${error.message}`
-                    : "조 정보는 수정됐지만 월간 스케줄 저장에 실패했습니다.",
+                    ? `조 정보는 수정됐지만 월간 근무일 저장에 실패했습니다: ${error.message}`
+                    : "조 정보는 수정됐지만 월간 근무일 저장에 실패했습니다.",
                 ),
             },
           );
@@ -221,7 +218,7 @@ const GroupMonthlyScheduleModal = ({
 
       <div className="border-t border-[#eceef1] pt-4 flex flex-col gap-4">
         <div className="text-[13px] font-bold text-[#1f2937]">
-          월간 근무 스케줄 (선택 — 지금 안 바꿔도 나중에 다시 이 모달로 수정할 수 있어요)
+          월간 근무일 (선택 — 지금 안 바꿔도 나중에 다시 이 모달로 수정할 수 있어요)
         </div>
 
         <FormField label="월">

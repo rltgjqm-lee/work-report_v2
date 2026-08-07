@@ -159,7 +159,7 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
 
   // 구독/토큰은 항상 출근 식별을 마친 뒤에만 만들어지므로(등록확인 화면에서 참여자와
   // 연결해서 생성) participantId는 항상 있다고 본다 — 그 참여자의 실제 스케줄(조 임시배정/
-  // 월간 스케줄/휴무/조 근무시간)로 지금 근무 중인지 판단해서, 개인적으로 퇴근했으면
+  // 월간 근무일/휴무/조 근무시간)로 지금 근무 중인지 판단해서, 개인적으로 퇴근했으면
   // 더는 오지 않게 한다. 같은 실행 안에서 메시지가 여러 건이어도 참여자별 조회는
   // 한 번만 하도록 캐싱한다.
   const scheduleCache = new Map<number, Promise<boolean>>();
