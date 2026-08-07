@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 
@@ -37,6 +37,17 @@ const ActivityReportPage = ({
   onAlert,
 }: Page4Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // 💡 아직 안 적었으면 사업단명/수요처명을 기본값으로 채워둔다 — 참여자는 그대로 쓰거나
+  // 고쳐 쓸 수 있다. 이미 적은 내용은 덮어쓰지 않는다.
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      actContent: prev.actContent || prev.programName,
+      actPlace: prev.actPlace || prev.demandName,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveButtonClick = () => {
     if (!formData.actContent.trim()) {
