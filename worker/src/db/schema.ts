@@ -550,7 +550,7 @@ export const attendanceLogs = sqliteTable(
     clockIn: text("clock_in"),
     clockOut: text("clock_out"),
     totalMinutes: integer("total_minutes"),
-    // 퇴근 시 배정된 조의 근무시간 대비 자동 판정 (지각/조퇴 여부) — 출근 중엔 NORMAL.
+    // LATE/EARLY_LEAVE는 관리자가 근태 강제수정에서 수동으로만 지정한다(자동 판정 없음).
     // INVALID는 관리자가 잘못된 기록을 무효화한 상태 (4-2 근태 강제수정/무효화).
     status: text("status")
       .$type<"NORMAL" | "LATE" | "EARLY_LEAVE" | "INVALID">()

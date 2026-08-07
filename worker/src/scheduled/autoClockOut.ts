@@ -38,7 +38,6 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
       workDate: attendanceLogs.workDate,
       clockIn: attendanceLogs.clockIn,
       note: attendanceLogs.note,
-      shiftStart: groups.shiftStart,
       shiftEnd: groups.shiftEnd,
     })
     .from(attendanceLogs)
@@ -54,34 +53,20 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
   for (const log of openLogs) {
     if (!log.clockIn) continue;
 
-    const shiftEndMinutes = toMinutes(log.shiftEnd);
     const clockOut = `${log.workDate}T${log.shiftEnd}:00.000Z`;
     const totalMinutes = Math.floor(
       (new Date(clockOut).getTime() - new Date(log.clockIn).getTime()) / 60000,
     );
 
-    // 지각/조퇴 판정은 수동 퇴근(public.ts)과 동일한 규칙을 그대로 재사용한다.
-    let status: "NORMAL" | "LATE" | "EARLY_LEAVE" = "NORMAL";
-    let note: string | undefined;
-    const expectedMinutes = shiftEndMinutes - toMinutes(log.shiftStart);
-    const clockInMinutes = toMinutes(log.clockIn.slice(11, 16));
-    if (totalMinutes < expectedMinutes - 10) {
-      status = "EARLY_LEAVE";
-      note = `조퇴 (예상: ${expectedMinutes}분, 실제: ${totalMinutes}분)`;
-    } else if (clockInMinutes > toMinutes(log.shiftStart) + 10) {
-      status = "LATE";
-      note = `지각 (예상 시작: ${log.shiftStart})`;
-    }
-
     // 마감 전에 이미 남아있던 메모(예: 관리자가 열려있는 동안 미리 남긴 메모)는 지우지 않고 이어붙인다.
-    const noteParts = [log.note, note, "[자동퇴근]"].filter(Boolean);
+    const noteParts = [log.note, "[자동퇴근]"].filter(Boolean);
 
     await db
       .update(attendanceLogs)
       .set({
         clockOut,
         totalMinutes,
-        status,
+        status: "NORMAL",
         note: noteParts.join("\n"),
       })
       .where(eq(attendanceLogs.id, log.id));

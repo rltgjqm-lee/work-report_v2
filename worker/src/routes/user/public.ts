@@ -491,8 +491,8 @@ app.post("/attendance/clock-out", async (c) => {
     ? (await db.select().from(groups).where(eq(groups.id, log.groupId)))[0]
     : undefined;
 
-  // 배정된 조에 근무시간이 설정돼 있으면 종료시간 10분 전부터만 퇴근을 허용한다
-  // (조퇴 판정 기준과 동일한 여유). 그 전에는 아예 퇴근 등록을 막는다.
+  // 배정된 조에 근무시간이 설정돼 있으면 종료시간 10분 전부터만 퇴근을 허용한다.
+  // 그 전에는 아예 퇴근 등록을 막는다.
   // 문구는 프론트에서 조립한다(시간 부분을 강조해야 해서) — 여기서는 코드/데이터만 내려준다.
   const nowMinutes = toMinutes(time);
   if (group) {
@@ -513,25 +513,6 @@ app.post("/attendance/clock-out", async (c) => {
   const totalMinutes = Math.floor(
     (new Date(effectiveClockOut).getTime() - new Date(log.clockIn).getTime()) / 60000,
   );
-
-  // 배정된 조의 근무시간이 있으면 지각/조퇴를 자동 판정한다 (±10분 여유)
-  let status: "NORMAL" | "LATE" | "EARLY_LEAVE" = "NORMAL";
-  let note: string | undefined;
-
-  if (group) {
-    const startMinutes = toMinutes(group.shiftStart);
-    const endMinutes = toMinutes(group.shiftEnd);
-    const expectedMinutes = endMinutes - startMinutes;
-    const clockInMinutes = toMinutes(log.clockIn.slice(11, 16));
-
-    if (totalMinutes < expectedMinutes - 10) {
-      status = "EARLY_LEAVE";
-      note = `조퇴 (예상: ${expectedMinutes}분, 실제: ${totalMinutes}분)`;
-    } else if (clockInMinutes > startMinutes + 10) {
-      status = "LATE";
-      note = `지각 (예상 시작: ${group.shiftStart})`;
-    }
-  }
 
   // 퇴근 위치도 출근과 같은 기준으로 기록만 한다. 좌표를 못 받았으면 배정 수요처를
   // 조회할 필요조차 없으니 D1 왕복을 건너뛴다.
@@ -554,8 +535,7 @@ app.post("/attendance/clock-out", async (c) => {
     .set({
       clockOut: effectiveClockOut,
       totalMinutes,
-      status,
-      note,
+      status: "NORMAL",
       clockOutLat: body.lat ?? null,
       clockOutLng: body.lng ?? null,
       clockOutAccuracy: body.accuracy ?? null,
