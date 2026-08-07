@@ -109,7 +109,7 @@ const ProgramDemandSitesSection = ({
                 <tr className="hover:bg-[#f8fafc]">
                   <td className="px-2 py-[13px] text-[13px] border-b border-[#eef0f3]">
                     <button
-                      className="w-6 h-6 border-none bg-transparent text-[#6b7280] text-xs cursor-pointer p-0"
+                      className="w-7 h-7 border-none bg-transparent text-[#374151] text-lg font-bold cursor-pointer p-0"
                       onClick={() =>
                         setExpandedSiteId((current) =>
                           current === demandSite.id ? null : demandSite.id,
