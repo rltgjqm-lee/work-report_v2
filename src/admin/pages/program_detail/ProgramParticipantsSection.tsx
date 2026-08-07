@@ -333,7 +333,7 @@ const ProgramParticipantsSection = ({
                           handleAnnualSettingButtonClick(participant.id, participant.name)
                         }
                       >
-                        연차설정
+                        연차
                       </button>
                       <button
                         className={rowActionBtnClass}

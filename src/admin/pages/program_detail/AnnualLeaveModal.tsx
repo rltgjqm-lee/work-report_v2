@@ -47,7 +47,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
     setAnnualLeaveMutation.mutate(
       { participantId: target.id, year: form.year, totalDays: Number(form.totalDays) },
       {
-        onSuccess: () => showToast("연차 설정을 저장했습니다."),
+        onSuccess: () => showToast("연차를 저장했습니다."),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -56,7 +56,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
   return (
     <SlideModal
       isOpen
-      title={target ? `'${target.name}' 님 연차 설정` : "연차 설정"}
+      title={target ? `'${target.name}' 님 연차` : "연차"}
       onClose={onClose}
       footer={
         <>
