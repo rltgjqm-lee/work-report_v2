@@ -20,7 +20,6 @@ const loadAttendanceLogWithProgram = async (db: ReturnType<typeof drizzle>, logI
   return { log, program };
 };
 
-// 4-2 근태 강제 수정 — 출퇴근 시간(HH:MM)/상태/사유를 관리자가 직접 고친다.
 // 사유는 프론트에도 보이는 note에 남기고, 누가/언제 고쳤는지는 correctedByAdminId/
 // correctedAt에 감사 목적으로만 남긴다 (프론트에는 노출 안 함).
 app.put("/:logId", async (c) => {
@@ -77,7 +76,6 @@ app.put("/:logId", async (c) => {
   return c.json(result[0]);
 });
 
-// 4-2 근태 무효화 — 잘못된 기록을 삭제 대신 INVALID 처리(소프트 삭제)
 app.post("/:logId/invalidate", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);

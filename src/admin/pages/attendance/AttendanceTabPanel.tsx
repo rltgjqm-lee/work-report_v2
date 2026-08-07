@@ -51,7 +51,7 @@ interface AttendanceTabPanelProps {
 }
 
 /**
- * 관리자 페이지 > 근태 관리 페이지의 "근태" 탭 내용입니다.
+ * 관리자 페이지 > 근무 관리 페이지의 "근무" 탭 내용입니다.
  *
  */
 const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelProps) => {
@@ -152,7 +152,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
 
   const handleInvalidateButtonClick = async (row: AttendanceRow) => {
     const reason = prompt(
-      `'${row.participantName}' 님의 ${row.log.workDate} 근태 기록을 무효화합니다. 사유를 입력해주세요.`,
+      `'${row.participantName}' 님의 ${row.log.workDate} 근무 기록을 무효화합니다. 사유를 입력해주세요.`,
     );
     if (reason === null) return;
 
@@ -304,8 +304,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 <tr>
                   <td colSpan={10} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                     {dayFilter === "all"
-                      ? "해당 월에 근태 기록이 없습니다."
-                      : "해당 일자에 근태 기록이 없습니다."}
+                      ? "해당 월에 근무 기록이 없습니다."
+                      : "해당 일자에 근무 기록이 없습니다."}
                   </td>
                 </tr>
               )}
@@ -318,7 +318,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
         <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
           <div className="bg-white rounded-[8px] shadow-xl w-[380px] p-5">
             <div className="text-[14px] font-bold mb-4">
-              {correctionTarget.participantName} — {correctionTarget.log.workDate} 근태 수정
+              {correctionTarget.participantName} — {correctionTarget.log.workDate} 근무 수정
             </div>
 
             <div className="flex flex-col gap-3">

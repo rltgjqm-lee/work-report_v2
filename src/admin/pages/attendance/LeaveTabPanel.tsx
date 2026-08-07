@@ -32,7 +32,7 @@ interface LeaveTabPanelProps {
 }
 
 /**
- * 관리자 페이지 > 근태 관리 페이지의 "휴가" 탭 내용입니다.
+ * 관리자 페이지 > 근무 관리 페이지의 "휴가" 탭 내용입니다.
  *
  */
 const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {

@@ -532,7 +532,7 @@ export const disasterPushLogs = sqliteTable(
   (table) => [index("idx_disaster_push_logs_message").on(table.messageId)],
 );
 
-// 참여자 셀프 체크인/아웃 근태 기록. 시간은 조의 shiftStart/shiftEnd 기준으로 판정한다.
+// 참여자 셀프 체크인/아웃 근무 기록. 시간은 조의 shiftStart/shiftEnd 기준으로 판정한다.
 // 출퇴근 시점의 위치도 같이 남기지만 이걸로 출퇴근을 막지는 않는다 — 실제 분포를 먼저
 // 모아보고(GPS 미허용률, 구역 중심까지 거리) 차단 정책을 정하기 위한 기록용이다.
 export const attendanceLogs = sqliteTable(
@@ -550,8 +550,8 @@ export const attendanceLogs = sqliteTable(
     clockIn: text("clock_in"),
     clockOut: text("clock_out"),
     totalMinutes: integer("total_minutes"),
-    // LATE/EARLY_LEAVE는 관리자가 근태 강제수정에서 수동으로만 지정한다(자동 판정 없음).
-    // INVALID는 관리자가 잘못된 기록을 무효화한 상태 (4-2 근태 강제수정/무효화).
+    // LATE/EARLY_LEAVE는 관리자가 근무 강제수정에서 수동으로만 지정한다(자동 판정 없음).
+    // INVALID는 관리자가 잘못된 기록을 무효화한 상태 (4-2 근무 강제수정/무효화).
     status: text("status")
       .$type<"NORMAL" | "LATE" | "EARLY_LEAVE" | "INVALID">()
       .notNull()
@@ -584,7 +584,7 @@ export const attendanceLogs = sqliteTable(
     clockOutDistanceM: integer("clock_out_distance_m"),
     // 이 날 받은 좌표 중 "GPS가 아니라 위치 조작 앱이 주입한 값"으로 표시된 건수.
     // 출근·퇴근·근무 중 보고를 모두 합산한다. 좌표를 근무지로 위조하면 구역 안으로만
-    // 찍혀서 이탈 기록이 아예 생기지 않기 때문에, 이탈 로그가 아니라 하루 근태 기록에
+    // 찍혀서 이탈 기록이 아예 생기지 않기 때문에, 이탈 로그가 아니라 하루 근무 기록에
     // 누적해야 드러난다.
     //
     // 하이브리드 앱(백그라운드 위치 플러그인)에서만 채워진다 — 브라우저 위치 API는
@@ -596,8 +596,8 @@ export const attendanceLogs = sqliteTable(
   (table) => [
     index("idx_attendance_participant_date").on(table.participantId, table.workDate),
     index("idx_attendance_program_date").on(table.programId, table.workDate),
-    // autoClockOut이 매분 "아직 퇴근 안 한 근태"를 찾는 쿼리용 — clockOut이 대부분(마감된
-    // 근태) NOT NULL이라 이 인덱스로 열려있는 소수만 바로 골라낸다.
+    // autoClockOut이 매분 "아직 퇴근 안 한 근무"를 찾는 쿼리용 — clockOut이 대부분(마감된
+    // 근무) NOT NULL이라 이 인덱스로 열려있는 소수만 바로 골라낸다.
     index("idx_attendance_open").on(table.clockOut, table.workDate),
   ],
 );

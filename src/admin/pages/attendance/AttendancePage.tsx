@@ -13,7 +13,7 @@ import type { DemandSite, Participant, Program } from "../../types";
 type Tab = "attendance" | "training" | "leave";
 
 /**
- * 관리자 페이지 > 근태 관리 페이지입니다. 근태/휴가/교육을 탭으로 묶어서 보여줍니다.
+ * 관리자 페이지 > 근무 관리 페이지입니다. 근무/휴가/교육을 탭으로 묶어서 보여줍니다.
  *
  */
 const AttendancePage = () => {
@@ -54,7 +54,7 @@ const AttendancePage = () => {
     listDemandSites(programId).then(setDemandSites);
   }, [programId]);
 
-  // 근태/교육/휴가 데이터에는 수요처 정보가 없고 참여자 id만 있다 —
+  // 근무/교육/휴가 데이터에는 수요처 정보가 없고 참여자 id만 있다 —
   // 선택한 수요처 소속 참여자 id 집합을 만들어 각 탭에서 그걸로 걸러낸다.
   // 선택 안 했으면 null을 내려서 필터를 끈다.
   const filteredParticipantIds = useMemo(() => {
@@ -90,12 +90,12 @@ const AttendancePage = () => {
               >
                 {programName || "사업단 상세"}
               </a>{" "}
-              / 근태 관리
+              / 근무 관리
             </div>
           ) : null}
-          <h1 className="text-[21px] font-bold m-0">근태 관리</h1>
+          <h1 className="text-[21px] font-bold m-0">근무 관리</h1>
           <p className="text-[13px] text-[#6b7280] mt-1.5">
-            참여자의 근태, 교육, 휴가 현황을 확인합니다.
+            참여자의 근무, 교육, 휴가 현황을 확인합니다.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -150,7 +150,7 @@ const AttendancePage = () => {
 
       <TabBar
         tabs={[
-          ["attendance", "근태"],
+          ["attendance", "근무"],
           ["training", "교육"],
           ["leave", "휴가 현황"],
         ]}

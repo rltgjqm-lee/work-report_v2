@@ -76,7 +76,7 @@ app.get("/:id", async (c) => {
   });
 });
 
-// 참여자 개인 근태 이력 — 관리자 콘솔 참여자 상세 페이지에서 쓴다
+// 참여자 개인 근무 이력 — 관리자 콘솔 참여자 상세 페이지에서 쓴다
 app.get("/:id/attendance", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);

@@ -20,7 +20,7 @@ const toMinutes = (hhmm: string): number => {
 const toHHMM = (minutes: number): string =>
   `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 
-// 조가 배정된 근태만 대상으로 한다 — 조 미배정 참여자는 애초에 출근 시 근무시간
+// 조가 배정된 근무만 대상으로 한다 — 조 미배정 참여자는 애초에 출근 시 근무시간
 // 검증 자체를 건너뛰므로(clock-in 참고) 기준으로 삼을 근무종료시각이 없다.
 export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
   const db = drizzle(env.DB);
@@ -28,7 +28,7 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
   const nowMinutes = toMinutes(time);
   const cutoffShiftEnd = toHHMM(nowMinutes - GRACE_MINUTES);
 
-  // 매분 "아직 안 마감된 근태 전체"를 다 읽어온 뒤 JS에서 거르면, 근무 중인 인원이 많아질수록
+  // 매분 "아직 안 마감된 근무 전체"를 다 읽어온 뒤 JS에서 거르면, 근무 중인 인원이 많아질수록
   // 매분 그 인원 전체를 읽게 된다 — 실제로 이번 분에 마감 대상인 것만 SQL에서 걸러낸다.
   // 오늘 이전 날짜(cron이 KST 18:00 이후 안 도는 사이 놓친 것)는 시각과 무관하게 무조건
   // 대상이고, 오늘 날짜는 조 근무종료 + 여유(GRACE_MINUTES)가 지난 조만 대상이다.

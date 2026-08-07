@@ -146,7 +146,7 @@ const ProgramDetailPage = () => {
             className={btnGhostClass}
             onClick={() => navigate(`/admin/programs/${programId}/attendance`)}
           >
-            근태 관리
+            근무 관리
           </button>
 
           <button

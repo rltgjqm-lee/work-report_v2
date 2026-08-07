@@ -132,7 +132,7 @@ app.post("/push-subscriptions", async (c) => {
   return c.json(result[0], 201);
 });
 
-// 참여자 셀프 근태체크 — 이름으로 본인 확인 (동명이인은 등록 시 이름에 "1", "2"를
+// 참여자 셀프 근무체크 — 이름으로 본인 확인 (동명이인은 등록 시 이름에 "1", "2"를
 // 붙여 미리 구분해둔다). 로그인/개인 UID 없이, 클라이언트가 응답의 participantId를
 // 로컬스토리지에 저장해두고 이후 출퇴근에 재사용한다.
 // 💡 등록확인 화면이 참여자 상태(휴무/탈락)와 사업 기간을 바로 판단할 수 있도록,
@@ -581,7 +581,7 @@ app.post("/attendance/sign", async (c) => {
     .from(attendanceLogs)
     .where(and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, date)));
   const log = rows[0];
-  if (!log) return c.json({ error: "근태 기록이 없습니다." }, 404);
+  if (!log) return c.json({ error: "근무 기록이 없습니다." }, 404);
 
   const key = `signatures/${log.programId}/${date.slice(0, 7)}/${log.participantId}/${log.id}.${extension}`;
   await c.env.SIGNATURES_BUCKET.put(key, bytes, {
@@ -638,7 +638,7 @@ app.post("/location", async (c) => {
   }
 
   // 좌표를 근무지로 위조하면 계속 "구역 안"으로만 찍혀서 이탈 기록이 아예 안 생긴다.
-  // 그래서 조작 표시는 이탈 로그가 아니라 그 날 근태 기록에 누적해 드러나게 한다.
+  // 그래서 조작 표시는 이탈 로그가 아니라 그 날 근무 기록에 누적해 드러나게 한다.
   if (body.simulated) {
     await db
       .update(attendanceLogs)

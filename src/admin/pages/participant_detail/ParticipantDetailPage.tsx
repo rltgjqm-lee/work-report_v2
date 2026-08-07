@@ -46,7 +46,7 @@ const emptyStats: AttendanceStats = {
 };
 
 /**
- * 관리자 페이지 > 참여자 상세 페이지입니다. 개인의 근태 이력과 휴가 현황을 보여줍니다.
+ * 관리자 페이지 > 참여자 상세 페이지입니다. 개인의 근무 이력과 휴가 현황을 보여줍니다.
  *
  */
 const ParticipantDetailPage = () => {
@@ -109,7 +109,7 @@ const ParticipantDetailPage = () => {
         </p>
       </div>
 
-      {/* 근태 이력 */}
+      {/* 근무 이력 */}
       <AttendanceHistorySection
         month={month}
         onMonthChange={setMonth}
@@ -146,7 +146,7 @@ const AttendanceHistorySection = ({
 }: AttendanceHistorySectionProps) => (
   <>
     <div className="flex items-center justify-between mb-3 gap-3">
-      <span className="text-sm font-bold whitespace-nowrap">근태 이력</span>
+      <span className="text-sm font-bold whitespace-nowrap">근무 이력</span>
       <MonthPicker value={month} onChange={onMonthChange} />
     </div>
 
@@ -233,7 +233,7 @@ const AttendanceHistorySection = ({
             {logs.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
-                  해당 월에 근태 기록이 없습니다.
+                  해당 월에 근무 기록이 없습니다.
                 </td>
               </tr>
             )}

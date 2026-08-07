@@ -83,7 +83,7 @@ interface TrainingTabPanelProps {
 }
 
 /**
- * 관리자 페이지 > 근태 관리 페이지의 "교육" 탭 내용입니다.
+ * 관리자 페이지 > 근무 관리 페이지의 "교육" 탭 내용입니다.
  * 교육 정의/이수 현황/필수교육 현황 하위 탭 3개.
  */
 const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingTabPanelProps) => {
