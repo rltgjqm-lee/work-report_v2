@@ -2,6 +2,40 @@
 
 @theme {
   --font-sans: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+
+  /* 참여자용 메인 앱 / 관리자 콘솔에서 공유 */
+  --color-text-strong: #1f2937;
+  --color-surface-page: #f2f4f6;
+
+  /* 메인 앱 전용 */
+  --color-brand: #3182f6;
+  --color-brand-tint: #eef6ff;
+  --color-text-muted: #9ca3af;
+  --color-text-disabled: #b0b8c1;
+  --color-border-default: #e5e8eb;
+  --color-border-subtle: #d1d5db;
+  --color-border-dashed: #cbd5e1;
+  --color-surface-muted: #f9fafb;
+  --color-danger: #e94b4b;
+  --color-danger-tint: #fef2f2;
+
+  /* 관리자 콘솔 전용 */
+  --color-admin-brand: #1e3a5f;
+  --color-admin-brand-dark: #132a45;
+  --color-admin-border: #d7dbe1;
+  --color-admin-border-subtle: #e2e5eb;
+  --color-admin-border-faint: #eef0f3;
+  --color-admin-border-hover: #c7cdd6;
+  --color-admin-text-secondary: #374151;
+  --color-admin-text-subtle: #6b7280;
+  --color-admin-text-tertiary: #4e5968;
+  --color-admin-text-faint: #8b95a3;
+  --color-admin-action: #8a6d1f;
+  --color-admin-surface-hover: #f5f6f8;
+  --color-admin-surface-muted-hover: #e7eaee;
+  --color-admin-danger: #c0392b;
+  --color-admin-danger-tint: #fbe9e9;
+  --color-admin-danger-tint-hover: #f7dcdc;
 }
 
 @layer base {
