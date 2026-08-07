@@ -16,6 +16,7 @@ import {
   clockOutMutationOptions,
 } from "../../utils/attendanceApi";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
+import { checkNativePushPermission, registerNativePush } from "../../utils/nativePushRegistration";
 
 interface HomePageProps {
   formData: ActivityLogFormData;
@@ -136,6 +137,25 @@ const HomePage = ({
 
   // 💡 정상 출근 완료 안내도 시간 부분만 강조해야 해서 전용 모달로 띄운다.
   const [clockInCompleteTime, setClockInCompleteTime] = useState<string | null>(null);
+
+  // 💡 등록확인 화면(네이티브 푸시 등록 최초 시도 지점)은 참여자id가 로컬에 남으면
+  // 최초 1회만 거치고 이후 앱을 켤 때마다 홈으로 바로 온다(Main.tsx) — 그래서 최초
+  // 시도가 실패하면(권한 다이얼로그를 놓치는 등) 재시도 기회가 영영 없었다. 홈 화면을
+  // 열 때마다 여기서 재시도한다.
+  const [notificationsBlocked, setNotificationsBlocked] = useState(false);
+
+  useEffect(() => {
+    const { participantId, programId } = formData;
+    if (!participantId || !programId) return;
+
+    checkNativePushPermission().then((permission) => {
+      setNotificationsBlocked(permission === "denied");
+      if (permission !== "denied") {
+        registerNativePush(programId, participantId);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.participantId, formData.programId]);
 
   useEffect(() => {
     if (!pendingAttendanceInTime) return;
@@ -306,6 +326,15 @@ const HomePage = ({
             {formData.programName} 사업입니다.
           </div>
         </div>
+
+        {notificationsBlocked && (
+          <div className="bg-[#fef2f2] rounded-2xl px-[18px] py-3.5 border border-[#fecaca]">
+            <span className="text-[13px] font-bold text-[#b91c1c]">
+              🔕 알림이 꺼져 있어요 — 휴대폰 설정에서 이 앱의 알림을 켜야 재난 문자를 받을 수
+              있어요.
+            </span>
+          </div>
+        )}
 
         {(import.meta.env.DEV || isSuperAdmin) && (
           <div className="bg-[#fff7e6] rounded-2xl px-[18px] py-3.5 flex items-center gap-3 border border-[#ffe1a8]">
