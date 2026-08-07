@@ -33,6 +33,8 @@ const ProgramsPage = () => {
   const { showToast } = useToast();
 
   const [instFilter, setInstFilter] = useState("all");
+  const [programFilter, setProgramFilter] = useState("all");
+  const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
@@ -95,10 +97,31 @@ const ProgramsPage = () => {
   const orgName = (organizationId: number) =>
     organizations.find((organization) => organization.id === organizationId)?.name ?? "-";
 
-  const filtered = useMemo(
-    () => programs.filter((program) => program.name.includes(search)),
-    [programs, search],
+  // 사업단 셀렉트 후보는 유형 필터로 이미 좁혀둔다 — 안 그러면 유형과 안 맞는
+  // 사업단을 골라서 결과가 항상 0건이 되는 조합이 가능해진다.
+  const programsForSelect = useMemo(
+    () =>
+      programTypeFilter === "all"
+        ? programs
+        : programs.filter((program) => program.programType === programTypeFilter),
+    [programs, programTypeFilter],
   );
+
+  const filtered = useMemo(() => {
+    let list = programs;
+
+    if (programTypeFilter !== "all") {
+      list = list.filter((program) => program.programType === programTypeFilter);
+    }
+    if (programFilter !== "all") {
+      list = list.filter((program) => program.id === Number(programFilter));
+    }
+    if (search) {
+      list = list.filter((program) => program.name.includes(search));
+    }
+
+    return list;
+  }, [programs, programTypeFilter, programFilter, search]);
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 6);
 
@@ -154,7 +177,10 @@ const ProgramsPage = () => {
             {role === ROLES.SUPER_ADMIN && (
               <FilterSelect
                 value={instFilter}
-                onChange={setInstFilter}
+                onChange={(value) => {
+                  setInstFilter(value);
+                  setProgramFilter("all");
+                }}
                 options={[
                   { value: "all", label: "전체 기관" },
                   ...organizations.map((organization) => ({
@@ -164,6 +190,31 @@ const ProgramsPage = () => {
                 ]}
               />
             )}
+
+            <FilterSelect
+              value={programTypeFilter}
+              onChange={(value) => {
+                setProgramTypeFilter(value);
+                setProgramFilter("all");
+              }}
+              options={[
+                { value: "all", label: "전체 유형" },
+                { value: "공익 활동", label: "공익 활동" },
+                { value: "역량 활동", label: "역량 활동" },
+              ]}
+            />
+
+            <FilterSelect
+              value={programFilter}
+              onChange={setProgramFilter}
+              options={[
+                { value: "all", label: "전체 사업단" },
+                ...programsForSelect.map((program) => ({
+                  value: String(program.id),
+                  label: program.name,
+                })),
+              ]}
+            />
 
             <SearchInput value={search} onChange={setSearch} placeholder="사업단명 검색" />
           </div>
