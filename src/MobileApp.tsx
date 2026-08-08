@@ -4,7 +4,13 @@ import Main from "./pages/Main";
 
 import "./App.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+    },
+  },
+});
 
 function MobileApp() {
   return (

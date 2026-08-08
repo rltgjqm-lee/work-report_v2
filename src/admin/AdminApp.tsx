@@ -18,7 +18,13 @@ import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
 import AdminsPage from "./pages/admins/AdminsPage";
 import LoginHistoryPage from "./pages/LoginHistoryPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+    },
+  },
+});
 
 const AdminApp = () => (
   <QueryClientProvider client={queryClient}>
