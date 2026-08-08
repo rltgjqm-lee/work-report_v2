@@ -152,6 +152,14 @@ app.post("/", async (c) => {
     );
   }
 
+  const duplicateRows = await db
+    .select({ id: programs.id })
+    .from(programs)
+    .where(and(eq(programs.organizationId, organizationId), eq(programs.name, name)));
+  if (duplicateRows.length > 0) {
+    return c.json({ error: "같은 기관에 동일한 이름의 사업단이 이미 있습니다." }, 400);
+  }
+
   const result = await db
     .insert(programs)
     .values({
@@ -334,6 +342,14 @@ app.post("/:id/groups", async (c) => {
 
   if (!body.name || !body.shiftStart || !body.shiftEnd) {
     return c.json({ error: "조 이름과 근무 시작 시간, 종료 시간을 모두 입력해주세요." }, 400);
+  }
+
+  const duplicateRows = await db
+    .select({ id: groups.id })
+    .from(groups)
+    .where(and(eq(groups.programId, programId), eq(groups.name, body.name)));
+  if (duplicateRows.length > 0) {
+    return c.json({ error: "같은 사업단에 동일한 이름의 조가 이미 있습니다." }, 400);
   }
 
   const result = await db

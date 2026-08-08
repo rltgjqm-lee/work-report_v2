@@ -311,6 +311,14 @@ app.post("/", async (c) => {
   const program = await loadAccessibleProgram(db, auth, body.programId);
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
+  const duplicateRows = await db
+    .select({ id: demandSites.id })
+    .from(demandSites)
+    .where(and(eq(demandSites.programId, body.programId), eq(demandSites.name, body.name)));
+  if (duplicateRows.length > 0) {
+    return c.json({ error: "같은 사업단에 동일한 이름의 수요처가 이미 있습니다." }, 400);
+  }
+
   // 좌표를 직접 보내지 않았으면 주소로 잡아준다
   const point =
     body.baseLat == null && body.baseLng == null && body.address
