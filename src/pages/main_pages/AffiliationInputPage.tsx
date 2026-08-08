@@ -277,7 +277,7 @@ const AffiliationInputPage = ({
           <ExceptionCard
             variant="warn"
             title="등록된 사업이 없습니다."
-            body={
+            note={
               <>
                 기관 혹은 사업 담당자에게
                 <br />

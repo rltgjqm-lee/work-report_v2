@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import AppBar from "../../components/molecule/AppBar";
@@ -16,7 +17,8 @@ import type { ActivityLogFormData } from "../../types/form";
 type ExceptionInfo = {
   variant: "warn" | "caution";
   title: string;
-  body: string;
+  body?: ReactNode;
+  note: ReactNode;
 };
 
 /**
@@ -58,38 +60,51 @@ const RegistrationConfirmPage = ({
   } else if (isIdentifyError) {
     if (identifyError instanceof IdentifyError && identifyError.body.error === "NOT_REGISTERED") {
       const { organization, program } = identifyError.body;
-      const organizationLabel = [
-        organization?.regionSido,
-        organization?.regionSigungu,
-        organization?.name,
-      ]
+      const regionLabel = [organization?.regionSido, organization?.regionSigungu]
         .filter(Boolean)
         .join(" ");
+      const programLabel = [program.programType, program.name].filter(Boolean).join(" ");
 
       exception = {
         variant: "warn",
         title: "본인 확인에 실패했어요.",
-        body: `${organizationLabel} ${program.programType ?? ""} ${program.name} 사업에 등록이 안되어 있습니다.
-        \n해당 기관, 사업 담당자에게 문의하여 주세요.`,
+        body: organization ? (
+          <>
+            {regionLabel}{" "}
+            <strong className="text-[#3182f6] font-extrabold">{organization.name}</strong>
+            {"의"}
+            <br />
+            <strong className="text-[#3182f6] font-extrabold">{programLabel}</strong> 사업에
+            <br />
+            등록이 안되어 있습니다.
+          </>
+        ) : (
+          <>
+            <strong className="text-[#3182f6] font-extrabold">{programLabel}</strong> 사업에
+            <br />
+            등록이 안되어 있습니다.
+          </>
+        ),
+        note: "해당 기관, 사업 담당자에게 문의하여 주세요.",
       };
     } else {
       exception = {
         variant: "warn",
         title: "본인 확인에 실패했어요.",
-        body: "이름을 다시 확인해 주세요. \n해당 기관, 사업 담당자에게 문의하여 주세요.",
+        note: "이름을 다시 확인해 주세요.\n해당 기관, 사업 담당자에게 문의하여 주세요.",
       };
     }
   } else if (identified.status === "DROPPED") {
     exception = {
       variant: "warn",
       title: "참여가 종료되었어요.",
-      body: "해당 기관, 사업 담당자에게 문의하여 주세요.",
+      note: "해당 기관, 사업 담당자에게 문의하여 주세요.",
     };
   } else if (identified.status === "ON_LEAVE") {
     exception = {
       variant: "caution",
       title: "현재 휴무 중이에요.",
-      body: identified.leaveEnd
+      note: identified.leaveEnd
         ? `${identified.leaveEnd}까지 휴무 예정이에요. 복귀 후 다시 이용해 주세요.`
         : "복귀 후 다시 이용해 주세요.",
     };
@@ -100,13 +115,13 @@ const RegistrationConfirmPage = ({
       exception = {
         variant: "caution",
         title: "사업이 종료되었어요.",
-        body: "다른 사업에 참여하시려면 '이전'을 눌러 다시 선택해 주세요.",
+        note: "다른 사업에 참여하시려면 '이전'을 눌러 다시 선택해 주세요.",
       };
     } else if (identified.program.startDate > today) {
       exception = {
         variant: "caution",
         title: "아직 사업이 시작되지 않았어요.",
-        body: `${identified.program.startDate}부터 이용하실 수 있어요.`,
+        note: `${identified.program.startDate}부터 이용하실 수 있어요.`,
       };
     } else {
       exception = null;
@@ -130,6 +145,7 @@ const RegistrationConfirmPage = ({
             variant={exception.variant}
             title={exception.title}
             body={exception.body}
+            note={exception.note}
           />
         )}
 
