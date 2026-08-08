@@ -274,11 +274,17 @@ const AffiliationInputPage = ({
 
       <div className={bodyClass}>
         {affiliationsLoaded && organizations.length === 0 && (
-          <ExceptionCard variant="warn">
-            <strong>등록된 사업이 없습니다.</strong>
-            <br />
-            기관 혹은 사업 담당자에게 문의해 주세요.
-          </ExceptionCard>
+          <ExceptionCard
+            variant="warn"
+            title="등록된 사업이 없습니다."
+            body={
+              <>
+                기관 혹은 사업 담당자에게
+                <br />
+                문의해 주세요.
+              </>
+            }
+          />
         )}
 
         <Card>

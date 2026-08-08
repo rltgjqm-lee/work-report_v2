@@ -126,11 +126,11 @@ const RegistrationConfirmPage = ({
         )}
 
         {exception && exception !== "loading" && (
-          <ExceptionCard variant={exception.variant}>
-            <strong>{exception.title}</strong>
-            <br />
-            <span className="whitespace-pre-line">{exception.body}</span>
-          </ExceptionCard>
+          <ExceptionCard
+            variant={exception.variant}
+            title={exception.title}
+            body={exception.body}
+          />
         )}
 
         {exception === null && (
