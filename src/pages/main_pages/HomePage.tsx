@@ -23,7 +23,7 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
 
     <div className="flex-1 flex flex-col px-[clamp(16px,5vw,24px)] py-[clamp(20px,6vw,36px)]">
       <div
-        className="w-[clamp(64px,18vw,76px)] h-[clamp(64px,18vw,76px)] rounded-[22%] overflow-hidden mx-auto mb-[clamp(16px,4vw,20px)]"
+        className="w-[clamp(64px,18vw,100px)] h-[clamp(64px,18vw,100px)] rounded-[22%] overflow-hidden mx-auto mb-[clamp(16px,4vw,20px)]"
         style={{ boxShadow: "0 10px 24px rgba(49,130,246,.28)" }}
       >
         <img src="/app-icon-1024.png" className="w-full h-full object-cover" alt="앱 아이콘" />
@@ -42,7 +42,7 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
         >
           <img
             src="/icon-basic-info.png"
-            className="w-[clamp(38px,10vw,48px)] h-[clamp(38px,10vw,48px)]"
+            className="w-[clamp(42px,10vw,80px)] h-[clamp(42px,10vw,80px)]"
             alt=""
           />
           <span className="text-[clamp(16px,4.4vw,18px)] font-extrabold text-[#1f2937]">
@@ -60,7 +60,7 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
         >
           <img
             src="/icon-start-log.png"
-            className="w-[clamp(38px,10vw,48px)] h-[clamp(38px,10vw,48px)]"
+            className="w-[clamp(42px,10vw,80px)] h-[clamp(42px,10vw,80px)]"
             alt=""
           />
           <span className="text-[clamp(16px,4.4vw,18px)] font-extrabold text-[#1f2937]">
