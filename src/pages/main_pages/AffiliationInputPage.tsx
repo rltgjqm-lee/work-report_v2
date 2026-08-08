@@ -52,11 +52,13 @@ const findRestoredSelection = (
 const AffiliationInputPage = ({
   formData,
   onChange,
+  onBack,
   onNext,
   onAlert,
 }: {
   formData: ActivityLogFormData;
   onChange: <T extends keyof ActivityLogFormData>(key: T, value: ActivityLogFormData[T]) => void;
+  onBack: () => void;
   onNext: () => void;
   onAlert: (messages: string[]) => void;
 }) => {
@@ -268,7 +270,7 @@ const AffiliationInputPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="기본 정보" />
+      <AppBar title="기본 정보" onBack={onBack} />
 
       <div className={bodyClass}>
         {affiliationsLoaded && organizations.length === 0 && (

@@ -5,6 +5,7 @@ import ConfirmModal from "../components/molecule/ConfirmModal";
 import AffiliationInputPage from "./main_pages/AffiliationInputPage";
 import RegistrationConfirmPage from "./main_pages/RegistrationConfirmPage";
 import HomePage from "./main_pages/HomePage";
+import ActivityDashboardPage from "./main_pages/ActivityDashboardPage";
 import ActivityReportPage from "./main_pages/ActivityReportPage";
 import AccidentCheckPage from "./main_pages/AccidentCheckPage";
 import ActivitySummaryPage from "./main_pages/ActivitySummaryPage";
@@ -28,9 +29,10 @@ import {
 } from "../utils/timeFormat";
 
 const VIEW_TYPE = {
+  MAIN: "main",
   AFFILIATION: "affiliation",
   REGISTRATION_CONFIRM: "registrationConfirm",
-  HOME: "home",
+  DASHBOARD: "dashboard",
   REPORT: "report",
   ACCIDENT: "accident",
   SUMMARY: "summary",
@@ -102,11 +104,8 @@ const loadFormDraft = (): Partial<ActivityLogFormData> => {
 
 const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
-  // 💡 draft에 participantId가 남아있으면(이미 등록을 마쳤던 상태) 새로고침해도
-  // 기본정보 페이지부터 다시 밟지 않도록 곧장 홈으로 복귀시킨다.
-  const [view, setView] = useState<View>(() =>
-    loadFormDraft().participantId ? VIEW_TYPE.HOME : VIEW_TYPE.AFFILIATION,
-  );
+  // 💡 앱을 켜면 누구나(첫 이용자 포함) 메인 페이지부터 본다.
+  const [view, setView] = useState<View>(VIEW_TYPE.MAIN);
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
@@ -385,11 +384,25 @@ const Main = () => {
             )
           ))}
 
+        {/* 메인 페이지 */}
+        {view === VIEW_TYPE.MAIN && (
+          <HomePage
+            formData={formData}
+            onOpenAffiliation={() => setView(VIEW_TYPE.AFFILIATION)}
+            onStartActivityLog={() =>
+              // 💡 이름이 없으면 등록확인의 본인확인 쿼리가 disabled 상태로 멈춰서
+              // "확인하는 중이에요"에서 영영 안 넘어간다 — 그 전에 기본정보 등록으로 보낸다.
+              setView(formData.userName ? VIEW_TYPE.REGISTRATION_CONFIRM : VIEW_TYPE.AFFILIATION)
+            }
+          />
+        )}
+
         {/* 1. 초기 설정 페이지 */}
         {view === VIEW_TYPE.AFFILIATION && (
           <AffiliationInputPage
             formData={formData}
             onChange={handleInputChange}
+            onBack={() => setView(VIEW_TYPE.MAIN)}
             onNext={() => setView(VIEW_TYPE.REGISTRATION_CONFIRM)}
             onAlert={handleAlertModalOpen}
           />
@@ -400,17 +413,17 @@ const Main = () => {
           <RegistrationConfirmPage
             formData={formData}
             onChange={handleInputChange}
-            onBack={() => setView(VIEW_TYPE.AFFILIATION)}
-            onNext={() => setView(VIEW_TYPE.HOME)}
+            onBack={() => setView(VIEW_TYPE.MAIN)}
+            onNext={() => setView(VIEW_TYPE.DASHBOARD)}
           />
         )}
 
-        {/* 홈 대시보드 */}
-        {view === VIEW_TYPE.HOME && (
-          <HomePage
+        {/* 근무 기록 대시보드 */}
+        {view === VIEW_TYPE.DASHBOARD && (
+          <ActivityDashboardPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.AFFILIATION)}
+            onHome={() => setView(VIEW_TYPE.MAIN)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
             onOpenWork={() => setView(VIEW_TYPE.REPORT)}
@@ -428,10 +441,10 @@ const Main = () => {
           <ActivityReportPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.HOME)}
+            onBack={() => setView(VIEW_TYPE.DASHBOARD)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
-            onNext={() => setView(VIEW_TYPE.HOME)}
+            onNext={() => setView(VIEW_TYPE.DASHBOARD)}
           />
         )}
 
@@ -440,10 +453,10 @@ const Main = () => {
           <AccidentCheckPage
             formData={formData}
             setFormData={setFormData}
-            onBack={() => setView(VIEW_TYPE.HOME)}
+            onBack={() => setView(VIEW_TYPE.DASHBOARD)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
-            onNext={() => setView(VIEW_TYPE.HOME)}
+            onNext={() => setView(VIEW_TYPE.DASHBOARD)}
           />
         )}
 
@@ -451,7 +464,7 @@ const Main = () => {
         {view === VIEW_TYPE.SUMMARY && (
           <ActivitySummaryPage
             formData={formData}
-            onBack={() => setView(VIEW_TYPE.HOME)}
+            onBack={() => setView(VIEW_TYPE.DASHBOARD)}
             onNext={() => setView(VIEW_TYPE.SIGNATURE)}
           />
         )}
@@ -464,7 +477,7 @@ const Main = () => {
             onBack={() => setView(VIEW_TYPE.SUMMARY)}
             onAlert={handleAlertModalOpen}
             onSave={() => handleStepDataSave(true)}
-            onHome={() => setView(VIEW_TYPE.HOME)}
+            onHome={() => setView(VIEW_TYPE.DASHBOARD)}
           />
         )}
       </div>
