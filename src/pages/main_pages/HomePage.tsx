@@ -17,22 +17,28 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
     className="flex flex-col h-full min-h-0 flex-1 overflow-y-auto"
     style={{ background: "linear-gradient(180deg,#eaf2ff 0%,#f2f4f6 min(320px,60vh))" }}
   >
-    <div className="h-[60px] flex-none flex items-center justify-center">
-      <span className="text-[clamp(16px,4.5vw,18px)] font-extrabold text-[#1f2937]">활동일지</span>
+    <div className="h-[60px] flex-none flex items-center justify-start px-[clamp(16px,5vw,24px)]">
+      <span className="relative top-1 text-[clamp(20px,4.5vw,22px)] font-extrabold text-[#1f2937]">
+        WORK-REPORT
+      </span>
     </div>
 
     <div className="flex-1 flex flex-col px-[clamp(16px,5vw,24px)] py-[clamp(20px,6vw,36px)]">
-      <div
-        className="w-[clamp(64px,18vw,100px)] h-[clamp(64px,18vw,100px)] rounded-[22%] overflow-hidden mx-auto mb-[clamp(16px,4vw,20px)]"
-        style={{ boxShadow: "0 10px 24px rgba(49,130,246,.28)" }}
-      >
-        <img src="/app-icon-1024.png" className="w-full h-full object-cover" alt="앱 아이콘" />
-      </div>
-      <div className="text-center text-[clamp(18px,5vw,21px)] font-extrabold text-[#1f2937]">
-        {formData.userName ? `${formData.userName}님, 안녕하세요` : "안녕하세요"}
-      </div>
-      <div className="text-center text-[clamp(13px,3.6vw,14px)] text-[#9ca3af] font-semibold mt-1.5">
-        일자리 활동일지 관리
+      <div className="flex items-center gap-[clamp(12px,3.5vw,16px)] mb-[clamp(16px,4vw,20px)]">
+        <div
+          className="w-[clamp(64px,18vw,100px)] h-[clamp(64px,18vw,100px)] rounded-[22%] overflow-hidden flex-none"
+          style={{ boxShadow: "0 10px 24px rgba(49,130,246,.28)" }}
+        >
+          <img src="/app-icon-1024.png" className="w-full h-full object-cover" alt="앱 아이콘" />
+        </div>
+        <div>
+          <div className="text-left text-[clamp(18px,5vw,21px)] font-extrabold text-[#1f2937]">
+            {formData.userName ? `${formData.userName}님, 안녕하세요` : "안녕하세요"}
+          </div>
+          <div className="text-left text-[clamp(13px,3.6vw,14px)] text-[#9ca3af] font-semibold mt-1.5">
+            일자리 활동일지 관리
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-[clamp(8px,3vw,12px)] mt-[clamp(28px,8vw,40px)]">
@@ -73,6 +79,7 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
           </span>
         </button>
       </div>
+      <div className="flex-1 min-h-[24px]" />
     </div>
   </div>
 );
