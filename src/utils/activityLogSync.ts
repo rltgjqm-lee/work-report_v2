@@ -10,6 +10,7 @@ const toPayload = (item: ActivityLogItem) => ({
   content: item.content,
   place: item.place,
   hasAccident: item.accident === "유",
+  accidentChecked: item.accidentChecked ?? false,
   accidentDetail: item.accidentDetail,
   accidentAction: item.accidentAction,
   userSignature: item.uSign,
@@ -81,3 +82,26 @@ export const syncPendingActivityLogs = async (db: IDBDatabase | null): Promise<v
     }
   }
 };
+
+/**
+ * 동기화를 시도한 뒤에도 여전히 synced:false로 남아있는 지난 날짜(오늘 이전) 기록을 찾는다.
+ * 업무일지/안전일지/서명 중 하나라도 빠져 있으면 서버가 거부해 계속 synced:false로 남으므로,
+ * 이 함수가 무언가를 찾았다는 것 자체가 "그날 완료를 못 했다"는 뜻이다.
+ */
+export const findIncompleteActivityLogDate = (
+  db: IDBDatabase,
+  participantId: number,
+  today: string,
+): Promise<string | null> =>
+  new Promise((resolve) => {
+    const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly");
+    const req = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME).getAll();
+    req.onsuccess = () => {
+      const items: ActivityLogItem[] = req.result || [];
+      const incomplete = items.find(
+        (item) => item.participantId === participantId && item.date < today && !item.synced,
+      );
+      resolve(incomplete?.date ?? null);
+    };
+    req.onerror = () => resolve(null);
+  });

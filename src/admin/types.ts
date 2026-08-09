@@ -200,12 +200,23 @@ export type AttendanceLog = {
   simulatedCount: number;
 };
 
+// 같은 참여자+근무일의 활동일지(업무/안전/서명) 완료 여부. 그날 활동일지 자체가 없으면
+// (참여자가 아직 아무것도 저장 안 함) 전부 기본값(false)으로 내려온다.
+export type ActivityLogSummary = {
+  hasAccident: boolean;
+  accidentChecked: boolean;
+  accidentDetail: string | null;
+  accidentAction: string | null;
+  signed: boolean;
+};
+
 export type AttendanceRow = {
   log: AttendanceLog;
   participantName: string;
   groupName: string | null;
   shiftStart: string | null;
   shiftEnd: string | null;
+  activity: ActivityLogSummary;
 };
 
 export type ParticipantAttendanceRow = {
@@ -213,6 +224,7 @@ export type ParticipantAttendanceRow = {
   groupName: string | null;
   shiftStart: string | null;
   shiftEnd: string | null;
+  activity: ActivityLogSummary;
 };
 
 export type AttendanceStats = {

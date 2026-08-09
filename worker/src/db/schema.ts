@@ -717,6 +717,9 @@ export const activityLogs = sqliteTable(
     content: text("content"),
     place: text("place"),
     hasAccident: integer("has_accident", { mode: "boolean" }).notNull().default(false),
+    // 참여자가 안전 일지 모듈에서 사고 유무를 실제로 선택했는지 여부. hasAccident만으로는
+    // "확인 후 사고 없음"과 "아직 확인 안 함"을 구분할 수 없어서 별도 컬럼으로 둔다.
+    accidentChecked: integer("accident_checked", { mode: "boolean" }).notNull().default(false),
     accidentDetail: text("accident_detail"),
     accidentAction: text("accident_action"),
     userSignature: text("user_signature"),

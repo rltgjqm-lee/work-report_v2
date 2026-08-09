@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import ConfirmModal from "../components/molecule/ConfirmModal";
+import IncompleteDayModal from "../components/molecule/IncompleteDayModal";
 
 import AffiliationInputPage from "./main_pages/AffiliationInputPage";
 import RegistrationConfirmPage from "./main_pages/RegistrationConfirmPage";
@@ -14,7 +15,7 @@ import SignaturePage from "./main_pages/SignaturePage";
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
-import { syncPendingActivityLogs } from "../utils/activityLogSync";
+import { syncPendingActivityLogs, findIncompleteActivityLogDate } from "../utils/activityLogSync";
 import { getTodayAttendance } from "../utils/attendanceApi";
 import {
   IDLE_LOCATION_REPORT_STATE,
@@ -110,6 +111,10 @@ const Main = () => {
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessages, setModalMessages] = useState<string[]>([]);
+
+  // 💡 앱을 켜자마자 한 번, 지난 날짜 중 아직 서버에 완료 처리되지 못한(=업무/안전/서명 중
+  // 하나라도 빠진) 기록이 있으면 안내한다.
+  const [incompleteDayDate, setIncompleteDayDate] = useState<string | null>(null);
 
   // 💡 서명은 매일 새로 받아야 하므로 이전 세션의 서명을 캐시에서 불러오지 않는다.
   const [formData, setFormData] = useState<ActivityLogFormData>(() => ({
@@ -242,14 +247,26 @@ const Main = () => {
     request.onsuccess = (event: Event) => {
       console.log("🎯 IndexedDB 연결 성공!");
       const target = event.target as IDBOpenDBRequest;
-      setDb(target.result); // 연결된 DB 객체를 상태에 보관
-      syncPendingActivityLogs(target.result); // 지난번에 오프라인으로 남겨둔 기록 재시도
+      const database = target.result;
+      setDb(database); // 연결된 DB 객체를 상태에 보관
+
+      // 지난번에 오프라인으로 남겨둔 기록 재시도 — 그래도 여전히 미완료(=synced:false)로
+      // 남은 지난 날짜 기록이 있으면 안내 모달을 띄운다.
+      syncPendingActivityLogs(database).then(() => {
+        if (!formData.participantId) return;
+        findIncompleteActivityLogDate(database, formData.participantId, getLocalToday()).then(
+          (date) => {
+            if (date) setIncompleteDayDate(date);
+          },
+        );
+      });
     };
 
     // 4. DB 연결에 실패했을 때 실행
     request.onerror = () => {
       console.error("❌ IndexedDB 연결 실패");
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 💡 오프라인 상태에서 저장해둔 기록을, 다시 온라인이 되는 순간 서버로 동기화
@@ -489,6 +506,10 @@ const Main = () => {
         onConfirm={handleAlertModalClose}
         onClose={handleAlertModalClose}
       />
+
+      {incompleteDayDate && (
+        <IncompleteDayModal date={incompleteDayDate} onConfirm={() => setIncompleteDayDate(null)} />
+      )}
     </div>
   );
 };

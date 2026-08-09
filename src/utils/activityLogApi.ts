@@ -8,6 +8,7 @@ export type ActivityLogPayload = {
   content?: string;
   place?: string;
   hasAccident?: boolean;
+  accidentChecked?: boolean;
   accidentDetail?: string;
   accidentAction?: string;
   userSignature?: string;

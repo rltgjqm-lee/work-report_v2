@@ -853,10 +853,31 @@ type ActivityLogBody = {
   content?: string;
   place?: string;
   hasAccident?: boolean;
+  accidentChecked?: boolean;
   accidentDetail?: string;
   accidentAction?: string;
   userSignature?: string;
   demandSignature?: string;
+};
+
+// 업무일지(내용/장소)·안전일지(사고유무 확인)·참여자 서명은 필수값이다. 역량활동은 참여자
+// 앱에서 업무/안전 모듈 자체를 보여주지 않으므로 그 두 항목은 요구하지 않는다(서명은 항상 필수).
+const validateActivityLogRequiredSections = (
+  body: ActivityLogBody,
+  programType: string | null,
+): string | null => {
+  if (programType !== "역량 활동") {
+    if (!body.content?.trim() || !body.place?.trim()) {
+      return "업무 일지(활동내용/활동장소)를 입력해주세요.";
+    }
+    if (!body.accidentChecked) {
+      return "안전 일지(사고 유무 확인)를 입력해주세요.";
+    }
+  }
+  if (!body.userSignature?.trim()) {
+    return "참여자 서명을 완료해주세요.";
+  }
+  return null;
 };
 
 // 활동일지 등록 — IndexedDB에 먼저 저장된 뒤(오프라인 대응) 온라인일 때 여기로 동기화된다.
@@ -869,12 +890,18 @@ app.post("/activity-logs", async (c) => {
     return c.json({ error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." }, 400);
   }
 
-  const participant = await db
-    .select()
+  const participantRows = await db
+    .select({ programType: programs.programType })
     .from(participants)
+    .innerJoin(programs, eq(participants.programId, programs.id))
     .where(eq(participants.id, body.participantId));
-  if (!participant[0]) {
+  if (!participantRows[0]) {
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
+  }
+
+  const validationError = validateActivityLogRequiredSections(body, participantRows[0].programType);
+  if (validationError) {
+    return c.json({ error: validationError }, 400);
   }
 
   const result = await db
@@ -887,6 +914,7 @@ app.post("/activity-logs", async (c) => {
       content: body.content,
       place: body.place,
       hasAccident: body.hasAccident ?? false,
+      accidentChecked: body.accidentChecked ?? false,
       accidentDetail: body.accidentDetail,
       accidentAction: body.accidentAction,
       userSignature: body.userSignature,
@@ -908,6 +936,20 @@ app.put("/activity-logs/:id", async (c) => {
     return c.json({ error: "참여자, 활동일자, 시작 시간, 종료 시간을 모두 입력해주세요." }, 400);
   }
 
+  const participantRows = await db
+    .select({ programType: programs.programType })
+    .from(participants)
+    .innerJoin(programs, eq(participants.programId, programs.id))
+    .where(eq(participants.id, body.participantId));
+  if (!participantRows[0]) {
+    return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
+  }
+
+  const validationError = validateActivityLogRequiredSections(body, participantRows[0].programType);
+  if (validationError) {
+    return c.json({ error: validationError }, 400);
+  }
+
   const result = await db
     .update(activityLogs)
     .set({
@@ -917,6 +959,7 @@ app.put("/activity-logs/:id", async (c) => {
       content: body.content,
       place: body.place,
       hasAccident: body.hasAccident ?? false,
+      accidentChecked: body.accidentChecked ?? false,
       accidentDetail: body.accidentDetail,
       accidentAction: body.accidentAction,
       userSignature: body.userSignature,

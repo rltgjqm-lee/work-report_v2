@@ -50,7 +50,7 @@ export interface ActivityLogItem {
   content: string;
   place: string;
   accident: "유" | "무";
-  accidentChecked?: boolean; // 안전 모듈 확인 여부 — 서버엔 안 보내고 IndexedDB 왕복용으로만 씀
+  accidentChecked?: boolean; // 안전 모듈에서 사고 유무를 확인했는지 여부 — 서버 필수값 검증에 쓰인다
   accidentDetail?: string;
   accidentAction?: string;
   uSign: string;

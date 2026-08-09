@@ -171,7 +171,7 @@ const AttendanceHistorySection = ({
 
     <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[910px] table-fixed border-collapse">
+        <table className="w-full min-w-[1190px] table-fixed border-collapse">
           <thead>
             <tr>
               <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -191,6 +191,9 @@ const AttendanceHistorySection = ({
               </th>
               <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                 상태
+              </th>
+              <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                사고유무
               </th>
               <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                 서명
@@ -222,7 +225,23 @@ const AttendanceHistorySection = ({
                   {STATUS_LABEL[row.log.status]}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
-                  {row.log.signatureKey ? "✓" : "-"}
+                  {row.activity.hasAccident ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span>사고</span>
+                      <span className="text-[12px] text-[#9aa1ab] whitespace-pre-wrap break-words">
+                        {[row.activity.accidentDetail, row.activity.accidentAction]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </div>
+                  ) : row.activity.accidentChecked ? (
+                    "무사고"
+                  ) : (
+                    "-"
+                  )}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  {row.activity.signed ? "✓" : "-"}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-pre-wrap break-words">
                   {row.log.note ?? "-"}
@@ -232,7 +251,7 @@ const AttendanceHistorySection = ({
 
             {logs.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                <td colSpan={9} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                   해당 월에 근무 기록이 없습니다.
                 </td>
               </tr>

@@ -710,10 +710,23 @@ app.get("/:id/attendance", async (c) => {
       groupName: groups.name,
       shiftStart: groups.shiftStart,
       shiftEnd: groups.shiftEnd,
+      hasAccident: activityLogs.hasAccident,
+      accidentChecked: activityLogs.accidentChecked,
+      accidentDetail: activityLogs.accidentDetail,
+      accidentAction: activityLogs.accidentAction,
+      userSignature: activityLogs.userSignature,
     })
     .from(attendanceLogs)
     .innerJoin(participants, eq(attendanceLogs.participantId, participants.id))
     .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
+    // 같은 참여자+날짜의 활동일지(업무/안전/서명)를 붙여 미완료 여부를 같이 내려준다.
+    .leftJoin(
+      activityLogs,
+      and(
+        eq(activityLogs.participantId, attendanceLogs.participantId),
+        eq(activityLogs.actDate, attendanceLogs.workDate),
+      ),
+    )
     .where(
       and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
@@ -726,7 +739,21 @@ app.get("/:id/attendance", async (c) => {
     totalHours: Math.floor(rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60),
   };
 
-  return c.json({ logs: rows, stats });
+  // 원본 서명 텍스트(base64)는 목록 응답에 실을 필요가 없어 있는지 여부만 boolean으로 내려준다.
+  const logs = rows.map(
+    ({ hasAccident, accidentChecked, accidentDetail, accidentAction, userSignature, ...row }) => ({
+      ...row,
+      activity: {
+        hasAccident: hasAccident ?? false,
+        accidentChecked: accidentChecked ?? false,
+        accidentDetail: accidentDetail ?? null,
+        accidentAction: accidentAction ?? null,
+        signed: !!userSignature,
+      },
+    }),
+  );
+
+  return c.json({ logs, stats });
 });
 
 app.get("/:id/leaves", async (c) => {

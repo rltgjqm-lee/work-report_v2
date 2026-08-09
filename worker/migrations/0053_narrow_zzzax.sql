@@ -1,0 +1,1 @@
+ALTER TABLE `activity_logs` ADD `accident_checked` integer DEFAULT false NOT NULL;

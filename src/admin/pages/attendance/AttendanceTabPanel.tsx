@@ -208,7 +208,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
 
       <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1270px] table-fixed border-collapse">
+          <table className="w-full min-w-[1550px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
@@ -234,6 +234,12 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 </th>
                 <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   상태
+                </th>
+                <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  사고유무
+                </th>
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  서명
                 </th>
                 <th className="w-[260px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
                   비고
@@ -277,6 +283,29 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                       {STATUS_LABEL[row.log.status]}
                     </StatusChip>
                   </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {row.activity.hasAccident ? (
+                      <div className="flex flex-col gap-1 items-start">
+                        <StatusChip variant="bad">사고</StatusChip>
+                        <span className="text-[12px] text-[#6b7280] whitespace-pre-wrap break-words">
+                          {[row.activity.accidentDetail, row.activity.accidentAction]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </div>
+                    ) : row.activity.accidentChecked ? (
+                      <StatusChip variant="ok">무사고</StatusChip>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    {row.activity.signed ? (
+                      <StatusChip variant="ok">완료</StatusChip>
+                    ) : (
+                      <StatusChip variant="warn">미완료</StatusChip>
+                    )}
+                  </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-pre-wrap break-words">
                     {row.log.note ?? "-"}
                   </td>
@@ -302,7 +331,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
               ))}
               {filteredLogs.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                  <td colSpan={12} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
                     {dayFilter === "all"
                       ? "해당 월에 근무 기록이 없습니다."
                       : "해당 일자에 근무 기록이 없습니다."}
