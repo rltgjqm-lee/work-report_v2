@@ -2,6 +2,7 @@ import React from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
+import PageHeaderCard from "../../components/molecule/PageHeaderCard";
 import Card from "../../components/atoms/Card";
 import BottomBar from "../../components/atoms/BottomBar";
 import SignatureCanvas from "../../components/atoms/SignatureCanvas";
@@ -25,7 +26,7 @@ interface Page6Props {
 const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert }: Page6Props) => {
   const handleSaveAndFinishButtonClick = async () => {
     if (!formData.userSignature) {
-      onAlert(["참여자 서명이 누락되었습니다. 서명을 작성해주세요."]);
+      onAlert(["참여자 서명이 누락되었습니다", "서명을 작성해주세요"]);
       return;
     }
 
@@ -33,7 +34,7 @@ const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert 
 
     if (!formData.demandSignature) {
       // 💡 "확인" 누를 때까지 기다렸다가 홈으로 이동한다.
-      await onAlert(["월말 제출을 위해 확인자 서명이 필요해요."]);
+      await onAlert(["월말 제출을 위해 확인자 서명이 필요해요"]);
     }
 
     onHome();
@@ -43,6 +44,12 @@ const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert 
     <div className={pageClass}>
       <AppBar title="서명" onBack={onBack} />
       <div className={bodyClass}>
+        <PageHeaderCard
+          icon="/icon-signature.png"
+          title="참여자 서명"
+          subtitle="서명을 남기고 활동일지를 완료해주세요"
+        />
+
         <Card>
           <label className={labelClass}>
             여기에 서명해 주세요 (필수)

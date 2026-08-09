@@ -406,7 +406,8 @@ app.post("/attendance/clock-in", async (c) => {
   }
 
   if (workDates && !workDates.includes(date)) {
-    return c.json({ error: "오늘은 근무일이 아니에요" }, 400);
+    // 문구는 프론트에서 조립한다(전용 안내 모달을 보여줘야 해서) — 여기서는 코드만 내려준다.
+    return c.json({ error: "NOT_WORK_DAY" }, 400);
   }
 
   // 배정된 조에 근무시간이 설정돼 있으면 근무 시작 15분 전부터, 종료 30분 후까지만 출근을

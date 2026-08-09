@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 import AppBar from "../../components/molecule/AppBar";
+import PageHeaderCard from "../../components/molecule/PageHeaderCard";
 import SafetySaveConfirmModal from "../../components/molecule/SafetySaveConfirmModal";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
@@ -50,11 +51,11 @@ const AccidentCheckPage = ({
 
   const handleSaveButtonClick = () => {
     if (!formData.accidentChecked) {
-      onAlert(["사고 유무를 선택해주세요."]);
+      onAlert(["사고 유무를 선택해주세요"]);
       return;
     }
     if (formData.hasAccident && !formData.accidentDetail.trim()) {
-      onAlert(["사고내용 및 조치내용을 입력해주세요."]);
+      onAlert(["사고내용 및 조치내용을 입력해주세요"]);
       return;
     }
     setConfirmOpen(true);
@@ -70,28 +71,41 @@ const AccidentCheckPage = ({
     <div className={pageClass}>
       <AppBar title="안전 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
-        <label className={labelClass + " px-1"}>오늘 다치신 곳이 있으신가요?</label>
-        <div
-          className={choiceCardClass(formData.accidentChecked && formData.hasAccident === true)}
-          onClick={() => handleAccidentToggleButtonClick(true)}
-        >
-          <span
-            className={choiceRadioClass(formData.accidentChecked && formData.hasAccident === true)}
+        <PageHeaderCard
+          icon="/icon-safety.png"
+          title="안전 등록"
+          subtitle="오늘 안전사고 여부를 확인해주세요"
+        />
+
+        <div className="bg-white rounded-[20px] p-[22px] shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
+          <label className={labelClass}>오늘 다치신 곳이 있으신가요?</label>
+          <div
+            className={choiceCardClass(formData.accidentChecked && formData.hasAccident === false)}
+            onClick={() => handleAccidentToggleButtonClick(false)}
           >
-            {formData.accidentChecked && formData.hasAccident === true ? "✓" : ""}
-          </span>
-          예, 있었습니다
-        </div>
-        <div
-          className={choiceCardClass(formData.accidentChecked && formData.hasAccident === false)}
-          onClick={() => handleAccidentToggleButtonClick(false)}
-        >
-          <span
-            className={choiceRadioClass(formData.accidentChecked && formData.hasAccident === false)}
+            <span
+              className={choiceRadioClass(
+                formData.accidentChecked && formData.hasAccident === false,
+              )}
+            >
+              {formData.accidentChecked && formData.hasAccident === false ? "✓" : ""}
+            </span>
+            아니요, 없었습니다
+          </div>
+          <div
+            className={choiceCardClass(formData.accidentChecked && formData.hasAccident === true)}
+            onClick={() => handleAccidentToggleButtonClick(true)}
+            style={{ marginBottom: 0 }}
           >
-            {formData.accidentChecked && formData.hasAccident === false ? "✓" : ""}
-          </span>
-          아니요, 없었습니다
+            <span
+              className={choiceRadioClass(
+                formData.accidentChecked && formData.hasAccident === true,
+              )}
+            >
+              {formData.accidentChecked && formData.hasAccident === true ? "✓" : ""}
+            </span>
+            예, 있었습니다
+          </div>
         </div>
 
         {formData.hasAccident && (

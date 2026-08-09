@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import AppBar from "../../components/molecule/AppBar";
+import PageHeaderCard from "../../components/molecule/PageHeaderCard";
 import Card from "../../components/atoms/Card";
 import ExceptionCard from "../../components/atoms/ExceptionCard";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
@@ -20,6 +21,13 @@ type ExceptionInfo = {
   body?: ReactNode;
   note: ReactNode;
 };
+
+const ConfirmRow = ({ label, value }: { label: string; value: ReactNode }) => (
+  <div className="flex items-center justify-between gap-3.5 py-4 border-b border-[#f2f4f6] last:border-b-0">
+    <span className="text-[13.5px] text-[#9ca3af] font-semibold flex-none">{label}</span>
+    <span className="text-[15px] font-extrabold text-[#1f2937] text-right">{value}</span>
+  </div>
+);
 
 /**
  * Page 2: 등록 확인 — 기본정보에서 입력한 내용을 요약해 보여주고, 참여자 상태(휴무/탈락)나
@@ -134,13 +142,7 @@ const RegistrationConfirmPage = ({
     <div className={pageClass}>
       <AppBar title="등록 확인" onBack={onBack} />
       <div className={bodyClass}>
-        {exception === "loading" && (
-          <Card>
-            <p className="text-[15px] text-[#6b7280]">확인하는 중이에요...</p>
-          </Card>
-        )}
-
-        {exception && exception !== "loading" && (
+        {exception !== "loading" && exception !== null && (
           <ExceptionCard
             variant={exception.variant}
             title={exception.title}
@@ -149,23 +151,46 @@ const RegistrationConfirmPage = ({
           />
         )}
 
-        {exception === null && (
+        {(exception === "loading" || exception === null) && (
+          <PageHeaderCard
+            icon="/icon-basic-info.png"
+            title="등록 확인"
+            subtitle="아래 내용이 맞는지 확인해주세요"
+          />
+        )}
+
+        {exception === "loading" && (
           <Card>
-            <p className="text-[16px] leading-relaxed font-medium text-[#1f2937] break-keep">
-              {orgAddress && `${orgAddress} `}
-              <strong className="text-[#3182f6] font-extrabold">{formData.orgName}</strong>의{" "}
-              <strong className="text-[#3182f6] font-extrabold">{formData.programName}</strong>
-              <br />
-              <strong className="text-[#3182f6] font-extrabold">
-                {formData.userName}님({formData.gender})
-              </strong>{" "}
-              맞으신가요?
-              <br />
-              <br />
-              맞으면 <strong className="font-extrabold">다음</strong>을, 틀리면{" "}
-              <strong className="font-extrabold">이전</strong>을 눌러주세요.
-            </p>
+            <p className="text-[15px] text-[#6b7280]">확인하는 중이에요...</p>
           </Card>
+        )}
+
+        {exception === null && (
+          <>
+            <div className="bg-white rounded-[20px] px-[18px] shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
+              <ConfirmRow
+                label="소속 기관"
+                value={orgAddress ? `${orgAddress} · ${formData.orgName}` : formData.orgName}
+              />
+              <ConfirmRow
+                label="사업단"
+                value={
+                  <span className="inline-flex items-center gap-2">
+                    <span>{formData.programName}</span>
+                    <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-full bg-[#eef6ff] text-[#3182f6]">
+                      {formData.programType}
+                    </span>
+                  </span>
+                }
+              />
+              <ConfirmRow label="참여자" value={`${formData.userName} (${formData.gender})`} />
+            </div>
+
+            <p className="text-center text-[13px] text-[#9ca3af] font-semibold">
+              내용이 맞으면 <b className="text-[#1f2937] font-extrabold">다음</b>을, 틀리면{" "}
+              <b className="text-[#1f2937] font-extrabold">이전</b>을 눌러주세요.
+            </p>
+          </>
         )}
       </div>
 

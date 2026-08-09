@@ -174,7 +174,9 @@ const coordinatesPayload = (coordinates?: Coordinates | null) =>
 // 💡 "너무 이르다" 실패는 안내 모달에 시간표까지 같이 보여줘야 해서(HomePage의
 // AttendanceTimeGuideModal), 문구가 아니라 코드/데이터 그대로 받아서 컴포넌트로 전달한다.
 export type ClockInErrorBody =
-  { error: "TOO_EARLY"; now: string; shiftStart: string; shiftEnd: string } | { error: string };
+  | { error: "TOO_EARLY"; now: string; shiftStart: string; shiftEnd: string }
+  | { error: "NOT_WORK_DAY" }
+  | { error: string };
 
 export class ClockInError extends Error {
   body: ClockInErrorBody;

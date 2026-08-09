@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { ActivityLogFormData } from "../../types/form";
 
 import AppBar from "../../components/molecule/AppBar";
+import PageHeaderCard from "../../components/molecule/PageHeaderCard";
 import ActivitySaveConfirmModal from "../../components/molecule/ActivitySaveConfirmModal";
 import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
@@ -51,11 +52,11 @@ const ActivityReportPage = ({
 
   const handleSaveButtonClick = () => {
     if (!formData.actContent.trim()) {
-      onAlert(["활동 내용을 입력해주세요."]);
+      onAlert(["활동 내용을 입력해주세요"]);
       return;
     }
     if (!formData.actPlace.trim()) {
-      onAlert(["활동 장소를 입력해주세요."]);
+      onAlert(["활동 장소를 입력해주세요"]);
       return;
     }
     setConfirmOpen(true);
@@ -71,6 +72,12 @@ const ActivityReportPage = ({
     <div className={pageClass}>
       <AppBar title="업무 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
+        <PageHeaderCard
+          icon="/icon-task.png"
+          title="업무 등록"
+          subtitle="오늘 하신 업무 내용을 남겨주세요"
+        />
+
         <Card>
           <div>
             <label className={labelClass}>

@@ -4,7 +4,7 @@ import Card from "../../components/atoms/Card";
 import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { formatTimeField } from "../../utils/timeFormat";
+import { formatTimeField, getLocalToday } from "../../utils/timeFormat";
 
 interface ActivitySummaryPageProps {
   formData: ActivityLogFormData;
@@ -12,9 +12,12 @@ interface ActivitySummaryPageProps {
   onNext: () => void;
 }
 
-const SummaryRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex justify-between gap-3 py-[13px] border-b border-[#f2f4f6] last:border-b-0 text-[15px]">
-    <span className="text-[#9ca3af] font-bold flex-none">{label}</span>
+const SummaryRow = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
+  <div className="flex items-center justify-between gap-3 py-[13px] border-b border-[#f2f4f6] last:border-b-0 text-[15px]">
+    <div className="flex items-center gap-3 min-w-0">
+      <img src={icon} alt="" className="w-8 h-8 flex-none" />
+      <span className="text-[#9ca3af] font-bold flex-none">{label}</span>
+    </div>
     <span className="text-[#1f2937] font-extrabold text-right">{value}</span>
   </div>
 );
@@ -25,13 +28,25 @@ const SummaryRow = ({ label, value }: { label: string; value: string }) => (
  */
 const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";
+  const todayLabel = getLocalToday().replaceAll("-", ".");
 
   return (
     <div className={pageClass}>
       <AppBar title="오늘의 활동 요약" onBack={onBack} />
       <div className={bodyClass}>
+        <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
+          <div className="text-[13px] text-[#9ca3af] font-bold mb-3.5">
+            {todayLabel} · {formData.userName}님, 안녕하세요
+          </div>
+          <div className="text-[19px] font-extrabold text-[#1f2937]">오늘 활동을 마쳤어요</div>
+          <div className="text-[15px] text-[#4e5968] font-semibold mt-1.5">
+            아래 내용을 확인하고 서명해주세요.
+          </div>
+        </div>
+
         <Card>
           <SummaryRow
+            icon="/icon-checkin-clock.png"
             label="출근 시각"
             value={
               formData.startTime.hour ? `${formatTimeField(formData.startTime)} 완료` : "아직이에요"
@@ -39,9 +54,18 @@ const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPagePr
           />
           {!isCompetencyProgram && (
             <>
-              <SummaryRow label="활동 내역" value={formData.actContent || "미등록"} />
-              <SummaryRow label="활동 장소" value={formData.actPlace || "미등록"} />
               <SummaryRow
+                icon="/icon-task.png"
+                label="활동 내역"
+                value={formData.actContent || "미등록"}
+              />
+              <SummaryRow
+                icon="/icon-map.png"
+                label="활동 장소"
+                value={formData.actPlace || "미등록"}
+              />
+              <SummaryRow
+                icon="/icon-safety.png"
                 label="사고 유무"
                 value={
                   !formData.accidentChecked
@@ -54,6 +78,7 @@ const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPagePr
             </>
           )}
           <SummaryRow
+            icon="/icon-checkout-clock.png"
             label="퇴근 시각"
             value={
               formData.endTime.hour ? `${formatTimeField(formData.endTime)} 완료` : "아직이에요"

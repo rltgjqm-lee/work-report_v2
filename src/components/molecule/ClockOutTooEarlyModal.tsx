@@ -1,7 +1,5 @@
 import { createPortal } from "react-dom";
 
-import Button from "../atoms/Button";
-
 interface ClockOutTooEarlyModalProps {
   shiftEnd: string;
   onConfirm: () => void;
@@ -9,17 +7,19 @@ interface ClockOutTooEarlyModalProps {
 
 const ClockOutTooEarlyModal = ({ shiftEnd, onConfirm }: ClockOutTooEarlyModalProps) =>
   createPortal(
-    <div className="fixed inset-0 w-full h-full bg-[rgba(15,23,42,0.45)] z-[9999] flex justify-center items-center p-6">
-      <div className="bg-white rounded-[20px] px-6 pt-7 pb-[22px] w-full max-w-[340px] shadow-[0_12px_32px_rgba(20,30,50,0.24)]">
-        <p className="text-[18px] font-semibold text-[#1f2937] leading-[1.5]">
-          아직 근무 시간 종료 전이에요
-          <br />
-          <b className="text-[#3182f6]">{shiftEnd}</b>에 퇴근할 수 있어요
-        </p>
+    <div className="fixed inset-0 w-full h-full bg-[rgba(20,30,50,0.45)] z-[9999] flex justify-center items-center p-6">
+      <div className="bg-white rounded-[20px] px-6 py-7 max-w-[320px] w-full shadow-[0_12px_32px_rgba(20,30,50,0.2)] text-center">
+        <img src="/icon-checkout-clock.png" alt="" className="w-14 h-14 mx-auto mb-3.5" />
+        <div className="text-[17px] font-extrabold text-[#1f2937] leading-[1.5]">
+          아직 근무 종료 시간(<b>{shiftEnd}</b>) 전입니다
+        </div>
 
-        <Button variant="primary" onClick={onConfirm} className="w-full mt-5">
+        <button
+          onClick={onConfirm}
+          className="w-full h-[52px] rounded-[14px] bg-[#3182f6] text-white text-[16px] font-extrabold border-none mt-5 cursor-pointer"
+        >
           확인
-        </Button>
+        </button>
       </div>
     </div>,
     document.body,

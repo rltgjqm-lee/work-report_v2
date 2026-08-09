@@ -7,6 +7,9 @@ import AttendanceTimeGuideModal from "../../components/molecule/AttendanceTimeGu
 import ClockOutTooEarlyModal from "../../components/molecule/ClockOutTooEarlyModal";
 import ClockInCompleteModal from "../../components/molecule/ClockInCompleteModal";
 import ClockOutCompleteModal from "../../components/molecule/ClockOutCompleteModal";
+import NotWorkDayModal from "../../components/molecule/NotWorkDayModal";
+import ClockInRequiredModal from "../../components/molecule/ClockInRequiredModal";
+import ClockOutRequiredModal from "../../components/molecule/ClockOutRequiredModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import {
   adminRoleQueryOptions,
@@ -35,6 +38,7 @@ interface ActivityDashboardPageProps {
 
 type ModuleItemProps = {
   index: number;
+  icon: string;
   category: string;
   title: string;
   status: string;
@@ -46,6 +50,7 @@ type ModuleItemProps = {
 
 const ModuleItem = ({
   index,
+  icon,
   category,
   title,
   status,
@@ -59,12 +64,15 @@ const ModuleItem = ({
       highlighted ? "border-[1.5px] border-[#eef6ff]" : ""
     }`}
   >
-    <div>
-      <div className="text-[13px] font-extrabold text-[#3182f6] mb-1">
-        {index}. {category}
+    <div className="flex items-center gap-3.5">
+      <img src={icon} alt="" className="w-10 h-10 flex-none" />
+      <div>
+        <div className="text-[13px] font-extrabold text-[#3182f6] mb-1">
+          {index}. {category}
+        </div>
+        <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
+        <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">{status}</div>
       </div>
-      <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
-      <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">{status}</div>
     </div>
     <button
       onClick={onClick}
@@ -129,6 +137,13 @@ const ActivityDashboardPage = ({
     shiftEnd: string;
   } | null>(null);
 
+  // 💡 근무일이 아닐 때도 일반 alert 대신 전용 아이콘 모달로 안내한다.
+  const [notWorkDayOpen, setNotWorkDayOpen] = useState(false);
+
+  // 💡 출근/퇴근을 먼저 해야 하는 안내도 일반 alert 대신 전용 아이콘 모달로 보여준다.
+  const [clockInRequiredOpen, setClockInRequiredOpen] = useState(false);
+  const [clockOutRequiredOpen, setClockOutRequiredOpen] = useState(false);
+
   // 💡 퇴근이 너무 이를 때도 마찬가지로 시간 부분만 강조해야 해서 전용 모달로 띄운다.
   const [clockOutTooEarlyShiftEnd, setClockOutTooEarlyShiftEnd] = useState<string | null>(null);
 
@@ -182,8 +197,6 @@ const ActivityDashboardPage = ({
 
     return `${year}.${month}.${day}`;
   }, []);
-  const programLabel = formData.programType ? `${formData.programType} 사업` : "";
-
   const attendanceInDone = formData.startTime.hour !== "";
   const attendanceOutDone = formData.endTime.hour !== "";
   const workDone = !!formData.actContent && !!formData.actPlace;
@@ -220,7 +233,11 @@ const ActivityDashboardPage = ({
             setTimeGuide({ now, shiftStart, shiftEnd });
             return;
           }
-          onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다."]);
+          if (body?.error === "NOT_WORK_DAY") {
+            setNotWorkDayOpen(true);
+            return;
+          }
+          onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다"]);
         },
       },
     );
@@ -228,7 +245,7 @@ const ActivityDashboardPage = ({
 
   const handleOpenWorkButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요"]);
+      setClockInRequiredOpen(true);
       return;
     }
     onOpenWork();
@@ -236,7 +253,7 @@ const ActivityDashboardPage = ({
 
   const handleOpenSafetyButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요"]);
+      setClockInRequiredOpen(true);
       return;
     }
     onOpenSafety();
@@ -244,7 +261,7 @@ const ActivityDashboardPage = ({
 
   const handleAttendanceOutButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요"]);
+      setClockInRequiredOpen(true);
       return;
     }
     if (!isCompetencyProgram && !workDone) {
@@ -278,7 +295,7 @@ const ActivityDashboardPage = ({
             setClockOutTooEarlyShiftEnd(shiftEnd);
             return;
           }
-          onAlert([error instanceof Error ? error.message : "퇴근 등록에 실패했습니다."]);
+          onAlert([error instanceof Error ? error.message : "퇴근 등록에 실패했습니다"]);
         },
       },
     );
@@ -286,7 +303,7 @@ const ActivityDashboardPage = ({
 
   const handleOpenSummaryButtonClick = () => {
     if (!attendanceInDone) {
-      onAlert(["출근 등록을 먼저 해주세요"]);
+      setClockInRequiredOpen(true);
       return;
     }
     if (!isCompetencyProgram && !workDone) {
@@ -298,7 +315,7 @@ const ActivityDashboardPage = ({
       return;
     }
     if (!attendanceOutDone) {
-      onAlert(["퇴근 등록을 먼저 완료해주세요"]);
+      setClockOutRequiredOpen(true);
       return;
     }
     if (signatureDone) {
@@ -314,15 +331,18 @@ const ActivityDashboardPage = ({
     <div className={pageClass}>
       <AppBar title="근무 기록" onHome={onHome} />
       <div className={bodyClass}>
-        <div className="bg-white rounded-[20px] px-[22px] py-5 shadow-[0_1px_2px_rgba(20,30,50,0.04)]">
+        <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
           <div className="text-[13px] text-[#9ca3af] font-bold mb-3.5">
             {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
           </div>
           <div className="flex items-center justify-between gap-2.5">
-            <span className="text-[19px] font-extrabold text-[#1f2937]">{programLabel}</span>
+            <span className="text-[19px] font-extrabold text-[#1f2937]">{formData.orgName}</span>
+            <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-xl bg-[#eef6ff] text-[#3182f6]">
+              {formData.programType}
+            </span>
           </div>
           <div className="text-[15px] text-[#4e5968] font-semibold mt-1.5">
-            {formData.programName} 사업입니다.
+            {formData.programName} · {formData.demandName}
           </div>
         </div>
 
@@ -369,6 +389,7 @@ const ActivityDashboardPage = ({
         {/* 업무·안전 모듈은 역량활동에는 표시되지 않는다 */}
         <ModuleItem
           index={moduleIndex++}
+          icon="/icon-checkin-clock.png"
           category="출근"
           title="출근 등록"
           status={
@@ -382,6 +403,7 @@ const ActivityDashboardPage = ({
         {!isCompetencyProgram && (
           <ModuleItem
             index={moduleIndex++}
+            icon="/icon-task.png"
             category="업무"
             title="업무 일지 등록"
             status={
@@ -395,6 +417,7 @@ const ActivityDashboardPage = ({
         {!isCompetencyProgram && (
           <ModuleItem
             index={moduleIndex++}
+            icon="/icon-safety.png"
             category="안전"
             title="안전 일지 등록"
             status={
@@ -411,6 +434,7 @@ const ActivityDashboardPage = ({
 
         <ModuleItem
           index={moduleIndex++}
+          icon="/icon-checkout-clock.png"
           category="퇴근"
           title="퇴근 등록"
           status={
@@ -423,6 +447,7 @@ const ActivityDashboardPage = ({
 
         <ModuleItem
           index={moduleIndex}
+          icon="/icon-signature.png"
           category="서명"
           title="전체 확인·서명"
           status={signatureDone ? "서명 완료" : "최종 확인이 필요해요"}
@@ -431,6 +456,16 @@ const ActivityDashboardPage = ({
           onClick={handleOpenSummaryButtonClick}
         />
       </div>
+
+      {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
+
+      {clockInRequiredOpen && (
+        <ClockInRequiredModal onConfirm={() => setClockInRequiredOpen(false)} />
+      )}
+
+      {clockOutRequiredOpen && (
+        <ClockOutRequiredModal onConfirm={() => setClockOutRequiredOpen(false)} />
+      )}
 
       {timeGuide && (
         <AttendanceTimeGuideModal
@@ -451,7 +486,6 @@ const ActivityDashboardPage = ({
       {clockOutCompleteTime && (
         <ClockOutCompleteModal
           endTime={clockOutCompleteTime}
-          userName={formData.userName}
           onConfirm={() => setClockOutCompleteTime(null)}
         />
       )}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import AppBar from "../../components/molecule/AppBar";
+import PageHeaderCard from "../../components/molecule/PageHeaderCard";
 import Dropdown from "../../components/molecule/Dropdown";
 import LabeledInput from "../../components/molecule/LabeledInput";
 import Card from "../../components/atoms/Card";
@@ -80,7 +81,7 @@ const AffiliationInputPage = ({
 
   useEffect(() => {
     if (affiliationsErrored) {
-      onAlert(["기관/사업단 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
+      onAlert(["기관/사업단 목록을 불러오지 못했습니다", "네트워크 상태를 확인해주세요"]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [affiliationsErrored]);
@@ -123,7 +124,7 @@ const AffiliationInputPage = ({
 
   useEffect(() => {
     if (demandSitesErrored) {
-      onAlert(["수요처 목록을 불러오지 못했습니다. 네트워크 상태를 확인해주세요."]);
+      onAlert(["수요처 목록을 불러오지 못했습니다", "네트워크 상태를 확인해주세요"]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demandSitesErrored]);
@@ -273,6 +274,12 @@ const AffiliationInputPage = ({
       <AppBar title="기본 정보" onBack={onBack} />
 
       <div className={bodyClass}>
+        <PageHeaderCard
+          icon="/icon-basic-info.png"
+          title="기본정보 등록"
+          subtitle="참여자 정보를 입력해주세요"
+        />
+
         {affiliationsLoaded && organizations.length === 0 && (
           <ExceptionCard
             variant="warn"
