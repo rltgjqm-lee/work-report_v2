@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import { eq, inArray, like, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import {
   programs,
@@ -55,27 +55,40 @@ const matchesOrgRegion = (regionText: string, sido: string, sigungu: string): bo
   return regionText.split(",").some((segment) => isSidoOnlySegment(segment, sido));
 };
 
-// 오늘 날짜(KST)의 호출 카운트를 확인하고, 한도 안이면 카운트를 올리고 true를 반환한다.
-// 한도에 도달했으면 카운트를 올리지 않고 false를 반환 — 호출하는 쪽은 이때 API를 호출하면 안 된다.
-const tryConsumeApiCallBudget = async (db: DB, date: string): Promise<boolean> => {
-  const rows = await db.select().from(disasterApiCallLog).where(eq(disasterApiCallLog.date, date));
-  const current = rows[0]?.callCount ?? 0;
-  if (current >= DAILY_CALL_CAP) return false;
+type CallBudgetState = { callCount: number; processedCount: number; exists: boolean };
 
-  if (rows[0]) {
-    await db
-      .update(disasterApiCallLog)
-      .set({ callCount: current + 1 })
-      .where(eq(disasterApiCallLog.date, date));
-  } else {
-    await db.insert(disasterApiCallLog).values({ date, callCount: 1 });
-  }
-  return true;
+const getCallBudgetState = async (db: DB, date: string): Promise<CallBudgetState> => {
+  const rows = await db.select().from(disasterApiCallLog).where(eq(disasterApiCallLog.date, date));
+  const row = rows[0];
+  return {
+    callCount: row?.callCount ?? 0,
+    processedCount: row?.processedCount ?? 0,
+    exists: !!row,
+  };
 };
 
-// crtDt=오늘(KST) 응답은 오름차순 누적이라, 오늘 이미 safety_alerts에 쌓아둔 개수만큼은
+// 호출 카운트와 오늘 처리 건수(processedCount)를 한 번의 쓰기로 같이 저장한다 — 두 값을
+// 따로 UPDATE하면 크론이 매분 도는 만큼 쓰기 횟수도 배로 늘어난다.
+const saveCallBudgetState = async (db: DB, date: string, state: CallBudgetState): Promise<void> => {
+  if (state.exists) {
+    await db
+      .update(disasterApiCallLog)
+      .set({ callCount: state.callCount, processedCount: state.processedCount })
+      .where(eq(disasterApiCallLog.date, date));
+  } else {
+    await db.insert(disasterApiCallLog).values({
+      date,
+      callCount: state.callCount,
+      processedCount: state.processedCount,
+    });
+  }
+};
+
+// crtDt=오늘(KST) 응답은 오름차순 누적이라, 오늘 이미 처리한 건수(processedCount)만큼은
 // 이전에 다 받은 페이지다 — 그 다음 페이지부터만 이어받으면 매분 오늘치 전체를 처음부터
-// 다시 받지 않아도 된다. 호출마다 일일 예산을 확인하고, 예산이 소진되면 그 자리에서 멈춘다.
+// 다시 받지 않아도 된다. 지역이 안 맞는 메시지는 safety_alerts에 저장하지 않기 때문에
+// (아래 enqueueNewMatches), 이 오프셋은 safety_alerts 행 개수가 아니라 별도 카운터로 추적한다.
+// 호출마다 일일 예산을 확인하고, 예산이 소진되면 그 자리에서 멈춘다.
 const fetchNewMessagesWithBudget = async (
   db: DB,
   env: Env["Bindings"],
@@ -83,18 +96,13 @@ const fetchNewMessagesWithBudget = async (
 ): Promise<DisasterMessage[]> => {
   const crtDt = date.replaceAll("-", "");
 
-  // sentAt은 "YYYY/MM/DD HH:MM:SS" 텍스트라 오늘 날짜 프리픽스로 이미 받아둔 개수를 센다.
-  const [{ knownCount }] = await db
-    .select({ knownCount: sql<number>`count(*)` })
-    .from(safetyAlerts)
-    .where(like(safetyAlerts.sentAt, `${date.replaceAll("-", "/")}%`));
-  const startPage = Math.floor(knownCount / MAX_ROWS_PER_PAGE) + 1;
+  const state = await getCallBudgetState(db, date);
+  const startPage = Math.floor(state.processedCount / MAX_ROWS_PER_PAGE) + 1;
 
   const collected: DisasterMessage[] = [];
 
   for (let pageNo = startPage; pageNo < startPage + MAX_PAGES_PER_RUN; pageNo++) {
-    const allowed = await tryConsumeApiCallBudget(db, date);
-    if (!allowed) {
+    if (state.callCount >= DAILY_CALL_CAP) {
       console.error(
         `재난문자 API 일일 호출 한도(${DAILY_CALL_CAP}회) 도달 — 이후 폴링을 건너뜁니다.`,
       );
@@ -107,6 +115,11 @@ const fetchNewMessagesWithBudget = async (
       pageNo,
     );
     collected.push(...messages);
+
+    state.callCount += 1;
+    state.processedCount += messages.length;
+    await saveCallBudgetState(db, date, state);
+    state.exists = true;
 
     if (pageNo * MAX_ROWS_PER_PAGE >= totalCount || messages.length === 0) break;
   }
@@ -132,9 +145,11 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
   const messages = await fetchNewMessagesWithBudget(db, env, date);
   if (messages.length === 0) return;
 
-  // safetyAlerts는 계속 쌓이기만 하는 이력 테이블이라 전체를 읽으면 갈수록 읽기 비용이
-  // 커진다 — alertId가 PK라 오늘 조회한 메시지 id만 IN으로 좁혀서 인덱스 조회로 끝낸다.
-  // 위 D1 파라미터 한도 때문에 100개씩 나눠서 조회한다.
+  // safetyAlerts엔 이제 지역이 매칭된(=실제로 발송 대상이 된) 메시지만 저장되므로, 이 dedup은
+  // "이미 발송 큐에 넣은 매칭 메시지를 다시 넣지 않기" 위한 것이다 — 매칭 안 된 메시지는
+  // 여기서 걸러지지 않고 매번 새로 필터링되지만, 어차피 발송으로 이어지지 않으니 무해하다.
+  // alertId가 PK라 오늘 조회한 메시지 id만 IN으로 좁혀서 인덱스 조회로 끝내고, 위 D1
+  // 파라미터 한도 때문에 100개씩 나눠서 조회한다.
   const processedIds = new Set<string>();
   for (const idChunk of chunk(
     messages.map((message) => message.id),
@@ -229,19 +244,23 @@ const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> =>
           })),
         );
       }
-    }
 
-    await db
-      .insert(safetyAlerts)
-      .values({
-        alertId: message.id,
-        message: message.message,
-        region: message.region,
-        alertType: message.alertType,
-        source: "MOIS",
-        sentAt: message.sentAt,
-      })
-      .onConflictDoNothing();
+      // 지역이 매칭돼 실제로 발송 대상이 된 메시지만 저장한다 — 전국 메시지를 전부 저장하면
+      // D1 쓰기가 대부분(우리 사업단과 무관한 메시지)에 낭비된다. 매칭 안 된 메시지는 다음
+      // 실행에서 다시 조회해도 무해하므로(발송으로 안 이어짐) 재조회 자체는 문제 없다 —
+      // 페이지 오프셋은 processedCount로 별도 추적하니 재조회로 인해 멈추지도 않는다.
+      await db
+        .insert(safetyAlerts)
+        .values({
+          alertId: message.id,
+          message: message.message,
+          region: message.region,
+          alertType: message.alertType,
+          source: "MOIS",
+          sentAt: message.sentAt,
+        })
+        .onConflictDoNothing();
+    }
   }
 };
 

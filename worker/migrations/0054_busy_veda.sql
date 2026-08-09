@@ -1,0 +1,1 @@
+ALTER TABLE `disaster_api_call_log` ADD `processed_count` integer DEFAULT 0 NOT NULL;

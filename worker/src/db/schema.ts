@@ -508,6 +508,10 @@ export const safetyAlerts = sqliteTable(
 export const disasterApiCallLog = sqliteTable("disaster_api_call_log", {
   date: text("date").primaryKey(),
   callCount: integer("call_count").notNull().default(0),
+  // 오늘 API에서 받아온 재난문자 총 건수(지역 매칭 여부 무관) — crtDt 페이지네이션 이어받기용.
+  // safety_alerts 행 개수로 세던 걸 이 컬럼으로 대체해서, 매칭 안 된 메시지를 저장 안 해도
+  // 페이지 오프셋을 정확히 추적할 수 있게 한다.
+  processedCount: integer("processed_count").notNull().default(0),
 });
 
 // 재난문자 발송 로그 (구독/기기 단위 — 구독이 나중에 삭제돼도 조회 가능하도록 programId를 그대로 저장)

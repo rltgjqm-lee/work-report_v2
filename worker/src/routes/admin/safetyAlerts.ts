@@ -9,8 +9,9 @@ import { ROLES, type Env } from "../../types";
 
 const app = new Hono<Env>();
 
-// 행안부 원본 수신 내역 전체(매칭 안 돼 아무한테도 안 보낸 것 포함) + 테스트 발송 내역.
-// 실제 발송된 것만 보고 싶으면 /api/disaster-push-logs를 쓴다 — 이 엔드포인트는
+// 행안부 원본 수신 내역 중 우리 사업단 지역과 매칭돼 실제 발송 대상이 된 것 + 테스트 발송
+// 내역. D1 쓰기 비용 때문에 지역이 안 맞는 전국 메시지는 저장하지 않으므로(checkDisasterAlerts.ts
+// 참고), 매칭 안 돼 아무한테도 안 보낸 메시지는 여기서 조회되지 않는다 — 이 엔드포인트는
 // 진단/테스트 목적이라 SUPER_ADMIN만 조회 가능.
 app.get("/", async (c) => {
   const auth = getAuth(c);
