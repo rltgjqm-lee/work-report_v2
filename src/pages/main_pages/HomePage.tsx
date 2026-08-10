@@ -70,7 +70,7 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
             alt=""
           />
           <span className="text-[clamp(16px,4.4vw,18px)] font-extrabold text-text-strong">
-            활동일지 시작하기
+            활동일지 시작
           </span>
           <span className="text-[clamp(13px,3.5vw,14px)] text-text-muted font-semibold leading-[1.5]">
             오늘의 출근부터,
