@@ -7,7 +7,8 @@ import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
 import DemandSiteGroupAssignModal from "./DemandSiteGroupAssignModal";
 import StatusChip from "../../components/chip/StatusChip";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, rowActionBtnClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import { rowActionBtnClass } from "../../uiClasses";
 import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
 
 interface ProgramDemandSitesSectionProps {
@@ -64,9 +65,9 @@ const ProgramDemandSitesSection = ({
     <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint">
         <span className="text-sm font-bold">수요처 관리</span>
-        <button className={btnGhostClass} onClick={handleAddButtonClick}>
+        <Button variant="ghost" onClick={handleAddButtonClick}>
           + 수요처 추가
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto">

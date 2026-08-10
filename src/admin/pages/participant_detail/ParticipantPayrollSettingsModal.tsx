@@ -6,7 +6,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import type { ParticipantDetail } from "../../types";
 
 const FEE_TYPE_OPTIONS = [
@@ -85,16 +86,15 @@ const ParticipantPayrollSettingsModal = ({
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button
-            className={btnPrimaryClass}
+          </Button>
+          <Button
             disabled={updateParticipantMutation.isPending}
             onClick={handleSaveButtonClick}
           >
             {updateParticipantMutation.isPending ? "저장 중..." : "저장"}
-          </button>
+          </Button>
         </>
       }
     >
@@ -103,9 +103,8 @@ const ParticipantPayrollSettingsModal = ({
       </p>
 
       <FormField label="시급(원)">
-        <input
+        <Input
           type="number"
-          className={inputClass}
           value={form.hourlyWage}
           onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
         />
@@ -118,9 +117,8 @@ const ParticipantPayrollSettingsModal = ({
       <div className="flex gap-3">
         <div className="flex-1">
           <FormField label="교육비(원)">
-            <input
+            <Input
               type="number"
-              className={inputClass}
               value={form.educationAmount}
               onChange={(event) =>
                 setForm((f) => ({
@@ -151,9 +149,8 @@ const ParticipantPayrollSettingsModal = ({
       <div className="flex gap-3">
         <div className="flex-1">
           <FormField label="치매 검진비(원)">
-            <input
+            <Input
               type="number"
-              className={inputClass}
               value={form.dementiaAmount}
               onChange={(event) =>
                 setForm((f) => ({
@@ -184,9 +181,8 @@ const ParticipantPayrollSettingsModal = ({
       {isCompetencyProgram && (
         <>
           <FormField label="주휴시간(월, 시간)">
-            <input
+            <Input
               type="number"
-              className={inputClass}
               value={form.weeklyHolidayHours}
               onChange={(event) =>
                 setForm((f) => ({

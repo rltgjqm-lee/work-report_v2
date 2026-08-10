@@ -7,7 +7,8 @@ import {
 } from "../api/admin/safetyAlerts";
 import { programsQueryOptions } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
-import { btnPrimaryClass, inputClass } from "../uiClasses";
+import Button from "../components/Button";
+import Input from "../components/Input";
 
 const SOURCE_LABEL: Record<string, string> = {
   MOIS: "행안부",
@@ -76,16 +77,14 @@ const DisasterMessagesPage = () => {
             ]}
           />
 
-          <input
-            className={inputClass + " flex-1 min-w-[240px]"}
+          <Input
+            className="flex-1 min-w-[240px]"
             placeholder="테스트 메시지를 입력하세요"
             value={testMessage}
             onChange={(event) => setTestMessage(event.target.value)}
           />
 
-          <button className={btnPrimaryClass} onClick={handleSendTestButtonClick}>
-            발송
-          </button>
+          <Button onClick={handleSendTestButtonClick}>발송</Button>
         </div>
         {testResult && <div className="text-xs text-admin-brand mt-2.5">{testResult}</div>}
       </div>

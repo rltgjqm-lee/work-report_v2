@@ -6,7 +6,7 @@ import GroupAddModal from "./GroupAddModal";
 import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
 import ItemCard from "../../components/ItemCard";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass } from "../../uiClasses";
+import Button from "../../components/Button";
 import type { Group } from "../../types";
 
 interface ProgramGroupsSectionProps {
@@ -53,9 +53,9 @@ const ProgramGroupsSection = ({
     <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint">
         <span className="text-sm font-bold">조 관리</span>
-        <button className={btnGhostClass} onClick={() => setGroupModalOpen(true)}>
+        <Button variant="ghost" onClick={() => setGroupModalOpen(true)}>
           + 조 추가
-        </button>
+        </Button>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 px-5 py-4">
         {groups.length === 0 && (

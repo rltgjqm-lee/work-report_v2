@@ -3,7 +3,8 @@ import { useState } from "react";
 import { changeMyPassword } from "../../api/admin/me";
 import SlideModal from "./SlideModal";
 import FormField from "../FormField";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../Button";
+import Input from "../Input";
 
 interface ChangePasswordModalProps {
   onClose: () => void;
@@ -51,37 +52,34 @@ const ChangePasswordModal = ({ onClose }: ChangePasswordModalProps) => {
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
       <FormField label="현재 비밀번호">
-        <input
+        <Input
           type="password"
-          className={inputClass}
           value={currentPassword}
           onChange={(event) => setCurrentPassword(event.target.value)}
         />
       </FormField>
 
       <FormField label="새 비밀번호 (8자 이상)">
-        <input
+        <Input
           type="password"
-          className={inputClass}
           value={newPassword}
           onChange={(event) => setNewPassword(event.target.value)}
         />
       </FormField>
 
       <FormField label="새 비밀번호 확인">
-        <input
+        <Input
           type="password"
-          className={inputClass}
           value={newPasswordConfirm}
           onChange={(event) => setNewPasswordConfirm(event.target.value)}
         />

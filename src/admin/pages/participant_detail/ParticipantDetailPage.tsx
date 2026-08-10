@@ -10,7 +10,7 @@ import {
 } from "../../api/admin/participants";
 import MonthPicker from "../../components/MonthPicker";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
-import { btnPrimaryClass } from "../../uiClasses";
+import Button from "../../components/Button";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type {
   AnnualLeave,
@@ -100,9 +100,7 @@ const ParticipantDetailPage = () => {
       <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-4 mb-5">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-sm font-bold">급여 관련 설정</span>
-          <button className={btnPrimaryClass} onClick={() => setPayrollModalOpen(true)}>
-            설정 변경
-          </button>
+          <Button onClick={() => setPayrollModalOpen(true)}>설정 변경</Button>
         </div>
         <p className="text-xs text-admin-text-placeholder m-0">
           교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.

@@ -10,7 +10,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { ROLES, type Admin, type Organization, type Program, type Role } from "../../types";
 
 // 담당자 선택 목록에 담당자(MANAGER)와 부관리자(SUB_ADMIN)가 섞여 나오므로
@@ -163,12 +164,12 @@ const ProgramFormModal = ({
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
@@ -235,8 +236,7 @@ const ProgramFormModal = ({
 
       {/* 사업단 명 */}
       <FormField label="사업단 명">
-        <input
-          className={inputClass}
+        <Input
           value={form.name}
           onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
@@ -246,9 +246,8 @@ const ProgramFormModal = ({
         {/* 시작일 */}
         <div className="flex-1">
           <FormField label="시작일">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={form.startDate}
               onChange={(event) => setForm((f) => ({ ...f, startDate: event.target.value }))}
             />
@@ -258,9 +257,8 @@ const ProgramFormModal = ({
         {/* 종료일 */}
         <div className="flex-1">
           <FormField label="종료일">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={form.endDate}
               min={form.startDate || undefined}
               onChange={(event) => setForm((f) => ({ ...f, endDate: event.target.value }))}
@@ -273,10 +271,9 @@ const ProgramFormModal = ({
         {/* 시작 시간 */}
         <div className="flex-1">
           <FormField label="시작 시간">
-            <input
+            <Input
               type="time"
               step={600}
-              className={inputClass}
               value={form.startTime}
               onChange={(event) => setForm((f) => ({ ...f, startTime: event.target.value }))}
             />
@@ -286,10 +283,9 @@ const ProgramFormModal = ({
         {/* 종료 시간  */}
         <div className="flex-1">
           <FormField label="종료 시간">
-            <input
+            <Input
               type="time"
               step={600}
-              className={inputClass}
               value={form.endTime}
               min={form.startTime || undefined}
               onChange={(event) => setForm((f) => ({ ...f, endTime: event.target.value }))}
@@ -300,9 +296,8 @@ const ProgramFormModal = ({
 
       {/* 시급 */}
       <FormField label="시급(원)">
-        <input
+        <Input
           type="number"
-          className={inputClass}
           value={form.hourlyWage}
           onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
         />

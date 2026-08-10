@@ -6,14 +6,10 @@ import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  inputClass,
-  rowActionBtnClass,
-  selectClass,
-} from "../../uiClasses";
+import { rowActionBtnClass, selectClass } from "../../uiClasses";
 import type { AttendanceRow, AttendanceStats } from "../../types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -355,9 +351,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
                   출근시간
                 </label>
-                <input
+                <Input
                   type="time"
-                  className={inputClass}
                   value={correctionForm.clockIn}
                   onChange={(event) =>
                     setCorrectionForm((f) => ({
@@ -371,9 +366,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
                   퇴근시간
                 </label>
-                <input
+                <Input
                   type="time"
-                  className={inputClass}
                   value={correctionForm.clockOut}
                   onChange={(event) =>
                     setCorrectionForm((f) => ({
@@ -404,8 +398,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
                   수정 사유 (필수)
                 </label>
-                <input
-                  className={inputClass}
+                <Input
                   value={correctionForm.reason}
                   onChange={(event) =>
                     setCorrectionForm((f) => ({
@@ -418,12 +411,12 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
-              <button className={btnGhostClass} onClick={() => setCorrectionTarget(null)}>
+              <Button variant="ghost" onClick={() => setCorrectionTarget(null)}>
                 취소
-              </button>
-              <button className={btnPrimaryClass} onClick={handleSaveCorrectionButtonClick}>
+              </Button>
+              <Button onClick={handleSaveCorrectionButtonClick}>
                 저장
-              </button>
+              </Button>
             </div>
           </div>
         </div>

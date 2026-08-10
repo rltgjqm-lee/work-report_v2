@@ -7,7 +7,7 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
+import Button from "../../components/Button";
 import { ROLES, type Admin, type Role } from "../../types";
 
 // 이관 후보로 담당자(MANAGER)와 부관리자(SUB_ADMIN)가 섞여 나오므로
@@ -103,12 +103,12 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleTransferButtonClick}>
+          </Button>
+          <Button onClick={handleTransferButtonClick}>
             이관
-          </button>
+          </Button>
         </>
       }
     >

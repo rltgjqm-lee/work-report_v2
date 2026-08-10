@@ -5,7 +5,7 @@ import { moveParticipantToDemandSiteMutationOptions } from "../../api/admin/part
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
+import Button from "../../components/Button";
 import type { DemandSite, Participant } from "../../types";
 
 interface ParticipantDemandSiteAssignModalProps {
@@ -72,12 +72,12 @@ const ParticipantDemandSiteAssignModal = ({
         </FormField>
 
         <div className="flex justify-end gap-2 mt-4">
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             닫기
-          </button>
-          <button className={btnPrimaryClass} onClick={handleChangeButtonClick}>
+          </Button>
+          <Button onClick={handleChangeButtonClick}>
             변경
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -11,7 +11,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 // import FilterSelect from "../../components/FilterSelect"; // 담당자 지정 UI와 함께 임시로 뺐다
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import type { DemandSite } from "../../types";
 
 // GPS 오차를 감안한 최소 반경 — 서버(demandSites 라우트)에서도 같은 값으로 올려잡는다
@@ -132,34 +133,32 @@ const DemandSiteFormModal = ({
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
       <FormField label="수요처명">
-        <input
-          className={inputClass}
+        <Input
           value={form.name}
           onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
       <FormField label="주소">
         <div className="flex gap-2">
-          <input
-            className={inputClass}
+          <Input
             value={form.address}
             readOnly
             placeholder="주소 검색을 눌러 입력해주세요"
             onClick={handleSearchAddressButtonClick}
           />
-          <button type="button" className={btnGhostClass} onClick={handleSearchAddressButtonClick}>
+          <Button variant="ghost" type="button" onClick={handleSearchAddressButtonClick}>
             주소 검색
-          </button>
+          </Button>
         </div>
       </FormField>
 
@@ -205,9 +204,8 @@ const DemandSiteFormModal = ({
       </FormField>
 
       <FormField label="관제 반경(m)">
-        <input
+        <Input
           type="number"
-          className={inputClass}
           value={form.radius}
           step={100}
           disabled={!form.baseAreaEnabled}

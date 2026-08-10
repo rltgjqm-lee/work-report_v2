@@ -16,14 +16,10 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import StatusChip from "../../components/chip/StatusChip";
 import SubTabBar from "../../components/bar/SubTabBar";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { getLocalToday } from "../../../utils/timeFormat";
-import {
-  btnGhostClass,
-  btnPrimaryClass,
-  inputClass,
-  rowActionBtnClass,
-  selectClass,
-} from "../../uiClasses";
+import { rowActionBtnClass, selectClass } from "../../uiClasses";
 import type {
   Participant,
   ProjectTraining,
@@ -255,9 +251,9 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
         <div>
           <div className="flex items-center justify-between gap-3 mb-4">
             <span className="text-sm font-bold">교육 목록 ({trainings.length}건)</span>
-            <button className={btnGhostClass} onClick={handleAddTrainingButtonClick}>
+            <Button variant="ghost" onClick={handleAddTrainingButtonClick}>
               + 교육 추가
-            </button>
+            </Button>
           </div>
           {trainings.length === 0 ? (
             <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center text-[13px] text-admin-text-placeholder">
@@ -322,9 +318,9 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               />
               <SearchInput value={logSearch} onChange={setLogSearch} placeholder="참여자 검색" />
             </div>
-            <button className={btnGhostClass} onClick={handleAddLogButtonClick}>
+            <Button variant="ghost" onClick={handleAddLogButtonClick}>
               + 이수 등록
-            </button>
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] table-fixed border-collapse">
@@ -454,18 +450,17 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
           onClose={() => setTrainingModalOpen(false)}
           footer={
             <>
-              <button className={btnGhostClass} onClick={() => setTrainingModalOpen(false)}>
+              <Button variant="ghost" onClick={() => setTrainingModalOpen(false)}>
                 취소
-              </button>
-              <button className={btnPrimaryClass} onClick={handleSaveTrainingButtonClick}>
+              </Button>
+              <Button onClick={handleSaveTrainingButtonClick}>
                 저장
-              </button>
+              </Button>
             </>
           }
         >
           <FormField label="교육명">
-            <input
-              className={inputClass}
+            <Input
               value={trainingForm.name}
               onChange={(event) =>
                 setTrainingForm((f) => ({
@@ -518,9 +513,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             </div>
           </div>
           <FormField label="교육날짜(선택)">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={trainingForm.trainingDate}
               onChange={(event) =>
                 setTrainingForm((f) => ({
@@ -533,9 +527,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
           <div className="flex gap-3">
             <div className="flex-1">
               <FormField label="시작시간(선택)">
-                <input
+                <Input
                   type="time"
-                  className={inputClass}
                   value={trainingForm.startTime}
                   onChange={(event) =>
                     setTrainingForm((f) => ({
@@ -548,9 +541,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             </div>
             <div className="flex-1">
               <FormField label="종료시간(선택)">
-                <input
+                <Input
                   type="time"
-                  className={inputClass}
                   value={trainingForm.endTime}
                   onChange={(event) =>
                     setTrainingForm((f) => ({
@@ -564,9 +556,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
           </div>
           {trainingForm.payMode === "DAILY" && (
             <FormField label="일당(원)">
-              <input
+              <Input
                 type="number"
-                className={inputClass}
                 value={trainingForm.dailyWage}
                 onChange={(event) =>
                   setTrainingForm((f) => ({
@@ -600,12 +591,12 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
           onClose={() => setLogModalOpen(false)}
           footer={
             <>
-              <button className={btnGhostClass} onClick={() => setLogModalOpen(false)}>
+              <Button variant="ghost" onClick={() => setLogModalOpen(false)}>
                 취소
-              </button>
-              <button className={btnPrimaryClass} onClick={handleSaveLogButtonClick}>
+              </Button>
+              <Button onClick={handleSaveLogButtonClick}>
                 저장
-              </button>
+              </Button>
             </>
           }
         >
@@ -650,9 +641,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             </select>
           </FormField>
           <FormField label="이수일자">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={logForm.attendDate}
               onChange={(event) =>
                 setLogForm((f) => ({
@@ -663,9 +653,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             />
           </FormField>
           <FormField label="이수시간(선택, 비우면 교육 기준시간 사용)">
-            <input
+            <Input
               type="number"
-              className={inputClass}
               value={logForm.attendHours}
               onChange={(event) =>
                 setLogForm((f) => ({

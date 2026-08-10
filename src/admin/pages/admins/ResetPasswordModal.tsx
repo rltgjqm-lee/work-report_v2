@@ -5,7 +5,8 @@ import { resetAdminPassword } from "../../api/admin/admins";
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 
 interface ResetPasswordModalProps {
   onClose: () => void;
@@ -67,12 +68,12 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
@@ -80,17 +81,15 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
         재설정하면 이 계정의 기존 로그인 세션이 모두 종료됩니다.
       </p>
       <FormField label="새 비밀번호 (8자 이상)">
-        <input
+        <Input
           type="password"
-          className={inputClass}
           value={newPassword}
           onChange={(event) => setNewPassword(event.target.value)}
         />
       </FormField>
       <FormField label="새 비밀번호 확인">
-        <input
+        <Input
           type="password"
-          className={inputClass}
           value={newPasswordConfirm}
           onChange={(event) => setNewPasswordConfirm(event.target.value)}
         />

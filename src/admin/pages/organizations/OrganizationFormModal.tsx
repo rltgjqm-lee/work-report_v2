@@ -10,7 +10,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { KOREAN_REGIONS, SIDO_LIST } from "../../data/koreanRegions";
 import { ORGANIZATION_TYPES } from "../../data/organizationTypes";
 import type { Organization } from "../../types";
@@ -117,39 +118,36 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
       <FormField label="기관명">
-        <input
-          className={inputClass}
+        <Input
           value={form.name}
           onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
       </FormField>
       <FormField label="기관주소">
         <div className="flex gap-2">
-          <input
-            className={inputClass}
+          <Input
             value={form.address}
             readOnly
             placeholder="주소 검색을 눌러 입력해주세요"
             onClick={handleSearchAddressButtonClick}
           />
-          <button type="button" className={btnGhostClass} onClick={handleSearchAddressButtonClick}>
+          <Button variant="ghost" type="button" onClick={handleSearchAddressButtonClick}>
             주소 검색
-          </button>
+          </Button>
         </div>
       </FormField>
       <FormField label="대표자">
-        <input
-          className={inputClass}
+        <Input
           value={form.rep}
           onChange={(event) => setForm((form) => ({ ...form, rep: event.target.value }))}
         />
@@ -157,8 +155,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
       <div className="flex gap-3">
         <div className="flex-1">
           <FormField label="전화번호">
-            <input
-              className={inputClass}
+            <Input
               placeholder="02-1234-5678"
               value={form.phone}
               onChange={(event) => setForm((form) => ({ ...form, phone: event.target.value }))}
@@ -167,8 +164,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
         </div>
         <div className="flex-1">
           <FormField label="팩스번호">
-            <input
-              className={inputClass}
+            <Input
               placeholder="02-1234-5678"
               value={form.fax}
               onChange={(event) => setForm((form) => ({ ...form, fax: event.target.value }))}
@@ -177,8 +173,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
         </div>
       </div>
       <FormField label="사업자 등록번호">
-        <input
-          className={inputClass}
+        <Input
           value={form.bizNo}
           onChange={(event) => setForm((form) => ({ ...form, bizNo: event.target.value }))}
         />
@@ -237,8 +232,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
         </div>
         <div className="flex-1">
           <FormField label="사업연도">
-            <input
-              className={inputClass}
+            <Input
               placeholder="예: 2026"
               value={form.prjYear}
               onChange={(event) => setForm((form) => ({ ...form, prjYear: event.target.value }))}

@@ -12,7 +12,8 @@ import SearchInput from "../../components/SearchInput";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
-import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import { rowActionBtnClass } from "../../uiClasses";
 import { ROLES, type Organization } from "../../types";
 
 /**
@@ -82,9 +83,7 @@ const OrganizationsPage = () => {
           </p>
         </div>
         {role === ROLES.SUPER_ADMIN && (
-          <button className={btnPrimaryClass} onClick={handleAddButtonClick}>
-            + 기관 추가
-          </button>
+          <Button onClick={handleAddButtonClick}>+ 기관 추가</Button>
         )}
       </div>
 

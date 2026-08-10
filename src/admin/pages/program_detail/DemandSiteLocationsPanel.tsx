@@ -13,14 +13,13 @@ import {
   updateDemandSiteMutationOptions,
 } from "../../api/admin/demandSites";
 import {
-  btnGhostClass,
-  btnPrimaryClass,
-  inputClass,
   panelLinkActionClass,
   zoneCardBtnClass,
   zoneCardBtnDangerClass,
   zoneCardFooterClass,
 } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { useToast } from "../../context/useToast";
 import { geocodeAddress } from "../../utils/geocodeAddress";
 import type { DemandSite, DemandSiteLocationShape } from "../../types";
@@ -437,9 +436,8 @@ const DemandSiteLocationsPanel = ({
         <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
           <div className="bg-white rounded-[8px] shadow-xl w-[360px] p-5">
             <div className="text-[14px] font-bold mb-3">거점 이름을 입력하세요</div>
-            <input
+            <Input
               autoFocus
-              className={inputClass}
               value={pendingName}
               onChange={(event) => setPendingName(event.target.value)}
               onKeyDown={(event) => {
@@ -447,12 +445,12 @@ const DemandSiteLocationsPanel = ({
               }}
             />
             <div className="flex justify-end gap-2 mt-4">
-              <button className={btnGhostClass} onClick={handleCancelPendingShapeButtonClick}>
+              <Button variant="ghost" onClick={handleCancelPendingShapeButtonClick}>
                 취소
-              </button>
-              <button className={btnPrimaryClass} onClick={handleSavePendingShapeButtonClick}>
+              </Button>
+              <Button onClick={handleSavePendingShapeButtonClick}>
                 저장
-              </button>
+              </Button>
             </div>
           </div>
         </div>

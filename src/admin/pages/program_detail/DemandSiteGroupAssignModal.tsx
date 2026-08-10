@@ -10,7 +10,7 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass } from "../../uiClasses";
+import Button from "../../components/Button";
 import type { DemandSite, Group } from "../../types";
 
 interface DemandSiteGroupAssignModalProps {
@@ -111,12 +111,12 @@ const DemandSiteGroupAssignModal = ({
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >

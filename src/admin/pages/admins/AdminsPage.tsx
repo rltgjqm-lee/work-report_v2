@@ -9,7 +9,8 @@ import TransferProgramsModal from "./TransferProgramsModal";
 import SearchInput from "../../components/SearchInput";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
-import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import { rowActionBtnClass } from "../../uiClasses";
 import { ROLES, type Admin, type Role } from "../../types";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -126,9 +127,7 @@ const AdminsPage = () => {
             기관과 계약 체결 후 발급하는 관리자 계정을 등록하고 관리합니다.
           </p>
         </div>
-        <button className={btnPrimaryClass} onClick={handleAddButtonClick}>
-          + 관리자 계정 발급
-        </button>
+        <Button onClick={handleAddButtonClick}>+ 관리자 계정 발급</Button>
       </div>
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px]">

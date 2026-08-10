@@ -16,8 +16,7 @@ import ProgramParticipantsSection from "./ProgramParticipantsSection";
 import ParticipantAddModal from "./ParticipantAddModal";
 import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
 import TabBar from "../../components/bar/TabBar";
-
-import { btnPrimaryClass, btnGhostClass } from "../../uiClasses";
+import Button from "../../components/Button";
 
 const PROGRAM_DETAIL_TAB = {
   GROUPS: "groups",
@@ -142,23 +141,21 @@ const ProgramDetailPage = () => {
               </option>
             ))}
           </select>
-          <button
-            className={btnGhostClass}
+          <Button
+            variant="ghost"
             onClick={() => navigate(`/admin/programs/${programId}/attendance`)}
           >
             근무 관리
-          </button>
+          </Button>
 
-          <button
-            className={btnGhostClass}
+          <Button
+            variant="ghost"
             onClick={() => navigate(`/admin/programs/${programId}/escapes`)}
           >
             안전 관제
-          </button>
+          </Button>
 
-          <button className={btnPrimaryClass} onClick={() => setIsModalOpen(true)}>
-            + 참여자 추가
-          </button>
+          <Button onClick={() => setIsModalOpen(true)}>+ 참여자 추가</Button>
         </div>
       </div>
 

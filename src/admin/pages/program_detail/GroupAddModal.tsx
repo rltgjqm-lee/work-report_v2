@@ -8,7 +8,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 
 const toMinutes = (hhmm: string): number => {
@@ -161,25 +162,23 @@ const GroupAddModal = ({
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
       <FormField label="조 이름">
-        <input
-          className={inputClass}
+        <Input
           value={form.name}
           onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
       <FormField label="설명">
-        <input
-          className={inputClass}
+        <Input
           value={form.description}
           onChange={(event) => setForm((f) => ({ ...f, description: event.target.value }))}
         />
@@ -187,12 +186,11 @@ const GroupAddModal = ({
       <div className="flex gap-3">
         <div className="flex-1">
           <FormField label="근무 시작시간">
-            <input
+            <Input
               type="time"
               step={600}
               min={programStartTime}
               max={programEndTime}
-              className={inputClass}
               value={form.shiftStart}
               onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
             />
@@ -200,12 +198,11 @@ const GroupAddModal = ({
         </div>
         <div className="flex-1">
           <FormField label="근무 종료시간">
-            <input
+            <Input
               type="time"
               step={600}
               min={programStartTime}
               max={programEndTime}
-              className={inputClass}
               value={form.shiftEnd}
               onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
             />
@@ -222,19 +219,17 @@ const GroupAddModal = ({
         </div>
 
         <FormField label="월">
-          <input
+          <Input
             type="month"
-            className={inputClass}
             value={yearMonth}
             onChange={(event) => setYearMonth(event.target.value)}
           />
         </FormField>
 
         <FormField label="월 근무시간 상한(시간)">
-          <input
+          <Input
             type="number"
             min={0}
-            className={inputClass}
             value={maxMonthlyHours}
             onChange={(event) => setMaxMonthlyHours(event.target.value)}
           />
@@ -242,25 +237,25 @@ const GroupAddModal = ({
 
         <FormField label="패턴 자동생성 (예: 1근무 2휴무)">
           <div className="flex items-center gap-2 flex-nowrap">
-            <input
+            <Input
+              compact
               type="number"
               min={1}
-              className={compactInputClass}
               value={patternWorkDays}
               onChange={(event) => setPatternWorkDays(event.target.value)}
             />
             <span className="text-[13px] text-text-subtle whitespace-nowrap">일 근무 /</span>
-            <input
+            <Input
+              compact
               type="number"
               min={0}
-              className={compactInputClass}
               value={patternRestDays}
               onChange={(event) => setPatternRestDays(event.target.value)}
             />
             <span className="text-[13px] text-text-subtle whitespace-nowrap">일 휴무</span>
-            <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
+            <Button variant="ghost" onClick={handleGeneratePatternButtonClick}>
               자동 생성
-            </button>
+            </Button>
           </div>
         </FormField>
 

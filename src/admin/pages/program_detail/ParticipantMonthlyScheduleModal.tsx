@@ -12,7 +12,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, compactInputClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { Group, Participant } from "../../types";
 
@@ -183,17 +184,17 @@ const ParticipantMonthlyScheduleModal = ({
       footer={
         hasOverride ? (
           <>
-            <button className={btnGhostClass} onClick={handleRevertToGroupButtonClick}>
+            <Button variant="ghost" onClick={handleRevertToGroupButtonClick}>
               조 스케줄로 되돌리기
-            </button>
-            <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+            </Button>
+            <Button onClick={handleSaveButtonClick}>
               저장
-            </button>
+            </Button>
           </>
         ) : (
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             닫기
-          </button>
+          </Button>
         )
       }
     >
@@ -203,9 +204,8 @@ const ParticipantMonthlyScheduleModal = ({
       </div>
 
       <FormField label="월">
-        <input
+        <Input
           type="month"
-          className={inputClass}
           value={yearMonth}
           onChange={(event) => setYearMonth(event.target.value)}
         />
@@ -216,35 +216,34 @@ const ParticipantMonthlyScheduleModal = ({
       ) : hasOverride ? (
         <>
           <FormField label="월 근무시간 상한(시간, 비우면 조 기본값 따름)">
-            <input
+            <Input
               type="number"
               min={0}
-              className={inputClass}
               value={maxMonthlyHours}
               onChange={(event) => setMaxMonthlyHours(event.target.value)}
             />
           </FormField>
           <FormField label="패턴 자동생성 (예: 1근무 2휴무)">
             <div className="flex items-center gap-2 flex-nowrap">
-              <input
+              <Input
+                compact
                 type="number"
                 min={1}
-                className={compactInputClass}
                 value={patternWorkDays}
                 onChange={(event) => setPatternWorkDays(event.target.value)}
               />
               <span className="text-[13px] text-text-subtle whitespace-nowrap">일 근무 /</span>
-              <input
+              <Input
+                compact
                 type="number"
                 min={0}
-                className={compactInputClass}
                 value={patternRestDays}
                 onChange={(event) => setPatternRestDays(event.target.value)}
               />
               <span className="text-[13px] text-text-subtle whitespace-nowrap">일 휴무</span>
-              <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
+              <Button variant="ghost" onClick={handleGeneratePatternButtonClick}>
                 자동 생성
-              </button>
+              </Button>
             </div>
           </FormField>
           <FormField label="근무일 (클릭해서 선택/해제)">
@@ -280,9 +279,9 @@ const ParticipantMonthlyScheduleModal = ({
               onToggleDate={() => {}}
             />
           </FormField>
-          <button className={btnGhostClass} onClick={handleStartOverrideButtonClick}>
+          <Button variant="ghost" onClick={handleStartOverrideButtonClick}>
             이 참여자만 다른 스케줄 설정하기
-          </button>
+          </Button>
         </>
       )}
     </SlideModal>

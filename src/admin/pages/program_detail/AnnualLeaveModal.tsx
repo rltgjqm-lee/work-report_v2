@@ -8,7 +8,8 @@ import {
 import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 
 const currentYear = new Date().getFullYear().toString();
 
@@ -60,12 +61,12 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             닫기
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
@@ -76,16 +77,14 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
         </div>
       )}
       <FormField label="연도">
-        <input
-          className={inputClass}
+        <Input
           value={form.year}
           onChange={(event) => setForm((f) => ({ ...f, year: event.target.value }))}
         />
       </FormField>
       <FormField label="총 연차 일수">
-        <input
+        <Input
           type="number"
-          className={inputClass}
           value={form.totalDays}
           onChange={(event) => setForm((f) => ({ ...f, totalDays: event.target.value }))}
         />

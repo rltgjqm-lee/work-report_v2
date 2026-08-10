@@ -11,7 +11,9 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass, rowActionBtnClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
+import { rowActionBtnClass } from "../../uiClasses";
 import { getLocalToday } from "../../../utils/timeFormat";
 import type { Group, Participant } from "../../types";
 
@@ -117,9 +119,9 @@ const ParticipantGroupAssignModal = ({
       title={`${participant.name} — 조 배정`}
       onClose={onClose}
       footer={
-        <button className={btnGhostClass} onClick={onClose}>
+        <Button variant="ghost" onClick={onClose}>
           닫기
-        </button>
+        </Button>
       }
     >
       <FormField label="변경 방식">
@@ -146,9 +148,8 @@ const ParticipantGroupAssignModal = ({
           </div>
 
           <FormField label="날짜">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={date}
               onChange={(event) => setDate(event.target.value)}
             />
@@ -169,9 +170,7 @@ const ParticipantGroupAssignModal = ({
             />
           </FormField>
 
-          <button className={btnPrimaryClass} onClick={handleAddOverrideButtonClick}>
-            등록
-          </button>
+          <Button onClick={handleAddOverrideButtonClick}>등록</Button>
 
           <FormField label="등록된 임시 배정">
             {isOverridesFetching ? (
@@ -221,9 +220,7 @@ const ParticipantGroupAssignModal = ({
             />
           </FormField>
 
-          <button className={btnPrimaryClass} onClick={handlePermanentChangeButtonClick}>
-            변경
-          </button>
+          <Button onClick={handlePermanentChangeButtonClick}>변경</Button>
         </>
       )}
     </SlideModal>

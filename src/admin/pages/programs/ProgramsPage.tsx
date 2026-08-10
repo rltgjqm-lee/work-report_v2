@@ -17,7 +17,8 @@ import FilterSelect from "../../components/FilterSelect";
 import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
-import { btnPrimaryClass, rowActionBtnClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import { rowActionBtnClass } from "../../uiClasses";
 import { ROLES, type Program } from "../../types";
 
 /**
@@ -166,9 +167,7 @@ const ProgramsPage = () => {
             기관별 사업단 목록을 조회하고 등록합니다.
           </p>
         </div>
-        <button className={btnPrimaryClass} onClick={handleAddButtonClick}>
-          + 사업단 추가
-        </button>
+        <Button onClick={handleAddButtonClick}>+ 사업단 추가</Button>
       </div>
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px]">

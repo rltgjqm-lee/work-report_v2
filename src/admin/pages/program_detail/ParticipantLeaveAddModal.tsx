@@ -6,7 +6,8 @@ import SlideModal from "../../components/modal/SlideModal";
 import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import { btnGhostClass, btnPrimaryClass, inputClass } from "../../uiClasses";
+import Button from "../../components/Button";
+import Input from "../../components/Input";
 import type { LeaveType } from "../../types";
 
 const emptyForm = {
@@ -71,21 +72,20 @@ const ParticipantLeaveAddModal = ({
       onClose={onClose}
       footer={
         <>
-          <button className={btnGhostClass} onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             취소
-          </button>
-          <button className={btnPrimaryClass} onClick={handleSaveButtonClick}>
+          </Button>
+          <Button onClick={handleSaveButtonClick}>
             저장
-          </button>
+          </Button>
         </>
       }
     >
       <div className="flex gap-3">
         <div className="flex-1">
           <FormField label="시작일">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={form.leaveStart}
               onChange={(event) => setForm((f) => ({ ...f, leaveStart: event.target.value }))}
             />
@@ -93,9 +93,8 @@ const ParticipantLeaveAddModal = ({
         </div>
         <div className="flex-1">
           <FormField label="종료일">
-            <input
+            <Input
               type="date"
-              className={inputClass}
               value={form.leaveEnd}
               onChange={(event) => setForm((f) => ({ ...f, leaveEnd: event.target.value }))}
             />
@@ -114,8 +113,7 @@ const ParticipantLeaveAddModal = ({
         />
       </FormField>
       <FormField label="사유">
-        <input
-          className={inputClass}
+        <Input
           value={form.reason}
           onChange={(event) => setForm((f) => ({ ...f, reason: event.target.value }))}
         />

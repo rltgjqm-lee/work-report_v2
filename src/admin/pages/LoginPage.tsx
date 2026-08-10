@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { login } from "../api/auth";
 import { useAuth } from "../context/useAuth";
-import { btnPrimaryClass, inputClass } from "../uiClasses";
+import Button from "../components/Button";
+import Input from "../components/Input";
 
 /**
  * 관리자 페이지 > 로그인 페이지입니다.
@@ -43,8 +44,8 @@ const LoginPage = () => {
         <p className="text-[13px] text-text-subtle mb-6">관리자 계정으로 로그인해주세요.</p>
 
         <label className="block text-[12.5px] font-semibold text-admin-text-secondary mb-1.5">이메일</label>
-        <input
-          className={`${inputClass} mb-4`}
+        <Input
+          className="mb-4"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           onKeyDown={(event) => {
@@ -53,9 +54,9 @@ const LoginPage = () => {
         />
 
         <label className="block text-[12.5px] font-semibold text-admin-text-secondary mb-1.5">비밀번호</label>
-        <input
+        <Input
           type="password"
-          className={`${inputClass} mb-5`}
+          className="mb-5"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           onKeyDown={(event) => {
@@ -65,13 +66,13 @@ const LoginPage = () => {
 
         {error && <p className="text-[12.5px] text-admin-error-text mb-4">{error}</p>}
 
-        <button
-          className={`${btnPrimaryClass} w-full py-3`}
+        <Button
+          className="w-full py-3"
           disabled={submitting}
           onClick={handleLoginButtonClick}
         >
           {submitting ? "로그인 중..." : "로그인"}
-        </button>
+        </Button>
       </div>
     </div>
   );
