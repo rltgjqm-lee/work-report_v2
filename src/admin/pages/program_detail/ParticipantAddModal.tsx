@@ -151,10 +151,10 @@ const ParticipantAddModal = ({
         </>
       }
     >
-      <div className="flex items-center justify-between gap-3 bg-[#f0f6ee] border border-[#d3e6cc] rounded-[2px] px-4 py-3.5">
+      <div className="flex items-center justify-between gap-3 bg-admin-upload-success-bg border border-admin-upload-success-border rounded-[2px] px-4 py-3.5">
         <div>
-          <div className="text-[13px] font-bold text-[#2f5c25]">엑셀로 일괄 등록</div>
-          <div className="text-xs text-[#5c7a53] mt-0.5">
+          <div className="text-[13px] font-bold text-admin-upload-success-text">엑셀로 일괄 등록</div>
+          <div className="text-xs text-admin-upload-success-text-muted mt-0.5">
             양식을 내려받아 작성한 뒤 업로드하세요
           </div>
         </div>
@@ -168,8 +168,8 @@ const ParticipantAddModal = ({
 
       <label
         htmlFor="part-file-input"
-        className={`flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-[2px] py-6 px-4 cursor-pointer text-center hover:bg-[#f7f8fa] ${
-          selectedFile ? "border-[#1e3a5f] bg-[#f5f8fb]" : "border-[#c7cdd6] hover:border-[#9aa5b3]"
+        className={`flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-[2px] py-6 px-4 cursor-pointer text-center hover:bg-admin-surface-header ${
+          selectedFile ? "border-admin-brand bg-admin-selected-tint" : "border-admin-border-hover hover:border-admin-border-hover-strong"
         }`}
       >
         <input
@@ -179,19 +179,19 @@ const ParticipantAddModal = ({
           className="hidden"
           onChange={handleFileChange}
         />
-        <span className="text-lg text-[#6b7280]">⬆</span>
-        <span className="text-[13px] font-semibold text-[#374151]">
+        <span className="text-lg text-text-subtle">⬆</span>
+        <span className="text-[13px] font-semibold text-admin-text-secondary">
           {selectedFile ? selectedFile.name : "파일이 선택되지 않았습니다"}
         </span>
-        <span className="text-[11.5px] text-[#9aa1ab]">
+        <span className="text-[11.5px] text-admin-text-placeholder">
           {selectedFile ? "다른 파일을 선택하려면 다시 클릭하세요" : "클릭하여 파일 선택 (xlsx)"}
         </span>
       </label>
 
-      <div className="flex items-center gap-2.5 text-[#9aa1ab] text-[11.5px]">
-        <div className="flex-1 h-px bg-[#e2e5eb]" />
+      <div className="flex items-center gap-2.5 text-admin-text-placeholder text-[11.5px]">
+        <div className="flex-1 h-px bg-admin-border-subtle" />
         <span>또는 직접 입력</span>
-        <div className="flex-1 h-px bg-[#e2e5eb]" />
+        <div className="flex-1 h-px bg-admin-border-subtle" />
       </div>
 
       <FormField label="이름">
@@ -200,7 +200,7 @@ const ParticipantAddModal = ({
           value={form.name}
           onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
-        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+        <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요
           <br />
           (예: 홍길동1, 홍길동2).
@@ -241,7 +241,7 @@ const ParticipantAddModal = ({
             })),
           ]}
         />
-        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+        <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           선택한 수요처에 배정된 조여야 저장됩니다. 조는 나중에 다시 수정할 수 있어요.
         </p>
       </FormField>

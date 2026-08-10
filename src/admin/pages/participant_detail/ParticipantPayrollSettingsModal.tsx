@@ -98,7 +98,7 @@ const ParticipantPayrollSettingsModal = ({
         </>
       }
     >
-      <p className="text-xs text-[#9aa1ab] m-0">
+      <p className="text-xs text-admin-text-placeholder m-0">
         시급·교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
       </p>
 
@@ -109,7 +109,7 @@ const ParticipantPayrollSettingsModal = ({
           value={form.hourlyWage}
           onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
         />
-        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+        <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           기본값은 사업단 등록 시 설정한 시급({participant.programHourlyWage.toLocaleString()}원)
           입니다.
         </p>

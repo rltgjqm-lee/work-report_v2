@@ -61,8 +61,8 @@ const ProgramDemandSitesSection = ({
   };
 
   return (
-    <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
-      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
+    <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint">
         <span className="text-sm font-bold">수요처 관리</span>
         <button className={btnGhostClass} onClick={handleAddButtonClick}>
           + 수요처 추가
@@ -73,32 +73,32 @@ const ProgramDemandSitesSection = ({
         <table className="w-full min-w-[1230px] table-fixed border-collapse">
           <thead>
             <tr>
-              <th className="w-[32px] bg-[#f7f8fa] px-2 py-[11px] border-b border-[#e2e5eb]" />
-              <th className="w-[160px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[32px] bg-admin-surface-header px-2 py-[11px] border-b border-admin-border-subtle" />
+              <th className="w-[160px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 수요처명
               </th>
-              <th className="w-[250px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[250px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 주소
               </th>
-              <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 담당자
               </th>
-              <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 조
               </th>
-              <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 근무시간
               </th>
-              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 상태
               </th>
-              <th className="w-[220px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+              <th className="w-[220px] bg-admin-surface-header border-b border-admin-border-subtle" />
             </tr>
           </thead>
           <tbody>
             {demandSites.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-4 text-[13px] text-[#9aa1ab]">
+                <td colSpan={8} className="px-5 py-4 text-[13px] text-admin-text-placeholder">
                   등록된 수요처가 없습니다.
                 </td>
               </tr>
@@ -106,10 +106,10 @@ const ProgramDemandSitesSection = ({
 
             {demandSites.map((demandSite) => (
               <Fragment key={demandSite.id}>
-                <tr className="hover:bg-[#f8fafc]">
-                  <td className="px-2 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <tr className="hover:bg-admin-row-hover">
+                  <td className="px-2 py-[13px] text-[13px] border-b border-border-faint">
                     <button
-                      className="w-7 h-7 border-none bg-transparent text-[#374151] text-lg font-bold cursor-pointer p-0"
+                      className="w-7 h-7 border-none bg-transparent text-admin-text-secondary text-lg font-bold cursor-pointer p-0"
                       onClick={() =>
                         setExpandedSiteId((current) =>
                           current === demandSite.id ? null : demandSite.id,
@@ -119,19 +119,19 @@ const ProgramDemandSitesSection = ({
                       {expandedSiteId === demandSite.id ? "▾" : "▸"}
                     </button>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {demandSite.name}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {demandSite.address}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {/* 계정 연결 이전에 자유 입력으로 쌓인 값(contactPerson)은 대체로 보여준다 */}
                     {demandSite.contactAdminName ?? demandSite.contactPerson}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <button
-                      className="text-left text-[#1e3a5f] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                      className="text-left text-admin-brand underline decoration-dotted underline-offset-2 hover:decoration-solid"
                       onClick={() => setGroupAssignTarget(demandSite)}
                     >
                       {(demandSiteSchedules[demandSite.id] ?? []).length > 0
@@ -141,13 +141,13 @@ const ProgramDemandSitesSection = ({
                         : "조 배정"}
                     </button>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <div className="flex flex-col">
                       {(demandSiteSchedules[demandSite.id] ?? []).map((schedule, index) => (
                         <span
                           key={schedule.id}
                           className={`py-1 whitespace-nowrap ${
-                            index === 0 ? "" : "border-t border-[#eef0f3]"
+                            index === 0 ? "" : "border-t border-border-faint"
                           }`}
                         >
                           {schedule.shiftStart} ~ {schedule.shiftEnd} ({schedule.groupName})
@@ -155,12 +155,12 @@ const ProgramDemandSitesSection = ({
                       ))}
                     </div>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     <StatusChip variant={demandSite.isActive ? "ok" : "pending"}>
                       {demandSite.isActive ? "활성" : "비활성"}
                     </StatusChip>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
                       onClick={() => handleEditButtonClick(demandSite)}
@@ -177,7 +177,7 @@ const ProgramDemandSitesSection = ({
                 </tr>
                 {expandedSiteId === demandSite.id && (
                   <tr>
-                    <td colSpan={8} className="p-3 bg-white border-b border-[#e2e5eb]">
+                    <td colSpan={8} className="p-3 bg-white border-b border-admin-border-subtle">
                       <DemandSiteLocationsPanel
                         demandSite={demandSite}
                         programId={programId}

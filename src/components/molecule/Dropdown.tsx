@@ -40,7 +40,7 @@ const Dropdown = ({ value, onChange, options, label, disabled, className }: Drop
       </select>
       <ChevronDown
         size={18}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af]"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
       />
     </div>
   </div>

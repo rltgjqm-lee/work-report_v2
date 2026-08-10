@@ -136,7 +136,7 @@ const DemandSiteGroupAssignModal = ({
 
       <FormField label="배치된 조">
         {stagedGroupIds.length === 0 ? (
-          <p className="text-[12.5px] text-[#9aa1ab]">아직 배치된 조가 없습니다.</p>
+          <p className="text-[12.5px] text-admin-text-placeholder">아직 배치된 조가 없습니다.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {stagedGroupIds.map((groupId) => {
@@ -146,16 +146,16 @@ const DemandSiteGroupAssignModal = ({
               return (
                 <li
                   key={groupId}
-                  className="flex items-center justify-between gap-2 text-[13px] px-3 py-2 border border-[#e2e5eb] rounded-[2px]"
+                  className="flex items-center justify-between gap-2 text-[13px] px-3 py-2 border border-admin-border-subtle rounded-[2px]"
                 >
                   <span>
                     {display.name}{" "}
-                    <span className="text-[#8b94a3]">
+                    <span className="text-admin-text-faint">
                       ({display.shiftStart}~{display.shiftEnd})
                     </span>
                   </span>
                   <button
-                    className="bg-transparent border-none text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:underline"
+                    className="bg-transparent border-none text-[12px] font-semibold text-admin-danger cursor-pointer hover:underline"
                     onClick={() => handleRemoveButtonClick(groupId)}
                   >
                     삭제

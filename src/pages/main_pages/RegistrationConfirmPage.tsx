@@ -23,9 +23,9 @@ type ExceptionInfo = {
 };
 
 const ConfirmRow = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div className="flex items-center justify-between gap-3.5 py-4 border-b border-[#f2f4f6] last:border-b-0">
-    <span className="text-[13.5px] text-[#9ca3af] font-semibold flex-none">{label}</span>
-    <span className="text-[15px] font-extrabold text-[#1f2937] text-right">{value}</span>
+  <div className="flex items-center justify-between gap-3.5 py-4 border-b border-surface-page last:border-b-0">
+    <span className="text-[13.5px] text-text-muted font-semibold flex-none">{label}</span>
+    <span className="text-[15px] font-extrabold text-text-strong text-right">{value}</span>
   </div>
 );
 
@@ -79,16 +79,16 @@ const RegistrationConfirmPage = ({
         body: organization ? (
           <>
             {regionLabel}{" "}
-            <strong className="text-[#3182f6] font-extrabold">{organization.name}</strong>
+            <strong className="text-brand font-extrabold">{organization.name}</strong>
             {"의"}
             <br />
-            <strong className="text-[#3182f6] font-extrabold">{programLabel}</strong> 사업에
+            <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에
             <br />
             등록이 안되어 있습니다.
           </>
         ) : (
           <>
-            <strong className="text-[#3182f6] font-extrabold">{programLabel}</strong> 사업에
+            <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에
             <br />
             등록이 안되어 있습니다.
           </>
@@ -161,7 +161,7 @@ const RegistrationConfirmPage = ({
 
         {exception === "loading" && (
           <Card>
-            <p className="text-[15px] text-[#6b7280]">확인하는 중이에요...</p>
+            <p className="text-[15px] text-text-subtle">확인하는 중이에요...</p>
           </Card>
         )}
 
@@ -177,7 +177,7 @@ const RegistrationConfirmPage = ({
                 value={
                   <span className="inline-flex items-center gap-2">
                     <span>{formData.programName}</span>
-                    <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-full bg-[#eef6ff] text-[#3182f6]">
+                    <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-full bg-brand-tint text-brand">
                       {formData.programType}
                     </span>
                   </span>
@@ -186,9 +186,9 @@ const RegistrationConfirmPage = ({
               <ConfirmRow label="참여자" value={`${formData.userName} (${formData.gender})`} />
             </div>
 
-            <p className="text-center text-[13px] text-[#9ca3af] font-semibold">
-              내용이 맞으면 <b className="text-[#1f2937] font-extrabold">다음</b>을, 틀리면{" "}
-              <b className="text-[#1f2937] font-extrabold">이전</b>을 눌러주세요.
+            <p className="text-center text-[13px] text-text-muted font-semibold">
+              내용이 맞으면 <b className="text-text-strong font-extrabold">다음</b>을, 틀리면{" "}
+              <b className="text-text-strong font-extrabold">이전</b>을 눌러주세요.
             </p>
           </>
         )}

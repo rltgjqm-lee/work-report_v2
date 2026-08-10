@@ -147,14 +147,14 @@ const ParticipantsPage = () => {
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
           <h1 className="text-[21px] font-bold m-0">참여자 관리</h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">
+          <p className="text-[13px] text-text-subtle mt-1.5">
             전체 사업단의 참여자를 통합 조회합니다.
           </p>
         </div>
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
           <div className="flex items-center gap-2.5">
             <FilterSelect
               value={programTypeFilter}
@@ -212,7 +212,7 @@ const ParticipantsPage = () => {
               placeholder="이름 또는 수요처명 검색"
             />
           </div>
-          <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
+          <span className="text-xs text-text-subtle font-medium whitespace-nowrap">
             총 {filtered.length}명
           </span>
         </div>
@@ -221,47 +221,47 @@ const ParticipantsPage = () => {
           <table className="w-full min-w-[880px] table-fixed border-collapse">
             <thead>
               <tr>
-                <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   이름
                 </th>
-                <th className="w-[60px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[60px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   성별
                 </th>
-                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   소속기관
                 </th>
-                <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   소속 사업단
                 </th>
-                <th className="w-[220px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[220px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   수요처명
                 </th>
-                <th className="w-[70px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[70px] bg-admin-surface-header border-b border-admin-border-subtle" />
               </tr>
             </thead>
             <tbody>
               {pageItems.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-[#f8fafc] cursor-pointer"
+                  className="hover:bg-admin-row-hover cursor-pointer"
                   onClick={() => navigate(`/admin/participants/${row.id}`)}
                 >
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.name}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.gender ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {row.organizationName}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {row.programName}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {row.demandName}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <button
                       className={rowActionBtnClass}
                       onClick={(event) => {

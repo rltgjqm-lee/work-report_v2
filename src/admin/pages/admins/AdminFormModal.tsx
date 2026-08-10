@@ -196,7 +196,7 @@ const AdminFormModal = ({
           onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
         />
       </FormField>
-      {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
+      {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}
     </SlideModal>
   );
 };

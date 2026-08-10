@@ -347,7 +347,7 @@ const AffiliationInputPage = ({
             label={
               <>
                 수요처명
-                <small className="ml-1.5 text-[13px] font-semibold text-[#9ca3af]">
+                <small className="ml-1.5 text-[13px] font-semibold text-text-muted">
                   서비스 대상자 명
                 </small>
               </>

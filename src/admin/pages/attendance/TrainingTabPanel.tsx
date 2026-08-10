@@ -260,7 +260,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             </button>
           </div>
           {trainings.length === 0 ? (
-            <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+            <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center text-[13px] text-admin-text-placeholder">
               등록된 교육이 없습니다.
             </div>
           ) : (
@@ -275,11 +275,11 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                   }}
                   infoLine={
                     <>
-                      <div className="text-[13px] text-[#6b7280] leading-[1.6]">
+                      <div className="text-[13px] text-text-subtle leading-[1.6]">
                         {CATEGORY_LABEL[training.category]} · {PAY_MODE_LABEL[training.payMode]}
                       </div>
                       {(training.trainingDate || (training.startTime && training.endTime)) && (
-                        <div className="text-[13.5px] font-bold text-[#1f2937] mt-1.5 mb-3">
+                        <div className="text-[13.5px] font-bold text-text-strong mt-1.5 mb-3">
                           {training.trainingDate}
                           {training.trainingDate && training.startTime && training.endTime && " "}
                           {training.startTime && training.endTime
@@ -306,8 +306,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
       )}
 
       {subTab === "logs" && (
-        <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+        <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
             <div className="flex items-center gap-2.5 flex-wrap">
               <FilterSelect
                 value={logTrainingFilter}
@@ -330,25 +330,25 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             <table className="w-full min-w-[820px] table-fixed border-collapse">
               <thead>
                 <tr>
-                  <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     참여자명
                   </th>
-                  <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     교육명
                   </th>
-                  <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     이수일자
                   </th>
-                  <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     이수시간
                   </th>
-                  <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     지급액
                   </th>
-                  <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     상태
                   </th>
-                  <th className="w-[90px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                  <th className="w-[90px] bg-admin-surface-header border-b border-admin-border-subtle" />
                 </tr>
               </thead>
               <tbody>
@@ -357,31 +357,31 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                     key={row.log.id}
                     className={
                       row.log.status === "CANCELLED"
-                        ? "opacity-50 hover:bg-[#f8fafc]"
-                        : "hover:bg-[#f8fafc]"
+                        ? "opacity-50 hover:bg-admin-row-hover"
+                        : "hover:bg-admin-row-hover"
                     }
                   >
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.participantName}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.trainingName}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {row.log.attendDate}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.log.attendHours}시간
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.log.payAmount.toLocaleString()}원
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       <StatusChip variant={row.log.status === "COMPLETED" ? "ok" : "bad"}>
                         {row.log.status === "COMPLETED" ? "완료" : "취소됨"}
                       </StatusChip>
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.log.status === "COMPLETED" && (
                         <button
                           className={rowActionBtnClass}
@@ -395,7 +395,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                 ))}
                 {filteredLogs.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                    <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                       이수 기록이 없습니다.
                     </td>
                   </tr>
@@ -407,36 +407,36 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
       )}
 
       {subTab === "summary" && (
-        <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-          <div className="px-5 py-4 border-b border-[#eceef1]">
+        <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+          <div className="px-5 py-4 border-b border-border-faint">
             <span className="text-sm font-bold">필수교육 미이수자</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] table-fixed border-collapse">
               <thead>
                 <tr>
-                  <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     참여자명
                   </th>
-                  <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     미이수 필수교육
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSummary.map((row) => (
-                  <tr key={row.participantId} className="hover:bg-[#f8fafc]">
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <tr key={row.participantId} className="hover:bg-admin-row-hover">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.participantName}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.missingTrainings.map((training) => training.name).join(", ")}
                     </td>
                   </tr>
                 ))}
                 {filteredSummary.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                    <td colSpan={2} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                       미이수자가 없습니다.
                     </td>
                   </tr>

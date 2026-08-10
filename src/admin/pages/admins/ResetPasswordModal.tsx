@@ -76,7 +76,7 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
         </>
       }
     >
-      <p className="text-xs text-[#6b7280]">
+      <p className="text-xs text-text-subtle">
         재설정하면 이 계정의 기존 로그인 세션이 모두 종료됩니다.
       </p>
       <FormField label="새 비밀번호 (8자 이상)">
@@ -95,7 +95,7 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
           onChange={(event) => setNewPasswordConfirm(event.target.value)}
         />
       </FormField>
-      {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
+      {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}
     </SlideModal>
   );
 };

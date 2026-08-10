@@ -82,11 +82,11 @@ const AttendancePage = () => {
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
           {preselectedProgramId ? (
-            <div className="text-xs text-[#6b7280] mb-1.5">
+            <div className="text-xs text-text-subtle mb-1.5">
               사업단 관리 /{" "}
               <a
                 onClick={() => navigate(`/admin/programs/${preselectedProgramId}`)}
-                className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+                className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
               >
                 {programName || "사업단 상세"}
               </a>{" "}
@@ -94,7 +94,7 @@ const AttendancePage = () => {
             </div>
           ) : null}
           <h1 className="text-[21px] font-bold m-0">근무 관리</h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">
+          <p className="text-[13px] text-text-subtle mt-1.5">
             참여자의 근무, 교육, 휴가 현황을 확인합니다.
           </p>
         </div>
@@ -159,7 +159,7 @@ const AttendancePage = () => {
       />
 
       {!programId ? (
-        <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+        <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center text-[13px] text-admin-text-placeholder">
           조회할 사업단을 선택해주세요.
         </div>
       ) : (

@@ -69,7 +69,7 @@ const ParticipantDetailPage = () => {
 
   if (!participant) {
     return (
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center text-[13px] text-admin-text-placeholder">
         불러오는 중...
       </div>
     );
@@ -82,29 +82,29 @@ const ParticipantDetailPage = () => {
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
-          <div className="text-xs text-[#6b7280] mb-1.5">
+          <div className="text-xs text-text-subtle mb-1.5">
             <a
               onClick={() => navigate("/admin/participants")}
-              className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+              className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
             >
               참여자 관리
             </a>{" "}
             / 참여자 상세
           </div>
           <h1 className="text-[21px] font-bold m-0">{participant.name}</h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">{participantSummary}</p>
+          <p className="text-[13px] text-text-subtle mt-1.5">{participantSummary}</p>
         </div>
       </div>
 
       {/* 급여 관련 설정 — 교육비/치매검진비는 항상, 4대보험/주휴수당은 역량활동만 모달에서 노출 */}
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-4 mb-5">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-4 mb-5">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-sm font-bold">급여 관련 설정</span>
           <button className={btnPrimaryClass} onClick={() => setPayrollModalOpen(true)}>
             설정 변경
           </button>
         </div>
-        <p className="text-xs text-[#9aa1ab] m-0">
+        <p className="text-xs text-admin-text-placeholder m-0">
           교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
         </p>
       </div>
@@ -151,84 +151,84 @@ const AttendanceHistorySection = ({
     </div>
 
     <div className="grid grid-cols-4 mb-5">
-      <div className="px-5 py-4 border border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">정상</div>
+      <div className="px-5 py-4 border border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">정상</div>
         <div className="text-sm font-bold">{stats.normal}건</div>
       </div>
-      <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">지각</div>
+      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">지각</div>
         <div className="text-sm font-bold">{stats.late}건</div>
       </div>
-      <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">조퇴</div>
+      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">조퇴</div>
         <div className="text-sm font-bold">{stats.earlyLeave}건</div>
       </div>
-      <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">총 근무시간</div>
+      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">총 근무시간</div>
         <div className="text-sm font-bold">{stats.totalHours}시간</div>
       </div>
     </div>
 
-    <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
+    <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1190px] table-fixed border-collapse">
           <thead>
             <tr>
-              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 근무일
               </th>
-              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 출근
               </th>
-              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 퇴근
               </th>
-              <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 위치
               </th>
-              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 근무시간(분)
               </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 상태
               </th>
-              <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 사고유무
               </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 서명
               </th>
-              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 비고
               </th>
             </tr>
           </thead>
           <tbody>
             {logs.map((row) => (
-              <tr key={row.log.id} className="hover:bg-[#f8fafc]">
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+              <tr key={row.log.id} className="hover:bg-admin-row-hover">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                   {row.log.workDate}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {row.log.clockIn?.slice(11, 16) ?? "-"}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {row.log.clockOut?.slice(11, 16) ?? "-"}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   <AttendanceLocationCell log={row.log} />
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {row.log.totalMinutes ?? "-"}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {STATUS_LABEL[row.log.status]}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {row.activity.hasAccident ? (
                     <div className="flex flex-col gap-0.5">
                       <span>사고</span>
-                      <span className="text-[12px] text-[#9aa1ab] whitespace-pre-wrap break-words">
+                      <span className="text-[12px] text-admin-text-placeholder whitespace-pre-wrap break-words">
                         {[row.activity.accidentDetail, row.activity.accidentAction]
                           .filter(Boolean)
                           .join(" · ")}
@@ -240,10 +240,10 @@ const AttendanceHistorySection = ({
                     "-"
                   )}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {row.activity.signed ? "✓" : "-"}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-pre-wrap break-words">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
                   {row.log.note ?? "-"}
                 </td>
               </tr>
@@ -251,7 +251,7 @@ const AttendanceHistorySection = ({
 
             {logs.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                <td colSpan={9} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                   해당 월에 근무 기록이 없습니다.
                 </td>
               </tr>
@@ -275,60 +275,60 @@ const LeaveHistorySection = ({ annualLeave, leaves }: LeaveHistorySectionProps) 
     </div>
 
     <div className="grid grid-cols-3 mb-5">
-      <div className="px-5 py-4 border border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+      <div className="px-5 py-4 border border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
           연차 총 부여일
         </div>
         <div className="text-sm font-bold">{annualLeave?.totalDays ?? 0}일</div>
       </div>
-      <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">사용</div>
+      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">사용</div>
         <div className="text-sm font-bold">{annualLeave?.usedDays ?? 0}일</div>
       </div>
-      <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-        <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">잔여</div>
+      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">잔여</div>
         <div className="text-sm font-bold">{annualLeave?.remainingDays ?? 0}일</div>
       </div>
     </div>
 
-    <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+    <div className="bg-white border border-admin-border-subtle rounded-[2px]">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[600px] table-fixed border-collapse">
           <thead>
             <tr>
-              <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 시작일
               </th>
-              <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 종료일
               </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 구분
               </th>
-              <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 일수
               </th>
-              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 사유
               </th>
             </tr>
           </thead>
           <tbody>
             {leaves.map((leave) => (
-              <tr key={leave.id} className="hover:bg-[#f8fafc]">
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+              <tr key={leave.id} className="hover:bg-admin-row-hover">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                   {leave.leaveStart}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                   {leave.leaveEnd}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {LEAVE_TYPE_LABEL[leave.leaveType]}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {leave.leaveDays}일
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                   {leave.reason ?? "-"}
                 </td>
               </tr>
@@ -336,7 +336,7 @@ const LeaveHistorySection = ({ annualLeave, leaves }: LeaveHistorySectionProps) 
 
             {leaves.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                   휴가 이력이 없습니다.
                 </td>
               </tr>

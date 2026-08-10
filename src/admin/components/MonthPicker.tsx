@@ -10,7 +10,7 @@ interface MonthPickerProps {
 const MonthPicker = ({ value, onChange }: MonthPickerProps) => (
   <input
     type="month"
-    className="flex-none border border-[#d7dbe1] px-3 py-2.5 text-[13px] rounded-[2px] font-sans box-border"
+    className="flex-none border border-admin-border px-3 py-2.5 text-[13px] rounded-[2px] font-sans box-border"
     value={value}
     onChange={(event) => onChange(event.target.value)}
   />

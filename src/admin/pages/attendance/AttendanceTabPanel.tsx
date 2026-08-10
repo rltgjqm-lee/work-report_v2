@@ -182,69 +182,69 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
       </div>
 
       <div className="grid grid-cols-5 mb-5">
-        <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">총 건수</div>
+        <div className="px-5 py-4 border border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">총 건수</div>
           <div className="text-sm font-bold">{displayStats.total}건</div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">정상</div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">정상</div>
           <div className="text-sm font-bold">{displayStats.normal}건</div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">지각</div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">지각</div>
           <div className="text-sm font-bold">{displayStats.late}건</div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">조퇴</div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">조퇴</div>
           <div className="text-sm font-bold">{displayStats.earlyLeave}건</div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
             총 근무시간
           </div>
           <div className="text-sm font-bold">{displayStats.totalHours}시간</div>
         </div>
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1550px] table-fixed border-collapse">
             <thead>
               <tr>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   근무일
                 </th>
-                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   참여자명
                 </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   조
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   출근
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   퇴근
                 </th>
-                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   위치
                 </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   근무시간(분)
                 </th>
-                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   상태
                 </th>
-                <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   사고유무
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   서명
                 </th>
-                <th className="w-[260px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[260px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   비고
                 </th>
-                <th className="w-[150px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[150px] bg-admin-surface-header border-b border-admin-border-subtle" />
               </tr>
             </thead>
             <tbody>
@@ -253,41 +253,41 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                   key={row.log.id}
                   className={
                     row.log.status === "INVALID"
-                      ? "opacity-50 hover:bg-[#f8fafc]"
-                      : "hover:bg-[#f8fafc]"
+                      ? "opacity-50 hover:bg-admin-row-hover"
+                      : "hover:bg-admin-row-hover"
                   }
                 >
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {row.log.workDate}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.participantName}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.groupName ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.clockIn?.slice(11, 16) ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.clockOut?.slice(11, 16) ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <AttendanceLocationCell log={row.log} />
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.totalMinutes ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <StatusChip variant={STATUS_VARIANT[row.log.status]}>
                       {STATUS_LABEL[row.log.status]}
                     </StatusChip>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.activity.hasAccident ? (
                       <div className="flex flex-col gap-1 items-start">
                         <StatusChip variant="bad">사고</StatusChip>
-                        <span className="text-[12px] text-[#6b7280] whitespace-pre-wrap break-words">
+                        <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
                           {[row.activity.accidentDetail, row.activity.accidentAction]
                             .filter(Boolean)
                             .join(" · ")}
@@ -299,17 +299,17 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                       "-"
                     )}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.activity.signed ? (
                       <StatusChip variant="ok">완료</StatusChip>
                     ) : (
                       <StatusChip variant="warn">미완료</StatusChip>
                     )}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-pre-wrap break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
                     {row.log.note ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {row.log.status !== "INVALID" && (
                       <>
                         <button
@@ -331,7 +331,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
               ))}
               {filteredLogs.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                  <td colSpan={12} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                     {dayFilter === "all"
                       ? "해당 월에 근무 기록이 없습니다."
                       : "해당 일자에 근무 기록이 없습니다."}
@@ -352,7 +352,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
                   출근시간
                 </label>
                 <input
@@ -368,7 +368,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
                   퇴근시간
                 </label>
                 <input
@@ -384,7 +384,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">상태</label>
+                <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">상태</label>
                 <select
                   className={selectClass}
                   value={correctionForm.status}
@@ -401,7 +401,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 </select>
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
                   수정 사유 (필수)
                 </label>
                 <input

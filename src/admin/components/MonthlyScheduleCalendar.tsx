@@ -32,7 +32,7 @@ const MonthlyScheduleCalendar = ({
       {WEEKDAY_LABELS.map((weekdayLabel) => (
         <div
           key={weekdayLabel}
-          className="text-center text-[11px] font-semibold text-[#9aa1ab] py-1"
+          className="text-center text-[11px] font-semibold text-admin-text-placeholder py-1"
         >
           {weekdayLabel}
         </div>
@@ -53,10 +53,10 @@ const MonthlyScheduleCalendar = ({
             onClick={() => onToggleDate(dateString)}
             className={`h-8 rounded-[6px] text-[12px] border transition-colors ${
               isPastProgramEnd
-                ? "bg-[#f2f4f6] text-[#c2c8d1] border-[#eceef1] cursor-not-allowed"
+                ? "bg-surface-page text-admin-text-disabled border-border-faint cursor-not-allowed"
                 : isSelected
-                  ? "bg-[#3182f6] text-white border-[#3182f6] font-semibold"
-                  : "bg-white text-[#374151] border-[#e2e5eb] hover:bg-[#f5f8fb]"
+                  ? "bg-brand text-white border-brand font-semibold"
+                  : "bg-white text-admin-text-secondary border-admin-border-subtle hover:bg-admin-selected-tint"
             }`}
           >
             {day}

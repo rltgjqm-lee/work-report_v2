@@ -25,9 +25,9 @@ export const panelLinkActionClass =
   "bg-transparent border-none text-admin-brand text-[12.5px] font-bold cursor-pointer hover:text-admin-brand-dark";
 // 관리자 페이지.dc.html의 .zone-card-footer/.zone-card-btn — 카드 하단에 구분선을 두고
 // 알약형 버튼을 나열하는 영역(거점 관리 카드의 삭제/상태 전환 등에서 쓴다).
-export const zoneCardFooterClass = "flex items-center gap-2 mt-3.5 pt-3 border-t border-admin-border-faint";
+export const zoneCardFooterClass = "flex items-center gap-2 mt-3.5 pt-3 border-t border-border-faint";
 export const zoneCardBtnClass =
-  "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-surface-page text-admin-text-tertiary cursor-pointer border-none whitespace-nowrap hover:bg-admin-surface-muted-hover";
+  "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-surface-page text-text-tertiary cursor-pointer border-none whitespace-nowrap hover:bg-admin-surface-muted-hover";
 export const zoneCardBtnDangerClass =
   "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-admin-danger-tint text-admin-danger cursor-pointer border-none whitespace-nowrap hover:bg-admin-danger-tint-hover";
 // 밑줄 강조형 탭(관리자 페이지.dc.html 디자인) — pill형 탭이 필요하면 별도로 쓸 것.
@@ -35,14 +35,14 @@ export const zoneCardBtnDangerClass =
 // 좌/우/위만 리셋하고 아래쪽만 border-b-2로 두께를 올려야 밑줄이 실제로 보인다.
 export const tabBarClass = "flex gap-1 mb-4 border-b border-admin-border-subtle";
 export const tabBtnClass =
-  "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-transparent text-admin-text-subtle hover:text-text-strong";
+  "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-transparent text-text-subtle hover:text-text-strong";
 export const tabBtnActiveClass =
   "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-admin-brand text-admin-brand";
 // 탭 안의 서브탭(교육 정의/이수 현황/필수교육 현황)용 알약형 버튼 — 바깥 밑줄 탭과
 // 시각적으로 구분되게 관리자 페이지.dc.html의 .sub-tabs/.sub-tab-btn을 그대로 따름.
 export const subTabBarClass = "flex gap-2 mb-4";
 export const subTabBtnClass =
-  "border border-admin-border-subtle bg-white px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-admin-text-subtle hover:border-admin-border-hover hover:text-text-strong";
+  "border border-admin-border-subtle bg-white px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-text-subtle hover:border-admin-border-hover hover:text-text-strong";
 export const subTabBtnActiveClass =
   "border border-admin-brand bg-admin-brand px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-white";
 // 양식 출력 카드(관리자 페이지.dc.html의 .export-grid/.export-card) — 사업단 상세 >

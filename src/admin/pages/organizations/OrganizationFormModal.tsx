@@ -246,7 +246,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
           </FormField>
         </div>
       </div>
-      {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
+      {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}
     </SlideModal>
   );
 };

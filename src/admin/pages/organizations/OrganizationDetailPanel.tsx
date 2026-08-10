@@ -94,21 +94,21 @@ const OrganizationDetailPanel = ({
   }, [programs, programQueries, demandSiteQueries]);
 
   return (
-    <div className="flex bg-[#f8f9fb] border border-[#e2e5eb] rounded-[2px] px-6 py-6">
-      <div className="flex-1 min-w-0 px-6 border-r border-[#e2e5eb]">
-        <div className="text-xs font-bold text-[#6b7280] mb-4">
+    <div className="flex bg-admin-surface-header border border-admin-border-subtle rounded-[2px] px-6 py-6">
+      <div className="flex-1 min-w-0 px-6 border-r border-admin-border-subtle">
+        <div className="text-xs font-bold text-text-subtle mb-4">
           소속 직원 · {staffItems.length}명
         </div>
         {!canViewStaff ? (
-          <span className="text-[11.5px] text-[#9aa1ab]">권한이 없어 볼 수 없습니다.</span>
+          <span className="text-[11.5px] text-admin-text-placeholder">권한이 없어 볼 수 없습니다.</span>
         ) : staffItems.length === 0 ? (
-          <span className="text-[11.5px] text-[#9aa1ab]">소속 직원이 없습니다.</span>
+          <span className="text-[11.5px] text-admin-text-placeholder">소속 직원이 없습니다.</span>
         ) : (
           <div className="flex flex-col gap-4">
             {staffItems.map((staff) => (
               <div key={staff.id} className="flex flex-col gap-1">
-                <span className="text-[13px] font-semibold text-[#1f2937]">{staff.name}</span>
-                <span className="text-[11.5px] text-[#8b94a3]">
+                <span className="text-[13px] font-semibold text-text-strong">{staff.name}</span>
+                <span className="text-[11.5px] text-admin-text-faint">
                   {ROLE_LABEL[staff.role]} · {staff.email}
                 </span>
               </div>
@@ -117,23 +117,23 @@ const OrganizationDetailPanel = ({
         )}
       </div>
 
-      <div className="flex-1 min-w-0 px-6 border-r border-[#e2e5eb]">
-        <div className="text-xs font-bold text-[#6b7280] mb-4">
+      <div className="flex-1 min-w-0 px-6 border-r border-admin-border-subtle">
+        <div className="text-xs font-bold text-text-subtle mb-4">
           담당 사업단 · {teamItems.length}개
         </div>
         {teamItems.length === 0 ? (
-          <span className="text-[11.5px] text-[#9aa1ab]">담당 사업단이 없습니다.</span>
+          <span className="text-[11.5px] text-admin-text-placeholder">담당 사업단이 없습니다.</span>
         ) : (
           <div className="flex flex-col gap-4">
             {teamItems.map((team) => (
               <div key={team.id} className="flex flex-col gap-1">
                 <a
-                  className="text-[13px] font-semibold text-[#1f2937] cursor-pointer hover:text-[#1e3a5f]"
+                  className="text-[13px] font-semibold text-text-strong cursor-pointer hover:text-admin-brand"
                   onClick={() => navigate(`/admin/programs/${team.id}`)}
                 >
                   {team.name}
                 </a>
-                <span className="text-[11.5px] text-[#8b94a3]">
+                <span className="text-[11.5px] text-admin-text-faint">
                   {team.type} · {team.participantCount}명 · 담당자 {team.managerName}
                 </span>
               </div>
@@ -143,17 +143,17 @@ const OrganizationDetailPanel = ({
       </div>
 
       <div className="flex-1 min-w-0 px-6">
-        <div className="text-xs font-bold text-[#6b7280] mb-4">
+        <div className="text-xs font-bold text-text-subtle mb-4">
           담당 수요처 · {siteItems.length}개
         </div>
         {siteItems.length === 0 ? (
-          <span className="text-[11.5px] text-[#9aa1ab]">담당 수요처가 없습니다.</span>
+          <span className="text-[11.5px] text-admin-text-placeholder">담당 수요처가 없습니다.</span>
         ) : (
           <div className="flex flex-col gap-4">
             {siteItems.map((site) => (
               <div key={site.id} className="flex flex-col gap-1">
-                <span className="text-[13px] font-semibold text-[#1f2937]">{site.site}</span>
-                <span className="text-[11.5px] text-[#8b94a3]">
+                <span className="text-[13px] font-semibold text-text-strong">{site.site}</span>
+                <span className="text-[11.5px] text-admin-text-faint">
                   배치 {site.count}명 · 담당자 {site.manager}
                 </span>
               </div>

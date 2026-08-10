@@ -50,8 +50,8 @@ const ProgramGroupsSection = ({
   };
 
   return (
-    <div className="bg-white border border-[#e2e5eb] rounded-[2px] mb-5">
-      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1]">
+    <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint">
         <span className="text-sm font-bold">조 관리</span>
         <button className={btnGhostClass} onClick={() => setGroupModalOpen(true)}>
           + 조 추가
@@ -59,7 +59,7 @@ const ProgramGroupsSection = ({
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 px-5 py-4">
         {groups.length === 0 && (
-          <span className="text-[13px] text-[#9aa1ab]">등록된 조가 없습니다.</span>
+          <span className="text-[13px] text-admin-text-placeholder">등록된 조가 없습니다.</span>
         )}
         {groups.map((group) => (
           <ItemCard
@@ -72,7 +72,7 @@ const ProgramGroupsSection = ({
             infoLine={
               <>
                 <div>{group.participantCount}명</div>
-                <div className="text-[13.5px] font-bold text-[#1f2937] mt-1.5 mb-1">
+                <div className="text-[13.5px] font-bold text-text-strong mt-1.5 mb-1">
                   {group.shiftStart}~{group.shiftEnd}
                 </div>
               </>

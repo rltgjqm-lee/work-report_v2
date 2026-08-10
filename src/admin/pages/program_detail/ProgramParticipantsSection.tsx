@@ -193,8 +193,8 @@ const ProgramParticipantsSection = ({
   };
 
   return (
-    <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+    <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
         <div className="flex items-center gap-2.5 flex-wrap">
           <SearchInput value={search} onChange={onSearchChange} placeholder="이름 검색" />
           <FilterSelect
@@ -230,14 +230,14 @@ const ProgramParticipantsSection = ({
             ]}
           />
         </div>
-        <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
+        <span className="text-xs text-text-subtle font-medium whitespace-nowrap">
           총 {participants.length}명
         </span>
       </div>
 
       {selectedParticipantIds.length > 0 && (
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-[#eceef1] bg-[#f5f8fb]">
-          <span className="text-xs text-[#1e3a5f] font-semibold">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-border-faint bg-admin-selected-tint">
+          <span className="text-xs text-admin-brand font-semibold">
             {selectedParticipantIds.length}명 선택됨
           </span>
           <button className={rowActionBtnClass} onClick={handleBulkDropButtonClick}>
@@ -253,58 +253,58 @@ const ProgramParticipantsSection = ({
         <table className="w-full min-w-[1000px] table-fixed border-collapse">
           <thead>
             <tr>
-              <th className="w-[40px] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]" />
-              <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[40px] bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle" />
+              <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 번호
               </th>
-              <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 이름
               </th>
-              <th className="w-[60px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[60px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 성별
               </th>
-              <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 수요처명
               </th>
-              <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 조
               </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 상태
               </th>
-              <th className="w-[260px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+              <th className="w-[260px] bg-admin-surface-header border-b border-admin-border-subtle" />
             </tr>
           </thead>
           <tbody>
             {pageItems.map((participant, index) => (
-              <tr key={participant.id} className="hover:bg-[#f8fafc]">
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+              <tr key={participant.id} className="hover:bg-admin-row-hover">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   <input
                     type="checkbox"
                     checked={selectedParticipantIds.includes(participant.id)}
                     onChange={() => handleParticipantSelectionChange(participant.id)}
                   />
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {(page - 1) * 15 + index + 1}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {participant.name}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {participant.gender ?? "-"}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                   <button
-                    className="text-left text-[#1e3a5f] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    className="text-left text-admin-brand underline decoration-dotted underline-offset-2 hover:decoration-solid"
                     onClick={() => setDemandSiteAssignTarget(participant)}
                   >
                     {participant.demandName ?? "미배정"}
                   </button>
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   <button
-                    className="text-left text-[#1e3a5f] underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                    className="text-left text-admin-brand underline decoration-dotted underline-offset-2 hover:decoration-solid"
                     onClick={() => setGroupAssignTarget(participant)}
                   >
                     {groups.find((group) => group.id === participant.groupId)?.name ?? "미배정"}
@@ -315,10 +315,10 @@ const ProgramParticipantsSection = ({
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {statusLabel[participant.status]}
                 </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                   {participant.status === "ACTIVE" && (
                     <>
                       <button

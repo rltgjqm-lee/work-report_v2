@@ -34,7 +34,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="bg-[#1f2937] text-white text-[13px] font-medium pl-3.5 pr-4 py-3 rounded-[4px] shadow-lg border-l-[3px] border-l-[#2f7d3c]"
+            className="bg-text-strong text-white text-[13px] font-medium pl-3.5 pr-4 py-3 rounded-[4px] shadow-lg border-l-[3px] border-l-admin-status-ok-text"
           >
             {toast.message}
           </div>

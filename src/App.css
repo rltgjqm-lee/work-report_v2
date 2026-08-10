@@ -6,6 +6,16 @@
   /* 참여자용 메인 앱 / 관리자 콘솔에서 공유 */
   --color-text-strong: #1f2937;
   --color-surface-page: #f2f4f6;
+  --color-danger-strong: #dc2626;
+  --color-caution-text: #b45309;
+  --color-danger-text-strong: #b91c1c;
+  --color-caution-border-subtle: #fecaca;
+  /* 원래 관리자 콘솔 전용 토큰이었는데 메인 앱(ExceptionCard, HomePage 등)도 같은 값을
+     그대로 쓰게 되어 공유 토큰으로 옮겼다 — admin- 접두사가 붙은 채로 메인 앱 코드에
+     남으면 헷갈린다. */
+  --color-border-faint: #eef0f3;
+  --color-text-subtle: #6b7280;
+  --color-text-tertiary: #4e5968;
 
   /* 메인 앱 전용 */
   --color-brand: #3182f6;
@@ -18,24 +28,71 @@
   --color-surface-muted: #f9fafb;
   --color-danger: #e94b4b;
   --color-danger-tint: #fef2f2;
+  --color-danger-tint-strong: #fee2e2;
+  --color-warn-text: #d97706;
+  --color-warn-tint: #fef3c7;
+  --color-caution-bg: #fffbeb;
+  --color-caution-border: #fde68a;
+  --color-app-shell-bg: #f0f0f0;
+  --color-badge-bg: #fff7e6;
+  --color-badge-border: #ffe1a8;
 
   /* 관리자 콘솔 전용 */
   --color-admin-brand: #1e3a5f;
   --color-admin-brand-dark: #132a45;
   --color-admin-border: #d7dbe1;
   --color-admin-border-subtle: #e2e5eb;
-  --color-admin-border-faint: #eef0f3;
   --color-admin-border-hover: #c7cdd6;
+  --color-admin-border-hover-strong: #9aa5b3;
   --color-admin-text-secondary: #374151;
-  --color-admin-text-subtle: #6b7280;
-  --color-admin-text-tertiary: #4e5968;
-  --color-admin-text-faint: #8b95a3;
+  /* 8b95a3(uiClasses.ts exportDescClass 1곳)과 8b94a3(카드 보조텍스트 8곳)는
+     1 RGB 단위 차이라 같은 색으로 보고 통합 — 더 많이 쓰이는 값을 canonical로 삼는다. */
+  --color-admin-text-faint: #8b94a3;
+  --color-admin-text-placeholder: #9aa1ab;
+  --color-admin-text-disabled: #c2c8d1;
   --color-admin-action: #8a6d1f;
   --color-admin-surface-hover: #f5f6f8;
   --color-admin-surface-muted-hover: #e7eaee;
+  /* 테이블 <th> 헤더 배경(f7f8fa)과 거의 같은 값인 f8f9fb(2곳)도 여기 합침 — 1.7 RGB 단위 차이. */
+  --color-admin-surface-header: #f7f8fa;
+  --color-admin-row-hover: #f8fafc;
+  --color-admin-selected-tint: #f5f8fb;
+  --color-admin-error-text: #b42318;
   --color-admin-danger: #c0392b;
   --color-admin-danger-tint: #fbe9e9;
   --color-admin-danger-tint-hover: #f7dcdc;
+  --color-admin-navy-strong: #14283d;
+  --color-admin-sidebar-text: #e6ebf2;
+  --color-admin-sidebar-icon-muted: #8fa3bd;
+  --color-admin-sidebar-border: #c3d0e0;
+  --color-admin-map-link: #3a6ea8;
+  --color-admin-success-text: #1a7f37;
+
+  /* StatusChip variant 색 — bad는 기존 admin-danger/admin-danger-tint와 값이 같아 재사용 */
+  --color-admin-status-ok-bg: #e8f3ea;
+  --color-admin-status-ok-text: #2f7d3c;
+  --color-admin-status-warn-bg: #fdf3e0;
+  --color-admin-status-warn-text: #a6690a;
+  --color-admin-status-pending-bg: #eef1f5;
+  --color-admin-status-pending-text: #5b6472;
+  /* info-bg(eaf0f8)와 거의 같은 값인 eaf0f7(DemandSiteLocationsPanel 1곳)도 여기 합침. */
+  --color-admin-status-info-bg: #eaf0f8;
+  --color-admin-status-info-text: #2b5b93;
+
+  /* EscapesPage 지도 마커 범례 */
+  --color-admin-map-safe: #2ecc71;
+  --color-admin-map-caution: #ffd200;
+  --color-admin-map-warning: #ff7800;
+  --color-admin-map-critical: #ff0000;
+  --color-admin-escape-critical-text: #e74c3c;
+  --color-admin-escape-critical-bg: #fbdedb;
+  --color-admin-escape-alert-bg: #fdecea;
+
+  /* ParticipantAddModal 업로드 성공 상태 팔레트 */
+  --color-admin-upload-success-text: #2f5c25;
+  --color-admin-upload-success-text-muted: #5c7a53;
+  --color-admin-upload-success-border: #d3e6cc;
+  --color-admin-upload-success-bg: #f0f6ee;
 }
 
 @layer base {

@@ -113,11 +113,11 @@ const ProgramDetailPage = () => {
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
-          <div className="text-xs text-[#6b7280] mb-1.5">
+          <div className="text-xs text-text-subtle mb-1.5">
             사업단 관리 /{" "}
             <a
               onClick={() => navigate("/admin/programs")}
-              className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+              className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
             >
               목록으로
             </a>
@@ -126,13 +126,13 @@ const ProgramDetailPage = () => {
             {program.name}
             <ProgramTypeChip programType={program.programType} />
           </h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">
+          <p className="text-[13px] text-text-subtle mt-1.5">
             사업단에 참여하는 참여자 명단을 관리합니다.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <select
-            className="border border-[#d7dbe1] px-3 py-2 text-[13px] rounded-[2px] bg-white"
+            className="border border-admin-border px-3 py-2 text-[13px] rounded-[2px] bg-white"
             value={programId}
             onChange={(event) => navigate(`/admin/programs/${event.target.value}`)}
           >
@@ -163,24 +163,24 @@ const ProgramDetailPage = () => {
       </div>
 
       <div className="grid grid-cols-4 mb-5">
-        <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">소속기관</div>
+        <div className="px-5 py-4 border border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">소속기관</div>
           <div className="text-sm font-bold">{organizationName}</div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">사업기간</div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">사업기간</div>
           <div className="text-sm font-bold">
             {program.startDate} ~ {program.endDate}
           </div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">운영시간</div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">운영시간</div>
           <div className="text-sm font-bold">
             {program.startTime} ~ {program.endTime}
           </div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">참여자수</div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">참여자수</div>
           <div className="text-sm font-bold">{filtered.length}명</div>
         </div>
       </div>

@@ -197,7 +197,7 @@ const ParticipantMonthlyScheduleModal = ({
         )
       }
     >
-      <div className="text-[12px] text-[#6b7280] bg-[#f7f8fa] border border-[#e2e5eb] rounded-[2px] px-3 py-2.5">
+      <div className="text-[12px] text-text-subtle bg-admin-surface-header border border-admin-border-subtle rounded-[2px] px-3 py-2.5">
         여기서 바꾸는 건 근무 요일뿐입니다. 근무 시간은 소속 조를 그대로 따릅니다
         {group ? ` (${group.shiftStart}~${group.shiftEnd})` : ""}.
       </div>
@@ -212,7 +212,7 @@ const ParticipantMonthlyScheduleModal = ({
       </FormField>
 
       {loading ? (
-        <div className="text-[13px] text-[#9aa1ab] py-4 text-center">불러오는 중...</div>
+        <div className="text-[13px] text-admin-text-placeholder py-4 text-center">불러오는 중...</div>
       ) : hasOverride ? (
         <>
           <FormField label="월 근무시간 상한(시간, 비우면 조 기본값 따름)">
@@ -233,7 +233,7 @@ const ParticipantMonthlyScheduleModal = ({
                 value={patternWorkDays}
                 onChange={(event) => setPatternWorkDays(event.target.value)}
               />
-              <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 근무 /</span>
+              <span className="text-[13px] text-text-subtle whitespace-nowrap">일 근무 /</span>
               <input
                 type="number"
                 min={0}
@@ -241,7 +241,7 @@ const ParticipantMonthlyScheduleModal = ({
                 value={patternRestDays}
                 onChange={(event) => setPatternRestDays(event.target.value)}
               />
-              <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 휴무</span>
+              <span className="text-[13px] text-text-subtle whitespace-nowrap">일 휴무</span>
               <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
                 자동 생성
               </button>
@@ -255,7 +255,7 @@ const ParticipantMonthlyScheduleModal = ({
             />
           </FormField>
           <div
-            className={`text-[12px] ${isOverCap ? "text-[#e94b4b] font-semibold" : "text-[#9aa1ab]"}`}
+            className={`text-[12px] ${isOverCap ? "text-danger font-semibold" : "text-admin-text-placeholder"}`}
           >
             선택된 근무일: {workDates.length}일
             {shiftMinutesPerDay > 0 && (
@@ -270,7 +270,7 @@ const ParticipantMonthlyScheduleModal = ({
         </>
       ) : (
         <>
-          <div className="text-[13px] text-[#6b7280]">
+          <div className="text-[13px] text-text-subtle">
             개인 예외가 없어 조 기본 스케줄({groupDefaultDates.length}일)을 그대로 따르고 있습니다.
           </div>
           <FormField label="조 기본 근무일 (참고용, 편집 불가)">

@@ -37,12 +37,12 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center w-full min-h-screen bg-[#f3f4f6]">
-      <div className="w-[360px] bg-white border border-[#e2e5eb] rounded-[10px] p-8">
-        <div className="text-[15px] font-bold text-[#14283d] mb-1">기관 통합관리시스템</div>
-        <p className="text-[13px] text-[#6b7280] mb-6">관리자 계정으로 로그인해주세요.</p>
+    <div className="flex items-center justify-center w-full min-h-screen bg-surface-page">
+      <div className="w-[360px] bg-white border border-admin-border-subtle rounded-[10px] p-8">
+        <div className="text-[15px] font-bold text-admin-navy-strong mb-1">기관 통합관리시스템</div>
+        <p className="text-[13px] text-text-subtle mb-6">관리자 계정으로 로그인해주세요.</p>
 
-        <label className="block text-[12.5px] font-semibold text-[#374151] mb-1.5">이메일</label>
+        <label className="block text-[12.5px] font-semibold text-admin-text-secondary mb-1.5">이메일</label>
         <input
           className={`${inputClass} mb-4`}
           value={email}
@@ -52,7 +52,7 @@ const LoginPage = () => {
           }}
         />
 
-        <label className="block text-[12.5px] font-semibold text-[#374151] mb-1.5">비밀번호</label>
+        <label className="block text-[12.5px] font-semibold text-admin-text-secondary mb-1.5">비밀번호</label>
         <input
           type="password"
           className={`${inputClass} mb-5`}
@@ -63,7 +63,7 @@ const LoginPage = () => {
           }}
         />
 
-        {error && <p className="text-[12.5px] text-[#b42318] mb-4">{error}</p>}
+        {error && <p className="text-[12.5px] text-admin-error-text mb-4">{error}</p>}
 
         <button
           className={`${btnPrimaryClass} w-full py-3`}

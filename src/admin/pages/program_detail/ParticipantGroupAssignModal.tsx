@@ -26,8 +26,8 @@ interface ParticipantGroupAssignModalProps {
 
 const modeButtonClass = (isSelected: boolean) =>
   isSelected
-    ? "px-3 py-1.5 rounded-[2px] text-[13px] font-semibold bg-[#1e3a5f] text-white"
-    : "px-3 py-1.5 rounded-[2px] text-[13px] font-semibold bg-[#f3f4f6] text-[#6b7280]";
+    ? "px-3 py-1.5 rounded-[2px] text-[13px] font-semibold bg-admin-brand text-white"
+    : "px-3 py-1.5 rounded-[2px] text-[13px] font-semibold bg-surface-page text-text-subtle";
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 참여자의 조를 배정하는 모달입니다.
@@ -141,7 +141,7 @@ const ParticipantGroupAssignModal = ({
 
       {mode === "TEMPORARY" ? (
         <>
-          <div className="text-[13px] text-[#6b7280]">
+          <div className="text-[13px] text-text-subtle">
             선택한 날짜 하루만 다른 조로 취급합니다. 다음날부터는 원래 조로 자동 복귀합니다.
           </div>
 
@@ -175,15 +175,15 @@ const ParticipantGroupAssignModal = ({
 
           <FormField label="등록된 임시 배정">
             {isOverridesFetching ? (
-              <div className="text-[13px] text-[#9aa1ab] py-2">불러오는 중...</div>
+              <div className="text-[13px] text-admin-text-placeholder py-2">불러오는 중...</div>
             ) : overrides.length === 0 ? (
-              <div className="text-[13px] text-[#9aa1ab] py-2">등록된 임시 배정이 없습니다.</div>
+              <div className="text-[13px] text-admin-text-placeholder py-2">등록된 임시 배정이 없습니다.</div>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {overrides.map(({ override, groupName }) => (
                   <li
                     key={override.id}
-                    className="flex items-center justify-between gap-2 text-[13px] px-3 py-2 border border-[#e2e5eb] rounded-[2px]"
+                    className="flex items-center justify-between gap-2 text-[13px] px-3 py-2 border border-admin-border-subtle rounded-[2px]"
                   >
                     <span>
                       {override.date} → <b className="font-semibold">{groupName}</b>
@@ -202,7 +202,7 @@ const ParticipantGroupAssignModal = ({
         </>
       ) : (
         <>
-          <div className="text-[13px] text-[#6b7280]">
+          <div className="text-[13px] text-text-subtle">
             사업단 운영이 끝날 때까지(다시 바꾸기 전까지) 계속 이 조로 배정됩니다.
           </div>
 

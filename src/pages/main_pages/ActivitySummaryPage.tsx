@@ -13,12 +13,12 @@ interface ActivitySummaryPageProps {
 }
 
 const SummaryRow = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
-  <div className="flex items-center justify-between gap-3 py-[13px] border-b border-[#f2f4f6] last:border-b-0 text-[15px]">
+  <div className="flex items-center justify-between gap-3 py-[13px] border-b border-surface-page last:border-b-0 text-[15px]">
     <div className="flex items-center gap-3 min-w-0">
       <img src={icon} alt="" className="w-8 h-8 flex-none" />
-      <span className="text-[#9ca3af] font-bold flex-none">{label}</span>
+      <span className="text-text-muted font-bold flex-none">{label}</span>
     </div>
-    <span className="text-[#1f2937] font-extrabold text-right">{value}</span>
+    <span className="text-text-strong font-extrabold text-right">{value}</span>
   </div>
 );
 
@@ -35,11 +35,11 @@ const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPagePr
       <AppBar title="오늘의 활동 요약" onBack={onBack} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
-          <div className="text-[13px] text-[#9ca3af] font-bold mb-3.5">
+          <div className="text-[13px] text-text-muted font-bold mb-3.5">
             {todayLabel} · {formData.userName}님, 안녕하세요
           </div>
-          <div className="text-[19px] font-extrabold text-[#1f2937]">오늘 활동을 마쳤어요</div>
-          <div className="text-[15px] text-[#4e5968] font-semibold mt-1.5">
+          <div className="text-[19px] font-extrabold text-text-strong">오늘 활동을 마쳤어요</div>
+          <div className="text-[15px] text-text-tertiary font-semibold mt-1.5">
             아래 내용을 확인하고 서명해주세요.
           </div>
         </div>

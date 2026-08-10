@@ -181,7 +181,7 @@ const DemandSiteFormModal = ({
             ]}
           />
           {editingDemandSite.contactAdminId === null && editingDemandSite.contactPerson && (
-            <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+            <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
               예전에 입력된 담당자: {editingDemandSite.contactPerson}
             </p>
           )}
@@ -191,7 +191,7 @@ const DemandSiteFormModal = ({
 
       {/* 수요처 단위 관제구역 — 거점을 따로 안 그려도 이 원으로 이탈 판정이 된다 */}
       <FormField label="기본 관제구역 사용">
-        <label className="flex items-center gap-1.5 text-[13px] text-[#374151]">
+        <label className="flex items-center gap-1.5 text-[13px] text-admin-text-secondary">
           <input
             type="checkbox"
             checked={form.baseAreaEnabled}
@@ -199,7 +199,7 @@ const DemandSiteFormModal = ({
           />
           입력한 주소를 중심으로 한 원형 구역을 기본 관제구역으로 설정
         </label>
-        <p className="text-[11.5px] text-[#9aa1ab] mt-1.5">
+        <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           다각형 관제구역 사용시 체크를 해제하세요
         </p>
       </FormField>

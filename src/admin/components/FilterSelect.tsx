@@ -38,7 +38,7 @@ const FilterSelect = ({ value, onChange, options, className, disabled }: FilterS
 
     <ChevronDown
       size={14}
-      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7280]"
+      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
     />
   </div>
 );

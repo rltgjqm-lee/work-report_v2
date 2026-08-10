@@ -70,7 +70,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
       }
     >
       {balance && (
-        <div className="text-xs text-[#6b7280] mb-3">
+        <div className="text-xs text-text-subtle mb-3">
           {balance.year}년 현황 — 총 {balance.totalDays}일 / 사용 {balance.usedDays}일 / 잔여{" "}
           {balance.remainingDays}일
         </div>

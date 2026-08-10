@@ -55,13 +55,13 @@ const DisasterMessagesPage = () => {
     <div>
       <div className="mb-5">
         <h1 className="text-[21px] font-bold m-0">재난문자 테스트</h1>
-        <p className="text-[13px] text-[#6b7280] mt-1.5">
+        <p className="text-[13px] text-text-subtle mt-1.5">
           테스트 발송 및 지역이 매칭돼 발송 대상이 된 행안부 수신 내역을 확인하는 진단용 화면입니다.
           실제 발송 이력은 "재난문자 발송이력" 메뉴를 확인하세요.
         </p>
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-4 mb-5">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-4 mb-5">
         <div className="text-[13px] font-bold mb-2.5">테스트 발송</div>
         <div className="flex items-center gap-2.5 flex-wrap">
           <FilterSelect
@@ -87,59 +87,59 @@ const DisasterMessagesPage = () => {
             발송
           </button>
         </div>
-        {testResult && <div className="text-xs text-[#1e3a5f] mt-2.5">{testResult}</div>}
+        {testResult && <div className="text-xs text-admin-brand mt-2.5">{testResult}</div>}
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] table-fixed border-collapse">
             <thead>
               <tr>
-                <th className="w-[160px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[160px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   발송시각
                 </th>
-                <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   지역
                 </th>
-                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   종류
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   구분
                 </th>
-                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   내용
                 </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   대상
                 </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   성공/실패
                 </th>
               </tr>
             </thead>
             <tbody>
               {alerts.map((alert) => (
-                <tr key={alert.alertId} className="hover:bg-[#f8fafc]">
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                <tr key={alert.alertId} className="hover:bg-admin-row-hover">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {alert.sentAt}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {alert.region}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {alert.alertType ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {SOURCE_LABEL[alert.source]}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {alert.message}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {alert.targetCount}건
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {alert.successCount} / {alert.failCount}
                   </td>
                 </tr>
@@ -147,7 +147,7 @@ const DisasterMessagesPage = () => {
 
               {alerts.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                  <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                     발송된 재난문자가 없습니다.
                   </td>
                 </tr>

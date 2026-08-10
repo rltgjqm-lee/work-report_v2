@@ -339,13 +339,13 @@ const DemandSiteLocationsPanel = ({
   };
 
   return (
-    <div className="bg-[#f8f9fb] border-t border-b border-[#e2e5eb] p-5">
+    <div className="bg-admin-surface-header border-t border-b border-admin-border-subtle p-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="text-[14px] font-bold text-[#1f2937]">
+          <div className="text-[14px] font-bold text-text-strong">
             {demandSite.name} — 거점/관제구역 편집
           </div>
-          <div className="text-[12.5px] text-[#8b94a3] mt-[3px]">
+          <div className="text-[12.5px] text-admin-text-faint mt-[3px]">
             {demandSite.address ||
               "등록된 주소 없음 — 수요처 정보에서 주소를 넣으면 지도가 그 위치로 이동합니다."}
           </div>
@@ -364,7 +364,7 @@ const DemandSiteLocationsPanel = ({
       <div className="flex gap-5 items-start">
         <div className="w-[220px] flex-none flex flex-col gap-2">
           {locations.length === 0 && demandSite.baseLat === null && (
-            <span className="text-[12.5px] text-[#9aa1ab]">
+            <span className="text-[12.5px] text-admin-text-placeholder">
               지도 우측 툴바에서 원(반경) 또는 다각형을 그려 거점을 추가하세요.
             </span>
           )}
@@ -372,23 +372,23 @@ const DemandSiteLocationsPanel = ({
             demandSite.baseLng !== null &&
             demandSite.radius !== null && (
               <div
-                className={`bg-white border border-[#e2e5eb] rounded-lg p-3.5 ${
+                className={`bg-white border border-admin-border-subtle rounded-lg p-3.5 ${
                   demandSite.baseAreaEnabled ? "" : "opacity-60"
                 }`}
               >
-                <div className="flex items-center gap-1.5 text-[13.5px] font-bold text-[#1f2937]">
+                <div className="flex items-center gap-1.5 text-[13.5px] font-bold text-text-strong">
                   {demandSite.name} 기본 관제구역
                   <span
                     className={`text-[10.5px] font-bold px-1.5 py-0.5 rounded-[3px] whitespace-nowrap ${
                       demandSite.baseAreaEnabled
-                        ? "bg-[#eaf0f7] text-[#3a6ea8]"
-                        : "bg-[#eef1f5] text-[#5b6472]"
+                        ? "bg-admin-status-info-bg text-admin-map-link"
+                        : "bg-admin-status-pending-bg text-admin-status-pending-text"
                     }`}
                   >
                     {demandSite.baseAreaEnabled ? "기본" : "사용 안 함"}
                   </span>
                 </div>
-                <div className="text-[12px] text-[#8b94a3] mt-1.5">
+                <div className="text-[12px] text-admin-text-faint mt-1.5">
                   원형 · 반경 {demandSite.radius}m
                 </div>
                 {(!demandSite.baseAreaEnabled || canManageMultipleZones) && (
@@ -401,9 +401,9 @@ const DemandSiteLocationsPanel = ({
               </div>
             )}
           {locations.map((location) => (
-            <div key={location.id} className="bg-white border border-[#e2e5eb] rounded-lg p-3.5">
-              <div className="text-[13.5px] font-bold text-[#1f2937]">{location.name}</div>
-              <div className="text-[12px] text-[#8b94a3] mt-1.5">
+            <div key={location.id} className="bg-white border border-admin-border-subtle rounded-lg p-3.5">
+              <div className="text-[13.5px] font-bold text-text-strong">{location.name}</div>
+              <div className="text-[12px] text-admin-text-faint mt-1.5">
                 {location.shapeType === SHAPE_TYPE.RADIUS
                   ? `원형 · 반경 ${location.radius}m`
                   : `다각형 · 좌표 ${location.polygon?.length ?? 0}개`}
@@ -429,7 +429,7 @@ const DemandSiteLocationsPanel = ({
         </div>
         <div
           ref={mapContainerRef}
-          className="flex-1 h-[640px] border border-[#e2e5eb] rounded-lg"
+          className="flex-1 h-[640px] border border-admin-border-subtle rounded-lg"
         />
       </div>
 

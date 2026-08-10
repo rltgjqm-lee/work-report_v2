@@ -62,84 +62,84 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
       </div>
 
       <div className="grid grid-cols-3 mb-3">
-        <div className="px-5 py-4 border border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">이달 휴가</div>
+        <div className="px-5 py-4 border border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">이달 휴가</div>
           <div className="text-sm font-bold">{monthStat?.totalLeaves ?? 0}건</div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
             유급 / 무급
           </div>
           <div className="text-sm font-bold">
             {monthStat?.paidLeaves ?? 0}건 / {monthStat?.unpaidLeaves ?? 0}건
           </div>
         </div>
-        <div className="px-5 py-4 border border-l-0 border-[#e2e5eb]">
-          <div className="text-[11px] text-[#6b7280] font-semibold uppercase mb-1.5">
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
             이달 휴가일수
           </div>
           <div className="text-sm font-bold">{monthStat?.totalDays ?? 0}일</div>
         </div>
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px]">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] table-fixed border-collapse">
             <thead>
               <tr>
-                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   참여자명
                 </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   조
                 </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   시작일
                 </th>
-                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   종료일
                 </th>
-                <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   일수
                 </th>
-                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   유형
                 </th>
-                <th className="w-[200px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[200px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   사유
                 </th>
-                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   연차 현황
                 </th>
               </tr>
             </thead>
             <tbody>
               {filteredLeaves.map((row) => (
-                <tr key={row.leave.id} className="hover:bg-[#f8fafc]">
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                <tr key={row.leave.id} className="hover:bg-admin-row-hover">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.participantName}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.groupName ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {row.leave.leaveStart}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {row.leave.leaveEnd}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.leave.leaveDays}일
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <StatusChip variant={LEAVE_TYPE_VARIANT[row.leave.leaveType]}>
                       {LEAVE_TYPE_LABEL[row.leave.leaveType]}
                     </StatusChip>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {row.leave.reason ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {row.annualTotalDays === null
                       ? "-"
                       : `${row.annualTotalDays}일 중 ${row.annualUsedDays}일 사용 (${row.annualRemainingDays}일 남음)`}
@@ -148,7 +148,7 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
               ))}
               {filteredLeaves.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-[#9aa1ab]">
+                  <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                     해당 월에 휴가 기록이 없습니다.
                   </td>
                 </tr>

@@ -61,17 +61,17 @@ const ModuleItem = ({
 }: ModuleItemProps) => (
   <div
     className={`bg-white rounded-2xl px-[18px] py-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
-      highlighted ? "border-[1.5px] border-[#eef6ff]" : ""
+      highlighted ? "border-[1.5px] border-brand-tint" : ""
     }`}
   >
     <div className="flex items-center gap-3.5">
       <img src={icon} alt="" className="w-10 h-10 flex-none" />
       <div>
-        <div className="text-[13px] font-extrabold text-[#3182f6] mb-1">
+        <div className="text-[13px] font-extrabold text-brand mb-1">
           {index}. {category}
         </div>
-        <div className="text-[17px] font-extrabold text-[#1f2937]">{title}</div>
-        <div className="text-[13.5px] text-[#9ca3af] font-semibold mt-0.5">{status}</div>
+        <div className="text-[17px] font-extrabold text-text-strong">{title}</div>
+        <div className="text-[13.5px] text-text-muted font-semibold mt-0.5">{status}</div>
       </div>
     </div>
     <button
@@ -79,8 +79,8 @@ const ModuleItem = ({
       disabled={isPending}
       className={`flex-none h-[42px] px-5 rounded-xl border-none text-[15px] font-extrabold ${
         isPending
-          ? "bg-[#f2f4f6] text-[#9ca3af] cursor-default"
-          : `cursor-pointer ${done ? "bg-[#f2f4f6] text-[#4e5968]" : "bg-[#3182f6] text-white"}`
+          ? "bg-surface-page text-text-muted cursor-default"
+          : `cursor-pointer ${done ? "bg-surface-page text-text-tertiary" : "bg-brand text-white"}`
       }`}
     >
       {isPending ? "확인 중" : done ? "확인" : "등록"}
@@ -332,23 +332,23 @@ const ActivityDashboardPage = ({
       <AppBar title="근무 기록" onHome={onHome} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
-          <div className="text-[13px] text-[#9ca3af] font-bold mb-3.5">
+          <div className="text-[13px] text-text-muted font-bold mb-3.5">
             {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
           </div>
           <div className="flex items-center justify-between gap-2.5">
-            <span className="text-[19px] font-extrabold text-[#1f2937]">{formData.orgName}</span>
-            <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-xl bg-[#eef6ff] text-[#3182f6]">
+            <span className="text-[19px] font-extrabold text-text-strong">{formData.orgName}</span>
+            <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-xl bg-brand-tint text-brand">
               {formData.programType}
             </span>
           </div>
-          <div className="text-[15px] text-[#4e5968] font-semibold mt-1.5">
+          <div className="text-[15px] text-text-tertiary font-semibold mt-1.5">
             {formData.programName} · {formData.demandName}
           </div>
         </div>
 
         {notificationsBlocked && (
-          <div className="bg-[#fef2f2] rounded-2xl px-[18px] py-3.5 border border-[#fecaca]">
-            <span className="text-[13px] font-bold text-[#b91c1c]">
+          <div className="bg-danger-tint rounded-2xl px-[18px] py-3.5 border border-caution-border-subtle">
+            <span className="text-[13px] font-bold text-danger-text-strong">
               🔕 알림이 꺼져 있어요 — 휴대폰 설정에서 이 앱의 알림을 켜야 재난 문자를 받을 수
               있어요.
             </span>
@@ -356,21 +356,21 @@ const ActivityDashboardPage = ({
         )}
 
         {(import.meta.env.DEV || isSuperAdmin) && (
-          <div className="bg-[#fff7e6] rounded-2xl px-[18px] py-3.5 flex items-center gap-3 border border-[#ffe1a8]">
-            <span className="text-[13px] font-extrabold text-[#b45309] flex-none">
+          <div className="bg-badge-bg rounded-2xl px-[18px] py-3.5 flex items-center gap-3 border border-badge-border">
+            <span className="text-[13px] font-extrabold text-caution-text flex-none">
               🧪 테스트용 날짜/시간
             </span>
             <input
               type="date"
               value={debugDate}
               onChange={(event) => setDebugDate(event.target.value)}
-              className="flex-1 h-9 px-2 rounded-lg border border-[#ffe1a8] text-[14px] font-semibold text-[#1f2937] bg-white"
+              className="flex-1 h-9 px-2 rounded-lg border border-badge-border text-[14px] font-semibold text-text-strong bg-white"
             />
             <input
               type="time"
               value={debugTime}
               onChange={(event) => setDebugTime(event.target.value)}
-              className="flex-1 h-9 px-2 rounded-lg border border-[#ffe1a8] text-[14px] font-semibold text-[#1f2937] bg-white"
+              className="flex-1 h-9 px-2 rounded-lg border border-badge-border text-[14px] font-semibold text-text-strong bg-white"
             />
             {(debugDate || debugTime) && (
               <button
@@ -378,7 +378,7 @@ const ActivityDashboardPage = ({
                   setDebugDate("");
                   setDebugTime("");
                 }}
-                className="flex-none h-9 px-3 rounded-lg border-none bg-white text-[13px] font-bold text-[#b45309] cursor-pointer"
+                className="flex-none h-9 px-3 rounded-lg border-none bg-white text-[13px] font-bold text-caution-text cursor-pointer"
               >
                 초기화
               </button>

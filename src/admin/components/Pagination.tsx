@@ -33,7 +33,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
   return (
     <div className="flex items-center justify-center gap-1.5 py-4 px-5">
       <button
-        className={`${pageBtnBase} border-[#d7dbe1] bg-white text-[#374151] disabled:opacity-40 disabled:cursor-not-allowed`}
+        className={`${pageBtnBase} border-admin-border bg-white text-admin-text-secondary disabled:opacity-40 disabled:cursor-not-allowed`}
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
       >
@@ -41,7 +41,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
       </button>
       {pages.map((pageNumber, index) =>
         pageNumber === "ellipsis" ? (
-          <span key={`ellipsis-${index}`} className="text-[#9aa1ab] text-xs px-1">
+          <span key={`ellipsis-${index}`} className="text-admin-text-placeholder text-xs px-1">
             …
           </span>
         ) : (
@@ -50,8 +50,8 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
             onClick={() => onChange(pageNumber)}
             className={`${pageBtnBase} ${
               pageNumber === page
-                ? "bg-[#1e3a5f] border-[#1e3a5f] text-white"
-                : "bg-white border-[#d7dbe1] text-[#374151]"
+                ? "bg-admin-brand border-admin-brand text-white"
+                : "bg-white border-admin-border text-admin-text-secondary"
             }`}
           >
             {pageNumber}
@@ -59,7 +59,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
         ),
       )}
       <button
-        className={`${pageBtnBase} border-[#d7dbe1] bg-white text-[#374151] disabled:opacity-40 disabled:cursor-not-allowed`}
+        className={`${pageBtnBase} border-admin-border bg-white text-admin-text-secondary disabled:opacity-40 disabled:cursor-not-allowed`}
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages}
       >

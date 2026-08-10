@@ -103,11 +103,11 @@ const AdminLayout = () => {
   })();
 
   return (
-    <div className="flex w-full min-h-screen bg-[#f3f4f6] text-[#1f2937] font-sans">
-      <aside className="w-[248px] flex-none bg-[#14283d] text-[#e6ebf2] flex flex-col py-6">
+    <div className="flex w-full min-h-screen bg-surface-page text-text-strong font-sans">
+      <aside className="w-[248px] flex-none bg-admin-navy-strong text-admin-sidebar-text flex flex-col py-6">
         <div className="px-6 pb-[22px] border-b border-white/[0.08] mb-3.5">
           <div className="text-[15px] font-bold text-white">기관 통합관리시스템</div>
-          <div className="text-[11px] text-[#8fa3bd] mt-[5px]">{sidebarSubtitle}</div>
+          <div className="text-[11px] text-admin-sidebar-icon-muted mt-[5px]">{sidebarSubtitle}</div>
         </div>
         {navItems.map((navItem) => (
           <NavLink
@@ -116,8 +116,8 @@ const AdminLayout = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 px-6 py-[13px] text-sm font-medium border-l-[3px] ${
                 isActive
-                  ? "bg-white/[0.08] text-white border-l-[#1e3a5f]"
-                  : "text-[#c3d0e0] border-l-transparent hover:bg-white/5 hover:text-white"
+                  ? "bg-white/[0.08] text-white border-l-admin-brand"
+                  : "text-admin-sidebar-border border-l-transparent hover:bg-white/5 hover:text-white"
               }`
             }
           >
@@ -125,7 +125,7 @@ const AdminLayout = () => {
               <>
                 <span
                   className={`w-[22px] h-[22px] flex-none rounded-[4px] flex items-center justify-center text-xs font-bold ${
-                    isActive ? "bg-[#1e3a5f] text-white" : "bg-white/[0.12]"
+                    isActive ? "bg-admin-brand text-white" : "bg-white/[0.12]"
                   }`}
                 >
                   {navItem.badge}
@@ -138,21 +138,21 @@ const AdminLayout = () => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="h-[60px] flex-none bg-white border-b border-[#e2e5eb] flex items-center justify-between px-8">
+        <div className="h-[60px] flex-none bg-white border-b border-admin-border-subtle flex items-center justify-between px-8">
           <div className="text-base font-bold">{getTopbarTitle(location.pathname)}</div>
-          <div className="flex items-center gap-4 text-xs text-[#6b7280]">
+          <div className="flex items-center gap-4 text-xs text-text-subtle">
             <span>
               {sessionRemainingLabel} · {admin?.name ?? admin?.email}
             </span>
             <button
               onClick={() => setPasswordModalOpen(true)}
-              className="text-[#374151] font-semibold cursor-pointer bg-transparent border-none hover:underline"
+              className="text-admin-text-secondary font-semibold cursor-pointer bg-transparent border-none hover:underline"
             >
               비밀번호 변경
             </button>
             <button
               onClick={handleLogoutButtonClick}
-              className="text-[#8a6d1f] font-semibold cursor-pointer bg-transparent border-none hover:underline"
+              className="text-admin-action font-semibold cursor-pointer bg-transparent border-none hover:underline"
             >
               로그아웃
             </button>

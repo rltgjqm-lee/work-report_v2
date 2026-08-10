@@ -212,12 +212,12 @@ const GroupAddModal = ({
           </FormField>
         </div>
       </div>
-      <div className="text-[12px] text-[#9aa1ab] -mt-2">
+      <div className="text-[12px] text-admin-text-placeholder -mt-2">
         사업단 운영시간({programStartTime}~{programEndTime}) 안에서 설정해주세요
       </div>
 
-      <div className="border-t border-[#eceef1] pt-4 flex flex-col gap-4">
-        <div className="text-[13px] font-bold text-[#1f2937]">
+      <div className="border-t border-border-faint pt-4 flex flex-col gap-4">
+        <div className="text-[13px] font-bold text-text-strong">
           월간 근무일 (선택 — 지금 안 정해도 나중에 수정할 수 있어요)
         </div>
 
@@ -249,7 +249,7 @@ const GroupAddModal = ({
               value={patternWorkDays}
               onChange={(event) => setPatternWorkDays(event.target.value)}
             />
-            <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 근무 /</span>
+            <span className="text-[13px] text-text-subtle whitespace-nowrap">일 근무 /</span>
             <input
               type="number"
               min={0}
@@ -257,7 +257,7 @@ const GroupAddModal = ({
               value={patternRestDays}
               onChange={(event) => setPatternRestDays(event.target.value)}
             />
-            <span className="text-[13px] text-[#6b7280] whitespace-nowrap">일 휴무</span>
+            <span className="text-[13px] text-text-subtle whitespace-nowrap">일 휴무</span>
             <button className={btnGhostClass} onClick={handleGeneratePatternButtonClick}>
               자동 생성
             </button>
@@ -274,7 +274,7 @@ const GroupAddModal = ({
         </FormField>
 
         <div
-          className={`text-[12px] ${isOverCap ? "text-[#e94b4b] font-semibold" : "text-[#9aa1ab]"}`}
+          className={`text-[12px] ${isOverCap ? "text-danger font-semibold" : "text-admin-text-placeholder"}`}
         >
           선택된 근무일: {workDates.length}일 · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}
           시간 / 상한 {maxMonthlyHours}시간

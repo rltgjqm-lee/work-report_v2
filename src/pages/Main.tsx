@@ -385,19 +385,19 @@ const Main = () => {
   }, [formData.participantId, isWorking]);
 
   return (
-    <div className="w-full h-full flex-shrink-0 flex justify-center items-stretch bg-[#f0f0f0] select-none">
+    <div className="w-full h-full flex-shrink-0 flex justify-center items-stretch bg-app-shell-bg select-none">
       <div className="w-full h-full bg-white rounded-xl overflow-hidden flex flex-col items-stretch content-stretch relative box-border">
         {/* 근무 중 위치 관제 상태 — 이탈이 더 급한 정보라 둘 다일 때는 이탈만 보여준다.
             레이아웃을 밀지 않도록 화면 아래에 떠 있게 둔다. */}
         {isWorking &&
           (locationReportState.escapedDemandSiteName !== null ? (
-            <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[#fef2f2] border-t border-[#fecaca] text-[13.5px] font-bold text-[#b91c1c]">
+            <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-danger-tint border-t border-caution-border-subtle text-[13.5px] font-bold text-danger-text-strong">
               ⚠️ {locationReportState.escapedDemandSiteName} 활동 구역을 벗어났어요 — 근무지로
               돌아가주세요
             </div>
           ) : (
             locationReportState.reportFailing && (
-              <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-[#fffbeb] border-t border-[#fde68a] text-[13.5px] font-bold text-[#b45309]">
+              <div className="absolute bottom-0 left-0 right-0 z-50 px-4 py-3 bg-caution-bg border-t border-caution-border text-[13.5px] font-bold text-caution-text">
                 위치가 전송되지 않고 있어요 — 위치 권한과 네트워크를 확인해주세요
               </div>
             )

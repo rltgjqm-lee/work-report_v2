@@ -16,7 +16,7 @@ const formatDistance = (meters: number) =>
 const AttendanceLocationCell = ({ log }: { log: AttendanceLog }) => {
   // 조작 표시는 출근 좌표를 못 받은 날에도 보여야 한다 — 위치 판정과 별개의 정보다.
   const simulatedWarning = log.simulatedCount > 0 && (
-    <div className="text-[11.5px] font-bold text-[#dc2626]">
+    <div className="text-[11.5px] font-bold text-danger-strong">
       ⚠️ 위치 조작 의심 {log.simulatedCount}건
     </div>
   );
@@ -24,7 +24,7 @@ const AttendanceLocationCell = ({ log }: { log: AttendanceLog }) => {
   if (log.clockInLat === null || log.clockInLng === null) {
     return (
       <div>
-        <span className="text-[#9aa1ab]">미기록</span>
+        <span className="text-admin-text-placeholder">미기록</span>
         {simulatedWarning}
       </div>
     );
@@ -35,12 +35,12 @@ const AttendanceLocationCell = ({ log }: { log: AttendanceLog }) => {
 
   return (
     <div>
-      <div className={log.clockInInside === false ? "text-[#dc2626]" : ""}>
+      <div className={log.clockInInside === false ? "text-danger-strong" : ""}>
         {log.clockInInside === null ? "판정 불가" : log.clockInInside ? "구역 내" : "구역 외"}
         {distanceLabel && ` · ${distanceLabel}`}
       </div>
       {log.clockInAccuracy !== null && (
-        <div className="text-[11.5px] text-[#9aa1ab]">
+        <div className="text-[11.5px] text-admin-text-placeholder">
           오차 ±{formatDistance(Math.round(log.clockInAccuracy))}
         </div>
       )}

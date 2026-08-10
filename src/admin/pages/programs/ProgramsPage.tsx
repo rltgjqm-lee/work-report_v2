@@ -162,7 +162,7 @@ const ProgramsPage = () => {
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
           <h1 className="text-[21px] font-bold m-0">사업단 관리</h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">
+          <p className="text-[13px] text-text-subtle mt-1.5">
             기관별 사업단 목록을 조회하고 등록합니다.
           </p>
         </div>
@@ -171,8 +171,8 @@ const ProgramsPage = () => {
         </button>
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
           <div className="flex items-center gap-2.5">
             {role === ROLES.SUPER_ADMIN && (
               <FilterSelect
@@ -218,7 +218,7 @@ const ProgramsPage = () => {
 
             <SearchInput value={search} onChange={setSearch} placeholder="사업단명 검색" />
           </div>
-          <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
+          <span className="text-xs text-text-subtle font-medium whitespace-nowrap">
             총 {filtered.length}개 사업단
           </span>
         </div>
@@ -231,66 +231,66 @@ const ProgramsPage = () => {
           >
             <thead>
               <tr>
-                <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   사업단명
                 </th>
-                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   소속기관
                 </th>
-                <th className="w-[210px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[210px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   기간
                 </th>
-                <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   운영시간
                 </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   참여자수
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   상태
                 </th>
                 {canViewManagerColumn && (
-                  <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                  <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                     담당자
                   </th>
                 )}
-                <th className="w-[160px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[160px] bg-admin-surface-header border-b border-admin-border-subtle" />
               </tr>
             </thead>
             <tbody>
               {pageItems.map((program) => (
                 <tr
                   key={program.id}
-                  className="hover:bg-[#f8fafc]"
+                  className="hover:bg-admin-row-hover"
                   onClick={() => navigate(`/admin/programs/${program.id}`)}
                 >
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     <span className="inline-flex items-center gap-2">
                       <ProgramTypeChip programType={program.programType} />
                       {program.name}
                     </span>
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {orgName(program.organizationId)}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {program.startDate} ~ {program.endDate}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {program.startTime} ~ {program.endTime}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {participantCounts[program.id] ?? "-"}명
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {program.isActive ? "활성" : "비활성"}
                   </td>
                   {canViewManagerColumn && (
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                       {managerAdminName(program.id)}
                     </td>
                   )}
-                  <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     <button
                       className={rowActionBtnClass}
                       onClick={(event) => {

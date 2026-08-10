@@ -198,7 +198,7 @@ const ProgramFormModal = ({
       {/* 담당자 (담당자 또는 부관리자 역할 관리자 계정) */}
       <FormField label={editingProgram ? "담당자" : "담당자 (필수)"}>
         {assignableManagerAdmins.length === 0 ? (
-          <p className="text-[12.5px] text-[#9aa1ab]">
+          <p className="text-[12.5px] text-admin-text-placeholder">
             {currentRole === ROLES.SUPER_ADMIN && !form.organizationId
               ? "기관을 먼저 선택하세요."
               : "지정할 수 있는 담당자 계정이 없습니다."}
@@ -308,7 +308,7 @@ const ProgramFormModal = ({
         />
       </FormField>
 
-      {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
+      {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}
     </SlideModal>
   );
 };

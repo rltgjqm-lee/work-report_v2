@@ -11,7 +11,7 @@ const ProtectedRoute = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center w-full min-h-screen bg-[#f3f4f6] text-sm text-[#6b7280]">
+      <div className="flex items-center justify-center w-full min-h-screen bg-surface-page text-sm text-text-subtle">
         확인 중...
       </div>
     );

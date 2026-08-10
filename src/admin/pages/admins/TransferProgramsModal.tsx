@@ -112,13 +112,13 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
         </>
       }
     >
-      <p className="text-xs text-[#6b7280]">
+      <p className="text-xs text-text-subtle">
         담당 사업단 {targetPrograms.length}개를 사업단별로 다른 담당자에게 나눠서 넘길 수 있습니다.
         해당 사업단의 수요처 담당자도 함께 변경됩니다.
       </p>
 
       {candidates.length === 0 ? (
-        <p className="text-[12.5px] text-[#9aa1ab]">
+        <p className="text-[12.5px] text-admin-text-placeholder">
           이관받을 수 있는 다른 담당자/부관리자 계정이 없습니다. 계정을 먼저 발급해주세요.
         </p>
       ) : (
@@ -146,7 +146,7 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
           ))}
         </>
       )}
-      {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
+      {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}
     </SlideModal>
   );
 };

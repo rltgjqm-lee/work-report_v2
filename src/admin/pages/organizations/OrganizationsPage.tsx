@@ -77,7 +77,7 @@ const OrganizationsPage = () => {
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
           <h1 className="text-[21px] font-bold m-0">기관 관리</h1>
-          <p className="text-[13px] text-[#6b7280] mt-1.5">
+          <p className="text-[13px] text-text-subtle mt-1.5">
             사업단이 소속되는 기관 정보를 등록하고 관리합니다.
           </p>
         </div>
@@ -88,15 +88,15 @@ const OrganizationsPage = () => {
         )}
       </div>
 
-      <div className="bg-white border border-[#e2e5eb] rounded-[2px]">
+      <div className="bg-white border border-admin-border-subtle rounded-[2px]">
         {role === ROLES.SUPER_ADMIN && (
-          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#eceef1] flex-wrap">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
             <SearchInput
               value={search}
               onChange={setSearch}
               placeholder="기관명 또는 대표자 검색"
             />
-            <span className="text-xs text-[#6b7280] font-medium whitespace-nowrap">
+            <span className="text-xs text-text-subtle font-medium whitespace-nowrap">
               총 {filtered.length}개 기관
             </span>
           </div>
@@ -107,40 +107,40 @@ const OrganizationsPage = () => {
             <thead>
               <tr>
                 {role === ROLES.SUPER_ADMIN && (
-                  <th className="w-[32px] bg-[#f7f8fa] px-2 py-[11px] border-b border-[#e2e5eb]" />
+                  <th className="w-[32px] bg-admin-surface-header px-2 py-[11px] border-b border-admin-border-subtle" />
                 )}
-                <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[180px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   기관명
                 </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   대표자
                 </th>
-                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   전화번호
                 </th>
-                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   팩스번호
                 </th>
-                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   사업자등록번호
                 </th>
-                <th className="w-[240px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[240px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   주소
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-5 py-[11px] border-b border-[#e2e5eb]">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   상태
                 </th>
-                <th className="w-[130px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                <th className="w-[130px] bg-admin-surface-header border-b border-admin-border-subtle" />
               </tr>
             </thead>
             <tbody>
               {pageItems.map((organization) => (
                 <Fragment key={organization.id}>
-                  <tr className="hover:bg-[#f8fafc]">
+                  <tr className="hover:bg-admin-row-hover">
                     {role === ROLES.SUPER_ADMIN && (
-                      <td className="px-2 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                      <td className="px-2 py-[13px] text-[13px] border-b border-border-faint">
                         <button
-                          className="w-7 h-7 border-none bg-transparent text-[#374151] text-lg font-bold cursor-pointer p-0"
+                          className="w-7 h-7 border-none bg-transparent text-admin-text-secondary text-lg font-bold cursor-pointer p-0"
                           onClick={() =>
                             setExpandedOrgId((current) =>
                               current === organization.id ? null : organization.id,
@@ -151,28 +151,28 @@ const OrganizationsPage = () => {
                         </button>
                       </td>
                     )}
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                       {organization.name}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {organization.rep}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {organization.phone}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {organization.fax}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {organization.bizNo}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-normal break-words">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                       {organization.address}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {organization.isActive ? "활성" : "비활성"}
                     </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {(role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN) && (
                         <button
                           className={rowActionBtnClass}
@@ -193,7 +193,7 @@ const OrganizationsPage = () => {
                   </tr>
                   {role === ROLES.SUPER_ADMIN && expandedOrgId === organization.id && (
                     <tr>
-                      <td colSpan={9} className="p-3 bg-white border-b border-[#e2e5eb]">
+                      <td colSpan={9} className="p-3 bg-white border-b border-admin-border-subtle">
                         <OrganizationDetailPanel
                           organizationId={organization.id}
                           canViewStaff={canViewStaff}
@@ -216,7 +216,7 @@ const OrganizationsPage = () => {
         pageItems.map((organization) => (
           <div key={organization.id} className="mt-5">
             <div className="text-sm font-bold mb-2.5">{organization.name} 상세</div>
-            <div className="bg-white border border-[#e2e5eb] rounded-[2px] p-3">
+            <div className="bg-white border border-admin-border-subtle rounded-[2px] p-3">
               <OrganizationDetailPanel
                 organizationId={organization.id}
                 canViewStaff={canViewStaff}

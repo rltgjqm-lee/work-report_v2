@@ -344,11 +344,11 @@ const EscapesPage = () => {
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
         <div>
           {preselectedProgramId ? (
-            <div className="text-xs text-[#6b7280] mb-1.5">
+            <div className="text-xs text-text-subtle mb-1.5">
               사업단 관리 /{" "}
               <a
                 onClick={() => navigate(`/admin/programs/${preselectedProgramId}`)}
-                className="cursor-pointer text-[#1e3a5f] hover:text-[#132a45]"
+                className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
               >
                 {programName || "사업단 상세"}
               </a>{" "}
@@ -414,7 +414,7 @@ const EscapesPage = () => {
       </div>
 
       {!programId ? (
-        <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-5 py-10 text-center text-[13px] text-[#9aa1ab]">
+        <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center text-[13px] text-admin-text-placeholder">
           조회할 사업단을 선택해주세요.
         </div>
       ) : (
@@ -422,56 +422,56 @@ const EscapesPage = () => {
           <div className="flex gap-3 items-start">
             <div
               ref={mapContainerRef}
-              className="h-[calc(100vh-190px)] flex-[2] border border-[#e2e5eb] rounded-[2px]"
+              className="h-[calc(100vh-190px)] flex-[2] border border-admin-border-subtle rounded-[2px]"
             />
             <div className="flex-1 min-w-[420px] flex flex-col gap-3">
-              <div className="bg-white border border-[#e2e5eb] rounded-[2px] px-4 py-4">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-[#6b7280] mb-3">
+              <div className="bg-white border border-admin-border-subtle rounded-[2px] px-4 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-wide text-text-subtle mb-3">
                   이탈 단계
                 </div>
                 <div className="flex items-center gap-4 text-[13px] flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#2ECC71] flex-none" />
+                    <span className="w-3 h-3 rounded-full bg-admin-map-safe flex-none" />
                     정상
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#FFD200] flex-none" />
+                    <span className="w-3 h-3 rounded-full bg-admin-map-caution flex-none" />
                     1단계
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#FF7800] flex-none" />
+                    <span className="w-3 h-3 rounded-full bg-admin-map-warning flex-none" />
                     2단계
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#FF0000] flex-none" />
+                    <span className="w-3 h-3 rounded-full bg-admin-map-critical flex-none" />
                     3단계
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full border-2 border-dashed border-[#3182f6] flex-none" />
+                    <span className="w-3 h-3 rounded-full border-2 border-dashed border-brand flex-none" />
                     관제구역
                   </div>
-                  <div className="text-[#6b7280] ml-auto">근무중 {filteredWorkers.length}명</div>
+                  <div className="text-text-subtle ml-auto">근무중 {filteredWorkers.length}명</div>
                 </div>
               </div>
 
-              <div className="bg-white border border-[#e2e5eb] rounded-[2px] flex-1 overflow-hidden flex flex-col">
+              <div className="bg-white border border-admin-border-subtle rounded-[2px] flex-1 overflow-hidden flex flex-col">
                 <div className="overflow-auto max-h-[640px]">
                   <table className="w-full min-w-[560px] table-fixed border-collapse">
                     <thead>
                       <tr>
-                        <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                        <th className="w-[130px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-3 py-[11px] border-b border-admin-border-subtle">
                           감지시각
                         </th>
-                        <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                        <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-3 py-[11px] border-b border-admin-border-subtle">
                           참여자명
                         </th>
-                        <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                        <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-3 py-[11px] border-b border-admin-border-subtle">
                           이탈거리
                         </th>
-                        <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-[#6b7280] bg-[#f7f8fa] px-3 py-[11px] border-b border-[#e2e5eb]">
+                        <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-3 py-[11px] border-b border-admin-border-subtle">
                           단계
                         </th>
-                        <th className="w-[110px] bg-[#f7f8fa] border-b border-[#e2e5eb]" />
+                        <th className="w-[110px] bg-admin-surface-header border-b border-admin-border-subtle" />
                       </tr>
                     </thead>
                     <tbody>
@@ -480,30 +480,30 @@ const EscapesPage = () => {
                           key={row.escape.id}
                           className={
                             row.escape.alertCount >= 3
-                              ? "bg-[#fdecea] hover:bg-[#fbdedb]"
-                              : "hover:bg-[#f8fafc]"
+                              ? "bg-admin-escape-alert-bg hover:bg-admin-escape-critical-bg"
+                              : "hover:bg-admin-row-hover"
                           }
                         >
-                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                          <td className="px-3 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                             {isoToKstMinuteString(row.escape.detectedAt)}
                           </td>
-                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                          <td className="px-3 py-[13px] text-[13px] border-b border-border-faint">
                             {row.participantName}
                           </td>
-                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3]">
+                          <td className="px-3 py-[13px] text-[13px] border-b border-border-faint">
                             {row.escape.distanceKm.toFixed(2)}km
                           </td>
-                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] font-semibold">
+                          <td className="px-3 py-[13px] text-[13px] border-b border-border-faint font-semibold">
                             {row.escape.alertCount >= 3
                               ? "3단계"
                               : row.escape.alertCount === 2
                                 ? "2단계"
                                 : "1단계"}
                           </td>
-                          <td className="px-3 py-[13px] text-[13px] border-b border-[#eef0f3] whitespace-nowrap">
+                          <td className="px-3 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                             {row.escape.status === "OPEN" ? (
                               <button
-                                className="border border-[#d7dbe1] px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-[#f3f4f6]"
+                                className="border border-admin-border px-2.5 py-1 text-xs rounded-[2px] bg-white hover:bg-surface-page"
                                 onClick={() =>
                                   handleResolveButtonClick(row.escape.id, row.participantName)
                                 }
@@ -511,7 +511,7 @@ const EscapesPage = () => {
                                 확인 처리
                               </button>
                             ) : (
-                              <span className="text-xs text-[#6b7280]">
+                              <span className="text-xs text-text-subtle">
                                 {row.escape.memo || "처리완료"}
                               </span>
                             )}
@@ -522,7 +522,7 @@ const EscapesPage = () => {
                         <tr>
                           <td
                             colSpan={5}
-                            className="px-3 py-8 text-center text-[13px] text-[#9aa1ab]"
+                            className="px-3 py-8 text-center text-[13px] text-admin-text-placeholder"
                           >
                             {status === "OPEN"
                               ? "확인이 필요한 이탈이 없습니다."
@@ -542,7 +542,7 @@ const EscapesPage = () => {
       {criticalEscape && (
         <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
           <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
-            <div className="text-[#e74c3c] text-xl font-bold mb-4">🚨 3단계 위급 이탈</div>
+            <div className="text-admin-escape-critical-text text-xl font-bold mb-4">🚨 3단계 위급 이탈</div>
             <div className="text-sm space-y-1.5 mb-5">
               <p>
                 <strong>참여자:</strong> {criticalEscape.participantName}
@@ -559,13 +559,13 @@ const EscapesPage = () => {
             </div>
             <div className="flex gap-2.5">
               <button
-                className="flex-1 py-3 text-sm font-bold rounded-[2px] bg-[#1e3a5f] text-white"
+                className="flex-1 py-3 text-sm font-bold rounded-[2px] bg-admin-brand text-white"
                 onClick={handleResolveCriticalButtonClick}
               >
                 확인 완료
               </button>
               <button
-                className="flex-1 py-3 text-sm font-bold rounded-[2px] border border-[#d7dbe1] bg-white"
+                className="flex-1 py-3 text-sm font-bold rounded-[2px] border border-admin-border bg-white"
                 onClick={() => setCriticalEscape(null)}
               >
                 닫기

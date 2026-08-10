@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 export type StatusChipVariant = "ok" | "warn" | "bad" | "pending" | "info";
 
 const VARIANT_CLASSES: Record<StatusChipVariant, string> = {
-  ok: "bg-[#e8f3ea] text-[#2f7d3c]",
-  warn: "bg-[#fdf3e0] text-[#a6690a]",
-  bad: "bg-[#fbe9e9] text-[#c0392b]",
-  pending: "bg-[#eef1f5] text-[#5b6472]",
-  info: "bg-[#eaf0f8] text-[#2b5b93]",
+  ok: "bg-admin-status-ok-bg text-admin-status-ok-text",
+  warn: "bg-admin-status-warn-bg text-admin-status-warn-text",
+  bad: "bg-admin-danger-tint text-admin-danger",
+  pending: "bg-admin-status-pending-bg text-admin-status-pending-text",
+  info: "bg-admin-status-info-bg text-admin-status-info-text",
 };
 
 interface StatusChipProps {
