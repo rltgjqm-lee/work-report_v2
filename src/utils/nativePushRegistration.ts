@@ -19,6 +19,13 @@ export const checkNativePushPermission = async (): Promise<
   }
 };
 
+// 대시보드는 Main.tsx의 view 전환마다(업무/안전 등록 화면 오갈 때마다) 매번 새로 마운트되고,
+// 그때마다 registerNativePush가 다시 호출된다 — 이 세션에서 이미 성공적으로 등록한
+// 참여자는 다시 서버에 upsert를 보내지 않게 걸러낸다. 모듈 스코프 변수라 앱을 완전히
+// 새로 켜면(모듈이 다시 로드되면) 초기화되므로, 아래 "실패 시 재시도" 안전망은 그대로
+// 유지된다 — 실패한 시도는 여기 추가하지 않아서 다음 리마운트에서 다시 시도된다.
+const registeredThisSession = new Set<number>();
+
 // 💡 등록확인 화면에서 출근 식별(이름 확인)에 성공하면 호출 — 하이브리드 앱(iOS/Android)에서
 // 네이티브 푸시 토큰을 등록한다(웹에서는 아무 것도 하지 않는다. 실패해도 흐름은 막지 않는다).
 // 이 시점엔 참여자가 이미 확정돼 있으므로 토큰을 처음부터 그 참여자와 연결해서 저장한다.
@@ -29,6 +36,7 @@ export const registerNativePush = async (
   participantId: number,
 ): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
+  if (registeredThisSession.has(participantId)) return;
 
   try {
     const permissionStatus = await PushNotifications.requestPermissions();
@@ -47,6 +55,7 @@ export const registerNativePush = async (
               token: token.value,
             }),
           });
+          registeredThisSession.add(participantId);
         } catch (error) {
           console.error("네이티브 푸시 토큰 서버 등록 실패:", error);
         } finally {
