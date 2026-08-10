@@ -12,7 +12,7 @@ import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import { KOREAN_REGIONS, SIDO_LIST } from "../../data/koreanRegions";
+import { KOREAN_REGIONS, SIDO_LIST } from "../../../constants/koreanRegions";
 import { ORGANIZATION_TYPES } from "../../data/organizationTypes";
 import type { Organization } from "../../types";
 

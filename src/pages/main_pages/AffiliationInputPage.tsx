@@ -14,6 +14,7 @@ import { validateForm } from "../../utils/validateFormData";
 import { PAGE1_RULES } from "../../types/validationRules";
 import { affiliationsQueryOptions } from "../../utils/affiliationsApi";
 import { demandSitesQueryOptions } from "../../utils/demandSitesApi";
+import { KOREAN_REGIONS, SIDO_LIST } from "../../constants/koreanRegions";
 
 import type { Affiliations } from "../../utils/affiliationsApi";
 import type { ActivityLogFormData } from "../../types/form";
@@ -129,26 +130,11 @@ const AffiliationInputPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demandSitesErrored]);
 
-  const sidoList = useMemo(
-    () =>
-      Array.from(
-        new Set(organizations.map((organization) => organization.regionSido).filter(Boolean)),
-      ) as string[],
-    [organizations],
-  );
+  // 💡 등록된 기관이 있는 지역만이 아니라 전국 시/도·시/군/구를 다 보여준다 — 아직 기관이
+  // 등록되지 않은 지역이라도 참여자가 자기 지역을 선택할 수 있어야 한다.
+  const sidoList = SIDO_LIST;
 
-  const sigunguList = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          organizations
-            .filter((organization) => organization.regionSido === sido)
-            .map((organization) => organization.regionSigungu)
-            .filter(Boolean),
-        ),
-      ) as string[],
-    [organizations, sido],
-  );
+  const sigunguList = useMemo(() => KOREAN_REGIONS[sido] ?? [], [sido]);
 
   const organizationCandidates = useMemo(
     () =>
