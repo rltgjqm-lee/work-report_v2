@@ -344,14 +344,7 @@ const AffiliationInputPage = ({
 
           {/* 수요처 */}
           <Dropdown
-            label={
-              <>
-                수요처명
-                <small className="ml-1.5 text-[13px] font-semibold text-text-muted">
-                  서비스 대상자 명
-                </small>
-              </>
-            }
+            label={"수요처명"}
             value={formData.demandName}
             disabled={!selectedProgramId}
             onChange={(value) => onChange("demandName", value)}
