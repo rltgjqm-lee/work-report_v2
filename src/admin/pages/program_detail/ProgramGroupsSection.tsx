@@ -13,13 +13,21 @@ interface ProgramGroupsSectionProps {
   programId: number;
   groups: Group[];
   programEndDate: string;
+  programStartTime: string;
+  programEndTime: string;
 }
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지의 조 관리 섹션입니다.
  *
  */
-const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGroupsSectionProps) => {
+const ProgramGroupsSection = ({
+  programId,
+  groups,
+  programEndDate,
+  programStartTime,
+  programEndTime,
+}: ProgramGroupsSectionProps) => {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [scheduleTarget, setScheduleTarget] = useState<Group | null>(null);
 
@@ -85,6 +93,8 @@ const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGrou
           onClose={() => setGroupModalOpen(false)}
           programId={programId}
           programEndDate={programEndDate}
+          programStartTime={programStartTime}
+          programEndTime={programEndTime}
         />
       )}
 
@@ -92,6 +102,8 @@ const ProgramGroupsSection = ({ programId, groups, programEndDate }: ProgramGrou
         <GroupMonthlyScheduleModal
           group={scheduleTarget}
           programEndDate={programEndDate}
+          programStartTime={programStartTime}
+          programEndTime={programEndTime}
           onClose={() => setScheduleTarget(null)}
         />
       )}

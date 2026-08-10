@@ -192,6 +192,8 @@ const ProgramDetailPage = () => {
           programId={programId}
           groups={groups}
           programEndDate={program.endDate}
+          programStartTime={program.startTime}
+          programEndTime={program.endTime}
         />
       )}
 

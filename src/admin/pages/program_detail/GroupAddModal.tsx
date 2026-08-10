@@ -27,6 +27,8 @@ interface GroupAddModalProps {
   onClose: () => void;
   programId: number;
   programEndDate: string;
+  programStartTime: string;
+  programEndTime: string;
 }
 
 /**
@@ -34,7 +36,13 @@ interface GroupAddModalProps {
  * 월간 근무 근무일도 같이 지정할 수 있고(선택), 근무일을 하나도 안 고르면
  * 근무일 없이 조만 만들어져서 나중에 "수정"으로 따로 설정해도 된다.
  */
-const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProps) => {
+const GroupAddModal = ({
+  onClose,
+  programId,
+  programEndDate,
+  programStartTime,
+  programEndTime,
+}: GroupAddModalProps) => {
   const [form, setForm] = useState(emptyForm);
   const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
   const [workDates, setWorkDates] = useState<string[]>([]);
@@ -96,6 +104,10 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
   const handleSaveButtonClick = () => {
     if (!form.name || !form.shiftStart || !form.shiftEnd) {
       alert("조 이름과 근무시간을 입력해주세요.");
+      return;
+    }
+    if (form.shiftStart < programStartTime || form.shiftEnd > programEndTime) {
+      alert(`근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`);
       return;
     }
     if (isOverCap) {
@@ -178,6 +190,8 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
             <input
               type="time"
               step={600}
+              min={programStartTime}
+              max={programEndTime}
               className={inputClass}
               value={form.shiftStart}
               onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
@@ -189,12 +203,17 @@ const GroupAddModal = ({ onClose, programId, programEndDate }: GroupAddModalProp
             <input
               type="time"
               step={600}
+              min={programStartTime}
+              max={programEndTime}
               className={inputClass}
               value={form.shiftEnd}
               onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
             />
           </FormField>
         </div>
+      </div>
+      <div className="text-[12px] text-[#9aa1ab] -mt-2">
+        사업단 운영시간({programStartTime}~{programEndTime}) 안에서 설정해주세요
       </div>
 
       <div className="border-t border-[#eceef1] pt-4 flex flex-col gap-4">

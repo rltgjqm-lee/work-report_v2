@@ -24,6 +24,8 @@ interface GroupMonthlyScheduleModalProps {
   onClose: () => void;
   group: Group;
   programEndDate: string;
+  programStartTime: string;
+  programEndTime: string;
 }
 
 /**
@@ -34,6 +36,8 @@ const GroupMonthlyScheduleModal = ({
   onClose,
   group,
   programEndDate,
+  programStartTime,
+  programEndTime,
 }: GroupMonthlyScheduleModalProps) => {
   const [form, setForm] = useState({
     name: group.name,
@@ -119,6 +123,10 @@ const GroupMonthlyScheduleModal = ({
       alert("조 이름과 근무시간을 입력해주세요.");
       return;
     }
+    if (form.shiftStart < programStartTime || form.shiftEnd > programEndTime) {
+      alert(`근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`);
+      return;
+    }
     if (isOverCap) {
       alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
@@ -197,6 +205,8 @@ const GroupMonthlyScheduleModal = ({
             <input
               type="time"
               step={600}
+              min={programStartTime}
+              max={programEndTime}
               className={inputClass}
               value={form.shiftStart}
               onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
@@ -208,12 +218,17 @@ const GroupMonthlyScheduleModal = ({
             <input
               type="time"
               step={600}
+              min={programStartTime}
+              max={programEndTime}
               className={inputClass}
               value={form.shiftEnd}
               onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
             />
           </FormField>
         </div>
+      </div>
+      <div className="text-[12px] text-[#9aa1ab] -mt-2">
+        사업단 운영시간({programStartTime}~{programEndTime}) 안에서 설정해주세요
       </div>
 
       <div className="border-t border-[#eceef1] pt-4 flex flex-col gap-4">
