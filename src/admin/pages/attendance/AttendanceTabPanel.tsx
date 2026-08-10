@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getMonthlyAttendance } from "../../api/admin/programs";
-import { correctAttendance, invalidateAttendance } from "../../api/admin/attendance";
+import {
+  correctAttendanceMutationOptions,
+  invalidateAttendanceMutationOptions,
+  monthlyAttendanceQueryOptions,
+  type AttendanceRow,
+} from "../../api/admin/attendance";
 import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
@@ -10,7 +15,7 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
-import type { AttendanceRow, AttendanceStats } from "../../types";
+import type { AttendanceStats } from "../../types";
 
 const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",
@@ -51,13 +56,11 @@ interface AttendanceTabPanelProps {
  *
  */
 const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelProps) => {
+  const queryClient = useQueryClient();
   const [month, setMonth] = useState(getLocalYearMonth());
   const [dayFilter, setDayFilter] = useState("all");
-  const [logs, setLogs] = useState<AttendanceRow[]>([]);
-  const [stats, setStats] = useState<AttendanceStats>(emptyStats);
 
   // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다.
-  // 렌더링 도중 상태를 조정해서 effect의 연쇄 렌더링을 피한다.
   const [prevMonth, setPrevMonth] = useState(month);
   if (month !== prevMonth) {
     setPrevMonth(month);
@@ -72,14 +75,14 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
     reason: "",
   });
 
-  const refresh = () => {
-    getMonthlyAttendance(programId, month).then((result) => {
-      setLogs(result.logs);
-      setStats(result.stats);
-    });
-  };
+  const { data: monthlyAttendance } = useQuery(monthlyAttendanceQueryOptions(programId, month));
+  const logs = monthlyAttendance?.logs ?? [];
+  const stats = monthlyAttendance?.stats ?? emptyStats;
 
-  useEffect(refresh, [programId, month]);
+  const correctAttendanceMutation = useMutation(correctAttendanceMutationOptions(queryClient));
+  const invalidateAttendanceMutation = useMutation(
+    invalidateAttendanceMutationOptions(queryClient),
+  );
 
   const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
@@ -125,39 +128,45 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
     });
   };
 
-  const handleSaveCorrectionButtonClick = async () => {
+  const handleSaveCorrectionButtonClick = () => {
     if (!correctionTarget) return;
     if (!correctionForm.reason) {
       alert("수정 사유를 입력해주세요.");
 
       return;
     }
-    try {
-      await correctAttendance(correctionTarget.log.id, {
-        clockIn: correctionForm.clockIn || undefined,
-        clockOut: correctionForm.clockOut || undefined,
-        status: correctionForm.status,
-        reason: correctionForm.reason,
-      });
-      setCorrectionTarget(null);
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "수정에 실패했습니다.");
-    }
+    correctAttendanceMutation.mutate(
+      {
+        logId: correctionTarget.log.id,
+        programId,
+        month,
+        data: {
+          clockIn: correctionForm.clockIn || undefined,
+          clockOut: correctionForm.clockOut || undefined,
+          status: correctionForm.status,
+          reason: correctionForm.reason,
+        },
+      },
+      {
+        onSuccess: () => setCorrectionTarget(null),
+        onError: (error) => alert(error instanceof Error ? error.message : "수정에 실패했습니다."),
+      },
+    );
   };
 
-  const handleInvalidateButtonClick = async (row: AttendanceRow) => {
+  const handleInvalidateButtonClick = (row: AttendanceRow) => {
     const reason = prompt(
       `'${row.participantName}' 님의 ${row.log.workDate} 근무 기록을 무효화합니다. 사유를 입력해주세요.`,
     );
     if (reason === null) return;
 
-    try {
-      await invalidateAttendance(row.log.id, reason || undefined);
-      refresh();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "무효화에 실패했습니다.");
-    }
+    invalidateAttendanceMutation.mutate(
+      { logId: row.log.id, programId, month, reason: reason || undefined },
+      {
+        onError: (error) =>
+          alert(error instanceof Error ? error.message : "무효화에 실패했습니다."),
+      },
+    );
   };
 
   return (
@@ -327,7 +336,10 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
               ))}
               {filteredLogs.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
+                  <td
+                    colSpan={12}
+                    className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                  >
                     {dayFilter === "all"
                       ? "해당 월에 근무 기록이 없습니다."
                       : "해당 일자에 근무 기록이 없습니다."}
@@ -378,7 +390,9 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">상태</label>
+                <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
+                  상태
+                </label>
                 <select
                   className={selectClass}
                   value={correctionForm.status}
@@ -414,9 +428,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
               <Button variant="ghost" onClick={() => setCorrectionTarget(null)}>
                 취소
               </Button>
-              <Button onClick={handleSaveCorrectionButtonClick}>
-                저장
-              </Button>
+              <Button onClick={handleSaveCorrectionButtonClick}>저장</Button>
             </div>
           </div>
         </div>

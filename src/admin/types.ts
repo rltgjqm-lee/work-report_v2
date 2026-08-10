@@ -210,15 +210,6 @@ export type ActivityLogSummary = {
   signed: boolean;
 };
 
-export type AttendanceRow = {
-  log: AttendanceLog;
-  participantName: string;
-  groupName: string | null;
-  shiftStart: string | null;
-  shiftEnd: string | null;
-  activity: ActivityLogSummary;
-};
-
 export type ParticipantAttendanceRow = {
   log: AttendanceLog;
   groupName: string | null;
@@ -233,11 +224,6 @@ export type AttendanceStats = {
   late: number;
   earlyLeave: number;
   totalHours: number;
-};
-
-export type MonthlyAttendance = {
-  logs: AttendanceRow[];
-  stats: AttendanceStats;
 };
 
 export type ParticipantMonthlyAttendance = {
