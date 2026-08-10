@@ -33,7 +33,7 @@ const HomePage = ({ formData, onOpenAffiliation, onStartActivityLog }: HomePageP
         </div>
         <div>
           <div className="text-left text-[clamp(18px,5vw,21px)] font-extrabold text-text-strong">
-            {formData.userName ? `${formData.userName}님, 안녕하세요` : "안녕하세요"}
+            {formData.userName ? `${formData.userName}님, 안녕하세요` : "안녕하세요, 참여자님!"}
           </div>
           <div className="text-left text-[clamp(13px,3.6vw,14px)] text-text-muted font-semibold mt-1.5">
             일자리 활동일지 관리
