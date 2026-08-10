@@ -55,6 +55,13 @@ const matchesOrgRegion = (regionText: string, sido: string, sigungu: string): bo
   return regionText.split(",").some((segment) => isSidoOnlySegment(segment, sido));
 };
 
+// crtDt로 오늘 것만 요청해도 행안부 서버가 과거 데이터를 섞어서 응답하는 사고가 실제로
+// 있었다(2026-08-10, 2023년 재난문자 28건이 매칭돼 발송까지 나감) — 요청 파라미터를
+// 신뢰하지 않고, 받은 메시지의 CRT_DT(sentAt)가 실제로 오늘(KST) 것인지 우리 쪽에서
+// 한 번 더 확인한다. sentAt은 "YYYY/MM/DD HH:MM:SS" 형식이라 앞 10자를 대시로 바꿔 비교한다.
+const isSentToday = (sentAt: string, todayDate: string): boolean =>
+  sentAt.slice(0, 10).replaceAll("/", "-") === todayDate;
+
 type CallBudgetState = { callCount: number; processedCount: number; exists: boolean };
 
 const getCallBudgetState = async (db: DB, date: string): Promise<CallBudgetState> => {
@@ -142,7 +149,13 @@ const chunk = <T>(items: T[], size: number): T[][] => {
 // 1단계: 새 재난문자를 조회해서 지역/근무시간에 매칭되는 구독을 대기열에 적재만 한다
 const enqueueNewMatches = async (db: DB, env: Env["Bindings"]): Promise<void> => {
   const { date } = getKstNow();
-  const messages = await fetchNewMessagesWithBudget(db, env, date);
+  const rawMessages = await fetchNewMessagesWithBudget(db, env, date);
+  const messages = rawMessages.filter((message) => isSentToday(message.sentAt, date));
+  if (rawMessages.length !== messages.length) {
+    console.error(
+      `재난문자 API가 crtDt=${date} 요청에 오늘 날짜가 아닌 메시지를 ${rawMessages.length - messages.length}건 섞어서 응답 — 무시함.`,
+    );
+  }
   if (messages.length === 0) return;
 
   // safetyAlerts엔 이제 지역이 매칭된(=실제로 발송 대상이 된) 메시지만 저장되므로, 이 dedup은
