@@ -1,13 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  cancelTrainingLog,
-  createTraining,
-  createTrainingLog,
-  getTrainingSummary,
-  listTrainingLogs,
-  listTrainings,
-  updateTraining,
+  cancelTrainingLogMutationOptions,
+  createTrainingLogMutationOptions,
+  createTrainingMutationOptions,
+  trainingLogsQueryOptions,
+  trainingComplianceQueryOptions,
+  trainingsQueryOptions,
+  updateTrainingMutationOptions,
+  type ProjectTraining,
+  type TrainingCategory,
+  type TrainingLogRow,
+  type TrainingPayMode,
 } from "../../api/admin/trainings";
 import FilterSelect from "../../components/FilterSelect";
 import ItemCard from "../../components/ItemCard";
@@ -20,14 +25,7 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { getLocalToday } from "../../../utils/timeFormat";
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
-import type {
-  Participant,
-  ProjectTraining,
-  TrainingCategory,
-  TrainingLogRow,
-  TrainingPayMode,
-  TrainingSummaryRow,
-} from "../../types";
+import type { Participant } from "../../types";
 
 const CATEGORY_LABEL: Record<TrainingCategory, string> = {
   PRE: "사전",
@@ -41,7 +39,7 @@ const PAY_MODE_LABEL: Record<TrainingPayMode, string> = {
   NONE: "미지급(기록만)",
 };
 
-type SubTab = "definitions" | "logs" | "summary";
+type SubTab = "definitions" | "logs" | "compliance";
 
 const emptyTrainingForm = {
   name: "",
@@ -83,11 +81,9 @@ interface TrainingTabPanelProps {
  * 교육 정의/이수 현황/필수교육 현황 하위 탭 3개.
  */
 const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingTabPanelProps) => {
+  const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<SubTab>("definitions");
 
-  const [trainings, setTrainings] = useState<ProjectTraining[]>([]);
-  const [logs, setLogs] = useState<TrainingLogRow[]>([]);
-  const [summary, setSummary] = useState<TrainingSummaryRow[]>([]);
   const [logTrainingFilter, setLogTrainingFilter] = useState("all");
   const [logSearch, setLogSearch] = useState("");
 
@@ -98,24 +94,23 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [logForm, setLogForm] = useState(emptyLogForm);
 
-  const refreshTrainings = () => {
-    listTrainings(programId).then(setTrainings);
-  };
-
-  const refreshLogs = () => {
-    listTrainingLogs(
+  // 교육 목록은 "이수 현황" 탭의 필터/모달과 "필수교육 현황" 탭에서도 참조하니 탭과 무관하게 받아둔다.
+  const { data: trainings = [] } = useQuery(trainingsQueryOptions(programId));
+  const { data: logs = [] } = useQuery(
+    trainingLogsQueryOptions(
       programId,
       logTrainingFilter === "all" ? undefined : Number(logTrainingFilter),
-    ).then(setLogs);
-  };
+      subTab === "logs",
+    ),
+  );
+  const { data: compliance = [] } = useQuery(
+    trainingComplianceQueryOptions(programId, subTab === "compliance"),
+  );
 
-  const refreshSummary = () => {
-    getTrainingSummary(programId).then(setSummary);
-  };
-
-  useEffect(refreshTrainings, [programId]);
-  useEffect(refreshLogs, [programId, logTrainingFilter]);
-  useEffect(refreshSummary, [programId]);
+  const createTrainingMutation = useMutation(createTrainingMutationOptions(queryClient));
+  const updateTrainingMutation = useMutation(updateTrainingMutationOptions(queryClient));
+  const createTrainingLogMutation = useMutation(createTrainingLogMutationOptions(queryClient));
+  const cancelTrainingLogMutation = useMutation(cancelTrainingLogMutationOptions(queryClient));
 
   const handleAddTrainingButtonClick = () => {
     setEditingTraining(null);
@@ -139,18 +134,18 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     setTrainingModalOpen(true);
   };
 
-  const handleToggleTrainingActiveButtonClick = async (training: ProjectTraining) => {
+  const handleToggleTrainingActiveButtonClick = (training: ProjectTraining) => {
     const actionLabel = training.isActive ? "비활성화" : "활성화";
     if (!confirm(`'${training.name}' 교육을 ${actionLabel}하시겠습니까?`)) return;
-    try {
-      await updateTraining(training.id, { isActive: !training.isActive });
-      refreshTrainings();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "처리에 실패했습니다.");
-    }
+    updateTrainingMutation.mutate(
+      { id: training.id, programId, data: { isActive: !training.isActive } },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
   };
 
-  const handleSaveTrainingButtonClick = async () => {
+  const handleSaveTrainingButtonClick = () => {
     if (!trainingForm.name) {
       alert("교육명을 입력해주세요.");
 
@@ -161,28 +156,30 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
 
       return;
     }
-    try {
-      const payload = {
-        name: trainingForm.name,
-        category: trainingForm.category,
-        trainingDate: trainingForm.trainingDate || undefined,
-        isPaid: trainingForm.isPaid,
-        payMode: trainingForm.payMode,
-        startTime: trainingForm.startTime || undefined,
-        endTime: trainingForm.endTime || undefined,
-        hours: computeTrainingHours(trainingForm.startTime, trainingForm.endTime),
-        dailyWage: trainingForm.dailyWage ? Number(trainingForm.dailyWage) : undefined,
-        isRequired: trainingForm.isRequired,
-      };
-      if (editingTraining) {
-        await updateTraining(editingTraining.id, payload);
-      } else {
-        await createTraining({ programId, ...payload });
-      }
-      setTrainingModalOpen(false);
-      refreshTrainings();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    const payload = {
+      name: trainingForm.name,
+      category: trainingForm.category,
+      trainingDate: trainingForm.trainingDate || undefined,
+      isPaid: trainingForm.isPaid,
+      payMode: trainingForm.payMode,
+      startTime: trainingForm.startTime || undefined,
+      endTime: trainingForm.endTime || undefined,
+      hours: computeTrainingHours(trainingForm.startTime, trainingForm.endTime),
+      dailyWage: trainingForm.dailyWage ? Number(trainingForm.dailyWage) : undefined,
+      isRequired: trainingForm.isRequired,
+    };
+    const onSettled = {
+      onSuccess: () => setTrainingModalOpen(false),
+      onError: (error: unknown) =>
+        alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
+    };
+    if (editingTraining) {
+      updateTrainingMutation.mutate(
+        { id: editingTraining.id, programId, data: payload },
+        onSettled,
+      );
+    } else {
+      createTrainingMutation.mutate({ programId, ...payload }, onSettled);
     }
   };
 
@@ -191,37 +188,38 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     setLogModalOpen(true);
   };
 
-  const handleSaveLogButtonClick = async () => {
+  const handleSaveLogButtonClick = () => {
     if (!logForm.participantId || !logForm.trainingId || !logForm.attendDate) {
       alert("참여자, 교육, 이수일자를 입력해주세요.");
 
       return;
     }
-    try {
-      await createTrainingLog({
+    createTrainingLogMutation.mutate(
+      {
+        programId,
         participantId: Number(logForm.participantId),
         trainingId: Number(logForm.trainingId),
         attendDate: logForm.attendDate,
         attendHours: logForm.attendHours ? Number(logForm.attendHours) : undefined,
-      });
-      setLogModalOpen(false);
-      refreshLogs();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "등록에 실패했습니다.");
-    }
+      },
+      {
+        onSuccess: () => setLogModalOpen(false),
+        onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
+      },
+    );
   };
 
-  const handleCancelLogButtonClick = async (log: TrainingLogRow) => {
+  const handleCancelLogButtonClick = (log: TrainingLogRow) => {
     if (
       !confirm(`'${log.participantName}' 님의 '${log.trainingName}' 이수 기록을 취소하시겠습니까?`)
     )
       return;
-    try {
-      await cancelTrainingLog(log.log.id);
-      refreshLogs();
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "취소에 실패했습니다.");
-    }
+    cancelTrainingLogMutation.mutate(
+      { logId: log.log.id, programId },
+      {
+        onError: (error) => alert(error instanceof Error ? error.message : "취소에 실패했습니다."),
+      },
+    );
   };
 
   // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체)
@@ -231,9 +229,9 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
       (!participantIds || participantIds.has(row.log.participantId)),
   );
 
-  const filteredSummary = participantIds
-    ? summary.filter((row) => participantIds.has(row.participantId))
-    : summary;
+  const filteredCompliance = participantIds
+    ? compliance.filter((row) => participantIds.has(row.participantId))
+    : compliance;
 
   return (
     <div>
@@ -241,7 +239,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
         tabs={[
           ["definitions", "교육 정의"],
           ["logs", "이수 현황"],
-          ["summary", "필수교육 현황"],
+          ["compliance", "필수교육 현황"],
         ]}
         active={subTab}
         onChange={setSubTab}
@@ -391,7 +389,10 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                 ))}
                 {filteredLogs.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
+                    <td
+                      colSpan={7}
+                      className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                    >
                       이수 기록이 없습니다.
                     </td>
                   </tr>
@@ -402,7 +403,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
         </div>
       )}
 
-      {subTab === "summary" && (
+      {subTab === "compliance" && (
         <div className="bg-white border border-admin-border-subtle rounded-[2px]">
           <div className="px-5 py-4 border-b border-border-faint">
             <span className="text-sm font-bold">필수교육 미이수자</span>
@@ -420,7 +421,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                 </tr>
               </thead>
               <tbody>
-                {filteredSummary.map((row) => (
+                {filteredCompliance.map((row) => (
                   <tr key={row.participantId} className="hover:bg-admin-row-hover">
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.participantName}
@@ -430,9 +431,12 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                     </td>
                   </tr>
                 ))}
-                {filteredSummary.length === 0 && (
+                {filteredCompliance.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
+                    <td
+                      colSpan={2}
+                      className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                    >
                       미이수자가 없습니다.
                     </td>
                   </tr>
@@ -453,9 +457,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               <Button variant="ghost" onClick={() => setTrainingModalOpen(false)}>
                 취소
               </Button>
-              <Button onClick={handleSaveTrainingButtonClick}>
-                저장
-              </Button>
+              <Button onClick={handleSaveTrainingButtonClick}>저장</Button>
             </>
           }
         >
@@ -594,9 +596,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               <Button variant="ghost" onClick={() => setLogModalOpen(false)}>
                 취소
               </Button>
-              <Button onClick={handleSaveLogButtonClick}>
-                저장
-              </Button>
+              <Button onClick={handleSaveLogButtonClick}>저장</Button>
             </>
           }
         >
