@@ -710,6 +710,7 @@ app.get("/:id/attendance", async (c) => {
       groupName: groups.name,
       shiftStart: groups.shiftStart,
       shiftEnd: groups.shiftEnd,
+      activityLogId: activityLogs.id,
       hasAccident: activityLogs.hasAccident,
       accidentChecked: activityLogs.accidentChecked,
       accidentDetail: activityLogs.accidentDetail,
@@ -731,27 +732,46 @@ app.get("/:id/attendance", async (c) => {
       and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
     );
 
+  // 참여자가 같은 날짜에 활동일지를 중복 제출하면(오프라인 재동기화 등) 위 조인이 근무
+  // 기록 하나를 여러 번 복제해서 내려보낸다 — 근무 기록 id당 가장 최근 활동일지 하나만 남긴다.
+  const dedupedRows = [
+    ...rows
+      .reduce((byLogId, row) => {
+        const existing = byLogId.get(row.log.id);
+        if (!existing || (row.activityLogId ?? -1) > (existing.activityLogId ?? -1)) {
+          byLogId.set(row.log.id, row);
+        }
+
+        return byLogId;
+      }, new Map<number, (typeof rows)[number]>())
+      .values(),
+  ];
+
   const stats = {
-    total: rows.length,
-    normal: rows.filter((row) => row.log.status === "NORMAL").length,
-    late: rows.filter((row) => row.log.status === "LATE").length,
-    earlyLeave: rows.filter((row) => row.log.status === "EARLY_LEAVE").length,
-    totalHours: Math.floor(rows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60),
+    total: dedupedRows.length,
+    normal: dedupedRows.filter((row) => row.log.status === "NORMAL").length,
+    late: dedupedRows.filter((row) => row.log.status === "LATE").length,
+    earlyLeave: dedupedRows.filter((row) => row.log.status === "EARLY_LEAVE").length,
+    totalHours: Math.floor(
+      dedupedRows.reduce((sum, row) => sum + (row.log.totalMinutes ?? 0), 0) / 60,
+    ),
   };
 
   // 원본 서명 텍스트(base64)는 목록 응답에 실을 필요가 없어 있는지 여부만 boolean으로 내려준다.
-  const logs = rows.map(
-    ({ hasAccident, accidentChecked, accidentDetail, accidentAction, userSignature, ...row }) => ({
-      ...row,
-      activity: {
-        hasAccident: hasAccident ?? false,
-        accidentChecked: accidentChecked ?? false,
-        accidentDetail: accidentDetail ?? null,
-        accidentAction: accidentAction ?? null,
-        signed: !!userSignature,
-      },
-    }),
-  );
+  const logs = dedupedRows.map((row) => ({
+    log: row.log,
+    participantName: row.participantName,
+    groupName: row.groupName,
+    shiftStart: row.shiftStart,
+    shiftEnd: row.shiftEnd,
+    activity: {
+      hasAccident: row.hasAccident ?? false,
+      accidentChecked: row.accidentChecked ?? false,
+      accidentDetail: row.accidentDetail ?? null,
+      accidentAction: row.accidentAction ?? null,
+      signed: !!row.userSignature,
+    },
+  }));
 
   return c.json({ logs, stats });
 });

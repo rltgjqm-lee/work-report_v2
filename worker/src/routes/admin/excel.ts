@@ -65,11 +65,27 @@ app.get("/:id/export/activity-log", async (c) => {
     .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)))
     .orderBy(activityLogs.actDate);
 
+  // 참여자가 같은 날짜에 활동일지를 중복 제출하면(오프라인 재동기화 등) 참여자+날짜당
+  // 가장 최근(id가 큰) 한 건만 남긴다 — 아니면 지급대장/근무일지에 같은 날이 중복 표기된다.
+  const dedupedRows = [
+    ...rows
+      .reduce((byParticipantDate, row) => {
+        const key = `${row.log.participantId}:${row.log.actDate}`;
+        const existing = byParticipantDate.get(key);
+        if (!existing || row.log.id > existing.log.id) {
+          byParticipantDate.set(key, row);
+        }
+
+        return byParticipantDate;
+      }, new Map<string, (typeof rows)[number]>())
+      .values(),
+  ];
+
   const participantsByName = new Map<
     string,
     { demandName: string | null; logs: (typeof rows)[number]["log"][] }
   >();
-  for (const row of rows) {
+  for (const row of dedupedRows) {
     if (!participantsByName.has(row.participantName)) {
       participantsByName.set(row.participantName, {
         demandName: row.demandName,
@@ -134,8 +150,24 @@ app.get("/:id/export/activity-payment", async (c) => {
     .innerJoin(participants, eq(activityLogs.participantId, participants.id))
     .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)));
 
+  // 참여자가 같은 날짜에 활동일지를 중복 제출하면(오프라인 재동기화 등) 참여자+날짜당
+  // 가장 최근(id가 큰) 한 건만 남긴다 — 아니면 지급액이 중복 합산된다.
+  const dedupedLogRows = [
+    ...logRows
+      .reduce((byParticipantDate, row) => {
+        const key = `${row.log.participantId}:${row.log.actDate}`;
+        const existing = byParticipantDate.get(key);
+        if (!existing || row.log.id > existing.log.id) {
+          byParticipantDate.set(key, row);
+        }
+
+        return byParticipantDate;
+      }, new Map<string, (typeof logRows)[number]>())
+      .values(),
+  ];
+
   const minutesByParticipant = new Map<number, number>();
-  for (const { log } of logRows) {
+  for (const { log } of dedupedLogRows) {
     const [startHour, startMinute] = log.startTime.split(":").map(Number);
     const [endHour, endMinute] = log.endTime.split(":").map(Number);
     const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
