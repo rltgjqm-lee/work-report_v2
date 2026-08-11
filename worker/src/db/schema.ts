@@ -732,5 +732,7 @@ export const activityLogs = sqliteTable(
       .notNull()
       .default(sql`(current_timestamp)`),
   },
-  (table) => [index("idx_activity_participant_date").on(table.participantId, table.actDate)],
+  (table) => [
+    uniqueIndex("activity_logs_participant_date_unique").on(table.participantId, table.actDate),
+  ],
 );

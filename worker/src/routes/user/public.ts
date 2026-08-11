@@ -904,6 +904,9 @@ app.post("/activity-logs", async (c) => {
     return c.json({ error: validationError }, 400);
   }
 
+  // 오프라인 큐가 서버 저장 성공 후 로컬에 serverId를 기록하기 전에 앱이 죽으면
+  // 같은 참여자+날짜를 다시 신규 등록으로 재전송할 수 있다 — 그때 새 행 대신 기존
+  // 행을 덮어써서(participant_id+act_date 유니크) 근무 기록/지급액이 중복되지 않게 한다.
   const result = await db
     .insert(activityLogs)
     .values({
@@ -919,6 +922,21 @@ app.post("/activity-logs", async (c) => {
       accidentAction: body.accidentAction,
       userSignature: body.userSignature,
       demandSignature: body.demandSignature,
+    })
+    .onConflictDoUpdate({
+      target: [activityLogs.participantId, activityLogs.actDate],
+      set: {
+        startTime: body.startTime,
+        endTime: body.endTime,
+        content: body.content,
+        place: body.place,
+        hasAccident: body.hasAccident ?? false,
+        accidentChecked: body.accidentChecked ?? false,
+        accidentDetail: body.accidentDetail,
+        accidentAction: body.accidentAction,
+        userSignature: body.userSignature,
+        demandSignature: body.demandSignature,
+      },
     })
     .returning();
 
