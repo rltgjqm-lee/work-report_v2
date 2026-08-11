@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
-import { getProgram, listPrograms } from "../../api/admin/programs";
-import { listDemandSites } from "../../api/admin/demandSites";
+import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
+import { demandSitesQueryOptions } from "../../api/admin/demandSites";
 import FilterSelect from "../../components/FilterSelect";
 import TabBar from "../../components/bar/TabBar";
 import AttendanceTabPanel from "./AttendanceTabPanel";
 import LeaveTabPanel from "./LeaveTabPanel";
 import TrainingTabPanel from "./TrainingTabPanel";
-import type { DemandSite, Participant, Program } from "../../types";
 
 type Tab = "attendance" | "training" | "leave";
 
@@ -21,19 +21,16 @@ const AttendancePage = () => {
   const navigate = useNavigate();
   const preselectedProgramId = id ? Number(id) : null;
 
-  const [programs, setPrograms] = useState<Program[]>([]);
   const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
-  const [programName, setProgramName] = useState("");
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [demandSites, setDemandSites] = useState<DemandSite[]>([]);
   const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
   const [tab, setTab] = useState<Tab>("attendance");
 
   // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
-  useEffect(() => {
-    if (!preselectedProgramId) listPrograms().then(setPrograms);
-  }, [preselectedProgramId]);
+  const { data: programs = [] } = useQuery({
+    ...programsQueryOptions,
+    enabled: !preselectedProgramId,
+  });
 
   const programId = preselectedProgramId ?? Number(selectedProgramId);
 
@@ -45,14 +42,17 @@ const AttendancePage = () => {
     [programs, programTypeFilter],
   );
 
-  useEffect(() => {
-    if (!programId) return;
-    getProgram(programId).then((program) => {
-      setProgramName(program.name);
-      setParticipants(program.participants);
-    });
-    listDemandSites(programId).then(setDemandSites);
-  }, [programId]);
+  const { data: program } = useQuery({
+    ...programQueryOptions(programId),
+    enabled: !!programId,
+  });
+  const programName = program?.name ?? "";
+  const participants = useMemo(() => program?.participants ?? [], [program]);
+
+  const { data: demandSites = [] } = useQuery({
+    ...demandSitesQueryOptions(programId),
+    enabled: !!programId,
+  });
 
   // 근무/교육/휴가 데이터에는 수요처 정보가 없고 참여자 id만 있다 —
   // 선택한 수요처 소속 참여자 id 집합을 만들어 각 탭에서 그걸로 걸러낸다.
