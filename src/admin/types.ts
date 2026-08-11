@@ -253,39 +253,12 @@ export type ParticipantLeave = {
   createdAt: string;
 };
 
-export type LeaveRow = {
-  leave: ParticipantLeave;
-  participantName: string;
-  groupName: string | null;
-  annualTotalDays: number | null;
-  annualUsedDays: number | null;
-  annualRemainingDays: number | null;
-};
-
 export type AnnualLeave = {
   participantId: number;
   year: string;
   totalDays: number;
   usedDays: number;
   remainingDays: number;
-};
-
-type LeaveMonthlyStat = {
-  month: string;
-  totalLeaves: number;
-  paidLeaves: number;
-  unpaidLeaves: number;
-  totalDays: number;
-};
-
-export type LeaveStats = {
-  monthly: LeaveMonthlyStat[];
-  annual: {
-    participants: number;
-    totalAnnual: number;
-    usedAnnual: number;
-    remainingAnnual: number;
-  };
 };
 
 export type EscapeStatus = "OPEN" | "RESOLVED";

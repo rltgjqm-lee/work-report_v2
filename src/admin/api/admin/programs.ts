@@ -2,7 +2,7 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 
 import { request } from "../client";
 import { adminKeys } from "./admins";
-import type { LeaveRow, LeaveStats, Program, ProgramWithParticipants } from "../../types";
+import type { Program, ProgramWithParticipants } from "../../types";
 
 export const listPrograms = (organizationId?: number) =>
   request<Program[]>(`/api/programs${organizationId ? `?organizationId=${organizationId}` : ""}`);
@@ -90,9 +90,3 @@ export const setProgramManagerMutationOptions = (queryClient: QueryClient) =>
       queryClient.invalidateQueries({ queryKey: adminKeys.all });
     },
   });
-
-export const getLeaves = (programId: number, month?: string) =>
-  request<LeaveRow[]>(`/api/programs/${programId}/leaves${month ? `?month=${month}` : ""}`);
-
-export const getLeaveStats = (programId: number, year: string) =>
-  request<LeaveStats>(`/api/programs/${programId}/leaves/stats?year=${year}`);

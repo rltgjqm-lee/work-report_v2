@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { getLeaves, getLeaveStats } from "../../api/admin/programs";
+import {
+  leaveStatsQueryOptions,
+  leavesQueryOptions,
+  type LeaveStats,
+} from "../../api/admin/leaves";
 import MonthPicker from "../../components/MonthPicker";
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import type { LeaveRow, LeaveStats } from "../../types";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
   PAID: "유급",
@@ -37,13 +41,11 @@ interface LeaveTabPanelProps {
  */
 const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
   const [month, setMonth] = useState(getLocalYearMonth());
-  const [leaves, setLeaves] = useState<LeaveRow[]>([]);
-  const [stats, setStats] = useState<LeaveStats>(emptyStats);
 
-  useEffect(() => {
-    getLeaves(programId, month).then(setLeaves);
-    getLeaveStats(programId, month.slice(0, 4)).then(setStats);
-  }, [programId, month]);
+  const { data: leaves = [] } = useQuery(leavesQueryOptions(programId, month));
+  const { data: stats = emptyStats } = useQuery(
+    leaveStatsQueryOptions(programId, month.slice(0, 4)),
+  );
 
   // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체).
   // 상단 통계는 사업단/연 단위 집계라 필터와 무관하게 그대로 둔다.
@@ -63,7 +65,9 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
 
       <div className="grid grid-cols-3 mb-3">
         <div className="px-5 py-4 border border-admin-border-subtle">
-          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">이달 휴가</div>
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
+            이달 휴가
+          </div>
           <div className="text-sm font-bold">{monthStat?.totalLeaves ?? 0}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
@@ -148,7 +152,10 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
               ))}
               {filteredLeaves.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
+                  <td
+                    colSpan={8}
+                    className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                  >
                     해당 월에 휴가 기록이 없습니다.
                   </td>
                 </tr>
