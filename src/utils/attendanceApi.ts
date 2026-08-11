@@ -45,13 +45,22 @@ export const adminRoleQueryOptions = queryOptions({
   queryFn: getCurrentAdminRole,
 });
 
+export type TodayAttendance = {
+  clockIn: string | null;
+  clockOut: string | null;
+  // 오늘이 배정된 근무일인지 — 참여자/조 스케줄이 아예 없는 사업단은 제약이 없다는 뜻으로 true.
+  isWorkDay: boolean;
+  shiftStart: string | null; // "HH:MM", 조가 없으면 null
+  shiftEnd: string | null;
+};
+
 // 오늘 실제 출퇴근 기록(서버 attendance_logs)을 조회 — 홈 화면의 출근/퇴근 상태는
 // 브라우저 로컬 캐시가 아니라 이 값을 기준으로 맞춘다(캐시가 없거나 어긋나도 정확하도록).
 // debug가 있으면 clock-in/out과 같은 날짜 기준으로 조회한다(테스트 패널 날짜와 어긋나지 않도록).
 export const getTodayAttendance = async (
   participantId: number,
   debug?: DebugAttendanceOverride,
-): Promise<{ clockIn: string | null; clockOut: string | null }> => {
+): Promise<TodayAttendance> => {
   const params = new URLSearchParams({ participantId: String(participantId) });
   if (debug?.date) params.set("debugDate", debug.date);
   if (debug?.time) params.set("debugTime", debug.time);

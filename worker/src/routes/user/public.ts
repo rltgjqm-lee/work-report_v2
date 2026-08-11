@@ -253,19 +253,87 @@ app.get("/attendance/today", async (c) => {
     debugTime: c.req.query("debugTime"),
   });
   const { date } = getKstNow(debugOverride.date, debugOverride.time);
+  const yearMonth = date.slice(0, 7);
 
-  const rows = await db
-    .select({
-      clockIn: attendanceLogs.clockIn,
-      clockOut: attendanceLogs.clockOut,
-    })
-    .from(attendanceLogs)
-    .where(and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, date)));
+  const participantRows = await db
+    .select()
+    .from(participants)
+    .where(eq(participants.id, participantId));
+  const participant = participantRows[0];
+  if (!participant) {
+    return c.json({ error: "본인 확인이 만료되었습니다. 다시 확인해주세요." }, 404);
+  }
 
-  const row = rows[0];
+  const [attendanceRows, groupOverrideRows, participantScheduleRows] = await Promise.all([
+    db
+      .select({ clockIn: attendanceLogs.clockIn, clockOut: attendanceLogs.clockOut })
+      .from(attendanceLogs)
+      .where(
+        and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, date)),
+      ),
+    // 오늘 날짜의 조 임시 배정이 있으면 원래 조 대신 이 조를 기준으로 근무일/근무시간을 본다
+    // — clock-in의 effectiveGroupId 판정과 동일한 로직이어야 화면과 실제 출근 처리가 어긋나지 않는다.
+    db
+      .select()
+      .from(participantGroupOverrides)
+      .where(
+        and(
+          eq(participantGroupOverrides.participantId, participantId),
+          eq(participantGroupOverrides.date, date),
+        ),
+      ),
+    db
+      .select()
+      .from(participantMonthlySchedule)
+      .where(
+        and(
+          eq(participantMonthlySchedule.participantId, participantId),
+          eq(participantMonthlySchedule.yearMonth, yearMonth),
+        ),
+      ),
+  ]);
+
+  const attendanceRow = attendanceRows[0];
+  const effectiveGroupId = groupOverrideRows[0]?.groupId ?? participant.groupId;
+
+  let workDates = participantScheduleRows[0]
+    ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
+    : null;
+  let group: typeof groups.$inferSelect | undefined;
+
+  if (effectiveGroupId) {
+    const [groupScheduleRows, groupRows] = await Promise.all([
+      workDates
+        ? Promise.resolve([])
+        : db
+            .select()
+            .from(groupMonthlySchedule)
+            .where(
+              and(
+                eq(groupMonthlySchedule.groupId, effectiveGroupId),
+                eq(groupMonthlySchedule.yearMonth, yearMonth),
+              ),
+            ),
+      db.select().from(groups).where(eq(groups.id, effectiveGroupId)),
+    ]);
+    if (!workDates) {
+      workDates = groupScheduleRows[0]
+        ? (JSON.parse(groupScheduleRows[0].workDates) as string[])
+        : null;
+    }
+    group = groupRows[0];
+  }
+
+  // 참여자/조 스케줄이 아예 없으면(스케줄 미편성 사업단) 근무일 여부를 판단할 근거가 없으니
+  // 막지 않는다 — clock-in의 "workDates && !workDates.includes(date)" 판정과 동일 기준.
+  const isWorkDay = !workDates || workDates.includes(date);
+
   return c.json({
-    clockIn: row?.clockIn ?? null,
-    clockOut: row?.clockOut ?? null,
+    clockIn: attendanceRow?.clockIn ?? null,
+    clockOut: attendanceRow?.clockOut ?? null,
+    isWorkDay,
+    shiftStart: group?.shiftStart ?? null,
+    shiftEnd: group?.shiftEnd ?? null,
   });
 });
 

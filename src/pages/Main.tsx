@@ -129,6 +129,14 @@ const Main = () => {
   const [debugDate, setDebugDate] = useState("");
   const [debugTime, setDebugTime] = useState("");
 
+  // 💡 홈 화면의 "오늘의 상태" 카드용 — 오늘이 근무일인지/조 근무시간. formData(활동일지
+  // 초안)와는 성격이 달라 별도 state로 둔다.
+  const [todayStatus, setTodayStatus] = useState<{
+    isWorkDay: boolean;
+    shiftStart: string | null;
+    shiftEnd: string | null;
+  } | null>(null);
+
   // functions
   // 💡 "확인" 누를 때까지 기다렸다가 다음 동작(예: 저장 후 홈 이동)을 이어가야 하는
   // 곳(handleStepDataSave)이 있어서, 모달을 네이티브 alert()처럼 await 가능하게
@@ -351,12 +359,13 @@ const Main = () => {
       date: debugDate || undefined,
       time: debugTime || undefined,
     })
-      .then(({ clockIn, clockOut }) => {
+      .then(({ clockIn, clockOut, isWorkDay, shiftStart, shiftEnd }) => {
         setFormData((prev) => ({
           ...prev,
           startTime: clockIn ? isoToTimeParts(clockIn) : { ampm: "AM", hour: "", minute: "" },
           endTime: clockOut ? isoToTimeParts(clockOut) : { ampm: "PM", hour: "", minute: "" },
         }));
+        setTodayStatus({ isWorkDay, shiftStart, shiftEnd });
       })
       .catch(() => {
         // 네트워크 오류 등은 조용히 무시하고 로컬 캐시 값을 그대로 쓴다.
@@ -407,12 +416,20 @@ const Main = () => {
         {view === VIEW_TYPE.MAIN && (
           <HomePage
             formData={formData}
+            todayStatus={todayStatus}
             onOpenAffiliation={() => setView(VIEW_TYPE.AFFILIATION)}
-            onStartActivityLog={() =>
-              // 💡 이름이 없으면 등록확인의 본인확인 쿼리가 disabled 상태로 멈춰서
+            onStartActivityLog={() => {
+              // 💡 오늘 이미 출근을 했으면(서버 값 기준) 본인 확인은 그 출근 시점에 이미
+              // 됐다고 보고, 다시 안 거치고 바로 대시보드로 보낸다 — 공유 기기 등에서의
+              // 오인 방지용 재확인은 출근 전까지만 의미가 있다.
+              if (formData.participantId && formData.startTime.hour !== "") {
+                setView(VIEW_TYPE.DASHBOARD);
+                return;
+              }
+              // 이름이 없으면 등록확인의 본인확인 쿼리가 disabled 상태로 멈춰서
               // "확인하는 중이에요"에서 영영 안 넘어간다 — 그 전에 기본정보 등록으로 보낸다.
-              setView(formData.userName ? VIEW_TYPE.REGISTRATION_CONFIRM : VIEW_TYPE.AFFILIATION)
-            }
+              setView(formData.userName ? VIEW_TYPE.REGISTRATION_CONFIRM : VIEW_TYPE.AFFILIATION);
+            }}
           />
         )}
 
