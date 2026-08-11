@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq, like } from "drizzle-orm";
+import { and, eq, getTableColumns, like } from "drizzle-orm";
 
 import {
   programs,
@@ -14,6 +14,7 @@ import {
   participantLeaves,
   participantAnnualLeave,
   participantTrainingLogs,
+  demandSites,
 } from "../../db/schema";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { getHolidayName } from "../../lib/koreanHolidays";
@@ -54,14 +55,18 @@ app.get("/:id/export/activity-log", async (c) => {
     .where(eq(organizations.id, program.organizationId));
   const organizationName = organizationRows[0]?.name ?? "";
 
+  // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
+  // 참여자는 있을 수 있어서, 그 경우 수요처명을 채워서 내려준다.
   const rows = await db
     .select({
       log: activityLogs,
       participantName: participants.name,
       demandName: participants.demandName,
+      demandSiteName: demandSites.name,
     })
     .from(activityLogs)
     .innerJoin(participants, eq(activityLogs.participantId, participants.id))
+    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
     .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)))
     .orderBy(activityLogs.actDate);
 
@@ -88,7 +93,7 @@ app.get("/:id/export/activity-log", async (c) => {
   for (const row of dedupedRows) {
     if (!participantsByName.has(row.participantName)) {
       participantsByName.set(row.participantName, {
-        demandName: row.demandName,
+        demandName: row.demandName ?? row.demandSiteName ?? null,
         logs: [],
       });
     }
@@ -139,9 +144,15 @@ app.get("/:id/export/activity-payment", async (c) => {
     .where(eq(organizations.id, program.organizationId));
   const organizationName = organizationRows[0]?.name ?? "";
 
+  // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
+  // 참여자는 있을 수 있어서, 그 경우 수요처명을 채워서 내려준다.
   const activeParticipants = await db
-    .select()
+    .select({
+      ...getTableColumns(participants),
+      demandSiteName: demandSites.name,
+    })
     .from(participants)
+    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
     .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
 
   const logRows = await db
@@ -178,7 +189,9 @@ app.get("/:id/export/activity-payment", async (c) => {
   }
 
   const sortedParticipants = [...activeParticipants].sort((a, b) => {
-    const demandCompare = (a.demandName ?? "").localeCompare(b.demandName ?? "");
+    const demandNameA = a.demandName ?? a.demandSiteName ?? "";
+    const demandNameB = b.demandName ?? b.demandSiteName ?? "";
+    const demandCompare = demandNameA.localeCompare(demandNameB);
     return demandCompare !== 0 ? demandCompare : a.name.localeCompare(b.name);
   });
 
@@ -187,7 +200,7 @@ app.get("/:id/export/activity-payment", async (c) => {
     organizationName,
     participants: sortedParticipants.map((participant) => ({
       name: participant.name,
-      demandName: participant.demandName,
+      demandName: participant.demandName ?? participant.demandSiteName ?? null,
       minutes: minutesByParticipant.get(participant.id) ?? 0,
       hourlyWage: participant.hourlyWage ?? program.hourlyWage,
     })),
