@@ -449,7 +449,9 @@ const Main = () => {
           <RegistrationConfirmPage
             formData={formData}
             onChange={handleInputChange}
-            onBack={() => setView(VIEW_TYPE.MAIN)}
+            // 💡 본인확인 실패 시 바로 수정할 수 있어야 하므로, 홈이 아니라 기본정보
+            // 입력 화면으로 돌아간다 — 홈으로 보내면 "기본정보 등록"을 한 번 더 눌러야 했다.
+            onBack={() => setView(VIEW_TYPE.AFFILIATION)}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
           />
         )}
