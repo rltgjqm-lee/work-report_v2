@@ -400,7 +400,10 @@ const DemandSiteLocationsPanel = ({
               </div>
             )}
           {locations.map((location) => (
-            <div key={location.id} className="bg-white border border-admin-border-subtle rounded-lg p-3.5">
+            <div
+              key={location.id}
+              className="bg-white border border-admin-border-subtle rounded-lg p-3.5"
+            >
               <div className="text-[13.5px] font-bold text-text-strong">{location.name}</div>
               <div className="text-[12px] text-admin-text-faint mt-1.5">
                 {location.shapeType === SHAPE_TYPE.RADIUS
@@ -448,9 +451,7 @@ const DemandSiteLocationsPanel = ({
               <Button variant="ghost" onClick={handleCancelPendingShapeButtonClick}>
                 취소
               </Button>
-              <Button onClick={handleSavePendingShapeButtonClick}>
-                저장
-              </Button>
+              <Button onClick={handleSavePendingShapeButtonClick}>저장</Button>
             </div>
           </div>
         </div>

@@ -148,11 +148,7 @@ const ParticipantGroupAssignModal = ({
           </div>
 
           <FormField label="날짜">
-            <Input
-              type="date"
-              value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
+            <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
           </FormField>
 
           <FormField label="임시 배정할 조">
@@ -176,7 +172,9 @@ const ParticipantGroupAssignModal = ({
             {isOverridesFetching ? (
               <div className="text-[13px] text-admin-text-placeholder py-2">불러오는 중...</div>
             ) : overrides.length === 0 ? (
-              <div className="text-[13px] text-admin-text-placeholder py-2">등록된 임시 배정이 없습니다.</div>
+              <div className="text-[13px] text-admin-text-placeholder py-2">
+                등록된 임시 배정이 없습니다.
+              </div>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {overrides.map(({ override, groupName }) => (

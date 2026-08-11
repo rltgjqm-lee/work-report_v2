@@ -78,8 +78,7 @@ const RegistrationConfirmPage = ({
         title: "본인 확인에 실패했어요.",
         body: organization ? (
           <>
-            {regionLabel}{" "}
-            <strong className="text-brand font-extrabold">{organization.name}</strong>
+            {regionLabel} <strong className="text-brand font-extrabold">{organization.name}</strong>
             {"의"}
             <br />
             <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에

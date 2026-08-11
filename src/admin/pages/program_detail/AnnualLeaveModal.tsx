@@ -48,7 +48,10 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
     setAnnualLeaveMutation.mutate(
       { participantId: target.id, year: form.year, totalDays: Number(form.totalDays) },
       {
-        onSuccess: () => showToast("연차를 저장했습니다."),
+        onSuccess: () => {
+          showToast("연차를 저장했습니다.");
+          onClose();
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -64,9 +67,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
           <Button variant="ghost" onClick={onClose}>
             닫기
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >

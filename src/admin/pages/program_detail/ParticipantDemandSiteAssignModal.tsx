@@ -75,9 +75,7 @@ const ParticipantDemandSiteAssignModal = ({
           <Button variant="ghost" onClick={onClose}>
             닫기
           </Button>
-          <Button onClick={handleChangeButtonClick}>
-            변경
-          </Button>
+          <Button onClick={handleChangeButtonClick}>변경</Button>
         </div>
       </div>
     </div>

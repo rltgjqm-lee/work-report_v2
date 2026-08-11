@@ -108,7 +108,9 @@ const GroupAddModal = ({
       return;
     }
     if (form.shiftStart < programStartTime || form.shiftEnd > programEndTime) {
-      alert(`근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`);
+      alert(
+        `근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`,
+      );
       return;
     }
     if (isOverCap) {
@@ -165,9 +167,7 @@ const GroupAddModal = ({
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >

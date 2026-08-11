@@ -125,7 +125,9 @@ const GroupMonthlyScheduleModal = ({
       return;
     }
     if (form.shiftStart < programStartTime || form.shiftEnd > programEndTime) {
-      alert(`근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`);
+      alert(
+        `근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`,
+      );
       return;
     }
     if (isOverCap) {
@@ -180,9 +182,7 @@ const GroupMonthlyScheduleModal = ({
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >
@@ -276,7 +276,9 @@ const GroupMonthlyScheduleModal = ({
 
         <FormField label="근무일 (클릭해서 선택/해제)">
           {isFetching ? (
-            <div className="text-[13px] text-admin-text-placeholder py-4 text-center">불러오는 중...</div>
+            <div className="text-[13px] text-admin-text-placeholder py-4 text-center">
+              불러오는 중...
+            </div>
           ) : (
             <MonthlyScheduleCalendar
               yearMonth={yearMonth}

@@ -148,10 +148,7 @@ const ProgramDetailPage = () => {
             근무 관리
           </Button>
 
-          <Button
-            variant="ghost"
-            onClick={() => navigate(`/admin/programs/${programId}/escapes`)}
-          >
+          <Button variant="ghost" onClick={() => navigate(`/admin/programs/${programId}/escapes`)}>
             안전 관제
           </Button>
 
@@ -161,23 +158,31 @@ const ProgramDetailPage = () => {
 
       <div className="grid grid-cols-4 mb-5">
         <div className="px-5 py-4 border border-admin-border-subtle">
-          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">소속기관</div>
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
+            소속기관
+          </div>
           <div className="text-sm font-bold">{organizationName}</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
-          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">사업기간</div>
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
+            사업기간
+          </div>
           <div className="text-sm font-bold">
             {program.startDate} ~ {program.endDate}
           </div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
-          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">운영시간</div>
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
+            운영시간
+          </div>
           <div className="text-sm font-bold">
             {program.startTime} ~ {program.endTime}
           </div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
-          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">참여자수</div>
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
+            참여자수
+          </div>
           <div className="text-sm font-bold">{filtered.length}명</div>
         </div>
       </div>

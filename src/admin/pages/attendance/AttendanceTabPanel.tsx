@@ -7,6 +7,7 @@ import {
   monthlyAttendanceQueryOptions,
   type AttendanceRow,
 } from "../../api/admin/attendance";
+import { useToast } from "../../context/useToast";
 import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
@@ -57,6 +58,7 @@ interface AttendanceTabPanelProps {
  */
 const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [month, setMonth] = useState(getLocalYearMonth());
   const [dayFilter, setDayFilter] = useState("all");
 
@@ -148,7 +150,10 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
         },
       },
       {
-        onSuccess: () => setCorrectionTarget(null),
+        onSuccess: () => {
+          showToast(`${correctionTarget.participantName} 님의 근무 기록을 수정했습니다.`);
+          setCorrectionTarget(null);
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "수정에 실패했습니다."),
       },
     );
@@ -163,6 +168,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
     invalidateAttendanceMutation.mutate(
       { logId: row.log.id, programId, month, reason: reason || undefined },
       {
+        onSuccess: () => showToast(`${row.participantName} 님의 근무 기록을 무효화했습니다.`),
         onError: (error) =>
           alert(error instanceof Error ? error.message : "무효화에 실패했습니다."),
       },

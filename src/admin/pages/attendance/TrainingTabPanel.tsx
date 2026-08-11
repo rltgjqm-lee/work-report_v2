@@ -14,6 +14,7 @@ import {
   type TrainingLogRow,
   type TrainingPayMode,
 } from "../../api/admin/trainings";
+import { useToast } from "../../context/useToast";
 import FilterSelect from "../../components/FilterSelect";
 import ItemCard from "../../components/ItemCard";
 import SearchInput from "../../components/SearchInput";
@@ -82,6 +83,7 @@ interface TrainingTabPanelProps {
  */
 const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingTabPanelProps) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [subTab, setSubTab] = useState<SubTab>("definitions");
 
   const [logTrainingFilter, setLogTrainingFilter] = useState("all");
@@ -140,6 +142,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     updateTrainingMutation.mutate(
       { id: training.id, programId, data: { isActive: !training.isActive } },
       {
+        onSuccess: () => showToast(`'${training.name}' 교육을 ${actionLabel}했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -169,7 +172,10 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
       isRequired: trainingForm.isRequired,
     };
     const onSettled = {
-      onSuccess: () => setTrainingModalOpen(false),
+      onSuccess: () => {
+        showToast(`'${trainingForm.name}' 교육을 저장했습니다.`);
+        setTrainingModalOpen(false);
+      },
       onError: (error: unknown) =>
         alert(error instanceof Error ? error.message : "저장에 실패했습니다."),
     };
@@ -203,7 +209,10 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
         attendHours: logForm.attendHours ? Number(logForm.attendHours) : undefined,
       },
       {
-        onSuccess: () => setLogModalOpen(false),
+        onSuccess: () => {
+          showToast("이수 기록을 등록했습니다.");
+          setLogModalOpen(false);
+        },
         onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
       },
     );
@@ -217,6 +226,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     cancelTrainingLogMutation.mutate(
       { logId: log.log.id, programId },
       {
+        onSuccess: () => showToast(`'${log.trainingName}' 이수 기록을 취소했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "취소에 실패했습니다."),
       },
     );

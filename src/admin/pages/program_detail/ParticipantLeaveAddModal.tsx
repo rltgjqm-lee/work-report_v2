@@ -75,9 +75,7 @@ const ParticipantLeaveAddModal = ({
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >

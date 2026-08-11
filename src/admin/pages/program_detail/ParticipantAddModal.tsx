@@ -146,15 +146,15 @@ const ParticipantAddModal = ({
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >
       <div className="flex items-center justify-between gap-3 bg-admin-upload-success-bg border border-admin-upload-success-border rounded-[2px] px-4 py-3.5">
         <div>
-          <div className="text-[13px] font-bold text-admin-upload-success-text">엑셀로 일괄 등록</div>
+          <div className="text-[13px] font-bold text-admin-upload-success-text">
+            엑셀로 일괄 등록
+          </div>
           <div className="text-xs text-admin-upload-success-text-muted mt-0.5">
             양식을 내려받아 작성한 뒤 업로드하세요
           </div>
@@ -170,7 +170,9 @@ const ParticipantAddModal = ({
       <label
         htmlFor="part-file-input"
         className={`flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-[2px] py-6 px-4 cursor-pointer text-center hover:bg-admin-surface-header ${
-          selectedFile ? "border-admin-brand bg-admin-selected-tint" : "border-admin-border-hover hover:border-admin-border-hover-strong"
+          selectedFile
+            ? "border-admin-brand bg-admin-selected-tint"
+            : "border-admin-border-hover hover:border-admin-border-hover-strong"
         }`}
       >
         <input
