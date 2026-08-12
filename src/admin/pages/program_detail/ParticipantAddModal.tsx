@@ -12,8 +12,8 @@ import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import type { DemandSite, Group } from "../../types";
-import { downloadAddParticipantsTemplate } from "../../../utils/excel/downloadAddParticipantsTemplate";
-import { parseParticipantsFile } from "../../../utils/excel/parseParticipantsFile";
+import { downloadAddParticipantsTemplate } from "../../utils/excel/downloadAddParticipantsTemplate";
+import { parseParticipantsFile } from "../../utils/excel/parseParticipantsFile";
 
 const GENDER_OPTIONS = [
   { value: "", label: "선택하세요" },
