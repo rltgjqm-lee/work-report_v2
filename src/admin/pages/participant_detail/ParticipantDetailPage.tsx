@@ -8,12 +8,11 @@ import {
   participantLeavesQueryOptions,
   participantQueryOptions,
 } from "../../api/admin/participants";
-import { participantEscapesQueryOptions } from "../../api/admin/escapes";
+import { allProgramEscapesQueryOptions } from "../../api/admin/escapes";
 import MonthPicker from "../../components/MonthPicker";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import Button from "../../components/Button";
-import StatusChip from "../../components/chip/StatusChip";
-import { getLocalYearMonth, isoToKstMinuteString } from "../../../utils/timeFormat";
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
 import type { EscapeRow } from "../../types/escapes";
@@ -62,9 +61,8 @@ const ParticipantDetailPage = () => {
     participantAnnualLeaveQueryOptions(participantId, new Date().getFullYear().toString()),
   );
   const { data: attendance } = useQuery(participantAttendanceQueryOptions(participantId, month));
-  const { data: escapes = [] } = useQuery(
-    participantEscapesQueryOptions(participant?.programId, participantId),
-  );
+  // 근무 이력의 위치 열 옆에 안전관제에서 처리한 이탈 상태/메모를 같이 보여준다.
+  const { data: escapes = [] } = useQuery(allProgramEscapesQueryOptions(participant?.programId));
 
   const attendanceLogs = attendance?.logs ?? [];
   const attendanceStats = attendance?.stats ?? emptyStats;
@@ -115,13 +113,11 @@ const ParticipantDetailPage = () => {
         onMonthChange={setMonth}
         stats={attendanceStats}
         logs={attendanceLogs}
+        escapes={escapes}
       />
 
       {/* 휴가 이력 */}
       <LeaveHistorySection annualLeave={annualLeave} leaves={leaves} />
-
-      {/* 이탈 이력 */}
-      <EscapeHistorySection escapes={escapes} />
 
       {/* 급여 설정 모달 */}
       {payrollModalOpen && (
@@ -139,6 +135,7 @@ interface AttendanceHistorySectionProps {
   onMonthChange: (month: string) => void;
   stats: AttendanceStats;
   logs: ParticipantAttendanceRow[];
+  escapes: EscapeRow[];
 }
 
 const AttendanceHistorySection = ({
@@ -146,125 +143,169 @@ const AttendanceHistorySection = ({
   onMonthChange,
   stats,
   logs,
-}: AttendanceHistorySectionProps) => (
-  <>
-    <div className="flex items-center justify-between mb-3 gap-3">
-      <span className="text-sm font-bold whitespace-nowrap">근무 이력</span>
-      <MonthPicker value={month} onChange={onMonthChange} />
-    </div>
+  escapes,
+}: AttendanceHistorySectionProps) => {
+  // 같은 날 이탈이 여러 건이면 미처리 건을 우선 보여주고, 다 처리됐으면 가장 최근
+  // 처리 건의 메모를 보여준다 (AttendanceTabPanel의 근무 목록과 동일한 규칙).
+  const findEscapeForRow = (row: ParticipantAttendanceRow): EscapeRow | null => {
+    const sameDayEscapes = escapes.filter(
+      (escapeRow) =>
+        escapeRow.escape.participantId === row.log.participantId &&
+        escapeRow.escape.detectedAt.slice(0, 10) === row.log.workDate,
+    );
+    if (sameDayEscapes.length === 0) return null;
 
-    <div className="grid grid-cols-4 mb-5">
-      <div className="px-5 py-4 border border-admin-border-subtle">
-        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">정상</div>
-        <div className="text-sm font-bold">{stats.normal}건</div>
-      </div>
-      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
-        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">지각</div>
-        <div className="text-sm font-bold">{stats.late}건</div>
-      </div>
-      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
-        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">조퇴</div>
-        <div className="text-sm font-bold">{stats.earlyLeave}건</div>
-      </div>
-      <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
-        <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">총 근무시간</div>
-        <div className="text-sm font-bold">{stats.totalHours}시간</div>
-      </div>
-    </div>
+    const openEscape = sameDayEscapes.find((escapeRow) => escapeRow.escape.status === "OPEN");
+    if (openEscape) return openEscape;
 
-    <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1190px] table-fixed border-collapse">
-          <thead>
-            <tr>
-              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                근무일
-              </th>
-              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                출근
-              </th>
-              <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                퇴근
-              </th>
-              <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                위치
-              </th>
-              <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                근무시간(분)
-              </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                상태
-              </th>
-              <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                사고유무
-              </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                서명
-              </th>
-              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                비고
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((row) => (
-              <tr key={row.log.id} className="hover:bg-admin-row-hover">
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                  {row.log.workDate}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.log.clockIn?.slice(11, 16) ?? "-"}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.log.clockOut?.slice(11, 16) ?? "-"}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  <AttendanceLocationCell log={row.log} />
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.log.totalMinutes ?? "-"}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {STATUS_LABEL[row.log.status]}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.activity.hasAccident ? (
-                    <div className="flex flex-col gap-0.5">
-                      <span>사고</span>
-                      <span className="text-[12px] text-admin-text-placeholder whitespace-pre-wrap break-words">
-                        {[row.activity.accidentDetail, row.activity.accidentAction]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    </div>
-                  ) : row.activity.accidentChecked ? (
-                    "무사고"
-                  ) : (
-                    "-"
-                  )}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.activity.signed ? "✓" : "-"}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
-                  {row.log.note ?? "-"}
-                </td>
-              </tr>
-            ))}
+    return sameDayEscapes.sort((a, b) => b.escape.detectedAt.localeCompare(a.escape.detectedAt))[0];
+  };
 
-            {logs.length === 0 && (
+  return (
+    <>
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <span className="text-sm font-bold whitespace-nowrap">근무 이력</span>
+        <MonthPicker value={month} onChange={onMonthChange} />
+      </div>
+
+      <div className="grid grid-cols-4 mb-5">
+        <div className="px-5 py-4 border border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">정상</div>
+          <div className="text-sm font-bold">{stats.normal}건</div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">지각</div>
+          <div className="text-sm font-bold">{stats.late}건</div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">조퇴</div>
+          <div className="text-sm font-bold">{stats.earlyLeave}건</div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
+            총 근무시간
+          </div>
+          <div className="text-sm font-bold">{stats.totalHours}시간</div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-admin-border-subtle rounded-[2px] mb-5">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1310px] table-fixed border-collapse">
+            <thead>
               <tr>
-                <td colSpan={9} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
-                  해당 월에 근무 기록이 없습니다.
-                </td>
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  근무일
+                </th>
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  출근
+                </th>
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  퇴근
+                </th>
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  위치
+                </th>
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  관리자 확인
+                </th>
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  근무시간(분)
+                </th>
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  상태
+                </th>
+                <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  사고유무
+                </th>
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  서명
+                </th>
+                <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  비고
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {logs.map((row) => (
+                <tr key={row.log.id} className="hover:bg-admin-row-hover">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                    {row.log.workDate}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {row.log.clockIn?.slice(11, 16) ?? "-"}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {row.log.clockOut?.slice(11, 16) ?? "-"}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    <AttendanceLocationCell log={row.log} />
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {(() => {
+                      const escapeRow = findEscapeForRow(row);
+                      if (!escapeRow) return "-";
+
+                      return (
+                        <div className="flex flex-col gap-0.5">
+                          <span>{escapeRow.escape.status === "OPEN" ? "이탈중" : "처리완료"}</span>
+                          {escapeRow.escape.memo && (
+                            <span className="text-[12px] text-admin-text-placeholder whitespace-pre-wrap break-words">
+                              {escapeRow.escape.memo}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {row.log.totalMinutes ?? "-"}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {STATUS_LABEL[row.log.status]}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {row.activity.hasAccident ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span>사고</span>
+                        <span className="text-[12px] text-admin-text-placeholder whitespace-pre-wrap break-words">
+                          {[row.activity.accidentDetail, row.activity.accidentAction]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </div>
+                    ) : row.activity.accidentChecked ? (
+                      "무사고"
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {row.activity.signed ? "✓" : "-"}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
+                    {row.log.note ?? "-"}
+                  </td>
+                </tr>
+              ))}
+
+              {logs.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={10}
+                    className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                  >
+                    해당 월에 근무 기록이 없습니다.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 interface LeaveHistorySectionProps {
   annualLeave: AnnualLeave | undefined;
@@ -339,82 +380,11 @@ const LeaveHistorySection = ({ annualLeave, leaves }: LeaveHistorySectionProps) 
 
             {leaves.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
-                  휴가 이력이 없습니다.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </>
-);
-
-interface EscapeHistorySectionProps {
-  escapes: EscapeRow[];
-}
-
-const EscapeHistorySection = ({ escapes }: EscapeHistorySectionProps) => (
-  <>
-    <div className="mb-3">
-      <span className="text-sm font-bold">이탈 이력</span>
-    </div>
-
-    <div className="bg-white border border-admin-border-subtle rounded-[2px]">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px] table-fixed border-collapse">
-          <thead>
-            <tr>
-              <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                발생일시
-              </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                상태
-              </th>
-              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                이탈횟수
-              </th>
-              <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                이탈거리
-              </th>
-              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                처리 메모
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {escapes.map((row) => (
-              <tr key={row.escape.id} className="hover:bg-admin-row-hover">
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                  {isoToKstMinuteString(row.escape.detectedAt)}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.escape.status === "OPEN" ? (
-                    <StatusChip variant="bad">이탈중</StatusChip>
-                  ) : (
-                    <StatusChip variant="ok">처리완료</StatusChip>
-                  )}
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.escape.alertCount}회
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                  {row.escape.distanceKm.toFixed(2)}km
-                </td>
-                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
-                  {row.escape.memo ?? "-"}
-                </td>
-              </tr>
-            ))}
-
-            {escapes.length === 0 && (
-              <tr>
                 <td
                   colSpan={5}
                   className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                 >
-                  이탈 이력이 없습니다.
+                  휴가 이력이 없습니다.
                 </td>
               </tr>
             )}

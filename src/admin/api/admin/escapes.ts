@@ -5,22 +5,12 @@ import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../../types
 
 const escapeKeys = {
   all: ["escapes"] as const,
-  byProgram: (programId: number, status: EscapeStatus) =>
+  byProgram: (programId: number, status: EscapeStatus | "ALL") =>
     [...escapeKeys.all, "program", programId, status] as const,
-  byParticipant: (participantId: number) =>
-    [...escapeKeys.all, "participant", participantId] as const,
 };
 
-const getEscapes = (
-  programId: number,
-  status: EscapeStatus | "ALL" = "OPEN",
-  participantId?: number,
-) =>
-  request<EscapeRow[]>(
-    `/api/programs/${programId}/escapes?status=${status}${
-      participantId ? `&participantId=${participantId}` : ""
-    }`,
-  );
+const getEscapes = (programId: number, status: EscapeStatus | "ALL" = "OPEN") =>
+  request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);
 
 export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
   queryOptions({
@@ -28,15 +18,14 @@ export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
     queryFn: () => getEscapes(programId, status),
   });
 
-// 참여자 상세 페이지의 이탈 이력 — 상태 무관하게(ALL) 그 참여자 것만 조회한다.
-export const participantEscapesQueryOptions = (
-  programId: number | undefined,
-  participantId: number | undefined,
-) =>
+// 근무 이력의 위치 열 옆에 이탈 처리 상태/메모를 같이 보여주기 위해, 상태 무관하게
+// 그 사업단의 이탈 전체를 한 번에 받아 참여자+날짜로 화면에서 매칭한다.
+// (참여자 상세 페이지는 참여자를 불러오기 전까진 programId를 몰라 undefined로 호출한다.)
+export const allProgramEscapesQueryOptions = (programId: number | undefined) =>
   queryOptions({
-    queryKey: escapeKeys.byParticipant(participantId ?? 0),
-    queryFn: () => getEscapes(programId as number, "ALL", participantId),
-    enabled: !!programId && !!participantId,
+    queryKey: escapeKeys.byProgram(programId ?? 0, "ALL"),
+    queryFn: () => getEscapes(programId as number, "ALL"),
+    enabled: !!programId,
   });
 
 const liveWorkerKeys = {

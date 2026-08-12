@@ -7,6 +7,7 @@ import {
   monthlyAttendanceQueryOptions,
   type AttendanceRow,
 } from "../../api/admin/attendance";
+import { allProgramEscapesQueryOptions } from "../../api/admin/escapes";
 import { useToast } from "../../context/useToast";
 import MonthPicker from "../../components/MonthPicker";
 import FilterSelect from "../../components/FilterSelect";
@@ -18,6 +19,7 @@ import PromptModal from "../../components/modal/PromptModal";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
 import type { AttendanceStats } from "../../types/attendance";
+import type { EscapeRow } from "../../types/escapes";
 
 const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",
@@ -82,6 +84,10 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   const { data: monthlyAttendance } = useQuery(monthlyAttendanceQueryOptions(programId, month));
   const logs = monthlyAttendance?.logs ?? [];
   const stats = monthlyAttendance?.stats ?? emptyStats;
+
+  // 위치 열 옆에 안전관제(EscapesPage)에서 이미 처리한 이탈 상태/메모를 그대로 보여준다 —
+  // 여기서 별도로 확인 처리를 하지는 않는다(처리는 안전관제에서만).
+  const { data: escapes = [] } = useQuery(allProgramEscapesQueryOptions(programId));
 
   const correctAttendanceMutation = useMutation(correctAttendanceMutationOptions(queryClient));
   const invalidateAttendanceMutation = useMutation(
@@ -180,6 +186,22 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
     );
   };
 
+  // 같은 참여자가 같은 날 이탈이 여러 건이면, 아직 처리 안 된 게 있으면 그게 더
+  // 급하니 그것부터 보여주고, 전부 처리됐으면 가장 최근 처리 건의 메모를 보여준다.
+  const findEscapeForRow = (row: AttendanceRow): EscapeRow | null => {
+    const sameDayEscapes = escapes.filter(
+      (escapeRow) =>
+        escapeRow.escape.participantId === row.log.participantId &&
+        escapeRow.escape.detectedAt.slice(0, 10) === row.log.workDate,
+    );
+    if (sameDayEscapes.length === 0) return null;
+
+    const openEscape = sameDayEscapes.find((escapeRow) => escapeRow.escape.status === "OPEN");
+    if (openEscape) return openEscape;
+
+    return sameDayEscapes.sort((a, b) => b.escape.detectedAt.localeCompare(a.escape.detectedAt))[0];
+  };
+
   return (
     <div>
       <div className="flex items-center justify-end gap-2.5 mb-3">
@@ -224,7 +246,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1550px] table-fixed border-collapse">
+          <table className="w-full min-w-[1670px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -244,6 +266,9 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 </th>
                 <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   위치
+                </th>
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  관리자 확인
                 </th>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   근무시간(분)
@@ -290,6 +315,27 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <AttendanceLocationCell log={row.log} />
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {(() => {
+                      const escapeRow = findEscapeForRow(row);
+                      if (!escapeRow) return "-";
+
+                      return (
+                        <div className="flex flex-col gap-1 items-start">
+                          {escapeRow.escape.status === "OPEN" ? (
+                            <StatusChip variant="bad">이탈중</StatusChip>
+                          ) : (
+                            <StatusChip variant="ok">처리완료</StatusChip>
+                          )}
+                          {escapeRow.escape.memo && (
+                            <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
+                              {escapeRow.escape.memo}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.totalMinutes ?? "-"}
@@ -348,7 +394,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
               {filteredLogs.length === 0 && (
                 <tr>
                   <td
-                    colSpan={12}
+                    colSpan={13}
                     className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                   >
                     {dayFilter === "all"

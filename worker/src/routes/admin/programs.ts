@@ -871,8 +871,6 @@ app.get("/:id/escapes", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const status = c.req.query("status") ?? "OPEN";
-  // 참여자 상세 페이지의 이탈 이력용 — 있으면 상태 무관하게 그 참여자 것만 본다.
-  const participantId = c.req.query("participantId");
 
   const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
@@ -884,9 +882,6 @@ app.get("/:id/escapes", async (c) => {
   const conditions = [eq(escapeLogs.programId, programId)];
   if (status !== "ALL") {
     conditions.push(eq(escapeLogs.status, status as "OPEN" | "RESOLVED"));
-  }
-  if (participantId) {
-    conditions.push(eq(escapeLogs.participantId, Number(participantId)));
   }
 
   const rows = await db
