@@ -422,7 +422,7 @@ const ActivityDashboardPage = ({
         {/* 업무·안전 모듈은 역량활동에는 표시되지 않는다 */}
         <ModuleItem
           index={moduleIndex++}
-          icon="/icon-checkin-clock.png"
+          icon="/icons/icon-checkin-clock.png"
           category="출근"
           title="출근 등록"
           status={
@@ -436,7 +436,7 @@ const ActivityDashboardPage = ({
         {!isCompetencyProgram && (
           <ModuleItem
             index={moduleIndex++}
-            icon="/icon-task.png"
+            icon="/icons/icon-task.png"
             category="업무"
             title="업무 일지 등록"
             status={
@@ -450,7 +450,7 @@ const ActivityDashboardPage = ({
         {!isCompetencyProgram && (
           <ModuleItem
             index={moduleIndex++}
-            icon="/icon-safety.png"
+            icon="/icons/icon-safety.png"
             category="안전"
             title="안전 일지 등록"
             status={
@@ -467,7 +467,7 @@ const ActivityDashboardPage = ({
 
         <ModuleItem
           index={moduleIndex++}
-          icon="/icon-checkout-clock.png"
+          icon="/icons/icon-checkout-clock.png"
           category="퇴근"
           title="퇴근 등록"
           status={
@@ -480,7 +480,7 @@ const ActivityDashboardPage = ({
 
         <ModuleItem
           index={moduleIndex}
-          icon="/icon-signature.png"
+          icon="/icons/icon-signature.png"
           category="서명"
           title="전체 확인·서명"
           status={signatureDone ? "서명 완료" : "최종 확인이 필요해요"}

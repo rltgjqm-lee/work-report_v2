@@ -72,7 +72,7 @@ const AccidentCheckPage = ({
       <AppBar title="안전 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
         <PageHeaderCard
-          icon="/icon-safety.png"
+          icon="/icons/icon-safety.png"
           title="안전 등록"
           subtitle="오늘 안전사고 여부를 확인해주세요"
         />

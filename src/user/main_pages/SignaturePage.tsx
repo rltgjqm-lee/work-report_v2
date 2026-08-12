@@ -45,7 +45,7 @@ const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert 
       <AppBar title="서명" onBack={onBack} />
       <div className={bodyClass}>
         <PageHeaderCard
-          icon="/icon-signature.png"
+          icon="/icons/icon-signature.png"
           title="참여자 서명"
           subtitle="서명을 남기고 활동일지를 완료해주세요"
         />

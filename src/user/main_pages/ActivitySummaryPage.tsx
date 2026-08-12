@@ -46,7 +46,7 @@ const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPagePr
 
         <Card>
           <SummaryRow
-            icon="/icon-checkin-clock.png"
+            icon="/icons/icon-checkin-clock.png"
             label="출근 시각"
             value={
               formData.startTime.hour ? `${formatTimeField(formData.startTime)} 완료` : "아직이에요"
@@ -55,17 +55,17 @@ const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPagePr
           {!isCompetencyProgram && (
             <>
               <SummaryRow
-                icon="/icon-task.png"
+                icon="/icons/icon-task.png"
                 label="활동 내역"
                 value={formData.actContent || "미등록"}
               />
               <SummaryRow
-                icon="/icon-map.png"
+                icon="/icons/icon-map.png"
                 label="활동 장소"
                 value={formData.actPlace || "미등록"}
               />
               <SummaryRow
-                icon="/icon-safety.png"
+                icon="/icons/icon-safety.png"
                 label="사고 유무"
                 value={
                   !formData.accidentChecked
@@ -78,7 +78,7 @@ const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPagePr
             </>
           )}
           <SummaryRow
-            icon="/icon-checkout-clock.png"
+            icon="/icons/icon-checkout-clock.png"
             label="퇴근 시각"
             value={
               formData.endTime.hour ? `${formatTimeField(formData.endTime)} 완료` : "아직이에요"

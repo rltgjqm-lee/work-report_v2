@@ -54,7 +54,7 @@ const HomePage = ({
       <div className="h-[60px] flex items-center justify-between gap-2 px-[clamp(16px,5vw,24px)]">
         <div className="flex items-center justify-between w-full">
           <div className="flex gap-1.5">
-            <img src="/app-icon-1024.png" alt="" className="w-5 h-5 rounded-[6px]" />
+            <img src="/icons/app-icon-1024.png" alt="" className="w-5 h-5 rounded-[6px]" />
             <p className="mt-[3px] text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
               WORK REPORT
             </p>
@@ -81,7 +81,7 @@ const HomePage = ({
         <div className="flex gap-[clamp(10px,3.5vw,14px)]">
           <HomeActionCard
             onClick={onOpenAffiliation}
-            iconSrc="/icon-basic-info.png"
+            iconSrc="/icons/icon-basic-info.png"
             title="기본정보 등록"
             description={
               <>
@@ -93,7 +93,7 @@ const HomePage = ({
           />
           <HomeActionCard
             onClick={onStartActivityLog}
-            iconSrc="/icon-start-log.png"
+            iconSrc="/icons/icon-start-log.png"
             title="활동일지 시작"
             description={
               <>

@@ -270,7 +270,7 @@ const AffiliationInputPage = ({
 
       <div className={bodyClass}>
         <PageHeaderCard
-          icon="/icon-basic-info.png"
+          icon="/icons/icon-basic-info.png"
           title="기본정보 등록"
           subtitle="참여자 정보를 입력해주세요"
         />

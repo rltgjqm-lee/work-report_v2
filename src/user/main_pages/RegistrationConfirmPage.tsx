@@ -150,7 +150,7 @@ const RegistrationConfirmPage = ({
 
         {(exception === "loading" || exception === null) && (
           <PageHeaderCard
-            icon="/icon-basic-info.png"
+            icon="/icons/icon-basic-info.png"
             title="등록 확인"
             subtitle="아래 내용이 맞는지 확인해주세요"
           />

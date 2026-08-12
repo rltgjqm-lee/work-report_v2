@@ -73,7 +73,7 @@ const ActivityReportPage = ({
       <AppBar title="업무 일지 등록" onBack={onBack} />
       <div className={bodyClass}>
         <PageHeaderCard
-          icon="/icon-task.png"
+          icon="/icons/icon-task.png"
           title="업무 등록"
           subtitle="오늘 하신 업무 내용을 남겨주세요"
         />
