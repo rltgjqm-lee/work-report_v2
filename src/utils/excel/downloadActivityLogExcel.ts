@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import type { ActivityLogItem } from "../types/form";
+import type { ActivityLogItem } from "../../types/form";
 
 export interface ActivityLogSheetHeader {
   orgName: string;
