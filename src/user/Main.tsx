@@ -16,14 +16,14 @@ import SettingsPage from "./pages/SettingsPage";
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
-import { syncPendingActivityLogs } from "../utils/activityLogSync";
-// import { findIncompleteActivityLogDate } from "../utils/activityLogSync"; // 💡 일단 주석 처리
-import { getTodayAttendance } from "../utils/attendanceApi";
+import { syncPendingActivityLogs } from "./utils/activityLogSync";
+// import { findIncompleteActivityLogDate } from "./utils/activityLogSync"; // 💡 일단 주석 처리
+import { getTodayAttendance } from "./api/attendanceApi";
 import {
   IDLE_LOCATION_REPORT_STATE,
   startLocationReporting,
   type LocationReportState,
-} from "../utils/locationReporting";
+} from "./utils/locationReporting";
 import {
   formatTimeField,
   getLocalToday,

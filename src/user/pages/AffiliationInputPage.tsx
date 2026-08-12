@@ -10,14 +10,14 @@ import ExceptionCard from "../components/atoms/ExceptionCard";
 import BottomBar from "../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { validateForm } from "../../utils/validateFormData";
-import { affiliationsQueryOptions } from "../../utils/affiliationsApi";
-import { demandSitesQueryOptions } from "../../utils/demandSitesApi";
+import { validateForm } from "../utils/validateFormData";
+import { affiliationsQueryOptions } from "../api/affiliationsApi";
+import { demandSitesQueryOptions } from "../api/demandSitesApi";
 import { KOREAN_REGIONS, SIDO_LIST } from "../../constants/koreanRegions";
 
-import type { Affiliations } from "../../utils/affiliationsApi";
+import type { Affiliations } from "../api/affiliationsApi";
 import type { ActivityLogFormData } from "../../types/form";
-import type { ValidationRule } from "../../utils/validateFormData";
+import type { ValidationRule } from "../utils/validateFormData";
 
 // 💡 이 페이지(기본정보 입력)에서만 쓰는 검증 규칙이라 여기 직접 둔다.
 const PAGE1_RULES: ValidationRule[] = [

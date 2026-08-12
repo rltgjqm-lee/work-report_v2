@@ -1,6 +1,6 @@
-import type { ActivityLogItem } from "../types/form";
-import { INDEXED_DB_CONFIG } from "../constants/storage";
-import { createActivityLog, updateActivityLog } from "./activityLogApi";
+import type { ActivityLogItem } from "../../types/form";
+import { INDEXED_DB_CONFIG } from "../../constants/storage";
+import { createActivityLog, updateActivityLog } from "../api/activityLogApi";
 
 const toPayload = (item: ActivityLogItem) => ({
   participantId: item.participantId!,

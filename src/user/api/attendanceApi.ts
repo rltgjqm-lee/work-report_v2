@@ -1,8 +1,8 @@
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
 
-import { readCurrentCoordinates } from "./geolocation";
-import type { Coordinates } from "./geolocation";
+import { readCurrentCoordinates } from "../utils/geolocation";
+import type { Coordinates } from "../utils/geolocation";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 

@@ -19,9 +19,9 @@ import {
   ClockOutError,
   clockOutMutationOptions,
   recordLocationConsentMutationOptions,
-} from "../../utils/attendanceApi";
+} from "../api/attendanceApi";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
-import { checkNativePushPermission, registerNativePush } from "../../utils/nativePushRegistration";
+import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
 
 interface ActivityDashboardPageProps {
   formData: ActivityLogFormData;

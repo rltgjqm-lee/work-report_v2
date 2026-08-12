@@ -1,4 +1,4 @@
-import { reportLocation } from "./attendanceApi";
+import { reportLocation } from "../api/attendanceApi";
 import { isNativePlatform, startBackgroundLocationWatch } from "./backgroundLocation";
 import { readCurrentCoordinates, type Coordinates } from "./geolocation";
 

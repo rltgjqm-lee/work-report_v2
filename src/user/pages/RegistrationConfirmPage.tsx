@@ -9,9 +9,9 @@ import ExceptionCard from "../components/atoms/ExceptionCard";
 import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { IdentifyError, identifyParticipantQueryOptions } from "../../utils/attendanceApi";
+import { IdentifyError, identifyParticipantQueryOptions } from "../api/attendanceApi";
 import { getLocalToday } from "../../utils/timeFormat";
-import { registerNativePush } from "../../utils/nativePushRegistration";
+import { registerNativePush } from "../utils/nativePushRegistration";
 import type { ActivityLogFormData } from "../../types/form";
 
 type ExceptionInfo = {

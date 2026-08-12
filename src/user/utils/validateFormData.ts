@@ -1,4 +1,4 @@
-import type { ActivityLogFormData } from "../types/form";
+import type { ActivityLogFormData } from "../../types/form";
 
 export interface ValidationRule {
   field: keyof ActivityLogFormData;

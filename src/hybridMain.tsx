@@ -5,7 +5,7 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
 
 import MobileApp from "./MobileApp";
-import { checkAndApplyOtaUpdate } from "./utils/otaUpdate";
+import { checkAndApplyOtaUpdate } from "./user/utils/otaUpdate";
 
 import "./App.css";
 
