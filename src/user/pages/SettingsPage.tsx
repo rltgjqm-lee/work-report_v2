@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import AppBar from "../../components/molecule/AppBar";
-import LocationConsentModal from "../../components/molecule/LocationConsentModal";
+import AppBar from "../components/molecule/AppBar";
+import LocationConsentModal from "../components/molecule/LocationConsentModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { isoToKstMinuteString } from "../../utils/timeFormat";
 

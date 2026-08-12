@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { sigBoxClass, sigClearClass } from "./classes";
+import { sigBoxClass, sigClearClass } from "../../../components/atoms/classes";
 
 interface SignatureCanvasProps {
   value: string;

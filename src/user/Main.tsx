@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 
 import ConfirmModal from "../components/molecule/ConfirmModal";
-// import IncompleteDayModal from "../components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리
+// import IncompleteDayModal from "./components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리
 
-import AffiliationInputPage from "./main_pages/AffiliationInputPage";
-import RegistrationConfirmPage from "./main_pages/RegistrationConfirmPage";
-import HomePage from "./main_pages/HomePage";
-import ActivityDashboardPage from "./main_pages/ActivityDashboardPage";
-import ActivityReportPage from "./main_pages/ActivityReportPage";
-import AccidentCheckPage from "./main_pages/AccidentCheckPage";
-import ActivitySummaryPage from "./main_pages/ActivitySummaryPage";
-import SignaturePage from "./main_pages/SignaturePage";
-import SettingsPage from "./main_pages/SettingsPage";
+import AffiliationInputPage from "./pages/AffiliationInputPage";
+import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
+import HomePage from "./pages/HomePage";
+import ActivityDashboardPage from "./pages/ActivityDashboardPage";
+import ActivityReportPage from "./pages/ActivityReportPage";
+import AccidentCheckPage from "./pages/AccidentCheckPage";
+import ActivitySummaryPage from "./pages/ActivitySummaryPage";
+import SignaturePage from "./pages/SignaturePage";
+import SettingsPage from "./pages/SettingsPage";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 

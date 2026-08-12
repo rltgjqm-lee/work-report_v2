@@ -1,4 +1,4 @@
-import { inputClass } from "./classes";
+import { inputClass } from "../../../components/atoms/classes";
 
 export interface TextInputProps {
   id: string;

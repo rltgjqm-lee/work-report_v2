@@ -1,7 +1,7 @@
 import type { ActivityLogFormData } from "../../types/form";
-import AppBar from "../../components/molecule/AppBar";
-import Card from "../../components/atoms/Card";
-import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
+import AppBar from "../components/molecule/AppBar";
+import Card from "../components/atoms/Card";
+import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { formatTimeField, getLocalToday } from "../../utils/timeFormat";

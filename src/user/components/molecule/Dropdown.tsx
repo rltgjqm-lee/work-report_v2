@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
-import { labelClass, selectClass } from "../atoms/classes";
+import { labelClass, selectClass } from "../../../components/atoms/classes";
 
 type DropdownOption = {
   value: string;

@@ -1,11 +1,11 @@
 import { useState } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
-import AppBar from "../../components/molecule/AppBar";
-import PageHeaderCard from "../../components/molecule/PageHeaderCard";
-import SafetySaveConfirmModal from "../../components/molecule/SafetySaveConfirmModal";
-import Card from "../../components/atoms/Card";
-import BottomBar, { BottomBarRow } from "../../components/atoms/BottomBar";
+import AppBar from "../components/molecule/AppBar";
+import PageHeaderCard from "../components/molecule/PageHeaderCard";
+import SafetySaveConfirmModal from "../components/molecule/SafetySaveConfirmModal";
+import Card from "../components/atoms/Card";
+import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import {
   pageClass,
   bodyClass,
