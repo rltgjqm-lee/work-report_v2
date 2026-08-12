@@ -52,6 +52,8 @@ export type TodayAttendance = {
   isWorkDay: boolean;
   shiftStart: string | null; // "HH:MM", 조가 없으면 null
   shiftEnd: string | null;
+  // 위치 수집 고지·동의 시각(ISO) — null이면 아직 동의 전. 참여자 단위 값이라 날짜와 무관하다.
+  locationConsentAt: string | null;
 };
 
 // 오늘 실제 출퇴근 기록(서버 attendance_logs)을 조회 — 홈 화면의 출근/퇴근 상태는
@@ -271,6 +273,27 @@ export const clockInMutationOptions = mutationOptions({
     const coordinates = await readCurrentCoordinates();
     return clockIn(participantId, debug, coordinates);
   },
+});
+
+// 💡 위치정보법상 위치 수집 전 고지·동의 기록 — 최초 출근 시 동의 모달을 확인하면 호출된다.
+// 이후 출근에서는 TodayAttendance.locationConsentAt이 채워져 있으므로 다시 호출하지 않는다.
+export const recordLocationConsent = async (
+  participantId: number,
+): Promise<{ locationConsentAt: string }> => {
+  const res = await fetch(`${BASE_URL}/public/attendance/location-consent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ participantId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}) as { error?: string });
+    throw new Error(data.error || "동의 저장에 실패했습니다.");
+  }
+  return res.json();
+};
+
+export const recordLocationConsentMutationOptions = mutationOptions({
+  mutationFn: (participantId: number) => recordLocationConsent(participantId),
 });
 
 export interface ClockOutVariables {

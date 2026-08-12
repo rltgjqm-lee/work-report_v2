@@ -10,6 +10,7 @@ import ClockOutCompleteModal from "../../components/molecule/ClockOutCompleteMod
 import NotWorkDayModal from "../../components/molecule/NotWorkDayModal";
 import ClockInRequiredModal from "../../components/molecule/ClockInRequiredModal";
 import ClockOutRequiredModal from "../../components/molecule/ClockOutRequiredModal";
+import LocationConsentModal from "../../components/molecule/LocationConsentModal";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import {
   adminRoleQueryOptions,
@@ -17,6 +18,7 @@ import {
   clockInMutationOptions,
   ClockOutError,
   clockOutMutationOptions,
+  recordLocationConsentMutationOptions,
 } from "../../utils/attendanceApi";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 import { checkNativePushPermission, registerNativePush } from "../../utils/nativePushRegistration";
@@ -24,6 +26,7 @@ import { checkNativePushPermission, registerNativePush } from "../../utils/nativ
 interface ActivityDashboardPageProps {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
+  todayStatus: { locationConsentAt: string | null } | null;
   onHome: () => void;
   onAlert: (messages: string[]) => Promise<void>;
   onSave: () => Promise<void>;
@@ -95,6 +98,7 @@ const ModuleItem = ({
 const ActivityDashboardPage = ({
   formData,
   setFormData,
+  todayStatus,
   onHome,
   onAlert,
   onSave,
@@ -128,6 +132,12 @@ const ActivityDashboardPage = ({
   //  - 출퇴근시 서버에 위치를 기록만 하고 위치로 출퇴근을 막지 않는다
   const clockInMutation = useMutation(clockInMutationOptions);
   const clockOutMutation = useMutation(clockOutMutationOptions);
+  const locationConsentMutation = useMutation(recordLocationConsentMutationOptions);
+
+  // 💡 출근 즉시 위치 확인(백그라운드 감시)이 시작되므로, 위치정보법상 수집 전 고지·동의가
+  // 필요하다 — 서버에 동의 기록이 없는 최초 출근에서만 모달을 띄우고, 확인해야 출근
+  // API를 호출한다. 이미 동의했으면(todayStatus.locationConsentAt) 매번 다시 묻지 않는다.
+  const [locationConsentOpen, setLocationConsentOpen] = useState(false);
 
   // 💡 출근 시간대 안내는 일반 alert 모달로는 시간표(업무 시작/종료)를 못 보여줘서
   // AttendanceTimeGuideModal이라는 전용 모달로 따로 띄운다.
@@ -211,6 +221,29 @@ const ActivityDashboardPage = ({
       setClockInCompleteTime(formatTimeField(formData.startTime));
       return;
     }
+    if (todayStatus?.locationConsentAt) {
+      submitClockIn();
+      return;
+    }
+
+    setLocationConsentOpen(true);
+  };
+
+  const handleLocationConsentConfirm = () => {
+    if (!formData.participantId) return;
+    locationConsentMutation.mutate(formData.participantId, {
+      onSuccess: () => {
+        setLocationConsentOpen(false);
+        submitClockIn();
+      },
+      onError: (error) => {
+        onAlert([error instanceof Error ? error.message : "동의 저장에 실패했습니다"]);
+      },
+    });
+  };
+
+  const submitClockIn = () => {
+    if (!formData.participantId) return;
 
     clockInMutation.mutate(
       {
@@ -456,6 +489,8 @@ const ActivityDashboardPage = ({
           onClick={handleOpenSummaryButtonClick}
         />
       </div>
+
+      {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
 
       {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
 

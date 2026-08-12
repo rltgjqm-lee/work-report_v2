@@ -267,6 +267,9 @@ export const participants = sqliteTable(
       .notNull()
       .default(false),
     weeklyHolidayHours: real("weekly_holiday_hours").notNull().default(0),
+    // 위치정보법상 위치 수집 전 고지·동의 기록 — 최초 출근 시 동의 화면을 거치면 채워지고,
+    // 이후 출근에서는 이 값이 있으면 동의 화면을 다시 띄우지 않는다(설정 화면에서 다시 볼 수 있음).
+    locationConsentAt: text("location_consent_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

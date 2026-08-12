@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Building2 } from "lucide-react";
+import { Building2, Settings } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
 
@@ -14,6 +14,7 @@ interface HomePageProps {
   todayStatus: TodayStatus | null;
   onOpenAffiliation: () => void;
   onStartActivityLog: () => void;
+  onOpenSettings: () => void;
 }
 
 interface HomeActionCardProps {
@@ -43,17 +44,23 @@ const HomePage = ({
   todayStatus,
   onOpenAffiliation,
   onStartActivityLog,
+  onOpenSettings,
 }: HomePageProps) => {
   return (
     <div
       className="flex flex-col h-full min-h-0 flex-1 overflow-y-auto"
       style={{ background: "linear-gradient(180deg,#eaf2ff 0%,#f2f4f6 min(320px,60vh))" }}
     >
-      <div className="h-[60px] flex items-center gap-2 px-[clamp(16px,5vw,24px)]">
-        <span className="w-2 h-2 rounded-full bg-brand mb-[2px]" />
-        <span className="leading-none text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
-          WORK REPORT
-        </span>
+      <div className="h-[60px] flex items-center justify-between gap-2 px-[clamp(16px,5vw,24px)]">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-brand mb-[4px]" />
+          <span className="leading-none text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
+            WORK REPORT
+          </span>
+        </div>
+        <button onClick={onOpenSettings} className="cursor-pointer" aria-label="설정">
+          <Settings size={16} color="#333d4b" strokeWidth={2.2} />
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col px-[clamp(16px,5vw,24px)] py-[clamp(12px,4vw,20px)]">

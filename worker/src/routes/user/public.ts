@@ -334,7 +334,28 @@ app.get("/attendance/today", async (c) => {
     isWorkDay,
     shiftStart: group?.shiftStart ?? null,
     shiftEnd: group?.shiftEnd ?? null,
+    locationConsentAt: participant.locationConsentAt ?? null,
   });
+});
+
+// 위치정보법상 위치 수집 전 고지·동의 기록 — 최초 출근 시 동의 화면을 거치면 호출된다.
+// 이미 동의한 참여자가 다시 확인해도(설정 화면 등) 시각을 최신으로 갱신할 뿐 문제되지 않는다.
+app.post("/attendance/location-consent", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{ participantId?: number }>();
+  const participantId = Number(body.participantId);
+  if (!participantId) {
+    return c.json({ error: "참여자를 지정해주세요." }, 400);
+  }
+
+  const { iso: locationConsentAt } = getKstNow();
+
+  await db
+    .update(participants)
+    .set({ locationConsentAt })
+    .where(eq(participants.id, participantId));
+
+  return c.json({ locationConsentAt });
 });
 
 // lat/lng/accuracy는 있으면 기록하고 없으면 그냥 넘어간다 — 위치로 출근을 막지 않는다.

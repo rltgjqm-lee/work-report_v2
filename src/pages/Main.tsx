@@ -11,6 +11,7 @@ import ActivityReportPage from "./main_pages/ActivityReportPage";
 import AccidentCheckPage from "./main_pages/AccidentCheckPage";
 import ActivitySummaryPage from "./main_pages/ActivitySummaryPage";
 import SignaturePage from "./main_pages/SignaturePage";
+import SettingsPage from "./main_pages/SettingsPage";
 
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 
@@ -39,6 +40,7 @@ const VIEW_TYPE = {
   ACCIDENT: "accident",
   SUMMARY: "summary",
   SIGNATURE: "signature",
+  SETTINGS: "settings",
 } as const;
 
 type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
@@ -135,6 +137,7 @@ const Main = () => {
     isWorkDay: boolean;
     shiftStart: string | null;
     shiftEnd: string | null;
+    locationConsentAt: string | null;
   } | null>(null);
 
   // functions
@@ -359,13 +362,13 @@ const Main = () => {
       date: debugDate || undefined,
       time: debugTime || undefined,
     })
-      .then(({ clockIn, clockOut, isWorkDay, shiftStart, shiftEnd }) => {
+      .then(({ clockIn, clockOut, isWorkDay, shiftStart, shiftEnd, locationConsentAt }) => {
         setFormData((prev) => ({
           ...prev,
           startTime: clockIn ? isoToTimeParts(clockIn) : { ampm: "AM", hour: "", minute: "" },
           endTime: clockOut ? isoToTimeParts(clockOut) : { ampm: "PM", hour: "", minute: "" },
         }));
-        setTodayStatus({ isWorkDay, shiftStart, shiftEnd });
+        setTodayStatus({ isWorkDay, shiftStart, shiftEnd, locationConsentAt });
       })
       .catch(() => {
         // 네트워크 오류 등은 조용히 무시하고 로컬 캐시 값을 그대로 쓴다.
@@ -430,6 +433,7 @@ const Main = () => {
               // "확인하는 중이에요"에서 영영 안 넘어간다 — 그 전에 기본정보 등록으로 보낸다.
               setView(formData.userName ? VIEW_TYPE.REGISTRATION_CONFIRM : VIEW_TYPE.AFFILIATION);
             }}
+            onOpenSettings={() => setView(VIEW_TYPE.SETTINGS)}
           />
         )}
 
@@ -461,6 +465,7 @@ const Main = () => {
           <ActivityDashboardPage
             formData={formData}
             setFormData={setFormData}
+            todayStatus={todayStatus}
             onHome={() => setView(VIEW_TYPE.MAIN)}
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
@@ -472,6 +477,11 @@ const Main = () => {
             debugTime={debugTime}
             setDebugTime={setDebugTime}
           />
+        )}
+
+        {/* 설정 */}
+        {view === VIEW_TYPE.SETTINGS && (
+          <SettingsPage todayStatus={todayStatus} onHome={() => setView(VIEW_TYPE.MAIN)} />
         )}
 
         {/* 업무 등록 모듈 */}
