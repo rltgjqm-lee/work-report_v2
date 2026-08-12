@@ -6,7 +6,7 @@ import { logout } from "../api/auth";
 import { organizationQueryOptions } from "../api/admin/organizations";
 import ChangePasswordModal from "./modal/ChangePasswordModal";
 import { useAuth } from "../context/useAuth";
-import { ROLES } from "../types";
+import { ROLES } from "../types/admins";
 
 const BASE_NAV_ITEMS = [
   { to: "/admin/organizations", label: "기관 관리", badge: "1" },

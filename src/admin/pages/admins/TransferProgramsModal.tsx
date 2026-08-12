@@ -8,7 +8,7 @@ import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
-import { ROLES, type Admin, type Role } from "../../types";
+import { ROLES, type Admin, type Role } from "../../types/admins";
 
 // 이관 후보로 담당자(MANAGER)와 부관리자(SUB_ADMIN)가 섞여 나오므로
 // 이름만으로는 구분이 안 돼 역할을 같이 표시한다.

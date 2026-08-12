@@ -26,7 +26,7 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { getLocalToday } from "../../../utils/timeFormat";
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
-import type { Participant } from "../../types";
+import type { Participant } from "../../types/participants";
 
 const CATEGORY_LABEL: Record<TrainingCategory, string> = {
   PRE: "사전",

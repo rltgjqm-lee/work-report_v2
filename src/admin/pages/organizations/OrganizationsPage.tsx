@@ -14,7 +14,8 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import { rowActionBtnClass } from "../../uiClasses";
-import { ROLES, type Organization } from "../../types";
+import { ROLES } from "../../types/admins";
+import type { Organization } from "../../types/organizations";
 
 /**
  * 관리자 페이지 > 기관 관리 페이지입니다.

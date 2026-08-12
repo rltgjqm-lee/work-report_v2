@@ -7,7 +7,7 @@ import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
 import ItemCard from "../../components/ItemCard";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
-import type { Group } from "../../types";
+import type { Group } from "../../types/groups";
 
 interface ProgramGroupsSectionProps {
   programId: number;

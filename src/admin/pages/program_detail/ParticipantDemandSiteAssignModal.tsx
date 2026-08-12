@@ -6,7 +6,8 @@ import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
-import type { DemandSite, Participant } from "../../types";
+import type { DemandSite } from "../../types/demandSites";
+import type { Participant } from "../../types/participants";
 
 interface ParticipantDemandSiteAssignModalProps {
   onClose: () => void;

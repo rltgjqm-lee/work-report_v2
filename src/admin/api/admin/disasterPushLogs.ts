@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { request } from "../client";
-import type { SafetyAlert } from "../../types";
+import type { SafetyAlert } from "../../types/safetyAlerts";
 
 const listDisasterPushLogs = () => request<SafetyAlert[]>("/api/disaster-push-logs");
 

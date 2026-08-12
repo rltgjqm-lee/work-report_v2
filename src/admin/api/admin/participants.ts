@@ -9,8 +9,8 @@ import type {
   Participant,
   ParticipantDetail,
   ParticipantLeave,
-  ParticipantMonthlyAttendance,
-} from "../../types";
+} from "../../types/participants";
+import type { ParticipantMonthlyAttendance } from "../../types/attendance";
 
 const participantKeys = {
   all: ["participants"] as const,

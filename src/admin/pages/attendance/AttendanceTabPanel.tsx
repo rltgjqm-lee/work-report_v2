@@ -17,7 +17,7 @@ import Input from "../../components/Input";
 import PromptModal from "../../components/modal/PromptModal";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
-import type { AttendanceStats } from "../../types";
+import type { AttendanceStats } from "../../types/attendance";
 
 const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",

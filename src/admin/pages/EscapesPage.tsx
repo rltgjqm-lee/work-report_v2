@@ -17,7 +17,8 @@ import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
 import PromptModal from "../components/modal/PromptModal";
 import { useToast } from "../context/useToast";
-import type { DemandSiteLocation, EscapeRow, EscapeStatus, LiveWorker } from "../types";
+import type { DemandSiteLocation } from "../types/demandSites";
+import type { EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
 
 // 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
 // location이 null이면 거점이 아니라 수요처 자체에 잡아둔 기본 원이다.

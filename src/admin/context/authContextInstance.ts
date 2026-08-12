@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-import type { AdminSession } from "../types";
+import type { AdminSession } from "../types/admins";
 
 export type AuthState = {
   admin: AdminSession | null;

@@ -5,7 +5,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { adminsQueryOptions } from "../../api/admin/admins";
 import { programQueryOptions, programsByOrganizationQueryOptions } from "../../api/admin/programs";
 import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import { ROLES, type Role } from "../../types";
+import { ROLES, type Role } from "../../types/admins";
 
 const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",

@@ -22,7 +22,7 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { useToast } from "../../context/useToast";
 import { geocodeAddress } from "../../utils/geocodeAddress";
-import type { DemandSite, DemandSiteLocationShape } from "../../types";
+import type { DemandSite, DemandSiteLocationShape } from "../../types/demandSites";
 
 const DEFAULT_CENTER: [number, number] = [36.5, 127.8];
 const MIN_RADIUS_METERS = 1500;

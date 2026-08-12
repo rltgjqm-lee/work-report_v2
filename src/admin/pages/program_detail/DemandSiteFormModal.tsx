@@ -13,7 +13,7 @@ import FormField from "../../components/FormField";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import type { DemandSite } from "../../types";
+import type { DemandSite } from "../../types/demandSites";
 
 // GPS 오차를 감안한 최소 반경 — 서버(demandSites 라우트)에서도 같은 값으로 올려잡는다
 const MIN_RADIUS_METERS = 1500;

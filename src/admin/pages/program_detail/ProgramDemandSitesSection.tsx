@@ -9,7 +9,8 @@ import StatusChip from "../../components/chip/StatusChip";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import { rowActionBtnClass } from "../../uiClasses";
-import type { DemandSite, DemandSiteSchedule, Group } from "../../types";
+import type { DemandSite, DemandSiteSchedule } from "../../types/demandSites";
+import type { Group } from "../../types/groups";
 
 interface ProgramDemandSitesSectionProps {
   programId: number;

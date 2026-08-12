@@ -11,7 +11,7 @@ import FilterSelect from "../components/FilterSelect";
 import { usePagination } from "../hooks/usePagination";
 import { useToast } from "../context/useToast";
 import { rowActionBtnClass } from "../uiClasses";
-import type { Participant } from "../types";
+import type { Participant } from "../types/participants";
 
 type ParticipantRow = Participant & {
   programName: string;

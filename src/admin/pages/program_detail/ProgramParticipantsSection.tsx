@@ -20,7 +20,9 @@ import PromptModal from "../../components/modal/PromptModal";
 import { usePagination } from "../../hooks/usePagination";
 import { useToast } from "../../context/useToast";
 import { rowActionBtnClass } from "../../uiClasses";
-import type { DemandSite, Group, Participant } from "../../types";
+import type { DemandSite } from "../../types/demandSites";
+import type { Group } from "../../types/groups";
+import type { Participant } from "../../types/participants";
 
 const statusLabel: Record<string, string> = {
   ACTIVE: "활동중",

@@ -2,7 +2,7 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 
 import { request } from "../client";
 import { adminKeys } from "./admins";
-import type { Program, ProgramWithParticipants } from "../../types";
+import type { Program, ProgramWithParticipants } from "../../types/programs";
 
 export const listPrograms = (organizationId?: number) =>
   request<Program[]>(`/api/programs${organizationId ? `?organizationId=${organizationId}` : ""}`);

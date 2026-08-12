@@ -8,7 +8,8 @@ import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import { ROLES, type Admin, type Organization, type Role } from "../../types";
+import { ROLES, type Admin, type Role } from "../../types/admins";
+import type { Organization } from "../../types/organizations";
 
 const emptyForm = {
   email: "",

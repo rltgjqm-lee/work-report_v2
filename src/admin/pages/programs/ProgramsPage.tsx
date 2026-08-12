@@ -19,7 +19,8 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import { rowActionBtnClass } from "../../uiClasses";
-import { ROLES, type Program } from "../../types";
+import { ROLES } from "../../types/admins";
+import type { Program } from "../../types/programs";
 
 /**
  * 관리자 페이지 > 사업단 관리 페이지입니다.

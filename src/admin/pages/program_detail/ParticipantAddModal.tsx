@@ -11,7 +11,8 @@ import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import type { DemandSite, Group } from "../../types";
+import type { DemandSite } from "../../types/demandSites";
+import type { Group } from "../../types/groups";
 import { downloadAddParticipantsTemplate } from "../../utils/excel/downloadAddParticipantsTemplate";
 import { parseParticipantsFile } from "../../utils/excel/parseParticipantsFile";
 

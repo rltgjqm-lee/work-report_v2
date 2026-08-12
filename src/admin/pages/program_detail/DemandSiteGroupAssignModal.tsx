@@ -11,7 +11,8 @@ import FormField from "../../components/FormField";
 import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
-import type { DemandSite, Group } from "../../types";
+import type { DemandSite } from "../../types/demandSites";
+import type { Group } from "../../types/groups";
 
 interface DemandSiteGroupAssignModalProps {
   onClose: () => void;

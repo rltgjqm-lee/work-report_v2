@@ -7,7 +7,7 @@ import type {
   DemandSiteLocationShape,
   DemandSiteSchedule,
   LatLngPoint,
-} from "../../types";
+} from "../../types/demandSites";
 
 const demandSiteKeys = {
   all: ["demand-sites"] as const,

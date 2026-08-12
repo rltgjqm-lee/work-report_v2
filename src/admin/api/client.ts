@@ -1,4 +1,4 @@
-import type { AdminSession } from "../types";
+import type { AdminSession } from "../types/admins";
 
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 

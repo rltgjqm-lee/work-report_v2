@@ -15,7 +15,8 @@ import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import type { Group, Participant } from "../../types";
+import type { Group } from "../../types/groups";
+import type { Participant } from "../../types/participants";
 
 const toMinutes = (hhmm: string): number => {
   const [hour, minute] = hhmm.split(":").map(Number);

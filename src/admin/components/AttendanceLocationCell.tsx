@@ -1,4 +1,4 @@
-import type { AttendanceLog } from "../types";
+import type { AttendanceLog } from "../types/attendance";
 
 const formatDistance = (meters: number) =>
   meters >= 1000 ? `${(meters / 1000).toFixed(1)}km` : `${meters}m`;

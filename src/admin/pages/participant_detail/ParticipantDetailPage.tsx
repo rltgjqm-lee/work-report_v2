@@ -12,12 +12,8 @@ import MonthPicker from "../../components/MonthPicker";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import Button from "../../components/Button";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import type {
-  AnnualLeave,
-  AttendanceStats,
-  ParticipantAttendanceRow,
-  ParticipantLeave,
-} from "../../types";
+import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
+import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
 import ParticipantPayrollSettingsModal from "./ParticipantPayrollSettingsModal";
 
 const STATUS_LABEL: Record<string, string> = {

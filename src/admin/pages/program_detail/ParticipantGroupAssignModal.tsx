@@ -15,7 +15,8 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 import { rowActionBtnClass } from "../../uiClasses";
 import { getLocalToday } from "../../../utils/timeFormat";
-import type { Group, Participant } from "../../types";
+import type { Group } from "../../types/groups";
+import type { Participant } from "../../types/participants";
 
 type AssignMode = "TEMPORARY" | "PERMANENT";
 

@@ -11,7 +11,7 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import { rowActionBtnClass } from "../../uiClasses";
-import { ROLES, type Admin, type Role } from "../../types";
+import { ROLES, type Admin, type Role } from "../../types/admins";
 
 const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",

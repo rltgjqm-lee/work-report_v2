@@ -8,7 +8,7 @@ import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import type { LeaveType } from "../../types";
+import type { LeaveType } from "../../types/participants";
 
 const emptyForm = {
   leaveStart: "",

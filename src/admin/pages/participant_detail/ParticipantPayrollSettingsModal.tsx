@@ -8,7 +8,7 @@ import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
-import type { ParticipantDetail } from "../../types";
+import type { ParticipantDetail } from "../../types/participants";
 
 const FEE_TYPE_OPTIONS = [
   { value: "add", label: "가산" },
