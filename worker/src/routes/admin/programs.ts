@@ -871,12 +871,22 @@ app.get("/:id/escapes", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const status = c.req.query("status") ?? "OPEN";
+  // 참여자 상세 페이지의 이탈 이력용 — 있으면 상태 무관하게 그 참여자 것만 본다.
+  const participantId = c.req.query("participantId");
 
   const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const conditions = [eq(escapeLogs.programId, programId)];
+  if (status !== "ALL") {
+    conditions.push(eq(escapeLogs.status, status as "OPEN" | "RESOLVED"));
+  }
+  if (participantId) {
+    conditions.push(eq(escapeLogs.participantId, Number(participantId)));
   }
 
   const rows = await db
@@ -890,12 +900,7 @@ app.get("/:id/escapes", async (c) => {
     .innerJoin(participants, eq(escapeLogs.participantId, participants.id))
     .leftJoin(groups, eq(participants.groupId, groups.id))
     .leftJoin(demandSites, eq(escapeLogs.demandSiteId, demandSites.id))
-    .where(
-      and(
-        eq(escapeLogs.programId, programId),
-        eq(escapeLogs.status, status as "OPEN" | "RESOLVED"),
-      ),
-    )
+    .where(and(...conditions))
     .orderBy(sql`${escapeLogs.detectedAt} DESC`);
 
   return c.json(rows);

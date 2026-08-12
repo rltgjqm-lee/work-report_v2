@@ -7,15 +7,36 @@ const escapeKeys = {
   all: ["escapes"] as const,
   byProgram: (programId: number, status: EscapeStatus) =>
     [...escapeKeys.all, "program", programId, status] as const,
+  byParticipant: (participantId: number) =>
+    [...escapeKeys.all, "participant", participantId] as const,
 };
 
-const getEscapes = (programId: number, status: EscapeStatus = "OPEN") =>
-  request<EscapeRow[]>(`/api/programs/${programId}/escapes?status=${status}`);
+const getEscapes = (
+  programId: number,
+  status: EscapeStatus | "ALL" = "OPEN",
+  participantId?: number,
+) =>
+  request<EscapeRow[]>(
+    `/api/programs/${programId}/escapes?status=${status}${
+      participantId ? `&participantId=${participantId}` : ""
+    }`,
+  );
 
 export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
   queryOptions({
     queryKey: escapeKeys.byProgram(programId, status),
     queryFn: () => getEscapes(programId, status),
+  });
+
+// 참여자 상세 페이지의 이탈 이력 — 상태 무관하게(ALL) 그 참여자 것만 조회한다.
+export const participantEscapesQueryOptions = (
+  programId: number | undefined,
+  participantId: number | undefined,
+) =>
+  queryOptions({
+    queryKey: escapeKeys.byParticipant(participantId ?? 0),
+    queryFn: () => getEscapes(programId as number, "ALL", participantId),
+    enabled: !!programId && !!participantId,
   });
 
 const liveWorkerKeys = {

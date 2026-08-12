@@ -8,12 +8,15 @@ import {
   participantLeavesQueryOptions,
   participantQueryOptions,
 } from "../../api/admin/participants";
+import { participantEscapesQueryOptions } from "../../api/admin/escapes";
 import MonthPicker from "../../components/MonthPicker";
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import Button from "../../components/Button";
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import StatusChip from "../../components/chip/StatusChip";
+import { getLocalYearMonth, isoToKstMinuteString } from "../../../utils/timeFormat";
 import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
+import type { EscapeRow } from "../../types/escapes";
 import ParticipantPayrollSettingsModal from "./ParticipantPayrollSettingsModal";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -59,6 +62,9 @@ const ParticipantDetailPage = () => {
     participantAnnualLeaveQueryOptions(participantId, new Date().getFullYear().toString()),
   );
   const { data: attendance } = useQuery(participantAttendanceQueryOptions(participantId, month));
+  const { data: escapes = [] } = useQuery(
+    participantEscapesQueryOptions(participant?.programId, participantId),
+  );
 
   const attendanceLogs = attendance?.logs ?? [];
   const attendanceStats = attendance?.stats ?? emptyStats;
@@ -113,6 +119,9 @@ const ParticipantDetailPage = () => {
 
       {/* 휴가 이력 */}
       <LeaveHistorySection annualLeave={annualLeave} leaves={leaves} />
+
+      {/* 이탈 이력 */}
+      <EscapeHistorySection escapes={escapes} />
 
       {/* 급여 설정 모달 */}
       {payrollModalOpen && (
@@ -332,6 +341,80 @@ const LeaveHistorySection = ({ annualLeave, leaves }: LeaveHistorySectionProps) 
               <tr>
                 <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
                   휴가 이력이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </>
+);
+
+interface EscapeHistorySectionProps {
+  escapes: EscapeRow[];
+}
+
+const EscapeHistorySection = ({ escapes }: EscapeHistorySectionProps) => (
+  <>
+    <div className="mb-3">
+      <span className="text-sm font-bold">이탈 이력</span>
+    </div>
+
+    <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px] table-fixed border-collapse">
+          <thead>
+            <tr>
+              <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                발생일시
+              </th>
+              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                상태
+              </th>
+              <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                이탈횟수
+              </th>
+              <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                이탈거리
+              </th>
+              <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                처리 메모
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {escapes.map((row) => (
+              <tr key={row.escape.id} className="hover:bg-admin-row-hover">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                  {isoToKstMinuteString(row.escape.detectedAt)}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {row.escape.status === "OPEN" ? (
+                    <StatusChip variant="bad">이탈중</StatusChip>
+                  ) : (
+                    <StatusChip variant="ok">처리완료</StatusChip>
+                  )}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {row.escape.alertCount}회
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {row.escape.distanceKm.toFixed(2)}km
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
+                  {row.escape.memo ?? "-"}
+                </td>
+              </tr>
+            ))}
+
+            {escapes.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                >
+                  이탈 이력이 없습니다.
                 </td>
               </tr>
             )}
