@@ -46,8 +46,9 @@ app.post("/:id/resolve", async (c) => {
   return c.json(result[0]);
 });
 
-// 관제 화면이 3단계 위급 이탈을 폴링으로 발견해 팝업을 띄운 뒤, 같은 이탈로 팝업이
-// 다시 뜨지 않도록 표시한다 (해결 처리 전까지 유지)
+// 관제 화면이 폴링으로 새 단계(1/2/3단계)의 이탈을 발견해 팝업을 띄운 뒤, 그 시점의
+// alertCount를 기록한다 — alertCount가 이보다 커지기(더 악화되기) 전까지는 같은 이탈로
+// 팝업이 다시 뜨지 않는다 (해결 처리 전까지 유지, 새로고침해도 유지).
 app.post("/:id/alerted", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -66,7 +67,7 @@ app.post("/:id/alerted", async (c) => {
 
   const result = await db
     .update(escapeLogs)
-    .set({ alerted: true })
+    .set({ alertedAtCount: escape.alertCount })
     .where(eq(escapeLogs.id, id))
     .returning();
 

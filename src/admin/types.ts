@@ -274,7 +274,7 @@ export type EscapeLog = {
   distanceKm: number;
   alertCount: number;
   status: EscapeStatus;
-  alerted: boolean;
+  alertedAtCount: number;
   resolvedBy: number | null;
   resolvedAt: string | null;
   memo: string | null;

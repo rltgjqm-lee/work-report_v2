@@ -1,0 +1,1 @@
+ALTER TABLE `escape_logs` DROP COLUMN `alerted`;

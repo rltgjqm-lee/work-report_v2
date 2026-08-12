@@ -407,6 +407,20 @@
       "when": 1786507479266,
       "tag": "0057_absent_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1786516770527,
+      "tag": "0058_even_stryfe",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1786516806552,
+      "tag": "0059_right_multiple_man",
+      "breakpoints": true
     }
   ]
 }

@@ -681,8 +681,10 @@ export const escapeLogs = sqliteTable(
     accuracyM: real("accuracy_m"),
     alertCount: integer("alert_count").notNull().default(1),
     status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
-    // 3단계(위급) 팝업을 관제 화면에서 한 번만 띄우기 위한 표시 — 팝업을 띄운 뒤 true로 바꾼다
-    alerted: integer("alerted", { mode: "boolean" }).notNull().default(false),
+    // 관제 화면이 마지막으로 팝업을 띄운 시점의 alertCount. 이후 alertCount가 이 값보다
+    // 커지면(1→2→3단계로 악화) 다시 팝업을 띄우고 이 값을 그때의 alertCount로 갱신한다
+    // — 새로고침해도 다시 안 뜨게, 단계가 올라갈 때만 다시 뜨게 하는 기준이다.
+    alertedAtCount: integer("alerted_at_count").notNull().default(0),
     resolvedBy: integer("resolved_by").references(() => admins.id),
     resolvedAt: text("resolved_at"),
     memo: text("memo"),

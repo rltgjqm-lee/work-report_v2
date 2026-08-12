@@ -52,6 +52,10 @@ const EscapesPage = () => {
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [search, setSearch] = useState("");
   const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
+  const [lowerTierEscapeAlert, setLowerTierEscapeAlert] = useState<{
+    row: EscapeRow;
+    tier: 1 | 2;
+  } | null>(null);
   const [resolveTarget, setResolveTarget] = useState<{
     escapeId: number;
     participantName: string;
@@ -149,14 +153,20 @@ const EscapesPage = () => {
   const resolveEscapeMutation = useMutation(resolveEscapeMutationOptions(queryClient));
   const markEscapeAlertedMutation = useMutation(markEscapeAlertedMutationOptions(queryClient));
 
-  // 새로 발생한 3단계(위급) 이탈을 감지해 팝업 — openEscapes가 폴링될 때마다 확인한다.
+  // 새로 다음 단계(1/2/3단계)로 악화된 이탈을 감지해 팝업 — openEscapes가 폴링될 때마다
+  // 확인한다. alertedAtCount가 서버에 남아있어 새로고침해도 같은 단계로는 다시 안 뜨고,
+  // 더 악화될 때만(alertCount가 alertedAtCount를 넘어설 때) 다시 뜬다.
   useEffect(() => {
-    const critical = openEscapes.find((row) => row.escape.alertCount >= 3 && !row.escape.alerted);
-    if (critical) {
+    const next = openEscapes.find((row) => row.escape.alertCount > row.escape.alertedAtCount);
+    if (!next) return;
+
+    if (next.escape.alertCount >= 3) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 폴링된 서버 상태를 감지해 팝업을 띄운다
-      setCriticalEscape(critical);
-      markEscapeAlertedMutation.mutate({ escapeId: critical.escape.id, programId });
+      setCriticalEscape(next);
+    } else {
+      setLowerTierEscapeAlert({ row: next, tier: next.escape.alertCount >= 2 ? 2 : 1 });
     }
+    markEscapeAlertedMutation.mutate({ escapeId: next.escape.id, programId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openEscapes]);
 
@@ -581,6 +591,40 @@ const EscapesPage = () => {
                 닫기
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {lowerTierEscapeAlert && (
+        <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
+          <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
+            <div
+              className="text-xl font-bold mb-4"
+              style={{ color: lowerTierEscapeAlert.tier >= 2 ? "#FF7800" : "#FFD200" }}
+            >
+              ⚠️ {lowerTierEscapeAlert.tier}단계 이탈
+            </div>
+            <div className="text-sm space-y-1.5 mb-5">
+              <p>
+                <strong>참여자:</strong> {lowerTierEscapeAlert.row.participantName}
+              </p>
+              <p>
+                <strong>수요처:</strong> {lowerTierEscapeAlert.row.demandSiteName ?? "-"}
+              </p>
+              <p>
+                <strong>이탈 횟수:</strong> {lowerTierEscapeAlert.row.escape.alertCount}회
+              </p>
+              <p>
+                <strong>이탈 거리:</strong> {lowerTierEscapeAlert.row.escape.distanceKm.toFixed(2)}
+                km
+              </p>
+            </div>
+            <button
+              className="w-full py-3 text-sm font-bold rounded-[2px] bg-admin-brand text-white"
+              onClick={() => setLowerTierEscapeAlert(null)}
+            >
+              확인
+            </button>
           </div>
         </div>
       )}
