@@ -65,7 +65,7 @@ const computeTrainingHours = (startTime: string, endTime: string): number | unde
 };
 
 const emptyLogForm = {
-  participantId: "",
+  participantIds: [] as number[],
   trainingId: "",
   attendDate: getLocalToday(),
   attendHours: "",
@@ -108,6 +108,29 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
   const { data: compliance = [] } = useQuery(
     trainingComplianceQueryOptions(programId, subTab === "compliance"),
   );
+
+  // 💡 이수등록 모달에서 선택한 교육을 이미 이수(COMPLETED)한 참여자는 체크박스를
+  // 막아서 중복 등록을 예방한다 — 참여자를 먼저 고르고 교육을 나중에 고르는 순서라,
+  // 저장 시점에도 한 번 더 걸러야 한다(교육을 나중에 바꿔서 뒤늦게 겹치는 경우).
+  const selectedLogTrainingId = logForm.trainingId ? Number(logForm.trainingId) : undefined;
+  const { data: selectedTrainingLogs = [] } = useQuery(
+    trainingLogsQueryOptions(
+      programId,
+      selectedLogTrainingId,
+      logModalOpen && selectedLogTrainingId !== undefined,
+    ),
+  );
+  // 💡 selectedLogTrainingId가 undefined면 쿼리 키가 "이수 현황" 탭의 "전체 교육"
+  // 필터와 같아져서(logsFiltered(programId, undefined)) 그 캐시를 그대로 돌려받을 수
+  // 있다 — 교육을 아직 안 고른 상태에서는 그 데이터를 참고하면 안 되니 항상 빈 값으로 본다.
+  const alreadyCompletedParticipantIds =
+    selectedLogTrainingId === undefined
+      ? new Set<number>()
+      : new Set(
+          selectedTrainingLogs
+            .filter((row) => row.log.status === "COMPLETED")
+            .map((row) => row.log.participantId),
+        );
 
   const createTrainingMutation = useMutation(createTrainingMutationOptions(queryClient));
   const updateTrainingMutation = useMutation(updateTrainingMutationOptions(queryClient));
@@ -194,28 +217,55 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     setLogModalOpen(true);
   };
 
-  const handleSaveLogButtonClick = () => {
-    if (!logForm.participantId || !logForm.trainingId || !logForm.attendDate) {
+  const handleParticipantCheckboxChange = (participantId: number) => {
+    setLogForm((f) => ({
+      ...f,
+      participantIds: f.participantIds.includes(participantId)
+        ? f.participantIds.filter((id) => id !== participantId)
+        : [...f.participantIds, participantId],
+    }));
+  };
+
+  const handleSaveLogButtonClick = async () => {
+    if (logForm.participantIds.length === 0 || !logForm.trainingId || !logForm.attendDate) {
       alert("참여자, 교육, 이수일자를 입력해주세요.");
 
       return;
     }
-    createTrainingLogMutation.mutate(
-      {
-        programId,
-        participantId: Number(logForm.participantId),
-        trainingId: Number(logForm.trainingId),
-        attendDate: logForm.attendDate,
-        attendHours: logForm.attendHours ? Number(logForm.attendHours) : undefined,
-      },
-      {
-        onSuccess: () => {
-          showToast("이수 기록을 등록했습니다.");
-          setLogModalOpen(false);
-        },
-        onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
-      },
+
+    // 참여자를 고른 뒤 교육을 바꿔서 뒤늦게 이미 이수한 사람이 섞여 있을 수 있어
+    // 저장 시점에 한 번 더 걸러낸다.
+    const targetParticipantIds = logForm.participantIds.filter(
+      (participantId) => !alreadyCompletedParticipantIds.has(participantId),
     );
+    const skippedCount = logForm.participantIds.length - targetParticipantIds.length;
+    if (targetParticipantIds.length === 0) {
+      alert("선택한 참여자가 모두 이미 이수 처리돼 있습니다.");
+
+      return;
+    }
+
+    try {
+      await Promise.all(
+        targetParticipantIds.map((participantId) =>
+          createTrainingLogMutation.mutateAsync({
+            programId,
+            participantId,
+            trainingId: Number(logForm.trainingId),
+            attendDate: logForm.attendDate,
+            attendHours: logForm.attendHours ? Number(logForm.attendHours) : undefined,
+          }),
+        ),
+      );
+      showToast(
+        skippedCount > 0
+          ? `${targetParticipantIds.length}명 등록, 이미 이수한 ${skippedCount}명은 제외했습니다.`
+          : `${targetParticipantIds.length}명의 이수 기록을 등록했습니다.`,
+      );
+      setLogModalOpen(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "등록에 실패했습니다.");
+    }
   };
 
   const handleCancelLogButtonClick = (log: TrainingLogRow) => {
@@ -610,35 +660,50 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             </>
           }
         >
-          <FormField label="참여자">
-            <select
-              className={selectClass}
-              value={logForm.participantId}
-              onChange={(event) =>
-                setLogForm((f) => ({
-                  ...f,
-                  participantId: event.target.value,
-                }))
-              }
-            >
-              <option value="">선택하세요</option>
-              {participants.map((participant) => (
-                <option key={participant.id} value={participant.id}>
-                  {participant.name}
-                </option>
-              ))}
-            </select>
+          <FormField label={`참여자 (${logForm.participantIds.length}명 선택됨)`}>
+            <div className="w-full max-h-[220px] overflow-y-auto border border-admin-border rounded-[2px]">
+              {participants.map((participant) => {
+                const isAlreadyCompleted = alreadyCompletedParticipantIds.has(participant.id);
+
+                return (
+                  <label
+                    key={participant.id}
+                    className={`flex items-center gap-2 px-3 py-2 text-[13px] font-sans border-b border-admin-border-subtle last:border-b-0 ${
+                      isAlreadyCompleted
+                        ? "text-admin-text-faint cursor-not-allowed"
+                        : "cursor-pointer hover:bg-admin-surface-hover"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={logForm.participantIds.includes(participant.id)}
+                      disabled={isAlreadyCompleted}
+                      onChange={() => handleParticipantCheckboxChange(participant.id)}
+                    />
+                    {participant.name}
+                    {isAlreadyCompleted && " · 이미 이수함"}
+                  </label>
+                );
+              })}
+            </div>
           </FormField>
           <FormField label="교육">
             <select
-              className={selectClass}
+              className={`${selectClass} w-full`}
               value={logForm.trainingId}
-              onChange={(event) =>
+              onChange={(event) => {
+                const selectedTraining = trainings.find(
+                  (training) => String(training.id) === event.target.value,
+                );
                 setLogForm((f) => ({
                   ...f,
                   trainingId: event.target.value,
-                }))
-              }
+                  attendHours:
+                    selectedTraining?.hours !== null && selectedTraining?.hours !== undefined
+                      ? String(selectedTraining.hours)
+                      : f.attendHours,
+                }));
+              }}
             >
               <option value="">선택하세요</option>
               {trainings
