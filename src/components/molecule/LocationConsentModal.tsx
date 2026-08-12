@@ -15,7 +15,7 @@ const LocationConsentModal = ({ onConfirm }: LocationConsentModalProps) =>
         <div className="text-[14.5px] text-text-tertiary font-semibold leading-[1.6] mt-2.5">
           출근하면 근무지 확인과 근무 중 안전 관리를
           <br />
-          위해 위치가 주기적으로 확인됩니다.
+          위해 위치를 주기적으로 확인해요
           <br />
           퇴근을 등록하면 위치 확인이 즉시 중단돼요
         </div>

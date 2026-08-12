@@ -52,15 +52,18 @@ const HomePage = ({
       style={{ background: "linear-gradient(180deg,#eaf2ff 0%,#f2f4f6 min(320px,60vh))" }}
     >
       <div className="h-[60px] flex items-center justify-between gap-2 px-[clamp(16px,5vw,24px)]">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-brand mb-[4px]" />
-          <span className="leading-none text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
-            WORK REPORT
-          </span>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex gap-1.5">
+            <img src="/app-icon-1024.png" alt="" className="w-5 h-5 rounded-[6px]" />
+            <p className="mt-[3px] text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
+              WORK REPORT
+            </p>
+          </div>
+
+          <button onClick={onOpenSettings} className="cursor-pointer" aria-label="설정">
+            <Settings size={16} color="#333d4b" strokeWidth={2.2} />
+          </button>
         </div>
-        <button onClick={onOpenSettings} className="cursor-pointer" aria-label="설정">
-          <Settings size={16} color="#333d4b" strokeWidth={2.2} />
-        </button>
       </div>
 
       <div className="flex-1 flex flex-col px-[clamp(16px,5vw,24px)] py-[clamp(12px,4vw,20px)]">
