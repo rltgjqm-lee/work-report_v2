@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "cap:sync": "npm run build:hybrid && npx cap sync",
     "cap:open:android": "npx cap open android",
-    "cap:open:ios": "npx cap open ios"
+    "cap:open:ios": "npx cap open ios",
+    "ota:publish": "npm run build:hybrid && node scripts/publishOta.mjs",
+    "ota:rollback": "node scripts/rollbackOta.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
@@ -21,6 +23,7 @@
     "@capacitor/push-notifications": "^7.0.7",
     "@capacitor/splash-screen": "^7.0.5",
     "@capacitor/status-bar": "^7.0.6",
+    "@capgo/capacitor-updater": "^7.50.2",
     "@tanstack/react-query": "^5.101.4",
     "@types/leaflet-draw": "^1.0.13",
     "exceljs": "^4.4.0",

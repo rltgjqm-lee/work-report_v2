@@ -13,7 +13,9 @@ import demandSites from "./routes/admin/demandSites";
 import escapes from "./routes/admin/escapes";
 import attendance from "./routes/admin/attendance";
 import trainings from "./routes/admin/trainings";
+import otaBundles from "./routes/admin/otaBundles";
 import publicRoutes from "./routes/user/public";
+import otaPublicRoutes from "./routes/user/ota";
 import authRoutes from "./routes/admin/auth";
 import meRoutes from "./routes/admin/me";
 import { requireAdmin } from "./lib/authz";
@@ -45,6 +47,7 @@ app.use(
 );
 
 app.route("/public", publicRoutes);
+app.route("/public/ota", otaPublicRoutes);
 app.route("/auth", authRoutes);
 
 app.use("/api/*", requireAdmin);
@@ -62,6 +65,7 @@ app.route("/api/demand-sites", demandSites);
 app.route("/api/escapes", escapes);
 app.route("/api/attendance", attendance);
 app.route("/api/trainings", trainings);
+app.route("/api/ota-bundles", otaBundles);
 
 export default {
   fetch: app.fetch,

@@ -15,6 +15,7 @@ node_modules
 # Build output
 dist
 dist-hybrid
+dist-hybrid.zip
 dist-ssr
 *.local
 

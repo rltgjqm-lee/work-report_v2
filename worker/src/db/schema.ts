@@ -736,3 +736,19 @@ export const activityLogs = sqliteTable(
     uniqueIndex("activity_logs_participant_date_unique").on(table.participantId, table.actDate),
   ],
 );
+
+export const otaBundles = sqliteTable("ota_bundles", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  // "1.4.2" 형태. 세미버 문자열 비교로 최신 여부를 판단한다(Capacitor 하이브리드 앱 전용,
+  // 네이티브 앱 버전과는 별개 카운터).
+  version: text("version").notNull(),
+  r2Key: text("r2_key").notNull(),
+  checksum: text("checksum").notNull(),
+  fileSize: integer("file_size").notNull(),
+  // 동시에 true인 row가 항상 하나 이하가 되도록 애플리케이션(activate 엔드포인트)에서 보장한다.
+  // 롤백도 이전 버전 row를 다시 activate하는 방식으로 처리한다.
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

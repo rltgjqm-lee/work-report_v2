@@ -15,6 +15,10 @@
       "binding": "SIGNATURES_BUCKET",
       "bucket_name": "work-report-signatures",
     },
+    {
+      "binding": "OTA_BUNDLES_BUCKET",
+      "bucket_name": "work-report-ota-bundles",
+    },
   ],
   "triggers": {
     // KST 09:00~17:59 매분 + KST 18:00 정각 1회 (Cron은 UTC 기준, KST = UTC+9)
