@@ -11,13 +11,22 @@ import BottomBar from "../../components/atoms/BottomBar";
 import Button from "../../components/atoms/Button";
 import { pageClass, bodyClass } from "../../components/atoms/classes";
 import { validateForm } from "../../utils/validateFormData";
-import { PAGE1_RULES } from "../../types/validationRules";
 import { affiliationsQueryOptions } from "../../utils/affiliationsApi";
 import { demandSitesQueryOptions } from "../../utils/demandSitesApi";
 import { KOREAN_REGIONS, SIDO_LIST } from "../../constants/koreanRegions";
 
 import type { Affiliations } from "../../utils/affiliationsApi";
 import type { ActivityLogFormData } from "../../types/form";
+import type { ValidationRule } from "../../utils/validateFormData";
+
+// 💡 이 페이지(기본정보 입력)에서만 쓰는 검증 규칙이라 여기 직접 둔다.
+const PAGE1_RULES: ValidationRule[] = [
+  { field: "orgName", message: "(1) 기관명을 넣어주세요" },
+  { field: "programName", message: "(2) 참여사업명을 넣어주세요" },
+  { field: "userName", message: "(3) 참여자성명을 넣어주세요" },
+  { field: "demandName", message: "(4) 수요처명을 넣어주세요" },
+  { field: "gender", message: "(5) 성별을 선택해주세요" },
+];
 
 const PLACEHOLDER_OPTION = { value: "", label: "선택하세요" };
 

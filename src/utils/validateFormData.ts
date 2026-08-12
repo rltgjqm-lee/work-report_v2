@@ -1,6 +1,6 @@
 import type { ActivityLogFormData } from "../types/form";
 
-interface ValidationRule {
+export interface ValidationRule {
   field: keyof ActivityLogFormData;
   message: string;
 }
