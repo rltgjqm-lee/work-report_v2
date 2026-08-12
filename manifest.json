@@ -1,6 +1,6 @@
 {
-  "name": "활동 일지",
-  "short_name": "활동 일지",
+  "name": "Work Report",
+  "short_name": "Work Report",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
