@@ -16,6 +16,7 @@ import ParticipantDemandSiteAssignModal from "./ParticipantDemandSiteAssignModal
 import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 import FilterSelect from "../../components/FilterSelect";
+import PromptModal from "../../components/modal/PromptModal";
 import { usePagination } from "../../hooks/usePagination";
 import { useToast } from "../../context/useToast";
 import { rowActionBtnClass } from "../../uiClasses";
@@ -78,6 +79,8 @@ const ProgramParticipantsSection = ({
   const [scheduleTarget, setScheduleTarget] = useState<Participant | null>(null);
   const [groupAssignTarget, setGroupAssignTarget] = useState<Participant | null>(null);
   const [demandSiteAssignTarget, setDemandSiteAssignTarget] = useState<Participant | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: number; name: string } | null>(null);
+  const [bulkDropPromptOpen, setBulkDropPromptOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -110,9 +113,13 @@ const ProgramParticipantsSection = ({
   };
 
   const handleDropButtonClick = (participantId: number, name: string) => {
-    const reason = prompt(`'${name}' 님의 참여종료 사유를 입력해주세요.`);
+    setDropTarget({ id: participantId, name });
+  };
 
-    if (reason === null) return;
+  const handleDropPromptConfirm = (reason: string) => {
+    if (!dropTarget) return;
+    const { id: participantId, name } = dropTarget;
+    setDropTarget(null);
 
     dropParticipantMutation.mutate(
       { participantId, programId, dropReason: reason || undefined },
@@ -157,8 +164,11 @@ const ProgramParticipantsSection = ({
   };
 
   const handleBulkDropButtonClick = () => {
-    const reason = prompt("일괄 참여종료 사유를 입력해주세요.");
-    if (reason === null) return;
+    setBulkDropPromptOpen(true);
+  };
+
+  const handleBulkDropPromptConfirm = (reason: string) => {
+    setBulkDropPromptOpen(false);
 
     bulkUpdateParticipantStatusMutation.mutate(
       {
@@ -415,6 +425,22 @@ const ProgramParticipantsSection = ({
           programId={programId}
           demandSites={demandSites}
           onClose={() => setDemandSiteAssignTarget(null)}
+        />
+      )}
+
+      {dropTarget && (
+        <PromptModal
+          title={`'${dropTarget.name}' 님의 참여종료 사유를 입력해주세요.`}
+          onConfirm={handleDropPromptConfirm}
+          onCancel={() => setDropTarget(null)}
+        />
+      )}
+
+      {bulkDropPromptOpen && (
+        <PromptModal
+          title="일괄 참여종료 사유를 입력해주세요."
+          onConfirm={handleBulkDropPromptConfirm}
+          onCancel={() => setBulkDropPromptOpen(false)}
         />
       )}
     </div>

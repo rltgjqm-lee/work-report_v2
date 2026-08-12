@@ -14,6 +14,7 @@ import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
+import PromptModal from "../../components/modal/PromptModal";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
 import type { AttendanceStats } from "../../types";
@@ -70,6 +71,7 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   }
 
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
+  const [invalidateTarget, setInvalidateTarget] = useState<AttendanceRow | null>(null);
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
     clockOut: "",
@@ -160,10 +162,13 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   };
 
   const handleInvalidateButtonClick = (row: AttendanceRow) => {
-    const reason = prompt(
-      `'${row.participantName}' 님의 ${row.log.workDate} 근무 기록을 무효화합니다. 사유를 입력해주세요.`,
-    );
-    if (reason === null) return;
+    setInvalidateTarget(row);
+  };
+
+  const handleInvalidatePromptConfirm = (reason: string) => {
+    if (!invalidateTarget) return;
+    const row = invalidateTarget;
+    setInvalidateTarget(null);
 
     invalidateAttendanceMutation.mutate(
       { logId: row.log.id, programId, month, reason: reason || undefined },
@@ -438,6 +443,14 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
             </div>
           </div>
         </div>
+      )}
+
+      {invalidateTarget && (
+        <PromptModal
+          title={`'${invalidateTarget.participantName}' 님의 ${invalidateTarget.log.workDate} 근무 기록을 무효화합니다. 사유를 입력해주세요.`}
+          onConfirm={handleInvalidatePromptConfirm}
+          onCancel={() => setInvalidateTarget(null)}
+        />
       )}
     </div>
   );

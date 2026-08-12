@@ -15,6 +15,7 @@ import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api
 import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
 import SearchInput from "../components/SearchInput";
 import FilterSelect from "../components/FilterSelect";
+import PromptModal from "../components/modal/PromptModal";
 import { useToast } from "../context/useToast";
 import type { DemandSiteLocation, EscapeRow, EscapeStatus, LiveWorker } from "../types";
 
@@ -51,6 +52,10 @@ const EscapesPage = () => {
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [search, setSearch] = useState("");
   const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
+  const [resolveTarget, setResolveTarget] = useState<{
+    escapeId: number;
+    participantName: string;
+  } | null>(null);
   const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -312,8 +317,13 @@ const EscapesPage = () => {
   }, [filteredWorkers]);
 
   const handleResolveButtonClick = (escapeId: number, participantName: string) => {
-    const memo = prompt(`'${participantName}' 님 이탈 확인 처리 — 메모(선택)`);
-    if (memo === null) return;
+    setResolveTarget({ escapeId, participantName });
+  };
+
+  const handleResolvePromptConfirm = (memo: string) => {
+    if (!resolveTarget) return;
+    const { escapeId, participantName } = resolveTarget;
+    setResolveTarget(null);
 
     resolveEscapeMutation.mutate(
       { escapeId, programId, memo: memo || undefined },
@@ -573,6 +583,14 @@ const EscapesPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {resolveTarget && (
+        <PromptModal
+          title={`'${resolveTarget.participantName}' 님 이탈 확인 처리 — 메모(선택)`}
+          onConfirm={handleResolvePromptConfirm}
+          onCancel={() => setResolveTarget(null)}
+        />
       )}
     </div>
   );
