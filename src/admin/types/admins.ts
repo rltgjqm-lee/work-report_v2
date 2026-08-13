@@ -29,3 +29,6 @@ export type Admin = {
   isActive: boolean;
   createdAt: string;
 };
+
+// 목록 화면(관리자 계정)용 — 프론트가 find로 붙이지 않도록 기관명을 서버가 조인해 같이 내려준다.
+export type AdminListItem = Admin & { organizationName: string | null };

@@ -1,10 +1,16 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
 import { ROLES, type AdminRole, type Env } from "../../types";
 
-import { adminLoginHistory, admins, adminSessions, demandSites } from "../../db/schema";
+import {
+  adminLoginHistory,
+  admins,
+  adminSessions,
+  demandSites,
+  organizations,
+} from "../../db/schema";
 import { getAuth, parseIdArray } from "../../lib/authz";
 import { hashPassword } from "../../lib/password";
 import { tryConsumePasswordResetBudget } from "../../lib/passwordResetRateLimit";
@@ -37,6 +43,15 @@ const toAdminJson = (admin: typeof admins.$inferSelect) => ({
   createdAt: admin.createdAt,
 });
 
+// 목록 화면(관리자 계정)에서 기관명을 프론트가 매 행마다 find로 찾지 않도록 서버에서
+// organizations를 조인해 같이 내려준다.
+const toAdminListJson = (
+  admin: typeof admins.$inferSelect & { organizationName: string | null },
+) => ({
+  ...toAdminJson(admin),
+  organizationName: admin.organizationName,
+});
+
 type AdminBody = {
   email?: string;
   name?: string;
@@ -57,15 +72,18 @@ app.get("/", async (c) => {
   }
 
   const db = drizzle(c.env.DB);
+  const selectWithOrganizationName = db
+    .select({ ...getTableColumns(admins), organizationName: organizations.name })
+    .from(admins)
+    .leftJoin(organizations, eq(admins.organizationId, organizations.id));
   const rows =
     auth.role === ROLES.SUPER_ADMIN
-      ? await db.select().from(admins)
-      : await db
-          .select()
-          .from(admins)
-          .where(eq(admins.organizationId, auth.organizationId as number));
+      ? await selectWithOrganizationName
+      : await selectWithOrganizationName.where(
+          eq(admins.organizationId, auth.organizationId as number),
+        );
 
-  return c.json(rows.map(toAdminJson));
+  return c.json(rows.map(toAdminListJson));
 });
 
 app.post("/", async (c) => {

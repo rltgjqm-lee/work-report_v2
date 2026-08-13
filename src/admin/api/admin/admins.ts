@@ -1,6 +1,6 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { Admin, Role } from "../../types/admins";
+import type { Admin, AdminListItem, Role } from "../../types/admins";
 
 import { request } from "../client";
 
@@ -36,7 +36,7 @@ export const adminKeys = {
   all: ["admins"] as const,
 };
 
-const listAdmins = () => request<Admin[]>("/api/admins");
+const listAdmins = () => request<AdminListItem[]>("/api/admins");
 
 export const adminsQueryOptions = queryOptions({
   queryKey: adminKeys.all,

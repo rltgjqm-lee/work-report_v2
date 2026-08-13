@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminsQueryOptions, updateAdminMutationOptions } from "../../api/admin/admins";
-import { organizationsQueryOptions } from "../../api/admin/organizations";
+import { organizationOptionsQueryOptions } from "../../api/admin/organizations";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
@@ -47,7 +47,7 @@ const AdminsPage = () => {
 
   const { data: admins = [] } = useQuery(adminsQueryOptions);
   const { data: organizations = [] } = useQuery({
-    ...organizationsQueryOptions,
+    ...organizationOptionsQueryOptions,
     enabled: role === ROLES.SUPER_ADMIN,
   });
 
@@ -59,9 +59,6 @@ const AdminsPage = () => {
     name: string;
   } | null>(null);
   const [transferTarget, setTransferTarget] = useState<Admin | null>(null);
-
-  const OrganizationNameById = (organizationId: number | null) =>
-    organizations.find((organization) => organization.id === organizationId)?.name ?? "-";
 
   const filtered = useMemo(
     () =>
@@ -179,7 +176,7 @@ const AdminsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     {adminRow.role === ROLES.SUPER_ADMIN
                       ? "전체"
-                      : OrganizationNameById(adminRow.organizationId)}
+                      : (adminRow.organizationName ?? "-")}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {adminRow.isActive ? "활성" : "비활성"}

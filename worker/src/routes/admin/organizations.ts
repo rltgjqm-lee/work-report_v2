@@ -38,6 +38,23 @@ app.get("/", async (c) => {
   return c.json(rows);
 });
 
+// 드롭다운 등 이름만 필요한 소비자용 — 주소·연락처 등 상세 필드 없이 딱 그 화면이
+// 쓰는 컬럼만 DB에서 골라 내려준다. `/:id`보다 먼저 등록해야 "dropdown"이 id로 안 잡힌다.
+app.get("/dropdown", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const select = db
+    .select({ id: organizations.id, name: organizations.name, isActive: organizations.isActive })
+    .from(organizations);
+
+  const rows =
+    auth.role === ROLES.SUPER_ADMIN
+      ? await select
+      : await select.where(eq(organizations.id, auth.organizationId as number));
+
+  return c.json(rows);
+});
+
 app.get("/:id", async (c) => {
   const auth = getAuth(c);
   const id = Number(c.req.param("id"));

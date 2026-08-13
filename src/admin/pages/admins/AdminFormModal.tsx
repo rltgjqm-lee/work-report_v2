@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createAdminMutationOptions, updateAdminMutationOptions } from "../../api/admin/admins";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
-import type { Organization } from "../../types/organizations";
+import type { OrganizationOption } from "../../types/organizations";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";
@@ -26,7 +26,7 @@ interface AdminFormModalProps {
   currentRole: Role;
   assignableRoles: Role[];
   roleLabel: Record<Role, string>;
-  organizations: Organization[];
+  organizations: OrganizationOption[];
 }
 
 /**
