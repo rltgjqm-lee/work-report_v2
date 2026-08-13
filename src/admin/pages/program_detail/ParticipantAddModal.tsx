@@ -202,7 +202,7 @@ const ParticipantAddModal = ({
       <FormField label="이름">
         <Input
           value={form.name}
-          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
         <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           동명이인이 있으면 이름 뒤에 숫자를 붙여 구분해주세요
@@ -214,7 +214,7 @@ const ParticipantAddModal = ({
         <FilterSelect
           className="w-full"
           value={form.gender}
-          onChange={(value) => setForm((f) => ({ ...f, gender: value }))}
+          onChange={(value) => setForm((form) => ({ ...form, gender: value }))}
           options={GENDER_OPTIONS}
         />
       </FormField>
@@ -222,7 +222,7 @@ const ParticipantAddModal = ({
         <FilterSelect
           className="w-full"
           value={form.demandSiteId}
-          onChange={(value) => setForm((f) => ({ ...f, demandSiteId: value }))}
+          onChange={(value) => setForm((form) => ({ ...form, demandSiteId: value }))}
           options={[
             { value: "", label: "선택하세요" },
             ...activeDemandSites.map((demandSite) => ({
@@ -236,7 +236,7 @@ const ParticipantAddModal = ({
         <FilterSelect
           className="w-full"
           value={form.groupId}
-          onChange={(value) => setForm((f) => ({ ...f, groupId: value }))}
+          onChange={(value) => setForm((form) => ({ ...form, groupId: value }))}
           options={[
             { value: "", label: "선택하세요" },
             ...activeGroups.map((group) => ({

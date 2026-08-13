@@ -143,7 +143,7 @@ const AdminFormModal = ({
         <Input
           value={form.email}
           disabled={!!editingAdmin}
-          onChange={(event) => setForm((f) => ({ ...f, email: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, email: event.target.value }))}
         />
       </FormField>
       {!editingAdmin && (
@@ -151,7 +151,7 @@ const AdminFormModal = ({
           <Input
             type="password"
             value={form.password}
-            onChange={(event) => setForm((f) => ({ ...f, password: event.target.value }))}
+            onChange={(event) => setForm((form) => ({ ...form, password: event.target.value }))}
           />
         </FormField>
       )}
@@ -161,7 +161,7 @@ const AdminFormModal = ({
             className="w-full"
             disabled={form.role === ROLES.SUPER_ADMIN}
             value={form.role === ROLES.SUPER_ADMIN ? "" : form.organizationId}
-            onChange={(value) => setForm((f) => ({ ...f, organizationId: value }))}
+            onChange={(value) => setForm((form) => ({ ...form, organizationId: value }))}
             options={[
               {
                 value: "",
@@ -181,7 +181,7 @@ const AdminFormModal = ({
         <FilterSelect
           className="w-full"
           value={form.role}
-          onChange={(value) => setForm((f) => ({ ...f, role: value as Role }))}
+          onChange={(value) => setForm((form) => ({ ...form, role: value as Role }))}
           options={assignableRoles.map((assignableRole) => ({
             value: assignableRole,
             label: roleLabel[assignableRole],
@@ -191,7 +191,7 @@ const AdminFormModal = ({
       <FormField label="이름">
         <Input
           value={form.name}
-          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
       </FormField>
       {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}

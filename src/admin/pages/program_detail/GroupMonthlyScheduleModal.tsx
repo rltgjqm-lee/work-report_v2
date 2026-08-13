@@ -190,13 +190,13 @@ const GroupMonthlyScheduleModal = ({
       <FormField label="조 이름">
         <Input
           value={form.name}
-          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
       </FormField>
       <FormField label="설명">
         <Input
           value={form.description}
-          onChange={(event) => setForm((f) => ({ ...f, description: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, description: event.target.value }))}
         />
       </FormField>
       <div className="flex gap-3">
@@ -208,7 +208,7 @@ const GroupMonthlyScheduleModal = ({
               min={programStartTime}
               max={programEndTime}
               value={form.shiftStart}
-              onChange={(event) => setForm((f) => ({ ...f, shiftStart: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, shiftStart: event.target.value }))}
             />
           </FormField>
         </div>
@@ -220,7 +220,7 @@ const GroupMonthlyScheduleModal = ({
               min={programStartTime}
               max={programEndTime}
               value={form.shiftEnd}
-              onChange={(event) => setForm((f) => ({ ...f, shiftEnd: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, shiftEnd: event.target.value }))}
             />
           </FormField>
         </div>

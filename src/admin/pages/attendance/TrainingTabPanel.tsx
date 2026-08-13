@@ -220,11 +220,11 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
   };
 
   const handleParticipantCheckboxChange = (participantId: number) => {
-    setLogForm((f) => ({
-      ...f,
-      participantIds: f.participantIds.includes(participantId)
-        ? f.participantIds.filter((id) => id !== participantId)
-        : [...f.participantIds, participantId],
+    setLogForm((logForm) => ({
+      ...logForm,
+      participantIds: logForm.participantIds.includes(participantId)
+        ? logForm.participantIds.filter((id) => id !== participantId)
+        : [...logForm.participantIds, participantId],
     }));
   };
 
@@ -527,8 +527,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             <Input
               value={trainingForm.name}
               onChange={(event) =>
-                setTrainingForm((f) => ({
-                  ...f,
+                setTrainingForm((trainingForm) => ({
+                  ...trainingForm,
                   name: event.target.value,
                 }))
               }
@@ -541,8 +541,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                   className="w-full"
                   value={trainingForm.category}
                   onChange={(value) =>
-                    setTrainingForm((f) => ({
-                      ...f,
+                    setTrainingForm((trainingForm) => ({
+                      ...trainingForm,
                       category: value as TrainingCategory | "",
                     }))
                   }
@@ -560,8 +560,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                   className="w-full"
                   value={trainingForm.payMode}
                   onChange={(value) =>
-                    setTrainingForm((f) => ({
-                      ...f,
+                    setTrainingForm((trainingForm) => ({
+                      ...trainingForm,
                       payMode: value as TrainingPayMode | "",
                     }))
                   }
@@ -581,8 +581,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               type="date"
               value={trainingForm.trainingDate}
               onChange={(event) =>
-                setTrainingForm((f) => ({
-                  ...f,
+                setTrainingForm((trainingForm) => ({
+                  ...trainingForm,
                   trainingDate: event.target.value,
                 }))
               }
@@ -595,8 +595,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                   type="time"
                   value={trainingForm.startTime}
                   onChange={(event) =>
-                    setTrainingForm((f) => ({
-                      ...f,
+                    setTrainingForm((trainingForm) => ({
+                      ...trainingForm,
                       startTime: event.target.value,
                     }))
                   }
@@ -609,8 +609,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                   type="time"
                   value={trainingForm.endTime}
                   onChange={(event) =>
-                    setTrainingForm((f) => ({
-                      ...f,
+                    setTrainingForm((trainingForm) => ({
+                      ...trainingForm,
                       endTime: event.target.value,
                     }))
                   }
@@ -624,8 +624,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                 type="number"
                 value={trainingForm.dailyWage}
                 onChange={(event) =>
-                  setTrainingForm((f) => ({
-                    ...f,
+                  setTrainingForm((trainingForm) => ({
+                    ...trainingForm,
                     dailyWage: event.target.value,
                   }))
                 }
@@ -637,8 +637,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               type="checkbox"
               checked={trainingForm.isRequired}
               onChange={(event) =>
-                setTrainingForm((f) => ({
-                  ...f,
+                setTrainingForm((trainingForm) => ({
+                  ...trainingForm,
                   isRequired: event.target.checked,
                 }))
               }
@@ -697,13 +697,13 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                 const selectedTraining = trainings.find(
                   (training) => String(training.id) === event.target.value,
                 );
-                setLogForm((f) => ({
-                  ...f,
+                setLogForm((logForm) => ({
+                  ...logForm,
                   trainingId: event.target.value,
                   attendHours:
                     selectedTraining?.hours !== null && selectedTraining?.hours !== undefined
                       ? String(selectedTraining.hours)
-                      : f.attendHours,
+                      : logForm.attendHours,
                 }));
               }}
             >
@@ -722,8 +722,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               type="date"
               value={logForm.attendDate}
               onChange={(event) =>
-                setLogForm((f) => ({
-                  ...f,
+                setLogForm((logForm) => ({
+                  ...logForm,
                   attendDate: event.target.value,
                 }))
               }
@@ -734,8 +734,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               type="number"
               value={logForm.attendHours}
               onChange={(event) =>
-                setLogForm((f) => ({
-                  ...f,
+                setLogForm((logForm) => ({
+                  ...logForm,
                   attendHours: event.target.value,
                 }))
               }

@@ -181,7 +181,7 @@ const ProgramFormModal = ({
             className="w-full"
             value={form.organizationId}
             onChange={(value) => {
-              setForm((f) => ({ ...f, organizationId: value }));
+              setForm((form) => ({ ...form, organizationId: value }));
               setManagerAdminId("");
             }}
             options={[
@@ -226,7 +226,7 @@ const ProgramFormModal = ({
         <FilterSelect
           className="w-full"
           value={form.programType}
-          onChange={(value) => setForm((f) => ({ ...f, programType: value }))}
+          onChange={(value) => setForm((form) => ({ ...form, programType: value }))}
           options={[
             { value: "", label: "선택하세요" },
             { value: "공익 활동", label: "공익 활동" },
@@ -239,7 +239,7 @@ const ProgramFormModal = ({
       <FormField label="사업단 명">
         <Input
           value={form.name}
-          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
       </FormField>
 
@@ -250,7 +250,7 @@ const ProgramFormModal = ({
             <Input
               type="date"
               value={form.startDate}
-              onChange={(event) => setForm((f) => ({ ...f, startDate: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, startDate: event.target.value }))}
             />
           </FormField>
         </div>
@@ -262,7 +262,7 @@ const ProgramFormModal = ({
               type="date"
               value={form.endDate}
               min={form.startDate || undefined}
-              onChange={(event) => setForm((f) => ({ ...f, endDate: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, endDate: event.target.value }))}
             />
           </FormField>
         </div>
@@ -276,7 +276,7 @@ const ProgramFormModal = ({
               type="time"
               step={600}
               value={form.startTime}
-              onChange={(event) => setForm((f) => ({ ...f, startTime: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, startTime: event.target.value }))}
             />
           </FormField>
         </div>
@@ -289,7 +289,7 @@ const ProgramFormModal = ({
               step={600}
               value={form.endTime}
               min={form.startTime || undefined}
-              onChange={(event) => setForm((f) => ({ ...f, endTime: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, endTime: event.target.value }))}
             />
           </FormField>
         </div>
@@ -300,7 +300,7 @@ const ProgramFormModal = ({
         <Input
           type="number"
           value={form.hourlyWage}
-          onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, hourlyWage: event.target.value }))}
         />
       </FormField>
 

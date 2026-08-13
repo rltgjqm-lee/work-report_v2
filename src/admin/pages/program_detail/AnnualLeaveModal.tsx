@@ -81,14 +81,14 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
       <FormField label="연도">
         <Input
           value={form.year}
-          onChange={(event) => setForm((f) => ({ ...f, year: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, year: event.target.value }))}
         />
       </FormField>
       <FormField label="총 연차 일수">
         <Input
           type="number"
           value={form.totalDays}
-          onChange={(event) => setForm((f) => ({ ...f, totalDays: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, totalDays: event.target.value }))}
         />
       </FormField>
     </SlideModal>

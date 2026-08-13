@@ -104,7 +104,7 @@ const ParticipantPayrollSettingsModal = ({
         <Input
           type="number"
           value={form.hourlyWage}
-          onChange={(event) => setForm((f) => ({ ...f, hourlyWage: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, hourlyWage: event.target.value }))}
         />
         <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           기본값은 사업단 등록 시 설정한 시급({participant.programHourlyWage.toLocaleString()}원)
@@ -119,8 +119,8 @@ const ParticipantPayrollSettingsModal = ({
               type="number"
               value={form.educationAmount}
               onChange={(event) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   educationAmount: event.target.value,
                 }))
               }
@@ -133,8 +133,8 @@ const ParticipantPayrollSettingsModal = ({
               className="w-full"
               value={form.educationType}
               onChange={(value) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   educationType: value as "add" | "deduct" | "none",
                 }))
               }
@@ -151,8 +151,8 @@ const ParticipantPayrollSettingsModal = ({
               type="number"
               value={form.dementiaAmount}
               onChange={(event) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   dementiaAmount: event.target.value,
                 }))
               }
@@ -165,8 +165,8 @@ const ParticipantPayrollSettingsModal = ({
               className="w-full"
               value={form.dementiaType}
               onChange={(value) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   dementiaType: value as "add" | "deduct" | "none",
                 }))
               }
@@ -183,8 +183,8 @@ const ParticipantPayrollSettingsModal = ({
               type="number"
               value={form.weeklyHolidayHours}
               onChange={(event) =>
-                setForm((f) => ({
-                  ...f,
+                setForm((form) => ({
+                  ...form,
                   weeklyHolidayHours: event.target.value,
                 }))
               }
@@ -198,8 +198,8 @@ const ParticipantPayrollSettingsModal = ({
                   type="checkbox"
                   checked={form.healthInsuranceEnrolled}
                   onChange={(event) =>
-                    setForm((f) => ({
-                      ...f,
+                    setForm((form) => ({
+                      ...form,
                       healthInsuranceEnrolled: event.target.checked,
                     }))
                   }
@@ -211,8 +211,8 @@ const ParticipantPayrollSettingsModal = ({
                   type="checkbox"
                   checked={form.longtermCareInsuranceEnrolled}
                   onChange={(event) =>
-                    setForm((f) => ({
-                      ...f,
+                    setForm((form) => ({
+                      ...form,
                       longtermCareInsuranceEnrolled: event.target.checked,
                     }))
                   }
@@ -224,8 +224,8 @@ const ParticipantPayrollSettingsModal = ({
                   type="checkbox"
                   checked={form.employmentInsuranceEnrolled}
                   onChange={(event) =>
-                    setForm((f) => ({
-                      ...f,
+                    setForm((form) => ({
+                      ...form,
                       employmentInsuranceEnrolled: event.target.checked,
                     }))
                   }
@@ -237,8 +237,8 @@ const ParticipantPayrollSettingsModal = ({
                   type="checkbox"
                   checked={form.industrialAccidentInsuranceEnrolled}
                   onChange={(event) =>
-                    setForm((f) => ({
-                      ...f,
+                    setForm((form) => ({
+                      ...form,
                       industrialAccidentInsuranceEnrolled: event.target.checked,
                     }))
                   }

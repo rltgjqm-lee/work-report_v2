@@ -74,8 +74,8 @@ const DemandSiteFormModal = ({
       await loadDaumPostcodeScript();
       new window.daum!.Postcode({
         oncomplete: (data) => {
-          setForm((f) => ({
-            ...f,
+          setForm((form) => ({
+            ...form,
             address: data.roadAddress || data.jibunAddress,
           }));
         },
@@ -144,7 +144,7 @@ const DemandSiteFormModal = ({
       <FormField label="수요처명">
         <Input
           value={form.name}
-          onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, name: event.target.value }))}
         />
       </FormField>
       <FormField label="주소">
@@ -169,7 +169,7 @@ const DemandSiteFormModal = ({
           <FilterSelect
             className="w-full"
             value={form.contactAdminId}
-            onChange={(value) => setForm((f) => ({ ...f, contactAdminId: value }))}
+            onChange={(value) => setForm((form) => ({ ...form, contactAdminId: value }))}
             options={[
               { value: "", label: "지정 안 함" },
               ...assignableAdmins.map((assignableAdmin) => ({
@@ -193,7 +193,9 @@ const DemandSiteFormModal = ({
           <input
             type="checkbox"
             checked={form.baseAreaEnabled}
-            onChange={(event) => setForm((f) => ({ ...f, baseAreaEnabled: event.target.checked }))}
+            onChange={(event) =>
+              setForm((form) => ({ ...form, baseAreaEnabled: event.target.checked }))
+            }
           />
           입력한 주소를 중심으로 한 원형 구역을 기본 관제구역으로 설정
         </label>
@@ -208,7 +210,7 @@ const DemandSiteFormModal = ({
           value={form.radius}
           step={100}
           disabled={!form.baseAreaEnabled}
-          onChange={(event) => setForm((f) => ({ ...f, radius: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, radius: event.target.value }))}
         />
       </FormField>
     </SlideModal>

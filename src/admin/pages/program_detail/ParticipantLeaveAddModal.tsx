@@ -86,7 +86,7 @@ const ParticipantLeaveAddModal = ({
             <Input
               type="date"
               value={form.leaveStart}
-              onChange={(event) => setForm((f) => ({ ...f, leaveStart: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, leaveStart: event.target.value }))}
             />
           </FormField>
         </div>
@@ -95,7 +95,7 @@ const ParticipantLeaveAddModal = ({
             <Input
               type="date"
               value={form.leaveEnd}
-              onChange={(event) => setForm((f) => ({ ...f, leaveEnd: event.target.value }))}
+              onChange={(event) => setForm((form) => ({ ...form, leaveEnd: event.target.value }))}
             />
           </FormField>
         </div>
@@ -104,7 +104,7 @@ const ParticipantLeaveAddModal = ({
         <FilterSelect
           className="w-full"
           value={form.leaveType}
-          onChange={(value) => setForm((f) => ({ ...f, leaveType: value as LeaveType }))}
+          onChange={(value) => setForm((form) => ({ ...form, leaveType: value as LeaveType }))}
           options={[
             { value: "PAID", label: "유급(연차 차감)" },
             { value: "UNPAID", label: "무급" },
@@ -114,7 +114,7 @@ const ParticipantLeaveAddModal = ({
       <FormField label="사유">
         <Input
           value={form.reason}
-          onChange={(event) => setForm((f) => ({ ...f, reason: event.target.value }))}
+          onChange={(event) => setForm((form) => ({ ...form, reason: event.target.value }))}
         />
       </FormField>
     </SlideModal>

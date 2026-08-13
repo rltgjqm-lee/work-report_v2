@@ -426,8 +426,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                   type="time"
                   value={correctionForm.clockIn}
                   onChange={(event) =>
-                    setCorrectionForm((f) => ({
-                      ...f,
+                    setCorrectionForm((correctionForm) => ({
+                      ...correctionForm,
                       clockIn: event.target.value,
                     }))
                   }
@@ -441,8 +441,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                   type="time"
                   value={correctionForm.clockOut}
                   onChange={(event) =>
-                    setCorrectionForm((f) => ({
-                      ...f,
+                    setCorrectionForm((correctionForm) => ({
+                      ...correctionForm,
                       clockOut: event.target.value,
                     }))
                   }
@@ -456,8 +456,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                   className={selectClass}
                   value={correctionForm.status}
                   onChange={(event) =>
-                    setCorrectionForm((f) => ({
-                      ...f,
+                    setCorrectionForm((correctionForm) => ({
+                      ...correctionForm,
                       status: event.target.value as CorrectionForm["status"],
                     }))
                   }
@@ -474,8 +474,8 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                 <Input
                   value={correctionForm.reason}
                   onChange={(event) =>
-                    setCorrectionForm((f) => ({
-                      ...f,
+                    setCorrectionForm((correctionForm) => ({
+                      ...correctionForm,
                       reason: event.target.value,
                     }))
                   }
