@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { adminsQueryOptions } from "../../api/admin/admins";
-import { programQueryOptions, programsByOrganizationQueryOptions } from "../../api/admin/programs";
 import { demandSitesQueryOptions } from "../../api/admin/demandSites";
+import { programQueryOptions, programsByOrganizationQueryOptions } from "../../api/admin/programs";
 import { ROLES, type Role } from "../../types/admins";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -100,7 +100,9 @@ const OrganizationDetailPanel = ({
           소속 직원 · {staffItems.length}명
         </div>
         {!canViewStaff ? (
-          <span className="text-[11.5px] text-admin-text-placeholder">권한이 없어 볼 수 없습니다.</span>
+          <span className="text-[11.5px] text-admin-text-placeholder">
+            권한이 없어 볼 수 없습니다.
+          </span>
         ) : staffItems.length === 0 ? (
           <span className="text-[11.5px] text-admin-text-placeholder">소속 직원이 없습니다.</span>
         ) : (

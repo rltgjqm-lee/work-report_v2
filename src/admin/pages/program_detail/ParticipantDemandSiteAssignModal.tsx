@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { moveParticipantToDemandSiteMutationOptions } from "../../api/admin/participants";
-import FormField from "../../components/FormField";
-import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
 import type { DemandSite } from "../../types/demandSites";
 import type { Participant } from "../../types/participants";
+
+import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
+import FormField from "../../components/FormField";
 
 interface ParticipantDemandSiteAssignModalProps {
   onClose: () => void;

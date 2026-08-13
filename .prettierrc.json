@@ -1,4 +1,26 @@
 {
   "printWidth": 100,
-  "tabWidth": 2
+  "tabWidth": 2,
+  "plugins": ["@ianvs/prettier-plugin-sort-imports"],
+  "importOrder": [
+    "^(react|react-dom)$",
+    "^react-router",
+    "^@tanstack/react-query",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "^\\.\\.?/.*/(api|utils|hooks|context|types|constants)(/|$)",
+    "^\\.\\.?/.*/use[A-Z]",
+    "",
+    "^\\.\\.?/.*/components/atoms/",
+    "^\\.\\.?/.*/components/molecule/",
+    "^\\.\\.?/.*/components/organism/",
+    "^\\.\\.?/.*/components/",
+    "^\\.\\.?/.*/pages/",
+    "",
+    "^\\.\\.?/(?!.*\\.(css|scss|sass|less|png|jpe?g|gif|svg|webp)$).*$",
+    "",
+    "\\.(css|scss|sass|less)$",
+    "\\.(png|jpe?g|gif|svg|webp)$"
+  ]
 }

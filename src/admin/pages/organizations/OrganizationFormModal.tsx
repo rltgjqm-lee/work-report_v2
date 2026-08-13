@@ -1,19 +1,20 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { KOREAN_REGIONS, SIDO_LIST } from "../../../constants/koreanRegions";
 import {
   createOrganizationMutationOptions,
   updateOrganizationMutationOptions,
 } from "../../api/admin/organizations";
-import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
-import SlideModal from "../../components/modal/SlideModal";
-import FormField from "../../components/FormField";
-import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
-import Input from "../../components/Input";
-import { KOREAN_REGIONS, SIDO_LIST } from "../../../constants/koreanRegions";
 import { ORGANIZATION_TYPES, type Organization } from "../../types/organizations";
+import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
+
+import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
+import FormField from "../../components/FormField";
+import Input from "../../components/Input";
+import SlideModal from "../../components/modal/SlideModal";
 
 // 휴대폰(010-1234-5678), 유선(02-123-4567, 031-123-4567 등 지역번호 1~2자리),
 // 안심번호(0507-1234-5678, 4자리)까지 폭넓게 허용하는 느슨한 패턴. 맨 앞 0을 반드시
@@ -120,9 +121,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >

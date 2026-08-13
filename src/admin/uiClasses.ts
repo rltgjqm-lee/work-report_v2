@@ -25,7 +25,8 @@ export const panelLinkActionClass =
   "bg-transparent border-none text-admin-brand text-[12.5px] font-bold cursor-pointer hover:text-admin-brand-dark";
 // 관리자 페이지.dc.html의 .zone-card-footer/.zone-card-btn — 카드 하단에 구분선을 두고
 // 알약형 버튼을 나열하는 영역(거점 관리 카드의 삭제/상태 전환 등에서 쓴다).
-export const zoneCardFooterClass = "flex items-center gap-2 mt-3.5 pt-3 border-t border-border-faint";
+export const zoneCardFooterClass =
+  "flex items-center gap-2 mt-3.5 pt-3 border-t border-border-faint";
 export const zoneCardBtnClass =
   "text-[12px] font-bold px-[11px] py-1.5 rounded-md bg-surface-page text-text-tertiary cursor-pointer border-none whitespace-nowrap hover:bg-admin-surface-muted-hover";
 export const zoneCardBtnDangerClass =

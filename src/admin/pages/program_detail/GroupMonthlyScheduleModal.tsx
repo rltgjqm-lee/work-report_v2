@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { updateGroupMutationOptions } from "../../api/admin/groups";
 import {
   groupMonthlyScheduleQueryOptions,
   updateGroupMonthlyScheduleMutationOptions,
 } from "../../api/admin/monthlySchedule";
-import { updateGroupMutationOptions } from "../../api/admin/groups";
-import { generateWorkPattern } from "../../utils/generateWorkPattern";
-import SlideModal from "../../components/modal/SlideModal";
-import FormField from "../../components/FormField";
-import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
-import Input from "../../components/Input";
-import { getLocalYearMonth } from "../../../utils/timeFormat";
 import type { Group } from "../../types/groups";
+import { generateWorkPattern } from "../../utils/generateWorkPattern";
+
+import Button from "../../components/Button";
+import FormField from "../../components/FormField";
+import Input from "../../components/Input";
+import SlideModal from "../../components/modal/SlideModal";
+import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
 
 const toMinutes = (hhmm: string): number => {
   const [hour, minute] = hhmm.split(":").map(Number);

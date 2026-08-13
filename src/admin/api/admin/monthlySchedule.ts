@@ -1,8 +1,9 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { request } from "../client";
 import type { GroupMonthlySchedule } from "../../types/groups";
 import type { ParticipantMonthlySchedule } from "../../types/participants";
+
+import { request } from "../client";
 
 const groupMonthlyScheduleKeys = {
   all: ["group-monthly-schedule"] as const,

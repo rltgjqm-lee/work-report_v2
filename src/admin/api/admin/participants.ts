@@ -1,8 +1,6 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { request } from "../client";
-import { programKeys } from "./programs";
-import { groupKeys } from "./groups";
+import type { ParticipantMonthlyAttendance } from "../../types/attendance";
 import type {
   AnnualLeave,
   LeaveType,
@@ -10,7 +8,10 @@ import type {
   ParticipantDetail,
   ParticipantLeave,
 } from "../../types/participants";
-import type { ParticipantMonthlyAttendance } from "../../types/attendance";
+
+import { request } from "../client";
+import { groupKeys } from "./groups";
+import { programKeys } from "./programs";
 
 const participantKeys = {
   all: ["participants"] as const,

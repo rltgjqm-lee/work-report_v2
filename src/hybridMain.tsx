@@ -1,11 +1,13 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+
 import { Capacitor } from "@capacitor/core";
-import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { createRoot } from "react-dom/client";
+
+import { checkAndApplyOtaUpdate } from "./user/utils/otaUpdate";
 
 import MobileApp from "./MobileApp";
-import { checkAndApplyOtaUpdate } from "./user/utils/otaUpdate";
 
 import "./App.css";
 

@@ -1,14 +1,15 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { updateParticipantMutationOptions } from "../../api/admin/participants";
-import SlideModal from "../../components/modal/SlideModal";
-import FormField from "../../components/FormField";
-import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
-import Input from "../../components/Input";
 import type { ParticipantDetail } from "../../types/participants";
+
+import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
+import FormField from "../../components/FormField";
+import Input from "../../components/Input";
+import SlideModal from "../../components/modal/SlideModal";
 
 const FEE_TYPE_OPTIONS = [
   { value: "add", label: "가산" },
@@ -89,10 +90,7 @@ const ParticipantPayrollSettingsModal = ({
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button
-            disabled={updateParticipantMutation.isPending}
-            onClick={handleSaveButtonClick}
-          >
+          <Button disabled={updateParticipantMutation.isPending} onClick={handleSaveButtonClick}>
             {updateParticipantMutation.isPending ? "저장 중..." : "저장"}
           </Button>
         </>

@@ -1,8 +1,8 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
 import type {
   BackgroundGeolocationPlugin,
   Location,
 } from "@capacitor-community/background-geolocation";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 import type { Coordinates } from "./geolocation";
 

@@ -2,20 +2,21 @@ import { useEffect, useState } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
 
-import AppBar from "../components/molecule/AppBar";
-import PageHeaderCard from "../components/molecule/PageHeaderCard";
-import ActivitySaveConfirmModal from "../components/molecule/ActivitySaveConfirmModal";
-import Card from "../components/atoms/Card";
-import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import {
-  pageClass,
   bodyClass,
+  btnOutlineClass,
+  btnPrimaryClass,
   labelClass,
   labelSmallClass,
+  pageClass,
   textareaClass,
-  btnPrimaryClass,
-  btnOutlineClass,
 } from "../../components/atoms/classes";
+
+import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
+import Card from "../components/atoms/Card";
+import ActivitySaveConfirmModal from "../components/molecule/ActivitySaveConfirmModal";
+import AppBar from "../components/molecule/AppBar";
+import PageHeaderCard from "../components/molecule/PageHeaderCard";
 
 interface Page4Props {
   formData: ActivityLogFormData;

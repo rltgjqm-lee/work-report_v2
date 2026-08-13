@@ -2,20 +2,22 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
+import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { allProgramEscapesQueryOptions } from "../../api/admin/escapes";
 import {
   participantAnnualLeaveQueryOptions,
   participantAttendanceQueryOptions,
   participantLeavesQueryOptions,
   participantQueryOptions,
 } from "../../api/admin/participants";
-import { allProgramEscapesQueryOptions } from "../../api/admin/escapes";
-import MonthPicker from "../../components/MonthPicker";
-import AttendanceLocationCell from "../../components/AttendanceLocationCell";
-import Button from "../../components/Button";
-import { getLocalYearMonth } from "../../../utils/timeFormat";
-import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
 import type { EscapeRow } from "../../types/escapes";
+import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
+
+import AttendanceLocationCell from "../../components/AttendanceLocationCell";
+import Button from "../../components/Button";
+import MonthPicker from "../../components/MonthPicker";
+
 import ParticipantPayrollSettingsModal from "./ParticipantPayrollSettingsModal";
 
 const STATUS_LABEL: Record<string, string> = {

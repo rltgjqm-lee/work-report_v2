@@ -3,15 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminsQueryOptions, updateAdminMutationOptions } from "../../api/admin/admins";
 import { organizationsQueryOptions } from "../../api/admin/organizations";
+import { useAuth } from "../../context/useAuth";
+import { useToast } from "../../context/useToast";
+import { ROLES, type Admin, type Role } from "../../types/admins";
+
+import Button from "../../components/Button";
+import SearchInput from "../../components/SearchInput";
+
+import { rowActionBtnClass } from "../../uiClasses";
 import AdminFormModal from "./AdminFormModal";
 import ResetPasswordModal from "./ResetPasswordModal";
 import TransferProgramsModal from "./TransferProgramsModal";
-import SearchInput from "../../components/SearchInput";
-import { useAuth } from "../../context/useAuth";
-import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
-import { rowActionBtnClass } from "../../uiClasses";
-import { ROLES, type Admin, type Role } from "../../types/admins";
 
 const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",
@@ -115,7 +117,9 @@ const AdminsPage = () => {
   };
 
   if (!role || assignableRoles.length === 0) {
-    return <div className="text-[13px] text-text-subtle">관리자 계정을 관리할 권한이 없습니다.</div>;
+    return (
+      <div className="text-[13px] text-text-subtle">관리자 계정을 관리할 권한이 없습니다.</div>
+    );
   }
 
   return (

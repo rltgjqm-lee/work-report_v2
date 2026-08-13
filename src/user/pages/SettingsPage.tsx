@@ -1,9 +1,11 @@
 import { useState } from "react";
 
+import { isoToKstMinuteString } from "../../utils/timeFormat";
+
+import { bodyClass, pageClass } from "../../components/atoms/classes";
+
 import AppBar from "../components/molecule/AppBar";
 import LocationConsentModal from "../components/molecule/LocationConsentModal";
-import { pageClass, bodyClass } from "../../components/atoms/classes";
-import { isoToKstMinuteString } from "../../utils/timeFormat";
 
 interface SettingsPageProps {
   todayStatus: { locationConsentAt: string | null } | null;

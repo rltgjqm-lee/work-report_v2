@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import { ChevronLeft, Home } from "lucide-react";
 
 interface AppBarProps {

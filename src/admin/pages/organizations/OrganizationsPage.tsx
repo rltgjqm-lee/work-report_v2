@@ -5,17 +5,19 @@ import {
   organizationsQueryOptions,
   updateOrganizationMutationOptions,
 } from "../../api/admin/organizations";
-import Pagination from "../../components/Pagination";
-import OrganizationFormModal from "./OrganizationFormModal";
-import OrganizationDetailPanel from "./OrganizationDetailPanel";
-import SearchInput from "../../components/SearchInput";
-import { usePagination } from "../../hooks/usePagination";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
-import { rowActionBtnClass } from "../../uiClasses";
+import { usePagination } from "../../hooks/usePagination";
 import { ROLES } from "../../types/admins";
 import type { Organization } from "../../types/organizations";
+
+import Button from "../../components/Button";
+import Pagination from "../../components/Pagination";
+import SearchInput from "../../components/SearchInput";
+
+import { rowActionBtnClass } from "../../uiClasses";
+import OrganizationDetailPanel from "./OrganizationDetailPanel";
+import OrganizationFormModal from "./OrganizationFormModal";
 
 /**
  * 관리자 페이지 > 기관 관리 페이지입니다.
@@ -83,9 +85,7 @@ const OrganizationsPage = () => {
             사업단이 소속되는 기관 정보를 등록하고 관리합니다.
           </p>
         </div>
-        {role === ROLES.SUPER_ADMIN && (
-          <Button onClick={handleAddButtonClick}>+ 기관 추가</Button>
-        )}
+        {role === ROLES.SUPER_ADMIN && <Button onClick={handleAddButtonClick}>+ 기관 추가</Button>}
       </div>
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px]">

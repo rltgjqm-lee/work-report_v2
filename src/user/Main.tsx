@@ -1,35 +1,33 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ConfirmModal from "../components/molecule/ConfirmModal";
-// import IncompleteDayModal from "./components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리
-
-import AffiliationInputPage from "./pages/AffiliationInputPage";
-import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
-import HomePage from "./pages/HomePage";
-import ActivityDashboardPage from "./pages/ActivityDashboardPage";
-import ActivityReportPage from "./pages/ActivityReportPage";
-import AccidentCheckPage from "./pages/AccidentCheckPage";
-import ActivitySummaryPage from "./pages/ActivitySummaryPage";
-import SignaturePage from "./pages/SignaturePage";
-import SettingsPage from "./pages/SettingsPage";
-
-import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
-
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
-import { syncPendingActivityLogs } from "./utils/activityLogSync";
-// import { findIncompleteActivityLogDate } from "./utils/activityLogSync"; // 💡 일단 주석 처리
-import { getTodayAttendance } from "./api/attendanceApi";
-import {
-  IDLE_LOCATION_REPORT_STATE,
-  startLocationReporting,
-  type LocationReportState,
-} from "./utils/locationReporting";
+import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
 import {
   formatTimeField,
   getLocalToday,
   hhmmToTimeParts,
   isoToTimeParts,
 } from "../utils/timeFormat";
+// import { findIncompleteActivityLogDate } from "./utils/activityLogSync"; // 💡 일단 주석 처리
+import { getTodayAttendance } from "./api/attendanceApi";
+import AccidentCheckPage from "./pages/AccidentCheckPage";
+import ActivityDashboardPage from "./pages/ActivityDashboardPage";
+import ActivityReportPage from "./pages/ActivityReportPage";
+import ActivitySummaryPage from "./pages/ActivitySummaryPage";
+// import IncompleteDayModal from "./components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리
+
+import AffiliationInputPage from "./pages/AffiliationInputPage";
+import HomePage from "./pages/HomePage";
+import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
+import SettingsPage from "./pages/SettingsPage";
+import SignaturePage from "./pages/SignaturePage";
+import { syncPendingActivityLogs } from "./utils/activityLogSync";
+import {
+  IDLE_LOCATION_REPORT_STATE,
+  startLocationReporting,
+  type LocationReportState,
+} from "./utils/locationReporting";
 
 const VIEW_TYPE = {
   MAIN: "main",

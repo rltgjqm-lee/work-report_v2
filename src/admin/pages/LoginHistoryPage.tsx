@@ -56,7 +56,11 @@ const LoginHistoryPage = () => {
                     {entry.ipAddress ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    <span className={entry.success ? "text-admin-success-text" : "text-admin-error-text"}>
+                    <span
+                      className={
+                        entry.success ? "text-admin-success-text" : "text-admin-error-text"
+                      }
+                    >
                       {entry.success ? "성공" : "실패"}
                     </span>
                   </td>
@@ -64,7 +68,10 @@ const LoginHistoryPage = () => {
               ))}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder">
+                  <td
+                    colSpan={5}
+                    className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                  >
                     로그인 이력이 없습니다.
                   </td>
                 </tr>

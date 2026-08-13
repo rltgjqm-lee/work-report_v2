@@ -6,13 +6,14 @@ import {
   deleteDemandSiteScheduleMutationOptions,
   demandSiteSchedulesQueryOptions,
 } from "../../api/admin/demandSites";
-import SlideModal from "../../components/modal/SlideModal";
-import FormField from "../../components/FormField";
-import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
 import type { DemandSite } from "../../types/demandSites";
 import type { Group } from "../../types/groups";
+
+import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
+import FormField from "../../components/FormField";
+import SlideModal from "../../components/modal/SlideModal";
 
 interface DemandSiteGroupAssignModalProps {
   onClose: () => void;

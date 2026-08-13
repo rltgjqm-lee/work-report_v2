@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import StatusChip, { type StatusChipVariant } from "./chip/StatusChip";
 import { zoneCardBtnClass } from "../uiClasses";
+import StatusChip, { type StatusChipVariant } from "./chip/StatusChip";
 
 interface ItemCardAction {
   label: string;
@@ -29,7 +29,9 @@ const SIZE_CLASSES: Record<"compact" | "comfortable", { padding: string; title: 
  * 아직 이 컴포넌트로 옮기지 않았다.
  */
 const ItemCard = ({ title, badge, infoLine, tags, actions, size = "compact" }: ItemCardProps) => (
-  <div className={`bg-white border border-admin-border-subtle rounded-lg ${SIZE_CLASSES[size].padding}`}>
+  <div
+    className={`bg-white border border-admin-border-subtle rounded-lg ${SIZE_CLASSES[size].padding}`}
+  >
     <div
       className={`flex items-center gap-1.5 font-bold text-text-strong ${SIZE_CLASSES[size].title}`}
     >

@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import MobileApp from "./MobileApp";
 import AdminApp from "./admin/AdminApp";
+import MobileApp from "./MobileApp";
 
 function App() {
   return (

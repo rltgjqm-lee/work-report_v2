@@ -1,22 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import AppBar from "../components/molecule/AppBar";
-import PageHeaderCard from "../components/molecule/PageHeaderCard";
-import Dropdown from "../components/molecule/Dropdown";
-import LabeledInput from "../components/molecule/LabeledInput";
+import { KOREAN_REGIONS, SIDO_LIST } from "../../constants/koreanRegions";
+import type { ActivityLogFormData } from "../../types/form";
+
+import Button from "../../components/atoms/Button";
+import { bodyClass, pageClass } from "../../components/atoms/classes";
+
+import { affiliationsQueryOptions } from "../api/affiliationsApi";
+import type { Affiliations } from "../api/affiliationsApi";
+import { demandSitesQueryOptions } from "../api/demandSitesApi";
+import BottomBar from "../components/atoms/BottomBar";
 import Card from "../components/atoms/Card";
 import ExceptionCard from "../components/atoms/ExceptionCard";
-import BottomBar from "../components/atoms/BottomBar";
-import Button from "../../components/atoms/Button";
-import { pageClass, bodyClass } from "../../components/atoms/classes";
+import AppBar from "../components/molecule/AppBar";
+import Dropdown from "../components/molecule/Dropdown";
+import LabeledInput from "../components/molecule/LabeledInput";
+import PageHeaderCard from "../components/molecule/PageHeaderCard";
 import { validateForm } from "../utils/validateFormData";
-import { affiliationsQueryOptions } from "../api/affiliationsApi";
-import { demandSitesQueryOptions } from "../api/demandSitesApi";
-import { KOREAN_REGIONS, SIDO_LIST } from "../../constants/koreanRegions";
-
-import type { Affiliations } from "../api/affiliationsApi";
-import type { ActivityLogFormData } from "../../types/form";
 import type { ValidationRule } from "../utils/validateFormData";
 
 // 💡 이 페이지(기본정보 입력)에서만 쓰는 검증 규칙이라 여기 직접 둔다.

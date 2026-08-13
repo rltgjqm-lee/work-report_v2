@@ -28,7 +28,9 @@ const SlideModal = ({ isOpen, title, onClose, children, footer }: SlideModalProp
           </button>
         </div>
         <div className="flex-1 overflow-auto px-6 py-5 flex flex-col gap-4">{children}</div>
-        <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border-faint">{footer}</div>
+        <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border-faint">
+          {footer}
+        </div>
       </div>
     </div>
   );

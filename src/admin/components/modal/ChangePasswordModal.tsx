@@ -1,10 +1,11 @@
 import { useState } from "react";
 
 import { changeMyPassword } from "../../api/admin/me";
-import SlideModal from "./SlideModal";
-import FormField from "../FormField";
+
 import Button from "../Button";
+import FormField from "../FormField";
 import Input from "../Input";
+import SlideModal from "./SlideModal";
 
 interface ChangePasswordModalProps {
   onClose: () => void;
@@ -55,9 +56,7 @@ const ChangePasswordModal = ({ onClose }: ChangePasswordModalProps) => {
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >

@@ -1,5 +1,6 @@
-import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
+
+import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
 import { readCurrentCoordinates } from "../utils/geolocation";
 import type { Coordinates } from "../utils/geolocation";

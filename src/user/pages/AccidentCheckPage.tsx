@@ -1,21 +1,23 @@
 import { useState } from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
+
+import {
+  bodyClass,
+  btnOutlineClass,
+  btnPrimaryClass,
+  choiceCardClass,
+  choiceRadioClass,
+  inputClass,
+  labelClass,
+  pageClass,
+} from "../../components/atoms/classes";
+
+import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
+import Card from "../components/atoms/Card";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
 import SafetySaveConfirmModal from "../components/molecule/SafetySaveConfirmModal";
-import Card from "../components/atoms/Card";
-import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
-import {
-  pageClass,
-  bodyClass,
-  labelClass,
-  inputClass,
-  btnPrimaryClass,
-  btnOutlineClass,
-  choiceCardClass,
-  choiceRadioClass,
-} from "../../components/atoms/classes";
 
 interface Page5Props {
   formData: ActivityLogFormData;

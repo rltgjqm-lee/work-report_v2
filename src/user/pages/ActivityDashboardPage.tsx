@@ -2,16 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
-import AppBar from "../components/molecule/AppBar";
-import AttendanceTimeGuideModal from "../components/molecule/AttendanceTimeGuideModal";
-import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal";
-import ClockInCompleteModal from "../components/molecule/ClockInCompleteModal";
-import ClockOutCompleteModal from "../components/molecule/ClockOutCompleteModal";
-import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
-import ClockInRequiredModal from "../components/molecule/ClockInRequiredModal";
-import ClockOutRequiredModal from "../components/molecule/ClockOutRequiredModal";
-import LocationConsentModal from "../components/molecule/LocationConsentModal";
-import { pageClass, bodyClass } from "../../components/atoms/classes";
+import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
+
+import { bodyClass, pageClass } from "../../components/atoms/classes";
+
 import {
   adminRoleQueryOptions,
   ClockInError,
@@ -20,7 +14,15 @@ import {
   clockOutMutationOptions,
   recordLocationConsentMutationOptions,
 } from "../api/attendanceApi";
-import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
+import AppBar from "../components/molecule/AppBar";
+import AttendanceTimeGuideModal from "../components/molecule/AttendanceTimeGuideModal";
+import ClockInCompleteModal from "../components/molecule/ClockInCompleteModal";
+import ClockInRequiredModal from "../components/molecule/ClockInRequiredModal";
+import ClockOutCompleteModal from "../components/molecule/ClockOutCompleteModal";
+import ClockOutRequiredModal from "../components/molecule/ClockOutRequiredModal";
+import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal";
+import LocationConsentModal from "../components/molecule/LocationConsentModal";
+import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
 
 interface ActivityDashboardPageProps {

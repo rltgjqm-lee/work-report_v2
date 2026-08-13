@@ -2,16 +2,17 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useToast } from "../context/useToast";
+import { usePagination } from "../hooks/usePagination";
+
+import { organizationsQueryOptions } from "../api/admin/organizations";
 import { deleteParticipantMutationOptions } from "../api/admin/participants";
 import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
-import { organizationsQueryOptions } from "../api/admin/organizations";
+import FilterSelect from "../components/FilterSelect";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
-import FilterSelect from "../components/FilterSelect";
-import { usePagination } from "../hooks/usePagination";
-import { useToast } from "../context/useToast";
-import { rowActionBtnClass } from "../uiClasses";
 import type { Participant } from "../types/participants";
+import { rowActionBtnClass } from "../uiClasses";
 
 type ParticipantRow = Participant & {
   programName: string;

@@ -1,4 +1,4 @@
-import type { Style, Cell } from "exceljs";
+import type { Cell, Style } from "exceljs";
 
 export async function downloadAddParticipantsTemplate(
   groups: { name: string }[] = [],

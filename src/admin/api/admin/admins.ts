@@ -1,7 +1,8 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { request } from "../client";
 import type { Admin, Role } from "../../types/admins";
+
+import { request } from "../client";
 
 interface CreateAdminVariables {
   email: string;

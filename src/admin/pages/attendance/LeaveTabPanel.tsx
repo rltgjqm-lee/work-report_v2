@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import {
-  leaveStatsQueryOptions,
   leavesQueryOptions,
+  leaveStatsQueryOptions,
   type LeaveStats,
 } from "../../api/admin/leaves";
-import MonthPicker from "../../components/MonthPicker";
+
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import MonthPicker from "../../components/MonthPicker";
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
   PAID: "유급",

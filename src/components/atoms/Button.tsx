@@ -1,4 +1,4 @@
-import { btnPrimaryClass, btnOutlineClass, btnTextClass } from "./classes";
+import { btnOutlineClass, btnPrimaryClass, btnTextClass } from "./classes";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "outline" | "text";

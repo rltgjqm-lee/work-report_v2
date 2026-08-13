@@ -1,7 +1,7 @@
-import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 
-import { demandSites, demandSiteLocations } from "../db/schema";
+import { demandSiteLocations, demandSites } from "../db/schema";
 import { distanceOutsidePolygonM, haversineKm, isPointInPolygon, polygonCentroid } from "./geo";
 
 type Database = ReturnType<typeof drizzle>;

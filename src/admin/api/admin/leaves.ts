@@ -1,7 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { request } from "../client";
 import type { ParticipantLeave } from "../../types/participants";
+
+import { request } from "../client";
 
 export type LeaveRow = {
   leave: ParticipantLeave;

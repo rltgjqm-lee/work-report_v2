@@ -1,7 +1,8 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { request } from "../client";
 import type { Group } from "../../types/groups";
+
+import { request } from "../client";
 
 export const groupKeys = {
   all: ["groups"] as const,

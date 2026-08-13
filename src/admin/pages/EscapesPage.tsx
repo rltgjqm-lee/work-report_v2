@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import L from "leaflet";
+
 import "leaflet/dist/leaflet.css";
 
-import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
+import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
+import { useToast } from "../context/useToast";
+
+import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api/admin/demandSites";
 import {
   escapesQueryOptions,
   liveWorkersQueryOptions,
   markEscapeAlertedMutationOptions,
   resolveEscapeMutationOptions,
 } from "../api/admin/escapes";
-import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api/admin/demandSites";
-import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
-import SearchInput from "../components/SearchInput";
+import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
 import PromptModal from "../components/modal/PromptModal";
-import { useToast } from "../context/useToast";
+import SearchInput from "../components/SearchInput";
 import type { DemandSiteLocation } from "../types/demandSites";
 import type { EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
 
@@ -563,7 +566,9 @@ const EscapesPage = () => {
       {criticalEscape && (
         <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
           <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
-            <div className="text-admin-escape-critical-text text-xl font-bold mb-4">🚨 3단계 위급 이탈</div>
+            <div className="text-admin-escape-critical-text text-xl font-bold mb-4">
+              🚨 3단계 위급 이탈
+            </div>
             <div className="text-sm space-y-1.5 mb-5">
               <p>
                 <strong>참여자:</strong> {criticalEscape.participantName}

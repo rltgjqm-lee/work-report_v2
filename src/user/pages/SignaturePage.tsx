@@ -1,18 +1,20 @@
 import React from "react";
 
 import type { ActivityLogFormData } from "../../types/form";
-import AppBar from "../components/molecule/AppBar";
-import PageHeaderCard from "../components/molecule/PageHeaderCard";
-import Card from "../components/atoms/Card";
-import BottomBar from "../components/atoms/BottomBar";
-import SignatureCanvas from "../components/atoms/SignatureCanvas";
+
 import {
-  pageClass,
   bodyClass,
+  btnPrimaryClass,
   labelClass,
   labelSmallClass,
-  btnPrimaryClass,
+  pageClass,
 } from "../../components/atoms/classes";
+
+import BottomBar from "../components/atoms/BottomBar";
+import Card from "../components/atoms/Card";
+import SignatureCanvas from "../components/atoms/SignatureCanvas";
+import AppBar from "../components/molecule/AppBar";
+import PageHeaderCard from "../components/molecule/PageHeaderCard";
 
 interface Page6Props {
   formData: ActivityLogFormData;

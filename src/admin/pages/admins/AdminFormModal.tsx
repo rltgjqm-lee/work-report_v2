@@ -1,15 +1,16 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { createAdminMutationOptions, updateAdminMutationOptions } from "../../api/admin/admins";
-import SlideModal from "../../components/modal/SlideModal";
-import FormField from "../../components/FormField";
-import FilterSelect from "../../components/FilterSelect";
 import { useToast } from "../../context/useToast";
-import Button from "../../components/Button";
-import Input from "../../components/Input";
 import { ROLES, type Admin, type Role } from "../../types/admins";
 import type { Organization } from "../../types/organizations";
+
+import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
+import FormField from "../../components/FormField";
+import Input from "../../components/Input";
+import SlideModal from "../../components/modal/SlideModal";
 
 const emptyForm = {
   email: "",
@@ -134,9 +135,7 @@ const AdminFormModal = ({
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >

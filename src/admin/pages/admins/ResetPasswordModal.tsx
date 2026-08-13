@@ -1,12 +1,13 @@
-import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import { resetAdminPassword } from "../../api/admin/admins";
-import SlideModal from "../../components/modal/SlideModal";
-import FormField from "../../components/FormField";
 import { useToast } from "../../context/useToast";
+
 import Button from "../../components/Button";
+import FormField from "../../components/FormField";
 import Input from "../../components/Input";
+import SlideModal from "../../components/modal/SlideModal";
 
 interface ResetPasswordModalProps {
   onClose: () => void;
@@ -71,9 +72,7 @@ const ResetPasswordModal = ({ onClose, target }: ResetPasswordModalProps) => {
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSaveButtonClick}>
-            저장
-          </Button>
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >
