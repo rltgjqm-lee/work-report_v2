@@ -79,6 +79,18 @@ const AttendancePage = () => {
     [participants, filteredParticipantIds],
   );
 
+  const handleProgramTypeFilterChange = (value: string) => {
+    setProgramTypeFilter(value);
+    setSelectedProgramId("");
+    setSelectedDemandSiteId("");
+  };
+
+  const handleProgramFilterChange = (value: string) => {
+    setSelectedProgramId(value);
+    // 사업단이 바뀌면 이전 사업단의 수요처 선택은 더 이상 유효하지 않다
+    setSelectedDemandSiteId("");
+  };
+
   return (
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -104,11 +116,7 @@ const AttendancePage = () => {
           {!preselectedProgramId && (
             <FilterSelect
               value={programTypeFilter}
-              onChange={(value) => {
-                setProgramTypeFilter(value);
-                setSelectedProgramId("");
-                setSelectedDemandSiteId("");
-              }}
+              onChange={handleProgramTypeFilterChange}
               options={[
                 { value: "all", label: "전체 유형" },
                 { value: "공익 활동", label: "공익 활동" },
@@ -119,11 +127,7 @@ const AttendancePage = () => {
           {!preselectedProgramId && (
             <FilterSelect
               value={selectedProgramId}
-              onChange={(value) => {
-                setSelectedProgramId(value);
-                // 사업단이 바뀌면 이전 사업단의 수요처 선택은 더 이상 유효하지 않다
-                setSelectedDemandSiteId("");
-              }}
+              onChange={handleProgramFilterChange}
               options={[
                 { value: "", label: "사업단을 선택하세요" },
                 ...filteredPrograms.map((program) => ({

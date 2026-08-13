@@ -363,6 +363,17 @@ const EscapesPage = () => {
     );
   };
 
+  const handleProgramTypeFilterChange = (value: string) => {
+    setProgramTypeFilter(value);
+    setSelectedProgramId("");
+    setSelectedDemandSiteId("");
+  };
+
+  const handleProgramFilterChange = (value: string) => {
+    setSelectedProgramId(value);
+    setSelectedDemandSiteId("");
+  };
+
   return (
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -385,11 +396,7 @@ const EscapesPage = () => {
           {!preselectedProgramId && (
             <FilterSelect
               value={programTypeFilter}
-              onChange={(value) => {
-                setProgramTypeFilter(value);
-                setSelectedProgramId("");
-                setSelectedDemandSiteId("");
-              }}
+              onChange={handleProgramTypeFilterChange}
               options={[
                 { value: "all", label: "전체 유형" },
                 { value: "공익 활동", label: "공익 활동" },
@@ -400,10 +407,7 @@ const EscapesPage = () => {
           {!preselectedProgramId && (
             <FilterSelect
               value={selectedProgramId}
-              onChange={(value) => {
-                setSelectedProgramId(value);
-                setSelectedDemandSiteId("");
-              }}
+              onChange={handleProgramFilterChange}
               options={[
                 { value: "", label: "사업단을 선택하세요" },
                 ...filteredPrograms.map((program) => ({

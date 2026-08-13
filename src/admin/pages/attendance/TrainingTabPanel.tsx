@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalToday } from "../../../utils/timeFormat";
@@ -225,6 +225,20 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
       participantIds: logForm.participantIds.includes(participantId)
         ? logForm.participantIds.filter((id) => id !== participantId)
         : [...logForm.participantIds, participantId],
+    }));
+  };
+
+  const handleTrainingSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const selectedTraining = trainings.find(
+      (training) => String(training.id) === event.target.value,
+    );
+    setLogForm((logForm) => ({
+      ...logForm,
+      trainingId: event.target.value,
+      attendHours:
+        selectedTraining?.hours !== null && selectedTraining?.hours !== undefined
+          ? String(selectedTraining.hours)
+          : logForm.attendHours,
     }));
   };
 
@@ -693,19 +707,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
             <select
               className={`${selectClass} w-full`}
               value={logForm.trainingId}
-              onChange={(event) => {
-                const selectedTraining = trainings.find(
-                  (training) => String(training.id) === event.target.value,
-                );
-                setLogForm((logForm) => ({
-                  ...logForm,
-                  trainingId: event.target.value,
-                  attendHours:
-                    selectedTraining?.hours !== null && selectedTraining?.hours !== undefined
-                      ? String(selectedTraining.hours)
-                      : logForm.attendHours,
-                }));
-              }}
+              onChange={handleTrainingSelectChange}
             >
               <option value="">선택하세요</option>
               {trainings

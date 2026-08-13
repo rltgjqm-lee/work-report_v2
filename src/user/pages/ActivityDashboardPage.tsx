@@ -360,6 +360,11 @@ const ActivityDashboardPage = ({
     onOpenSummary();
   };
 
+  const handleDebugDateTimeResetButtonClick = () => {
+    setDebugDate("");
+    setDebugTime("");
+  };
+
   let moduleIndex = 1;
 
   return (
@@ -409,10 +414,7 @@ const ActivityDashboardPage = ({
             />
             {(debugDate || debugTime) && (
               <button
-                onClick={() => {
-                  setDebugDate("");
-                  setDebugTime("");
-                }}
+                onClick={handleDebugDateTimeResetButtonClick}
                 className="flex-none h-9 px-3 rounded-lg border-none bg-white text-[13px] font-bold text-caution-text cursor-pointer"
               >
                 초기화

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -131,16 +131,42 @@ const ParticipantsPage = () => {
 
   const deleteParticipantMutation = useMutation(deleteParticipantMutationOptions(queryClient));
 
-  const handleDeleteButtonClick = (row: ParticipantRow) => {
-    if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
+  const handleDeleteButtonClick =
+    (row: ParticipantRow) => (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
 
-    deleteParticipantMutation.mutate(
-      { programId: row.programId, participantId: row.id, name: row.name },
-      {
-        onSuccess: () => showToast(`'${row.name}' 님을 삭제했습니다.`),
-        onError: (error) => alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
-      },
-    );
+      deleteParticipantMutation.mutate(
+        { programId: row.programId, participantId: row.id, name: row.name },
+        {
+          onSuccess: () => showToast(`'${row.name}' 님을 삭제했습니다.`),
+          onError: (error) =>
+            alert(error instanceof Error ? error.message : "삭제에 실패했습니다."),
+        },
+      );
+    };
+
+  const handleProgramTypeFilterChange = (value: string) => {
+    setProgramTypeFilter(value);
+    setProgramFilter(PROGRAM_FILTER.ALL);
+    setDemandSiteFilter(DEMAND_SITE.ALL);
+    setPage(1);
+  };
+
+  const handleProgramFilterChange = (value: string) => {
+    setProgramFilter(value);
+    setDemandSiteFilter(DEMAND_SITE.ALL);
+    setPage(1);
+  };
+
+  const handleDemandSiteFilterChange = (value: string) => {
+    setDemandSiteFilter(value);
+    setPage(1);
+  };
+
+  const handleSearchInputChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
   };
 
   return (
@@ -159,12 +185,7 @@ const ParticipantsPage = () => {
           <div className="flex items-center gap-2.5">
             <FilterSelect
               value={programTypeFilter}
-              onChange={(value) => {
-                setProgramTypeFilter(value);
-                setProgramFilter(PROGRAM_FILTER.ALL);
-                setDemandSiteFilter(DEMAND_SITE.ALL);
-                setPage(1);
-              }}
+              onChange={handleProgramTypeFilterChange}
               options={[
                 { value: "all", label: "전체 유형" },
                 { value: "공익 활동", label: "공익 활동" },
@@ -173,11 +194,7 @@ const ParticipantsPage = () => {
             />
             <FilterSelect
               value={programFilter}
-              onChange={(value) => {
-                setProgramFilter(value);
-                setDemandSiteFilter(DEMAND_SITE.ALL);
-                setPage(1);
-              }}
+              onChange={handleProgramFilterChange}
               options={[
                 { value: PROGRAM_FILTER.ALL, label: "전체 사업단" },
                 ...filteredPrograms.map((program) => ({
@@ -188,10 +205,7 @@ const ParticipantsPage = () => {
             />
             <FilterSelect
               value={demandSiteFilter}
-              onChange={(value) => {
-                setDemandSiteFilter(value);
-                setPage(1);
-              }}
+              onChange={handleDemandSiteFilterChange}
               options={[
                 { value: DEMAND_SITE.ALL, label: "전체 수요처" },
                 {
@@ -206,10 +220,7 @@ const ParticipantsPage = () => {
             />
             <SearchInput
               value={search}
-              onChange={(value) => {
-                setSearch(value);
-                setPage(1);
-              }}
+              onChange={handleSearchInputChange}
               placeholder="이름 또는 수요처명 검색"
             />
           </div>
@@ -263,13 +274,7 @@ const ParticipantsPage = () => {
                     {row.demandName}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleDeleteButtonClick(row);
-                      }}
-                    >
+                    <button className={rowActionBtnClass} onClick={handleDeleteButtonClick(row)}>
                       삭제
                     </button>
                   </td>

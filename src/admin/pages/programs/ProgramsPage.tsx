@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -134,31 +134,45 @@ const ProgramsPage = () => {
     setModalOpen(true);
   };
 
-  const handleEditButtonClick = (program: Program) => {
+  const handleEditButtonClick = (program: Program) => (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     setEditingProgram(program);
     setModalOpen(true);
   };
 
   const updateProgramMutation = useMutation(updateProgramMutationOptions(queryClient));
 
-  const handleToggleActiveButtonClick = (program: Program) => {
-    const actionLabel = program.isActive ? "비활성화" : "활성화";
-    if (
-      !confirm(
-        `'${program.name}' 사업단을 ${actionLabel}하시겠습니까?${
-          program.isActive ? " 소속된 활성 참여자는 모두 참여종료 처리됩니다." : ""
-        }`,
+  const handleToggleActiveButtonClick =
+    (program: Program) => (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      const actionLabel = program.isActive ? "비활성화" : "활성화";
+      if (
+        !confirm(
+          `'${program.name}' 사업단을 ${actionLabel}하시겠습니까?${
+            program.isActive ? " 소속된 활성 참여자는 모두 참여종료 처리됩니다." : ""
+          }`,
+        )
       )
-    )
-      return;
+        return;
 
-    updateProgramMutation.mutate(
-      { id: program.id, data: { isActive: !program.isActive } },
-      {
-        onSuccess: () => showToast(`'${program.name}' 사업단을 ${actionLabel}했습니다.`),
-        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
-      },
-    );
+      updateProgramMutation.mutate(
+        { id: program.id, data: { isActive: !program.isActive } },
+        {
+          onSuccess: () => showToast(`'${program.name}' 사업단을 ${actionLabel}했습니다.`),
+          onError: (error) =>
+            alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+        },
+      );
+    };
+
+  const handleInstitutionFilterChange = (value: string) => {
+    setInstFilter(value);
+    setProgramFilter("all");
+  };
+
+  const handleProgramTypeFilterChange = (value: string) => {
+    setProgramTypeFilter(value);
+    setProgramFilter("all");
   };
 
   return (
@@ -179,10 +193,7 @@ const ProgramsPage = () => {
             {role === ROLES.SUPER_ADMIN && (
               <FilterSelect
                 value={instFilter}
-                onChange={(value) => {
-                  setInstFilter(value);
-                  setProgramFilter("all");
-                }}
+                onChange={handleInstitutionFilterChange}
                 options={[
                   { value: "all", label: "전체 기관" },
                   ...organizations.map((organization) => ({
@@ -195,10 +206,7 @@ const ProgramsPage = () => {
 
             <FilterSelect
               value={programTypeFilter}
-              onChange={(value) => {
-                setProgramTypeFilter(value);
-                setProgramFilter("all");
-              }}
+              onChange={handleProgramTypeFilterChange}
               options={[
                 { value: "all", label: "전체 유형" },
                 { value: "공익 활동", label: "공익 활동" },
@@ -293,21 +301,12 @@ const ProgramsPage = () => {
                     </td>
                   )}
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleEditButtonClick(program);
-                      }}
-                    >
+                    <button className={rowActionBtnClass} onClick={handleEditButtonClick(program)}>
                       수정
                     </button>
                     <button
                       className={rowActionBtnClass}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleToggleActiveButtonClick(program);
-                      }}
+                      onClick={handleToggleActiveButtonClick(program)}
                     >
                       {program.isActive ? "비활성화" : "활성화"}
                     </button>

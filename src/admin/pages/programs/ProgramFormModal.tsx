@@ -110,6 +110,11 @@ const ProgramFormModal = ({
     });
   };
 
+  const handleOrganizationFilterChange = (value: string) => {
+    setForm((form) => ({ ...form, organizationId: value }));
+    setManagerAdminId("");
+  };
+
   const handleSaveButtonClick = async () => {
     if (form.endDate && form.startDate && form.endDate < form.startDate) {
       setError("종료일은 시작일 이후여야 합니다.");
@@ -180,10 +185,7 @@ const ProgramFormModal = ({
           <FilterSelect
             className="w-full"
             value={form.organizationId}
-            onChange={(value) => {
-              setForm((form) => ({ ...form, organizationId: value }));
-              setManagerAdminId("");
-            }}
+            onChange={handleOrganizationFilterChange}
             options={[
               { value: "", label: "선택하세요" },
               ...organizations
