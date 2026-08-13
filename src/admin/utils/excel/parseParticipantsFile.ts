@@ -14,19 +14,19 @@ type DemandSiteOption = { id: number; name: string };
 const toText = (value: unknown): string => {
   if (value === null || value === undefined) return "";
   if (typeof value === "object") {
-    const v = value as {
+    const cellValue = value as {
       text?: unknown;
       richText?: { text: string }[];
       result?: unknown;
     };
-    if (Array.isArray(v.richText)) {
-      return v.richText
-        .map((r) => r.text)
+    if (Array.isArray(cellValue.richText)) {
+      return cellValue.richText
+        .map((richTextSegment) => richTextSegment.text)
         .join("")
         .trim();
     }
-    if ("text" in v) return String(v.text ?? "").trim();
-    if ("result" in v) return String(v.result ?? "").trim();
+    if ("text" in cellValue) return String(cellValue.text ?? "").trim();
+    if ("result" in cellValue) return String(cellValue.result ?? "").trim();
   }
   return String(value).trim();
 };

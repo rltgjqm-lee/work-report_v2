@@ -107,9 +107,9 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
         ? COMPETENCY_ITEMS
         : [...PUBLIC_INTEREST_ITEMS, ...COMPETENCY_ITEMS];
 
-  const handleDownloadButtonClick = (item: ExcelExportItem, month: string) => {
+  const handleDownloadButtonClick = (exportItem: ExcelExportItem, month: string) => {
     downloadMutation.mutate(
-      { item, month },
+      { item: exportItem, month },
       {
         onError: (error) =>
           setDownloadError(error instanceof Error ? error.message : "다운로드에 실패했습니다."),
@@ -119,17 +119,17 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
 
   return (
     <div className={exportGridClass}>
-      {items.map((item) => {
-        const ready = item.download !== null;
-        const month = months[item.key] ?? getLocalYearMonth();
+      {items.map((exportItem) => {
+        const ready = exportItem.download !== null;
+        const month = months[exportItem.key] ?? getLocalYearMonth();
         const isDownloading =
-          downloadMutation.isPending && downloadMutation.variables?.item.key === item.key;
+          downloadMutation.isPending && downloadMutation.variables?.item.key === exportItem.key;
 
         return (
-          <div key={item.key} className={exportCardClass}>
-            <div className={exportIconClass}>{item.icon}</div>
-            <div className={exportNameClass}>{item.name}</div>
-            <div className={exportDescClass}>{item.desc}</div>
+          <div key={exportItem.key} className={exportCardClass}>
+            <div className={exportIconClass}>{exportItem.icon}</div>
+            <div className={exportNameClass}>{exportItem.name}</div>
+            <div className={exportDescClass}>{exportItem.desc}</div>
             <div className="flex flex-col gap-2.5">
               <input
                 type="month"
@@ -139,14 +139,14 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
                 onChange={(event) =>
                   setMonths((current) => ({
                     ...current,
-                    [item.key]: event.target.value,
+                    [exportItem.key]: event.target.value,
                   }))
                 }
               />
               <button
                 className={`${exportBtnClass} disabled:opacity-40 disabled:cursor-not-allowed`}
                 disabled={!ready || isDownloading}
-                onClick={() => handleDownloadButtonClick(item, month)}
+                onClick={() => handleDownloadButtonClick(exportItem, month)}
               >
                 {isDownloading ? "다운로드 중..." : ready ? "엑셀 다운로드" : "준비중"}
               </button>

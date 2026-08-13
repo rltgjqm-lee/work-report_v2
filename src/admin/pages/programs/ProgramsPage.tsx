@@ -9,6 +9,7 @@ import {
   programsByOrganizationQueryOptions,
   updateProgramMutationOptions,
 } from "../../api/admin/programs";
+import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
@@ -23,12 +24,6 @@ import SearchInput from "../../components/SearchInput";
 
 import { rowActionBtnClass } from "../../uiClasses";
 import ProgramFormModal from "./ProgramFormModal";
-
-const PROGRAM_TYPE_OPTIONS = [
-  { value: "all", label: "전체 유형" },
-  { value: "공익 활동", label: "공익 활동" },
-  { value: "역량 활동", label: "역량 활동" },
-];
 
 /**
  * 관리자 페이지 > 사업단 관리 페이지입니다.
@@ -223,7 +218,7 @@ const ProgramsPage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={PROGRAM_TYPE_OPTIONS}
+              options={PROGRAM_TYPE_FILTER_OPTIONS}
             />
 
             <FilterSelect

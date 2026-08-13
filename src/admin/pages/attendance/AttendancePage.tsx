@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { demandSitesQueryOptions } from "../../api/admin/demandSites";
 import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
+import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 
 import TabBar from "../../components/bar/TabBar";
 import FilterSelect from "../../components/FilterSelect";
@@ -13,12 +14,6 @@ import LeaveTabPanel from "./LeaveTabPanel";
 import TrainingTabPanel from "./TrainingTabPanel";
 
 type Tab = "attendance" | "training" | "leave";
-
-const PROGRAM_TYPE_OPTIONS = [
-  { value: "all", label: "전체 유형" },
-  { value: "공익 활동", label: "공익 활동" },
-  { value: "역량 활동", label: "역량 활동" },
-];
 
 /**
  * 관리자 페이지 > 근무 관리 페이지입니다. 근무/휴가/교육을 탭으로 묶어서 보여줍니다.
@@ -139,7 +134,7 @@ const AttendancePage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={PROGRAM_TYPE_OPTIONS}
+              options={PROGRAM_TYPE_FILTER_OPTIONS}
             />
           )}
           {!preselectedProgramId && (

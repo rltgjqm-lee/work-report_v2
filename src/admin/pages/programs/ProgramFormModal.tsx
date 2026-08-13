@@ -6,6 +6,7 @@ import {
   setProgramManagerMutationOptions,
   updateProgramMutationOptions,
 } from "../../api/admin/programs";
+import { PROGRAM_TYPE_SELECT_OPTIONS } from "../../constants/programTypes";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
 import type { Organization } from "../../types/organizations";
@@ -25,12 +26,6 @@ const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUB_ADMIN]: "부관리자",
   [ROLES.MANAGER]: "담당자",
 };
-
-const PROGRAM_TYPE_OPTIONS = [
-  { value: "", label: "선택하세요" },
-  { value: "공익 활동", label: "공익 활동" },
-  { value: "역량 활동", label: "역량 활동" },
-];
 
 const emptyForm = {
   organizationId: "",
@@ -239,7 +234,7 @@ const ProgramFormModal = ({
           className="w-full"
           value={form.programType}
           onChange={(value) => setForm((form) => ({ ...form, programType: value }))}
-          options={PROGRAM_TYPE_OPTIONS}
+          options={PROGRAM_TYPE_SELECT_OPTIONS}
         />
       </FormField>
 

@@ -11,6 +11,7 @@ import { programQueryOptions, programsQueryOptions } from "../api/admin/programs
 import FilterSelect from "../components/FilterSelect";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
+import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
 import type { Participant } from "../types/participants";
 import { rowActionBtnClass } from "../uiClasses";
 
@@ -28,12 +29,6 @@ const DEMAND_SITE = {
 const PROGRAM_FILTER = {
   ALL: "all",
 } as const;
-
-const PROGRAM_TYPE_OPTIONS = [
-  { value: "all", label: "전체 유형" },
-  { value: "공익 활동", label: "공익 활동" },
-  { value: "역량 활동", label: "역량 활동" },
-];
 
 /**
  * 관리자 페이지 > 참여자 관리 페이지입니다.
@@ -212,7 +207,7 @@ const ParticipantsPage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={PROGRAM_TYPE_OPTIONS}
+              options={PROGRAM_TYPE_FILTER_OPTIONS}
             />
             <FilterSelect
               value={programFilter}

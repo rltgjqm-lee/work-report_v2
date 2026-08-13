@@ -20,6 +20,7 @@ import { programQueryOptions, programsQueryOptions } from "../api/admin/programs
 import FilterSelect from "../components/FilterSelect";
 import PromptModal from "../components/modal/PromptModal";
 import SearchInput from "../components/SearchInput";
+import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
 import type { DemandSiteLocation } from "../types/demandSites";
 import type { EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
 
@@ -33,12 +34,6 @@ interface DemandSiteGeofence {
 }
 
 const POLL_INTERVAL_MS = 10000;
-
-const PROGRAM_TYPE_OPTIONS = [
-  { value: "all", label: "전체 유형" },
-  { value: "공익 활동", label: "공익 활동" },
-  { value: "역량 활동", label: "역량 활동" },
-];
 
 const ESCAPE_STATUS_OPTIONS = [
   { value: "OPEN", label: "확인 필요" },
@@ -424,7 +419,7 @@ const EscapesPage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={PROGRAM_TYPE_OPTIONS}
+              options={PROGRAM_TYPE_FILTER_OPTIONS}
             />
           )}
           {!preselectedProgramId && (

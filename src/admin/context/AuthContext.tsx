@@ -6,30 +6,30 @@ import { AuthContext, type AuthContextValue, type AuthState } from "./authContex
 const initialState: AuthState = { admin: null, loading: true };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [state, setState] = useState<AuthState>(initialState);
+  const [authState, setAuthState] = useState<AuthState>(initialState);
 
   // 세션 쿠키가 있으면 /api/me가 그 쿠키로 관리자 정보를 내려준다 — 없거나
   // 만료됐으면 401이 나고 아래 catch에서 admin: null로 처리된다.
   const refresh = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true }));
+    setAuthState((authState) => ({ ...authState, loading: true }));
     try {
       const admin = await getMe();
-      setState({ admin, loading: false });
+      setAuthState({ admin, loading: false });
     } catch {
-      setState({ admin: null, loading: false });
+      setAuthState({ admin: null, loading: false });
     }
   }, []);
 
   useEffect(() => {
-    setOnUnauthorized(() => setState({ admin: null, loading: false }));
+    setOnUnauthorized(() => setAuthState({ admin: null, loading: false }));
 
     let cancelled = false;
     getMe()
       .then((admin) => {
-        if (!cancelled) setState({ admin, loading: false });
+        if (!cancelled) setAuthState({ admin, loading: false });
       })
       .catch(() => {
-        if (!cancelled) setState({ admin: null, loading: false });
+        if (!cancelled) setAuthState({ admin: null, loading: false });
       });
 
     return () => {
@@ -39,13 +39,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 세션 만료 시각이 되면 다른 화면 조작 없이도 자동으로 로그아웃 처리한다 —
   // API 401을 다음 요청까지 기다리지 않고 그 순간 바로 세션을 정리한다.
-  const expiresAt = state.admin?.expiresAt;
+  const expiresAt = authState.admin?.expiresAt;
   useEffect(() => {
     if (!expiresAt) return;
 
     const delay = Math.max(0, new Date(expiresAt).getTime() - Date.now());
     const timer = setTimeout(() => {
-      setState({ admin: null, loading: false });
+      setAuthState({ admin: null, loading: false });
       alert("세션이 만료되었습니다. 다시 로그인해주세요.");
     }, delay);
 
@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [expiresAt]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, isAuthenticated: !!state.admin, refresh }),
-    [state, refresh],
+    () => ({ ...authState, isAuthenticated: !!authState.admin, refresh }),
+    [authState, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
