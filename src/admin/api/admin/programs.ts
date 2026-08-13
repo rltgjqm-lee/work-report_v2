@@ -1,12 +1,24 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { Program, ProgramWithParticipants } from "../../types/programs";
+import type {
+  Program,
+  ProgramFilterOption,
+  ProgramListItem,
+  ProgramOption,
+  ProgramWithParticipants,
+} from "../../types/programs";
 
 import { request } from "../client";
 import { adminKeys } from "./admins";
 
-export const listPrograms = (organizationId?: number) =>
+const listPrograms = (organizationId?: number) =>
   request<Program[]>(`/api/programs${organizationId ? `?organizationId=${organizationId}` : ""}`);
+
+// 사업단 관리 목록 화면 전용 — 참여자 수·소속 기관명·담당자명까지 서버에서 조합해 내려준다.
+const listProgramsSummary = (organizationId?: number) =>
+  request<ProgramListItem[]>(
+    `/api/programs/summary${organizationId ? `?organizationId=${organizationId}` : ""}`,
+  );
 
 export const programKeys = {
   all: ["programs"] as const,
@@ -15,26 +27,57 @@ export const programKeys = {
   // 캐시 키가 충돌한다.
   byOrganization: (organizationId: number | undefined) =>
     [...programKeys.all, "organization", organizationId ?? "all"] as const,
+  byOrganizationOptions: (organizationId: number | undefined) =>
+    [...programKeys.all, "organization-options", organizationId ?? "all"] as const,
   detail: (id: number) => [...programKeys.all, id] as const,
+  editDetail: (id: number) => [...programKeys.all, id, "edit"] as const,
 };
 
+// 유형 필터가 있는 드롭다운용 — 여러 화면이 같이 쓰므로 이름/유형까지만 받는다.
 export const programsQueryOptions = queryOptions({
   queryKey: programKeys.all,
   queryFn: () => listPrograms(),
+  select: (programs): ProgramFilterOption[] =>
+    programs.map((program) => ({
+      id: program.id,
+      name: program.name,
+      programType: program.programType,
+    })),
 });
 
+// 사업단 관리 목록 화면용 — 급여 관련 필드는 빼고 화면에 보여주는 필드 + 참여자 수·
+// 소속 기관명·담당자명을 받는다.
 export const programsByOrganizationQueryOptions = (organizationId: number | undefined) =>
   queryOptions({
     queryKey: programKeys.byOrganization(organizationId),
-    queryFn: () => listPrograms(organizationId),
+    queryFn: () => listProgramsSummary(organizationId),
   });
 
-export const getProgram = (id: number) => request<ProgramWithParticipants>(`/api/programs/${id}`);
+// 이름만 필요한 드롭다운용(담당자 이관 모달 등).
+export const programOptionsByOrganizationQueryOptions = (organizationId: number | undefined) =>
+  queryOptions({
+    queryKey: programKeys.byOrganizationOptions(organizationId),
+    queryFn: () => listPrograms(organizationId),
+    select: (programs): ProgramOption[] =>
+      programs.map((program) => ({ id: program.id, name: program.name })),
+  });
+
+const getProgram = (id: number) => request<ProgramWithParticipants>(`/api/programs/${id}`);
 
 export const programQueryOptions = (id: number) =>
   queryOptions({
     queryKey: programKeys.detail(id),
     queryFn: () => getProgram(id),
+  });
+
+// 사업단 수정 폼용 — 참여자 목록(조인 필요) 없이 사업단 필드만 받는다.
+const getProgramFields = (id: number) =>
+  request<Program>(`/api/programs/${id}?withParticipants=false`);
+
+export const programEditQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: programKeys.editDetail(id),
+    queryFn: () => getProgramFields(id),
   });
 
 const createProgram = (data: Partial<Omit<Program, "id" | "createdAt">>) =>

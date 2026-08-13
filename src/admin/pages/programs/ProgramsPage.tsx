@@ -1,11 +1,11 @@
 import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminsQueryOptions } from "../../api/admin/admins";
-import { organizationsQueryOptions } from "../../api/admin/organizations";
+import { organizationOptionsQueryOptions } from "../../api/admin/organizations";
 import {
-  programQueryOptions,
+  programEditQueryOptions,
   programsByOrganizationQueryOptions,
   updateProgramMutationOptions,
 } from "../../api/admin/programs";
@@ -14,7 +14,7 @@ import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
 import { ROLES } from "../../types/admins";
-import type { Program } from "../../types/programs";
+import type { Program, ProgramListItem } from "../../types/programs";
 
 import Button from "../../components/Button";
 import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
@@ -44,7 +44,7 @@ const ProgramsPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
 
-  const { data: organizations = [] } = useQuery(organizationsQueryOptions);
+  const { data: organizations = [] } = useQuery(organizationOptionsQueryOptions);
 
   // 담당자 목록을 못 받아오는 역할(부관리자/담당자)에겐 "-"만 늘어놓는 대신 열 자체를 숨긴다.
   const canViewManagerColumn = role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
@@ -77,30 +77,6 @@ const ProgramsPage = () => {
   const { data: programs = [] } = useQuery(
     programsByOrganizationQueryOptions(selectedOrganizationId),
   );
-  const programQueries = useQueries({
-    queries: programs.map((program) => programQueryOptions(program.id)),
-  });
-  const participantCounts = useMemo(
-    () =>
-      Object.fromEntries(
-        programQueries
-          .map((programQuery) => programQuery.data)
-          .filter((fullProgram): fullProgram is NonNullable<typeof fullProgram> => !!fullProgram)
-          .map((fullProgram) => [fullProgram.id, fullProgram.participants.length] as const),
-      ),
-    [programQueries],
-  );
-
-  const managerAdminName = (programId: number) => {
-    const managerAdmin = managerAdmins.find((candidate) =>
-      candidate.programIds.includes(programId),
-    );
-
-    return managerAdmin?.name ?? managerAdmin?.email ?? "-";
-  };
-
-  const orgName = (organizationId: number) =>
-    organizations.find((organization) => organization.id === organizationId)?.name ?? "-";
 
   // 사업단 셀렉트 후보는 유형 필터로 이미 좁혀둔다 — 안 그러면 유형과 안 맞는
   // 사업단을 골라서 결과가 항상 0건이 되는 조합이 가능해진다.
@@ -135,16 +111,22 @@ const ProgramsPage = () => {
     setModalOpen(true);
   };
 
-  const handleEditButtonClick = (program: Program) => (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    setEditingProgram(program);
-    setModalOpen(true);
-  };
+  const handleEditButtonClick =
+    (program: ProgramListItem) => async (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      try {
+        const fullProgram = await queryClient.fetchQuery(programEditQueryOptions(program.id));
+        setEditingProgram(fullProgram);
+        setModalOpen(true);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "사업단 정보를 불러오지 못했습니다.");
+      }
+    };
 
   const updateProgramMutation = useMutation(updateProgramMutationOptions(queryClient));
 
   const handleToggleActiveButtonClick =
-    (program: Program) => (event: MouseEvent<HTMLButtonElement>) => {
+    (program: ProgramListItem) => (event: MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       const actionLabel = program.isActive ? "비활성화" : "활성화";
       if (
@@ -282,7 +264,7 @@ const ProgramsPage = () => {
                     </span>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
-                    {orgName(program.organizationId)}
+                    {program.organizationName}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {program.startDate} ~ {program.endDate}
@@ -291,14 +273,14 @@ const ProgramsPage = () => {
                     {program.startTime} ~ {program.endTime}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {participantCounts[program.id] ?? "-"}명
+                    {program.participantCount}명
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {program.isActive ? "활성" : "비활성"}
                   </td>
                   {canViewManagerColumn && (
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
-                      {managerAdminName(program.id)}
+                      {program.managerName}
                     </td>
                   )}
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">

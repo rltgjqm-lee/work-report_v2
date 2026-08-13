@@ -12,6 +12,7 @@ import {
   demandSiteSchedules,
   escapeLogs,
   groups,
+  organizations,
   participantAnnualLeave,
   participantEscapeMeta,
   participantGroupOverrides,
@@ -68,6 +69,92 @@ app.get("/", async (c) => {
   return c.json(visible);
 });
 
+// 사업단 관리 목록 화면용 — 참여자 수 집계, 소속 기관명, 담당자명까지 서버에서 한 번에
+// 조합해서 내려준다. `/:id`보다 먼저 등록해야 "summary"가 id로 안 잡힌다.
+app.get("/summary", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const queryOrgId = c.req.query("organizationId");
+
+  const organizationId =
+    auth.role === ROLES.SUPER_ADMIN
+      ? queryOrgId
+        ? Number(queryOrgId)
+        : undefined
+      : (auth.organizationId as number);
+
+  const rows = organizationId
+    ? await db.select().from(programs).where(eq(programs.organizationId, organizationId))
+    : await db.select().from(programs);
+
+  const visible =
+    auth.role === ROLES.MANAGER ? rows.filter((p) => auth.programIds.includes(p.id)) : rows;
+
+  if (visible.length === 0) return c.json([]);
+
+  const organizationIds = [...new Set(visible.map((program) => program.organizationId))];
+
+  const participantCountRows = await db
+    .select({ programId: participants.programId, count: sql<number>`count(*)` })
+    .from(participants)
+    .where(
+      inArray(
+        participants.programId,
+        visible.map((program) => program.id),
+      ),
+    )
+    .groupBy(participants.programId);
+  const participantCountByProgramId = new Map(
+    participantCountRows.map((row) => [row.programId, row.count]),
+  );
+
+  const organizationRows = await db
+    .select({ id: organizations.id, name: organizations.name })
+    .from(organizations)
+    .where(inArray(organizations.id, organizationIds));
+  const organizationNameById = new Map(
+    organizationRows.map((organization) => [organization.id, organization.name]),
+  );
+
+  // 담당자 열은 계정 목록(GET /api/admins)과 같은 기준으로 가린다 — SUB_ADMIN/MANAGER는 못 본다.
+  const canViewManager = hasMinRole(auth, ROLES.ORGANIZATION_ADMIN);
+  const managerCandidates = canViewManager
+    ? await db
+        .select({ name: admins.name, email: admins.email, programIds: admins.programIds })
+        .from(admins)
+        .where(
+          and(
+            inArray(admins.organizationId, organizationIds),
+            inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
+            eq(admins.isActive, true),
+          ),
+        )
+    : [];
+  const managerNameByProgramId = (programId: number) => {
+    const manager = managerCandidates.find((candidate) =>
+      parseIdArray(candidate.programIds).includes(programId),
+    );
+    return manager?.name ?? manager?.email ?? "-";
+  };
+
+  const summaries = visible.map((program) => ({
+    id: program.id,
+    organizationId: program.organizationId,
+    organizationName: organizationNameById.get(program.organizationId) ?? "-",
+    name: program.name,
+    startDate: program.startDate,
+    endDate: program.endDate,
+    startTime: program.startTime,
+    endTime: program.endTime,
+    programType: program.programType,
+    isActive: program.isActive,
+    participantCount: participantCountByProgramId.get(program.id) ?? 0,
+    managerName: canViewManager ? managerNameByProgramId(program.id) : "-",
+  }));
+
+  return c.json(summaries);
+});
+
 app.get("/:id", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -78,6 +165,11 @@ app.get("/:id", async (c) => {
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  // 편집 폼처럼 참여자 목록 없이 사업단 필드만 필요한 소비자는 참여자 조인을 스킵한다.
+  if (c.req.query("withParticipants") === "false") {
+    return c.json(program);
   }
 
   // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
