@@ -26,6 +26,12 @@ const ROLE_LABEL: Record<Role, string> = {
   [ROLES.MANAGER]: "담당자",
 };
 
+const PROGRAM_TYPE_OPTIONS = [
+  { value: "", label: "선택하세요" },
+  { value: "공익 활동", label: "공익 활동" },
+  { value: "역량 활동", label: "역량 활동" },
+];
+
 const emptyForm = {
   organizationId: "",
   name: "",
@@ -165,6 +171,24 @@ const ProgramFormModal = ({
     }
   };
 
+  const organizationOptions = [
+    { value: "", label: "선택하세요" },
+    ...organizations
+      .filter((organization) => organization.isActive)
+      .map((organization) => ({
+        value: String(organization.id),
+        label: organization.name,
+      })),
+  ];
+
+  const managerAdminOptions = [
+    { value: "", label: "선택하세요" },
+    ...assignableManagerAdmins.map((managerAdmin) => ({
+      value: String(managerAdmin.id),
+      label: `${managerAdmin.name ?? managerAdmin.email} (${ROLE_LABEL[managerAdmin.role]})`,
+    })),
+  ];
+
   return (
     <SlideModal
       isOpen
@@ -186,15 +210,7 @@ const ProgramFormModal = ({
             className="w-full"
             value={form.organizationId}
             onChange={handleOrganizationFilterChange}
-            options={[
-              { value: "", label: "선택하세요" },
-              ...organizations
-                .filter((organization) => organization.isActive)
-                .map((organization) => ({
-                  value: String(organization.id),
-                  label: organization.name,
-                })),
-            ]}
+            options={organizationOptions}
           />
         </FormField>
       )}
@@ -212,13 +228,7 @@ const ProgramFormModal = ({
             className="w-full"
             value={managerAdminId}
             onChange={setManagerAdminId}
-            options={[
-              { value: "", label: "선택하세요" },
-              ...assignableManagerAdmins.map((managerAdmin) => ({
-                value: String(managerAdmin.id),
-                label: `${managerAdmin.name ?? managerAdmin.email} (${ROLE_LABEL[managerAdmin.role]})`,
-              })),
-            ]}
+            options={managerAdminOptions}
           />
         )}
       </FormField>
@@ -229,11 +239,7 @@ const ProgramFormModal = ({
           className="w-full"
           value={form.programType}
           onChange={(value) => setForm((form) => ({ ...form, programType: value }))}
-          options={[
-            { value: "", label: "선택하세요" },
-            { value: "공익 활동", label: "공익 활동" },
-            { value: "역량 활동", label: "역량 활동" },
-          ]}
+          options={PROGRAM_TYPE_OPTIONS}
         />
       </FormField>
 

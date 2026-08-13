@@ -32,6 +32,13 @@ const statusLabel: Record<string, string> = {
   DROPPED: "참여종료",
 };
 
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "전체 상태" },
+  { value: "ACTIVE", label: "활동중" },
+  { value: "ON_LEAVE", label: "휴무중" },
+  { value: "DROPPED", label: "참여종료" },
+];
+
 interface ProgramParticipantsSectionProps {
   programId: number;
   participants: Participant[];
@@ -206,6 +213,22 @@ const ProgramParticipantsSection = ({
     );
   };
 
+  const demandSiteOptions = [
+    { value: "all", label: "전체 수요처" },
+    ...demandOptions.map((demandName) => ({
+      value: demandName,
+      label: demandName,
+    })),
+  ];
+
+  const groupOptions = [
+    { value: "all", label: "전체 조" },
+    ...groups.map((group) => ({
+      value: String(group.id),
+      label: group.name,
+    })),
+  ];
+
   return (
     <div className="bg-white border border-admin-border-subtle rounded-[2px]">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
@@ -214,34 +237,13 @@ const ProgramParticipantsSection = ({
           <FilterSelect
             value={demandFilter}
             onChange={onDemandFilterChange}
-            options={[
-              { value: "all", label: "전체 수요처" },
-              ...demandOptions.map((demandName) => ({
-                value: demandName,
-                label: demandName,
-              })),
-            ]}
+            options={demandSiteOptions}
           />
-          <FilterSelect
-            value={groupFilter}
-            onChange={onGroupFilterChange}
-            options={[
-              { value: "all", label: "전체 조" },
-              ...groups.map((group) => ({
-                value: String(group.id),
-                label: group.name,
-              })),
-            ]}
-          />
+          <FilterSelect value={groupFilter} onChange={onGroupFilterChange} options={groupOptions} />
           <FilterSelect
             value={statusFilter}
             onChange={onStatusFilterChange}
-            options={[
-              { value: "all", label: "전체 상태" },
-              { value: "ACTIVE", label: "활동중" },
-              { value: "ON_LEAVE", label: "휴무중" },
-              { value: "DROPPED", label: "참여종료" },
-            ]}
+            options={STATUS_FILTER_OPTIONS}
           />
         </div>
         <span className="text-xs text-text-subtle font-medium whitespace-nowrap">

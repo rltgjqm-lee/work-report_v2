@@ -30,6 +30,14 @@ const DisasterMessagesPage = () => {
 
   const sendTestMutation = useMutation(sendTestSafetyAlertMutationOptions(queryClient));
 
+  const programOptions = [
+    { value: "", label: "사업단을 선택하세요" },
+    ...programs.map((program) => ({
+      value: String(program.id),
+      label: program.name,
+    })),
+  ];
+
   const handleSendTestButtonClick = () => {
     if (!testProgramId || !testMessage) {
       alert("사업단과 메시지를 입력해주세요.");
@@ -68,13 +76,7 @@ const DisasterMessagesPage = () => {
           <FilterSelect
             value={testProgramId}
             onChange={setTestProgramId}
-            options={[
-              { value: "", label: "사업단을 선택하세요" },
-              ...programs.map((program) => ({
-                value: String(program.id),
-                label: program.name,
-              })),
-            ]}
+            options={programOptions}
           />
 
           <Input

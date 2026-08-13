@@ -29,6 +29,12 @@ const PROGRAM_FILTER = {
   ALL: "all",
 } as const;
 
+const PROGRAM_TYPE_OPTIONS = [
+  { value: "all", label: "전체 유형" },
+  { value: "공익 활동", label: "공익 활동" },
+  { value: "역량 활동", label: "역량 활동" },
+];
+
 /**
  * 관리자 페이지 > 참여자 관리 페이지입니다.
  *
@@ -169,6 +175,26 @@ const ParticipantsPage = () => {
     setPage(1);
   };
 
+  const programOptions = [
+    { value: PROGRAM_FILTER.ALL, label: "전체 사업단" },
+    ...filteredPrograms.map((program) => ({
+      value: String(program.id),
+      label: program.name,
+    })),
+  ];
+
+  const demandSiteOptions = [
+    { value: DEMAND_SITE.ALL, label: "전체 수요처" },
+    {
+      value: DEMAND_SITE.UNASSIGNED,
+      label: "수요처 미배정",
+    },
+    ...demandSiteNames.map((demandSiteName) => ({
+      value: demandSiteName,
+      label: demandSiteName,
+    })),
+  ];
+
   return (
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -186,37 +212,17 @@ const ParticipantsPage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={[
-                { value: "all", label: "전체 유형" },
-                { value: "공익 활동", label: "공익 활동" },
-                { value: "역량 활동", label: "역량 활동" },
-              ]}
+              options={PROGRAM_TYPE_OPTIONS}
             />
             <FilterSelect
               value={programFilter}
               onChange={handleProgramFilterChange}
-              options={[
-                { value: PROGRAM_FILTER.ALL, label: "전체 사업단" },
-                ...filteredPrograms.map((program) => ({
-                  value: String(program.id),
-                  label: program.name,
-                })),
-              ]}
+              options={programOptions}
             />
             <FilterSelect
               value={demandSiteFilter}
               onChange={handleDemandSiteFilterChange}
-              options={[
-                { value: DEMAND_SITE.ALL, label: "전체 수요처" },
-                {
-                  value: DEMAND_SITE.UNASSIGNED,
-                  label: "수요처 미배정",
-                },
-                ...demandSiteNames.map((demandSiteName) => ({
-                  value: demandSiteName,
-                  label: demandSiteName,
-                })),
-              ]}
+              options={demandSiteOptions}
             />
             <SearchInput
               value={search}

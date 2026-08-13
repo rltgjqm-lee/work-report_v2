@@ -22,6 +22,16 @@ import SlideModal from "../../components/modal/SlideModal";
 // Number() 변환처럼 앞자리 0이 사라질 걱정이 없다.
 const PHONE_NUMBER_PATTERN = /^0\d{1,3}-\d{3,4}-\d{4}$/;
 
+const SIDO_OPTIONS = [
+  { value: "", label: "선택하세요" },
+  ...SIDO_LIST.map((sido) => ({ value: sido, label: sido })),
+];
+
+const ORGANIZATION_TYPE_OPTIONS = [
+  { value: "", label: "선택하세요" },
+  ...ORGANIZATION_TYPES.map((type) => ({ value: type.value, label: type.label })),
+];
+
 const emptyForm = {
   name: "",
   address: "",
@@ -111,6 +121,14 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
     }
   };
 
+  const sigunguOptions = [
+    { value: "", label: "선택하세요" },
+    ...(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => ({
+      value: sigungu,
+      label: sigungu,
+    })),
+  ];
+
   return (
     <SlideModal
       isOpen
@@ -189,10 +207,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
                   regionSigungu: "",
                 }))
               }
-              options={[
-                { value: "", label: "선택하세요" },
-                ...SIDO_LIST.map((sido) => ({ value: sido, label: sido })),
-              ]}
+              options={SIDO_OPTIONS}
             />
           </FormField>
         </div>
@@ -203,13 +218,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
               value={form.regionSigungu}
               disabled={!form.regionSido}
               onChange={(value) => setForm((form) => ({ ...form, regionSigungu: value }))}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...(KOREAN_REGIONS[form.regionSido] ?? []).map((sigungu) => ({
-                  value: sigungu,
-                  label: sigungu,
-                })),
-              ]}
+              options={sigunguOptions}
             />
           </FormField>
         </div>
@@ -221,10 +230,7 @@ const OrganizationFormModal = ({ onClose, editingOrganization }: OrganizationFor
               className="w-full"
               value={form.organizationType}
               onChange={(value) => setForm((form) => ({ ...form, organizationType: value }))}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...ORGANIZATION_TYPES.map((type) => ({ value: type.value, label: type.label })),
-              ]}
+              options={ORGANIZATION_TYPE_OPTIONS}
             />
           </FormField>
         </div>

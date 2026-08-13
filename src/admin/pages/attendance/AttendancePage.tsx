@@ -14,6 +14,12 @@ import TrainingTabPanel from "./TrainingTabPanel";
 
 type Tab = "attendance" | "training" | "leave";
 
+const PROGRAM_TYPE_OPTIONS = [
+  { value: "all", label: "전체 유형" },
+  { value: "공익 활동", label: "공익 활동" },
+  { value: "역량 활동", label: "역량 활동" },
+];
+
 /**
  * 관리자 페이지 > 근무 관리 페이지입니다. 근무/휴가/교육을 탭으로 묶어서 보여줍니다.
  *
@@ -91,6 +97,22 @@ const AttendancePage = () => {
     setSelectedDemandSiteId("");
   };
 
+  const programOptions = [
+    { value: "", label: "사업단을 선택하세요" },
+    ...filteredPrograms.map((program) => ({
+      value: String(program.id),
+      label: program.name,
+    })),
+  ];
+
+  const demandSiteOptions = [
+    { value: "", label: "전체 수요처" },
+    ...demandSites.map((demandSite) => ({
+      value: String(demandSite.id),
+      label: demandSite.name,
+    })),
+  ];
+
   return (
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -117,24 +139,14 @@ const AttendancePage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={[
-                { value: "all", label: "전체 유형" },
-                { value: "공익 활동", label: "공익 활동" },
-                { value: "역량 활동", label: "역량 활동" },
-              ]}
+              options={PROGRAM_TYPE_OPTIONS}
             />
           )}
           {!preselectedProgramId && (
             <FilterSelect
               value={selectedProgramId}
               onChange={handleProgramFilterChange}
-              options={[
-                { value: "", label: "사업단을 선택하세요" },
-                ...filteredPrograms.map((program) => ({
-                  value: String(program.id),
-                  label: program.name,
-                })),
-              ]}
+              options={programOptions}
             />
           )}
           {/* 사업단을 고르기 전에도 자리를 지킨다 — 고를 수 있는 수요처가 없을 뿐이라
@@ -143,13 +155,7 @@ const AttendancePage = () => {
             value={selectedDemandSiteId}
             onChange={setSelectedDemandSiteId}
             disabled={!programId}
-            options={[
-              { value: "", label: "전체 수요처" },
-              ...demandSites.map((demandSite) => ({
-                value: String(demandSite.id),
-                label: demandSite.name,
-              })),
-            ]}
+            options={demandSiteOptions}
           />
         </div>
       </div>

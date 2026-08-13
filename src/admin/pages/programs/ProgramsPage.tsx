@@ -24,6 +24,12 @@ import SearchInput from "../../components/SearchInput";
 import { rowActionBtnClass } from "../../uiClasses";
 import ProgramFormModal from "./ProgramFormModal";
 
+const PROGRAM_TYPE_OPTIONS = [
+  { value: "all", label: "전체 유형" },
+  { value: "공익 활동", label: "공익 활동" },
+  { value: "역량 활동", label: "역량 활동" },
+];
+
 /**
  * 관리자 페이지 > 사업단 관리 페이지입니다.
  *
@@ -175,6 +181,22 @@ const ProgramsPage = () => {
     setProgramFilter("all");
   };
 
+  const institutionOptions = [
+    { value: "all", label: "전체 기관" },
+    ...organizations.map((organization) => ({
+      value: String(organization.id),
+      label: organization.name,
+    })),
+  ];
+
+  const programOptions = [
+    { value: "all", label: "전체 사업단" },
+    ...programsForSelect.map((program) => ({
+      value: String(program.id),
+      label: program.name,
+    })),
+  ];
+
   return (
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -194,36 +216,20 @@ const ProgramsPage = () => {
               <FilterSelect
                 value={instFilter}
                 onChange={handleInstitutionFilterChange}
-                options={[
-                  { value: "all", label: "전체 기관" },
-                  ...organizations.map((organization) => ({
-                    value: String(organization.id),
-                    label: organization.name,
-                  })),
-                ]}
+                options={institutionOptions}
               />
             )}
 
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={[
-                { value: "all", label: "전체 유형" },
-                { value: "공익 활동", label: "공익 활동" },
-                { value: "역량 활동", label: "역량 활동" },
-              ]}
+              options={PROGRAM_TYPE_OPTIONS}
             />
 
             <FilterSelect
               value={programFilter}
               onChange={setProgramFilter}
-              options={[
-                { value: "all", label: "전체 사업단" },
-                ...programsForSelect.map((program) => ({
-                  value: String(program.id),
-                  label: program.name,
-                })),
-              ]}
+              options={programOptions}
             />
 
             <SearchInput value={search} onChange={setSearch} placeholder="사업단명 검색" />

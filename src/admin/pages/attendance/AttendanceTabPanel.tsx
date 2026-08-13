@@ -204,21 +204,19 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
     return sameDayEscapes.sort((a, b) => b.escape.detectedAt.localeCompare(a.escape.detectedAt))[0];
   };
 
+  const dayFilterOptions = [
+    { value: "all", label: "전체 일자" },
+    ...Array.from({ length: daysInMonth }, (_unused, dayIndex) => {
+      const day = String(dayIndex + 1);
+      return { value: day, label: `${day}일` };
+    }),
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-end gap-2.5 mb-3">
         <MonthPicker value={month} onChange={setMonth} />
-        <FilterSelect
-          value={dayFilter}
-          onChange={setDayFilter}
-          options={[
-            { value: "all", label: "전체 일자" },
-            ...Array.from({ length: daysInMonth }, (_, i) => {
-              const day = String(i + 1);
-              return { value: day, label: `${day}일` };
-            }),
-          ]}
-        />
+        <FilterSelect value={dayFilter} onChange={setDayFilter} options={dayFilterOptions} />
       </div>
 
       <div className="grid grid-cols-5 mb-5">

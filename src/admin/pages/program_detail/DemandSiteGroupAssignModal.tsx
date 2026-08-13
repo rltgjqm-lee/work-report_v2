@@ -106,6 +106,13 @@ const DemandSiteGroupAssignModal = ({
     }
   };
 
+  const groupOptions = [
+    { value: "", label: "선택하세요" },
+    ...activeGroups
+      .filter((group) => !stagedGroupIds.includes(group.id))
+      .map((group) => ({ value: String(group.id), label: group.name })),
+  ];
+
   return (
     <SlideModal
       isOpen
@@ -125,12 +132,7 @@ const DemandSiteGroupAssignModal = ({
           className="w-full"
           value=""
           onChange={handleGroupSelectChange}
-          options={[
-            { value: "", label: "선택하세요" },
-            ...activeGroups
-              .filter((group) => !stagedGroupIds.includes(group.id))
-              .map((group) => ({ value: String(group.id), label: group.name })),
-          ]}
+          options={groupOptions}
         />
       </FormField>
 

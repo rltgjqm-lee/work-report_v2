@@ -125,6 +125,24 @@ const AdminFormModal = ({
     );
   };
 
+  const roleOptions = assignableRoles.map((assignableRole) => ({
+    value: assignableRole,
+    label: roleLabel[assignableRole],
+  }));
+
+  const organizationOptions = [
+    {
+      value: "",
+      label: form.role === ROLES.SUPER_ADMIN ? "전체 (소속 기관 없음)" : "선택하세요",
+    },
+    ...organizations
+      .filter((organization) => organization.isActive)
+      .map((organization) => ({
+        value: String(organization.id),
+        label: organization.name,
+      })),
+  ];
+
   return (
     <SlideModal
       isOpen
@@ -162,18 +180,7 @@ const AdminFormModal = ({
             disabled={form.role === ROLES.SUPER_ADMIN}
             value={form.role === ROLES.SUPER_ADMIN ? "" : form.organizationId}
             onChange={(value) => setForm((form) => ({ ...form, organizationId: value }))}
-            options={[
-              {
-                value: "",
-                label: form.role === ROLES.SUPER_ADMIN ? "전체 (소속 기관 없음)" : "선택하세요",
-              },
-              ...organizations
-                .filter((organization) => organization.isActive)
-                .map((organization) => ({
-                  value: String(organization.id),
-                  label: organization.name,
-                })),
-            ]}
+            options={organizationOptions}
           />
         </FormField>
       )}
@@ -182,10 +189,7 @@ const AdminFormModal = ({
           className="w-full"
           value={form.role}
           onChange={(value) => setForm((form) => ({ ...form, role: value as Role }))}
-          options={assignableRoles.map((assignableRole) => ({
-            value: assignableRole,
-            label: roleLabel[assignableRole],
-          }))}
+          options={roleOptions}
         />
       </FormField>
       <FormField label="이름">

@@ -34,6 +34,17 @@ interface DemandSiteGeofence {
 
 const POLL_INTERVAL_MS = 10000;
 
+const PROGRAM_TYPE_OPTIONS = [
+  { value: "all", label: "전체 유형" },
+  { value: "공익 활동", label: "공익 활동" },
+  { value: "역량 활동", label: "역량 활동" },
+];
+
+const ESCAPE_STATUS_OPTIONS = [
+  { value: "OPEN", label: "확인 필요" },
+  { value: "RESOLVED", label: "처리 완료" },
+];
+
 // 3단계 신호등 — alertCount 기준 (설계의 outside_minutes는 이번 구현에서 안 씀)
 const getMarkerColor = (worker: LiveWorker): string => {
   if (worker.alertCount >= 3) return "#FF0000";
@@ -374,6 +385,22 @@ const EscapesPage = () => {
     setSelectedDemandSiteId("");
   };
 
+  const programOptions = [
+    { value: "", label: "사업단을 선택하세요" },
+    ...filteredPrograms.map((program) => ({
+      value: String(program.id),
+      label: program.name,
+    })),
+  ];
+
+  const demandSiteOptions = [
+    { value: "", label: "전체 수요처" },
+    ...demandSites.map((demandSite) => ({
+      value: String(demandSite.id),
+      label: demandSite.name,
+    })),
+  ];
+
   return (
     <div>
       <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -397,46 +424,27 @@ const EscapesPage = () => {
             <FilterSelect
               value={programTypeFilter}
               onChange={handleProgramTypeFilterChange}
-              options={[
-                { value: "all", label: "전체 유형" },
-                { value: "공익 활동", label: "공익 활동" },
-                { value: "역량 활동", label: "역량 활동" },
-              ]}
+              options={PROGRAM_TYPE_OPTIONS}
             />
           )}
           {!preselectedProgramId && (
             <FilterSelect
               value={selectedProgramId}
               onChange={handleProgramFilterChange}
-              options={[
-                { value: "", label: "사업단을 선택하세요" },
-                ...filteredPrograms.map((program) => ({
-                  value: String(program.id),
-                  label: program.name,
-                })),
-              ]}
+              options={programOptions}
             />
           )}
           <FilterSelect
             value={selectedDemandSiteId}
             onChange={setSelectedDemandSiteId}
             disabled={!programId}
-            options={[
-              { value: "", label: "전체 수요처" },
-              ...demandSites.map((demandSite) => ({
-                value: String(demandSite.id),
-                label: demandSite.name,
-              })),
-            ]}
+            options={demandSiteOptions}
           />
           <SearchInput value={search} onChange={setSearch} placeholder="🔍 참여자 이름 검색" />
           <FilterSelect
             value={status}
             onChange={(value) => setStatus(value as EscapeStatus)}
-            options={[
-              { value: "OPEN", label: "확인 필요" },
-              { value: "RESOLVED", label: "처리 완료" },
-            ]}
+            options={ESCAPE_STATUS_OPTIONS}
           />
         </div>
       </div>

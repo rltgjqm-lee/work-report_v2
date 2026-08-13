@@ -138,6 +138,22 @@ const ParticipantAddModal = ({
     }
   };
 
+  const demandSiteOptions = [
+    { value: "", label: "선택하세요" },
+    ...activeDemandSites.map((demandSite) => ({
+      value: String(demandSite.id),
+      label: demandSite.name,
+    })),
+  ];
+
+  const groupOptions = [
+    { value: "", label: "선택하세요" },
+    ...activeGroups.map((group) => ({
+      value: String(group.id),
+      label: group.name,
+    })),
+  ];
+
   return (
     <SlideModal
       isOpen
@@ -223,13 +239,7 @@ const ParticipantAddModal = ({
           className="w-full"
           value={form.demandSiteId}
           onChange={(value) => setForm((form) => ({ ...form, demandSiteId: value }))}
-          options={[
-            { value: "", label: "선택하세요" },
-            ...activeDemandSites.map((demandSite) => ({
-              value: String(demandSite.id),
-              label: demandSite.name,
-            })),
-          ]}
+          options={demandSiteOptions}
         />
       </FormField>
       <FormField label="조">
@@ -237,13 +247,7 @@ const ParticipantAddModal = ({
           className="w-full"
           value={form.groupId}
           onChange={(value) => setForm((form) => ({ ...form, groupId: value }))}
-          options={[
-            { value: "", label: "선택하세요" },
-            ...activeGroups.map((group) => ({
-              value: String(group.id),
-              label: group.name,
-            })),
-          ]}
+          options={groupOptions}
         />
         <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           선택한 수요처에 배정된 조여야 저장됩니다. 조는 나중에 다시 수정할 수 있어요.

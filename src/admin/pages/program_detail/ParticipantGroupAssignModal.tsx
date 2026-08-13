@@ -70,6 +70,22 @@ const ParticipantGroupAssignModal = ({
     (group) => group.isActive || group.id === participant.groupId,
   );
 
+  const temporaryGroupSelectOptions = [
+    { value: "", label: "선택하세요" },
+    ...temporaryGroupOptions.map((group) => ({
+      value: String(group.id),
+      label: group.name,
+    })),
+  ];
+
+  const permanentGroupSelectOptions = [
+    { value: "", label: "선택하세요" },
+    ...permanentGroupOptions.map((group) => ({
+      value: String(group.id),
+      label: group.name,
+    })),
+  ];
+
   const handleAddOverrideButtonClick = () => {
     if (!date || !temporaryGroupId) {
       alert("날짜와 조를 모두 선택해주세요.");
@@ -159,13 +175,7 @@ const ParticipantGroupAssignModal = ({
               className="w-full"
               value={temporaryGroupId}
               onChange={setTemporaryGroupId}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...temporaryGroupOptions.map((group) => ({
-                  value: String(group.id),
-                  label: group.name,
-                })),
-              ]}
+              options={temporaryGroupSelectOptions}
             />
           </FormField>
 
@@ -211,13 +221,7 @@ const ParticipantGroupAssignModal = ({
               className="w-full"
               value={permanentGroupId}
               onChange={setPermanentGroupId}
-              options={[
-                { value: "", label: "선택하세요" },
-                ...permanentGroupOptions.map((group) => ({
-                  value: String(group.id),
-                  label: group.name,
-                })),
-              ]}
+              options={permanentGroupSelectOptions}
             />
           </FormField>
 

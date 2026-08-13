@@ -18,6 +18,11 @@ const emptyForm = {
   reason: "",
 };
 
+const LEAVE_TYPE_OPTIONS = [
+  { value: "PAID", label: "유급(연차 차감)" },
+  { value: "UNPAID", label: "무급" },
+];
+
 interface ParticipantLeaveAddModalProps {
   onClose: () => void;
   programId: number;
@@ -105,10 +110,7 @@ const ParticipantLeaveAddModal = ({
           className="w-full"
           value={form.leaveType}
           onChange={(value) => setForm((form) => ({ ...form, leaveType: value as LeaveType }))}
-          options={[
-            { value: "PAID", label: "유급(연차 차감)" },
-            { value: "UNPAID", label: "무급" },
-          ]}
+          options={LEAVE_TYPE_OPTIONS}
         />
       </FormField>
       <FormField label="사유">

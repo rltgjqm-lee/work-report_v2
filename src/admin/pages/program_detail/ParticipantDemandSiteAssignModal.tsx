@@ -52,6 +52,14 @@ const ParticipantDemandSiteAssignModal = ({
     );
   };
 
+  const demandSiteOptions = [
+    { value: "", label: "선택하세요" },
+    ...demandSites.map((demandSite) => ({
+      value: String(demandSite.id),
+      label: demandSite.name,
+    })),
+  ];
+
   return (
     <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
       <div className="bg-white rounded-[8px] shadow-xl w-[380px] p-5">
@@ -63,13 +71,7 @@ const ParticipantDemandSiteAssignModal = ({
             className="w-full"
             value={demandSiteId}
             onChange={setDemandSiteId}
-            options={[
-              { value: "", label: "선택하세요" },
-              ...demandSites.map((demandSite) => ({
-                value: String(demandSite.id),
-                label: demandSite.name,
-              })),
-            ]}
+            options={demandSiteOptions}
           />
         </FormField>
 

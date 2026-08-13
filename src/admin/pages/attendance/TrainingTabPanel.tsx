@@ -42,6 +42,20 @@ const PAY_MODE_LABEL: Record<TrainingPayMode, string> = {
   NONE: "미지급(기록만)",
 };
 
+const TRAINING_CATEGORY_OPTIONS = [
+  { value: "", label: "선택하세요" },
+  { value: "PRE", label: "사전" },
+  { value: "DURING", label: "기간중" },
+];
+
+const TRAINING_PAY_MODE_OPTIONS = [
+  { value: "", label: "선택하세요" },
+  { value: "NONE", label: "미지급(기록만)" },
+  { value: "WORK", label: "근무시간 합산" },
+  { value: "HOURLY", label: "시간당 별도지급" },
+  { value: "DAILY", label: "일당 별도지급" },
+];
+
 type SubTab = "definitions" | "logs" | "compliance";
 
 const emptyTrainingForm = {
@@ -309,6 +323,14 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     ? compliance.filter((row) => participantIds.has(row.participantId))
     : compliance;
 
+  const trainingFilterOptions = [
+    { value: "all", label: "전체 교육" },
+    ...trainings.map((training) => ({
+      value: String(training.id),
+      label: training.name,
+    })),
+  ];
+
   return (
     <div>
       <SubTabBar
@@ -382,13 +404,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
               <FilterSelect
                 value={logTrainingFilter}
                 onChange={setLogTrainingFilter}
-                options={[
-                  { value: "all", label: "전체 교육" },
-                  ...trainings.map((training) => ({
-                    value: String(training.id),
-                    label: training.name,
-                  })),
-                ]}
+                options={trainingFilterOptions}
               />
               <SearchInput value={logSearch} onChange={setLogSearch} placeholder="참여자 검색" />
             </div>
@@ -560,11 +576,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                       category: value as TrainingCategory | "",
                     }))
                   }
-                  options={[
-                    { value: "", label: "선택하세요" },
-                    { value: "PRE", label: "사전" },
-                    { value: "DURING", label: "기간중" },
-                  ]}
+                  options={TRAINING_CATEGORY_OPTIONS}
                 />
               </FormField>
             </div>
@@ -579,13 +591,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                       payMode: value as TrainingPayMode | "",
                     }))
                   }
-                  options={[
-                    { value: "", label: "선택하세요" },
-                    { value: "NONE", label: "미지급(기록만)" },
-                    { value: "WORK", label: "근무시간 합산" },
-                    { value: "HOURLY", label: "시간당 별도지급" },
-                    { value: "DAILY", label: "일당 별도지급" },
-                  ]}
+                  options={TRAINING_PAY_MODE_OPTIONS}
                 />
               </FormField>
             </div>
