@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
+import type { Role } from "../../types/admins";
 import type { Organization, OrganizationOption } from "../../types/organizations";
 
 import { request } from "../client";
@@ -8,6 +9,7 @@ const organizationKeys = {
   all: ["organizations"] as const,
   options: ["organizations", "options"] as const,
   detail: (id: number) => [...organizationKeys.all, id] as const,
+  detailPanel: (id: number) => [...organizationKeys.all, id, "detail-panel"] as const,
 };
 export interface UpdateOrganizationVariables {
   id: number;
@@ -21,8 +23,7 @@ export const organizationsQueryOptions = queryOptions({
   queryFn: listOrganizations,
 });
 
-// 이름만 필요한 드롭다운/조회용 — 서버가 그 화면이 쓰는 컬럼(id/name/isActive)만
-// 골라 내려주는 전용 라우트를 쓴다.
+// 이름만 필요한 드롭다운/조회용
 const listOrganizationOptions = () => request<OrganizationOption[]>("/api/organizations/dropdown");
 
 export const organizationOptionsQueryOptions = queryOptions({
@@ -36,6 +37,43 @@ export const organizationQueryOptions = (id: number) =>
   queryOptions({
     queryKey: organizationKeys.detail(id),
     queryFn: () => getOrganization(id),
+  });
+
+export interface OrganizationStaffMember {
+  id: number;
+  name: string | null;
+  email: string;
+  role: Role;
+}
+export interface OrganizationProgramSummary {
+  id: number;
+  name: string;
+  type: string;
+  participantCount: number;
+  managerName: string;
+}
+export interface OrganizationSiteSummary {
+  id: number;
+  site: string;
+  count: number;
+  manager: string;
+}
+export interface OrganizationDetail {
+  staff: OrganizationStaffMember[];
+  programs: OrganizationProgramSummary[];
+  sites: OrganizationSiteSummary[];
+}
+
+const getOrganizationDetail = (id: number) =>
+  request<OrganizationDetail>(`/api/organizations/${id}/detail`);
+
+export const organizationDetailQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: organizationKeys.detailPanel(id),
+    queryFn: () => getOrganizationDetail(id),
+    // 아코디언을 열었다 닫았다 할 때마다 재요청하지 않도록 — 이 데이터를 바꾸는
+    // 뮤테이션들이 아직 이 쿼리 키를 무효화하지 않아서 너무 길게 잡지는 않는다.
+    staleTime: 60 * 1000,
   });
 
 const createOrganization = (data: Partial<Omit<Organization, "id" | "createdAt">>) =>

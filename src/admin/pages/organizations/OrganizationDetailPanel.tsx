@@ -1,10 +1,7 @@
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
-import { adminsQueryOptions } from "../../api/admin/admins";
-import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import { programQueryOptions, programsByOrganizationQueryOptions } from "../../api/admin/programs";
+import { organizationDetailQueryOptions } from "../../api/admin/organizations";
 import { ROLES, type Role } from "../../types/admins";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -29,69 +26,10 @@ const OrganizationDetailPanel = ({
 }: OrganizationDetailPanelProps) => {
   const navigate = useNavigate();
 
-  const { data: admins = [] } = useQuery({ ...adminsQueryOptions, enabled: canViewStaff });
-  const staffItems = useMemo(
-    () => admins.filter((adminRow) => adminRow.organizationId === organizationId),
-    [admins, organizationId],
-  );
-  // 사업단 담당자로 지정할 수 있는 계정 — ProgramsPage.tsx와 동일한 방식으로 찾는다.
-  // 담당자(MANAGER)뿐 아니라 부관리자(SUB_ADMIN)도 사업단 담당자가 될 수 있다.
-  const managerAdmins = useMemo(
-    () =>
-      admins.filter(
-        (adminRow) =>
-          (adminRow.role === ROLES.MANAGER || adminRow.role === ROLES.SUB_ADMIN) &&
-          adminRow.isActive,
-      ),
-    [admins],
-  );
-  const managerAdminName = (programId: number) => {
-    const managerAdmin = managerAdmins.find((candidate) =>
-      candidate.programIds.includes(programId),
-    );
-    return managerAdmin?.name ?? managerAdmin?.email ?? "-";
-  };
-
-  const { data: programs = [] } = useQuery(programsByOrganizationQueryOptions(organizationId));
-
-  const programQueries = useQueries({
-    queries: programs.map((program) => programQueryOptions(program.id)),
-  });
-  const demandSiteQueries = useQueries({
-    queries: programs.map((program) => demandSitesQueryOptions(program.id)),
-  });
-
-  const teamItems = useMemo(
-    () =>
-      programs.map((program, index) => ({
-        id: program.id,
-        name: program.name,
-        type: program.programType ?? "-",
-        participantCount: programQueries[index]?.data?.participants.length ?? 0,
-        managerName: canViewStaff ? managerAdminName(program.id) : "-",
-      })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- managerAdminName은 admins에서 파생되므로 admins만 있으면 충분
-    [programs, programQueries, admins, canViewStaff],
-  );
-
-  // 배치 인원은 조 participantCount와 같은 관례로 활성(ACTIVE) 참여자만 센다.
-  const siteItems = useMemo(() => {
-    const activeParticipants = programQueries.flatMap(
-      (programQuery) => programQuery.data?.participants ?? [],
-    );
-
-    return programs.flatMap((_program, index) => {
-      const sites = demandSiteQueries[index]?.data ?? [];
-      return sites.map((site) => ({
-        id: site.id,
-        site: site.name,
-        count: activeParticipants.filter(
-          (participant) => participant.demandSiteId === site.id && participant.status === "ACTIVE",
-        ).length,
-        manager: site.contactAdminName ?? site.contactPerson ?? "-",
-      }));
-    });
-  }, [programs, programQueries, demandSiteQueries]);
+  const { data } = useQuery(organizationDetailQueryOptions(organizationId));
+  const staffItems = data?.staff ?? [];
+  const programItems = data?.programs ?? [];
+  const siteItems = data?.sites ?? [];
 
   return (
     <div className="flex bg-admin-surface-header border border-admin-border-subtle rounded-[2px] px-6 py-6">
@@ -121,22 +59,22 @@ const OrganizationDetailPanel = ({
 
       <div className="flex-1 min-w-0 px-6 border-r border-admin-border-subtle">
         <div className="text-xs font-bold text-text-subtle mb-4">
-          담당 사업단 · {teamItems.length}개
+          담당 사업단 · {programItems.length}개
         </div>
-        {teamItems.length === 0 ? (
+        {programItems.length === 0 ? (
           <span className="text-[11.5px] text-admin-text-placeholder">담당 사업단이 없습니다.</span>
         ) : (
           <div className="flex flex-col gap-4">
-            {teamItems.map((team) => (
-              <div key={team.id} className="flex flex-col gap-1">
+            {programItems.map((program) => (
+              <div key={program.id} className="flex flex-col gap-1">
                 <a
                   className="text-[13px] font-semibold text-text-strong cursor-pointer hover:text-admin-brand"
-                  onClick={() => navigate(`/admin/programs/${team.id}`)}
+                  onClick={() => navigate(`/admin/programs/${program.id}`)}
                 >
-                  {team.name}
+                  {program.name}
                 </a>
                 <span className="text-[11.5px] text-admin-text-faint">
-                  {team.type} · {team.participantCount}명 · 담당자 {team.managerName}
+                  {program.type} · {program.participantCount}명 · 담당자 {program.managerName}
                 </span>
               </div>
             ))}
