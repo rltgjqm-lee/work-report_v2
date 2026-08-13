@@ -7,6 +7,7 @@ import type {
   Participant,
   ParticipantDetail,
   ParticipantLeave,
+  ParticipantListItem,
 } from "../../types/participants";
 
 import { request } from "../client";
@@ -23,6 +24,15 @@ const participantKeys = {
     [...participantKeys.detail(id), "annual-leave", year] as const,
   groupOverrides: (id: number) => [...participantKeys.detail(id), "group-overrides"] as const,
 };
+
+// 참여자 관리 화면(전체 사업단 통합 조회)용 — 사업단마다 상세를 반복 호출하지 않도록
+// 서버가 참여자·사업단·기관을 조인해서 한 번에 내려준다.
+const listParticipants = () => request<ParticipantListItem[]>("/api/participants");
+
+export const participantsQueryOptions = queryOptions({
+  queryKey: participantKeys.all,
+  queryFn: listParticipants,
+});
 
 const getParticipant = (id: number) => request<ParticipantDetail>(`/api/participants/${id}`);
 
@@ -68,13 +78,15 @@ const addParticipant = (programId: number, data: AddParticipantVariables["data"]
   });
 
 // critical: 새 참여자가 사업단 참여자 목록(programKeys.detail)에 들어가고, 조에 배정됐다면
-// 그 조의 participantCount도 바뀐다.
+// 그 조의 participantCount도 바뀐다. 참여자 관리(전체 사업단 통합 조회) 목록에도 새 행이
+// 생기므로 같이 무효화한다.
 export const addParticipantMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ programId, data }: AddParticipantVariables) => addParticipant(programId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: participantKeys.all });
     },
   });
 
@@ -103,6 +115,8 @@ export const deleteParticipantMutationOptions = (queryClient: QueryClient) =>
       });
       // 삭제된 참여자가 조에 배정돼 있었다면 그 조의 participantCount도 바뀐다.
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+      // 참여자 관리(전체 사업단 통합 조회) 화면의 목록도 갱신해야 한다.
+      queryClient.invalidateQueries({ queryKey: participantKeys.all });
     },
   });
 
@@ -131,6 +145,7 @@ export const bulkAddParticipantsMutationOptions = (queryClient: QueryClient) =>
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: participantKeys.all });
     },
   });
 
@@ -165,8 +180,9 @@ const updateParticipant = (id: number, data: UpdateParticipantVariables["data"])
   });
 
 // critical: 방금 수정한 필드를 참여자 상세 쿼리 캐시에 바로 반영한다 — 다시 불러오지
-// 않아도 상세 화면이 최신 상태를 보여준다. 모달 닫기 같은 UI 한정 동작은 호출부의
-// mutate(variables, { onSuccess, onError })에 둔다.
+// 않아도 상세 화면이 최신 상태를 보여준다. name/demandName 등은 참여자 관리(전체 사업단
+// 통합 조회) 목록에도 보이는 필드라 그 목록은 무효화한다. 모달 닫기 같은 UI 한정 동작은
+// 호출부의 mutate(variables, { onSuccess, onError })에 둔다.
 export const updateParticipantMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ id, data }: UpdateParticipantVariables) => updateParticipant(id, data),
@@ -176,6 +192,7 @@ export const updateParticipantMutationOptions = (queryClient: QueryClient) =>
         (previous: ParticipantDetail | undefined) =>
           previous ? { ...previous, ...updated } : previous,
       );
+      queryClient.invalidateQueries({ queryKey: participantKeys.all });
     },
   });
 
@@ -223,6 +240,8 @@ export const moveParticipantToDemandSiteMutationOptions = (queryClient: QueryCli
       moveParticipantToDemandSite(participantId, demandSiteId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      // 참여자 관리(전체 사업단 통합 조회) 목록의 수요처명도 바뀐다.
+      queryClient.invalidateQueries({ queryKey: participantKeys.all });
     },
   });
 

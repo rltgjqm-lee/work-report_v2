@@ -37,6 +37,16 @@ export type ParticipantDetail = Participant & {
   organizationName: string | null;
 };
 
+// 참여자 관리 화면(전체 사업단 통합 조회)용 — 그 화면이 실제로 보여주는 필드만 담는다.
+export type ParticipantListItem = Pick<
+  Participant,
+  "id" | "programId" | "name" | "gender" | "demandName"
+> & {
+  programName: string;
+  programType: string | null;
+  organizationName: string;
+};
+
 export type LeaveType = "PAID" | "UNPAID";
 
 export type ParticipantLeave = {

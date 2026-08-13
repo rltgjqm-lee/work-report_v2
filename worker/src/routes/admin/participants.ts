@@ -1,8 +1,8 @@
-import { and, desc, eq, like, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
-import type { Env } from "../../types";
+import { ROLES, type Env } from "../../types";
 
 import {
   activityLogs,
@@ -48,6 +48,48 @@ const loadParticipantWithProgram = async (
 
   return { participant, program };
 };
+
+// 참여자 관리 화면(전체 사업단 통합 조회)용 — 사업단마다 상세를 반복 호출하지 않도록
+// 참여자·사업단·기관을 한 번에 조인해서 내려준다.
+app.get("/", async (c) => {
+  const auth = getAuth(c);
+
+  if (auth.role === ROLES.MANAGER && auth.programIds.length === 0) return c.json([]);
+
+  const db = drizzle(c.env.DB);
+  // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된 참여자는
+  // 있을 수 있어서(GET /programs/:id와 동일한 이유), 수요처명을 조인해 fallback으로 채운다.
+  const baseQuery = db
+    .select({
+      id: participants.id,
+      programId: participants.programId,
+      name: participants.name,
+      gender: participants.gender,
+      demandName: participants.demandName,
+      demandSiteName: demandSites.name,
+      programName: programs.name,
+      programType: programs.programType,
+      organizationName: organizations.name,
+    })
+    .from(participants)
+    .innerJoin(programs, eq(participants.programId, programs.id))
+    .innerJoin(organizations, eq(programs.organizationId, organizations.id))
+    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id));
+
+  const rows =
+    auth.role === ROLES.SUPER_ADMIN
+      ? await baseQuery
+      : auth.role === ROLES.MANAGER
+        ? await baseQuery.where(inArray(programs.id, auth.programIds))
+        : await baseQuery.where(eq(programs.organizationId, auth.organizationId as number));
+
+  return c.json(
+    rows.map(({ demandSiteName, ...row }) => ({
+      ...row,
+      demandName: row.demandName ?? demandSiteName ?? null,
+    })),
+  );
+});
 
 // 참여자 상세 페이지 헤더 정보 — 소속 사업단/조/기관명까지 한 번에 내려준다
 app.get("/:id", async (c) => {

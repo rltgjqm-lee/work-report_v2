@@ -1,25 +1,21 @@
 import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useToast } from "../context/useToast";
 import { usePagination } from "../hooks/usePagination";
 
-import { organizationsQueryOptions } from "../api/admin/organizations";
-import { deleteParticipantMutationOptions } from "../api/admin/participants";
-import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
+import {
+  deleteParticipantMutationOptions,
+  participantsQueryOptions,
+} from "../api/admin/participants";
+import { programsQueryOptions } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
-import type { Participant } from "../types/participants";
+import type { ParticipantListItem } from "../types/participants";
 import { rowActionBtnClass } from "../uiClasses";
-
-type ParticipantRow = Participant & {
-  programName: string;
-  programType: string | null;
-  organizationName: string;
-};
 
 const DEMAND_SITE = {
   ALL: "all",
@@ -44,10 +40,7 @@ const ParticipantsPage = () => {
   const [search, setSearch] = useState("");
 
   const { data: programs = [] } = useQuery(programsQueryOptions);
-  const { data: organizations = [] } = useQuery(organizationsQueryOptions);
-  const programQueries = useQueries({
-    queries: programs.map((program) => programQueryOptions(program.id)),
-  });
+  const { data: participants = [] } = useQuery(participantsQueryOptions);
 
   const filteredPrograms = useMemo(
     () =>
@@ -57,52 +50,31 @@ const ParticipantsPage = () => {
     [programs, programTypeFilter],
   );
 
-  const OrganizationNameById = useMemo(
-    () => new Map(organizations.map((organization) => [organization.id, organization.name])),
-    [organizations],
-  );
-
-  const rows: ParticipantRow[] = useMemo(
-    () =>
-      programQueries.flatMap((programQuery) => {
-        const fullProgram = programQuery.data;
-        if (!fullProgram) return [];
-
-        return fullProgram.participants.map((participant) => ({
-          ...participant,
-          programName: fullProgram.name,
-          programType: fullProgram.programType,
-          organizationName: OrganizationNameById.get(fullProgram.organizationId) ?? "-",
-        }));
-      }),
-    [programQueries, OrganizationNameById],
-  );
-
   // 수요처는 사업단마다 다르므로, 선택한 사업단에 실제로 있는 수요처만 후보로 올린다.
   // 참여자 행이 들고 있는 이름(demandName)을 그대로 쓰므로 별도 조회가 필요 없다.
   const demandSiteNames = useMemo(() => {
-    let scopedRows =
+    let scopedParticipants =
       programTypeFilter === "all"
-        ? rows
-        : rows.filter((participantRow) => participantRow.programType === programTypeFilter);
+        ? participants
+        : participants.filter((participantRow) => participantRow.programType === programTypeFilter);
 
     if (programFilter !== PROGRAM_FILTER.ALL) {
-      scopedRows = scopedRows.filter(
+      scopedParticipants = scopedParticipants.filter(
         (participantRow) => participantRow.programId === Number(programFilter),
       );
     }
 
     return [
       ...new Set(
-        scopedRows
+        scopedParticipants
           .map((participantRow) => participantRow.demandName)
           .filter((demandName): demandName is string => !!demandName),
       ),
     ].sort((a, b) => a.localeCompare(b));
-  }, [rows, programFilter, programTypeFilter]);
+  }, [participants, programFilter, programTypeFilter]);
 
   const filtered = useMemo(() => {
-    let list = rows;
+    let list = participants;
 
     if (programTypeFilter !== "all") {
       list = list.filter((participantRow) => participantRow.programType === programTypeFilter);
@@ -126,14 +98,14 @@ const ParticipantsPage = () => {
       );
     }
     return list;
-  }, [rows, programTypeFilter, programFilter, demandSiteFilter, search]);
+  }, [participants, programTypeFilter, programFilter, demandSiteFilter, search]);
 
   const { page, totalPages, pageItems, setPage } = usePagination(filtered, 15);
 
   const deleteParticipantMutation = useMutation(deleteParticipantMutationOptions(queryClient));
 
   const handleDeleteButtonClick =
-    (row: ParticipantRow) => (event: MouseEvent<HTMLButtonElement>) => {
+    (row: ParticipantListItem) => (event: MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       if (!confirm(`'${row.name}' 님을 삭제하시겠습니까?`)) return;
 
