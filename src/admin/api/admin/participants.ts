@@ -95,6 +95,7 @@ export const addParticipantMutationOptions = (queryClient: QueryClient) =>
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
       queryClient.invalidateQueries({ queryKey: participantKeys.all });
+      queryClient.invalidateQueries({ queryKey: programKeys.participants(variables.programId) });
     },
   });
 
@@ -125,6 +126,7 @@ export const deleteParticipantMutationOptions = (queryClient: QueryClient) =>
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
       // 참여자 관리(전체 사업단 통합 조회) 화면의 목록도 갱신해야 한다.
       queryClient.invalidateQueries({ queryKey: participantKeys.all });
+      queryClient.invalidateQueries({ queryKey: programKeys.participants(variables.programId) });
     },
   });
 
@@ -154,6 +156,7 @@ export const bulkAddParticipantsMutationOptions = (queryClient: QueryClient) =>
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
       queryClient.invalidateQueries({ queryKey: participantKeys.all });
+      queryClient.invalidateQueries({ queryKey: programKeys.participants(variables.programId) });
     },
   });
 
@@ -250,6 +253,8 @@ export const moveParticipantToDemandSiteMutationOptions = (queryClient: QueryCli
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       // 참여자 관리(전체 사업단 통합 조회) 목록의 수요처명도 바뀐다.
       queryClient.invalidateQueries({ queryKey: participantKeys.all });
+      // 근무 관리 화면의 수요처 필터가 이 참여자의 demandSiteId로 걸러내므로 같이 갱신한다.
+      queryClient.invalidateQueries({ queryKey: programKeys.participants(variables.programId) });
     },
   });
 

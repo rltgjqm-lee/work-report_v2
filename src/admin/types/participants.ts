@@ -47,6 +47,10 @@ export type ParticipantListItem = Pick<
   organizationName: string;
 };
 
+// 근무 관리 화면(사업단 단위 근무/교육/휴가 탭)의 수요처 필터·참여자 선택용 — 조인이
+// 필요한 오늘 조 임시배정(todayGroupOverride)만 빼고 참여자 원본 필드를 가볍게 받는다.
+export type ProgramParticipant = Omit<Participant, "todayGroupOverride">;
+
 export type LeaveType = "PAID" | "UNPAID";
 
 export type ParticipantLeave = {

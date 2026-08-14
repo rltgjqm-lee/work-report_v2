@@ -3,7 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
+import {
+  programEditQueryOptions,
+  programParticipantsQueryOptions,
+  programsQueryOptions,
+} from "../../api/admin/programs";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 
 import TabBar from "../../components/bar/TabBar";
@@ -46,11 +50,14 @@ const AttendancePage = () => {
   );
 
   const { data: program } = useQuery({
-    ...programQueryOptions(programId),
+    ...programEditQueryOptions(programId),
     enabled: !!programId,
   });
   const programName = program?.name ?? "";
-  const participants = useMemo(() => program?.participants ?? [], [program]);
+  const { data: participants = [] } = useQuery({
+    ...programParticipantsQueryOptions(programId),
+    enabled: !!programId,
+  });
 
   const { data: demandSites = [] } = useQuery({
     ...demandSitesQueryOptions(programId),
@@ -70,8 +77,7 @@ const AttendancePage = () => {
     );
   }, [participants, selectedDemandSiteId]);
 
-  // 교육 탭에는 걸러낸 참여자 목록을 그대로 넘긴다 — JSX 안에서 만들면 렌더마다
-  // 새 배열이 되어, 나중에 이 prop이 effect 의존성에 들어가는 순간 재요청이 돈다.
+  // 교육 탭에는 걸러낸 참여자 목록을 그대로 넘긴다
   const filteredParticipants = useMemo(
     () =>
       filteredParticipantIds
@@ -88,7 +94,6 @@ const AttendancePage = () => {
 
   const handleProgramFilterChange = (value: string) => {
     setSelectedProgramId(value);
-    // 사업단이 바뀌면 이전 사업단의 수요처 선택은 더 이상 유효하지 않다
     setSelectedDemandSiteId("");
   };
 
@@ -144,8 +149,6 @@ const AttendancePage = () => {
               options={programOptions}
             />
           )}
-          {/* 사업단을 고르기 전에도 자리를 지킨다 — 고를 수 있는 수요처가 없을 뿐이라
-              비활성 상태로 보여준다 (수요처 목록은 사업단에 딸려 있다) */}
           <FilterSelect
             value={selectedDemandSiteId}
             onChange={setSelectedDemandSiteId}

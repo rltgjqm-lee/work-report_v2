@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
+import type { ProgramParticipant } from "../../types/participants";
 import type {
   Program,
   ProgramFilterOption,
@@ -31,6 +32,7 @@ export const programKeys = {
     [...programKeys.all, "organization-options", organizationId ?? "all"] as const,
   detail: (id: number) => [...programKeys.all, id] as const,
   editDetail: (id: number) => [...programKeys.all, id, "edit"] as const,
+  participants: (id: number) => [...programKeys.all, id, "participants"] as const,
 };
 
 // 유형 필터가 있는 드롭다운용 — 여러 화면이 같이 쓰므로 이름/유형까지만 받는다.
@@ -78,6 +80,17 @@ export const programEditQueryOptions = (id: number) =>
   queryOptions({
     queryKey: programKeys.editDetail(id),
     queryFn: () => getProgramFields(id),
+  });
+
+// 근무 관리 화면(근무/교육/휴가 탭)의 수요처 필터·참여자 선택용 — GET /:id처럼 오늘 조
+// 임시배정을 조인하지 않는 가벼운 참여자 목록만 받는다.
+const getProgramParticipants = (id: number) =>
+  request<ProgramParticipant[]>(`/api/programs/${id}/participants`);
+
+export const programParticipantsQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: programKeys.participants(id),
+    queryFn: () => getProgramParticipants(id),
   });
 
 const createProgram = (data: Partial<Omit<Program, "id" | "createdAt">>) =>

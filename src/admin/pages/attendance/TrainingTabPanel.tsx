@@ -16,7 +16,7 @@ import {
   type TrainingPayMode,
 } from "../../api/admin/trainings";
 import { useToast } from "../../context/useToast";
-import type { Participant } from "../../types/participants";
+import type { ProgramParticipant } from "../../types/participants";
 
 import SubTabBar from "../../components/bar/SubTabBar";
 import Button from "../../components/Button";
@@ -89,7 +89,7 @@ const emptyLogForm = {
 
 interface TrainingTabPanelProps {
   programId: number;
-  participants: Participant[];
+  participants: ProgramParticipant[];
   participantIds: Set<number> | null;
 }
 
