@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
 
 import {
@@ -41,9 +41,9 @@ const PROGRAM_DETAIL_TABS: [Tab, string][] = [
  *
  */
 const ProgramDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const programId = Number(id);
+  const programId = Number(searchParams.get("id"));
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -135,7 +135,7 @@ const ProgramDetailPage = () => {
           <select
             className="border border-admin-border px-3 py-2 text-[13px] rounded-[2px] bg-white"
             value={programId}
-            onChange={(event) => navigate(`/admin/programs/${event.target.value}`)}
+            onChange={(event) => navigate(`/admin/program?id=${event.target.value}`)}
           >
             {allPrograms.map((program) => (
               <option key={program.id} value={program.id}>
@@ -145,12 +145,12 @@ const ProgramDetailPage = () => {
           </select>
           <Button
             variant="ghost"
-            onClick={() => navigate(`/admin/programs/${programId}/attendance`)}
+            onClick={() => navigate(`/admin/attendance?programId=${programId}`)}
           >
             근무 관리
           </Button>
 
-          <Button variant="ghost" onClick={() => navigate(`/admin/programs/${programId}/escapes`)}>
+          <Button variant="ghost" onClick={() => navigate(`/admin/escapes?programId=${programId}`)}>
             안전 관제
           </Button>
 

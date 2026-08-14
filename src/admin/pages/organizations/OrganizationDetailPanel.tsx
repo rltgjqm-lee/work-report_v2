@@ -69,7 +69,7 @@ const OrganizationDetailPanel = ({
               <div key={program.id} className="flex flex-col gap-1">
                 <a
                   className="text-[13px] font-semibold text-text-strong cursor-pointer hover:text-admin-brand"
-                  onClick={() => navigate(`/admin/programs/${program.id}`)}
+                  onClick={() => navigate(`/admin/program?id=${program.id}`)}
                 >
                   {program.name}
                 </a>

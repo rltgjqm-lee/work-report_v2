@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import L from "leaflet";
@@ -56,12 +56,13 @@ const getMarkerColor = (worker: LiveWorker): string => {
  *
  */
 const EscapesPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const preselectedProgramId = id ? Number(id) : null;
+  const programIdParam = searchParams.get("programId");
+  const preselectedProgramId = programIdParam ? Number(programIdParam) : null;
 
   const [programTypeFilter, setProgramTypeFilter] = useState("all");
-  const [selectedProgramId, setSelectedProgramId] = useState<string>(id ?? "");
+  const [selectedProgramId, setSelectedProgramId] = useState<string>(programIdParam ?? "");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [search, setSearch] = useState("");
   const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
@@ -403,7 +404,7 @@ const EscapesPage = () => {
             <div className="text-xs text-text-subtle mb-1.5">
               사업단 관리 /{" "}
               <a
-                onClick={() => navigate(`/admin/programs/${preselectedProgramId}`)}
+                onClick={() => navigate(`/admin/program?id=${preselectedProgramId}`)}
                 className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
               >
                 {programName || "사업단 상세"}

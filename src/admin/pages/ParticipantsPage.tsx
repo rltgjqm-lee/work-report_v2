@@ -229,7 +229,7 @@ const ParticipantsPage = () => {
                 <tr
                   key={row.id}
                   className="hover:bg-admin-row-hover cursor-pointer"
-                  onClick={() => navigate(`/admin/participants/${row.id}`)}
+                  onClick={() => navigate(`/admin/participant?id=${row.id}`)}
                 >
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.name}

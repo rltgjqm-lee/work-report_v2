@@ -37,13 +37,11 @@ const AdminApp = () => (
               <Route index element={<Navigate to="/admin/organizations" replace />} />
               <Route path="organizations" element={<OrganizationsPage />} />
               <Route path="programs" element={<ProgramsPage />} />
-              <Route path="programs/:id" element={<ProgramDetailPage />} />
-              <Route path="programs/:id/attendance" element={<AttendancePage />} />
+              <Route path="program" element={<ProgramDetailPage />} />
               <Route path="attendance" element={<AttendancePage />} />
-              <Route path="programs/:id/escapes" element={<EscapesPage />} />
               <Route path="escapes" element={<EscapesPage />} />
               <Route path="participants" element={<ParticipantsPage />} />
-              <Route path="participants/:id" element={<ParticipantDetailPage />} />
+              <Route path="participant" element={<ParticipantDetailPage />} />
               <Route path="safety-alerts" element={<DisasterMessagesPage />} />
               <Route path="disaster-push-logs" element={<DisasterPushLogsPage />} />
               <Route path="admins" element={<AdminsPage />} />

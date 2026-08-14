@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { getLocalYearMonth } from "../../../utils/timeFormat";
@@ -47,9 +47,9 @@ const emptyStats: AttendanceStats = {
  *
  */
 const ParticipantDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const participantId = Number(id);
+  const participantId = Number(searchParams.get("id"));
 
   const [month, setMonth] = useState(getLocalYearMonth());
   const [payrollModalOpen, setPayrollModalOpen] = useState(false);
