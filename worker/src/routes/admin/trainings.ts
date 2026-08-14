@@ -157,9 +157,13 @@ app.get("/logs", async (c) => {
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const trainingId = c.req.query("trainingId");
+  const demandSiteId = c.req.query("demandSiteId");
   const conditions = [eq(participants.programId, programId)];
   if (trainingId) {
     conditions.push(eq(participantTrainingLogs.trainingId, Number(trainingId)));
+  }
+  if (demandSiteId) {
+    conditions.push(eq(participants.demandSiteId, Number(demandSiteId)));
   }
 
   const rows = await db
@@ -330,11 +334,25 @@ app.get("/summary", async (c) => {
   const program = await loadAccessibleProgram(db, auth, programId);
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
+  const demandSiteId = c.req.query("demandSiteId");
+  const activeParticipantConditions = [
+    eq(participants.programId, programId),
+    eq(participants.status, "ACTIVE"),
+  ];
+  const completedLogConditions = [
+    eq(participants.programId, programId),
+    eq(participantTrainingLogs.status, "COMPLETED"),
+  ];
+  if (demandSiteId) {
+    activeParticipantConditions.push(eq(participants.demandSiteId, Number(demandSiteId)));
+    completedLogConditions.push(eq(participants.demandSiteId, Number(demandSiteId)));
+  }
+
   const [activeParticipants, requiredTrainings, logs] = await Promise.all([
     db
       .select()
       .from(participants)
-      .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE"))),
+      .where(and(...activeParticipantConditions)),
     db
       .select()
       .from(projectTrainings)
@@ -352,9 +370,7 @@ app.get("/summary", async (c) => {
       })
       .from(participantTrainingLogs)
       .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
-      .where(
-        and(eq(participants.programId, programId), eq(participantTrainingLogs.status, "COMPLETED")),
-      ),
+      .where(and(...completedLogConditions)),
   ]);
 
   const completedKeySet = new Set(logs.map((log) => `${log.participantId}:${log.trainingId}`));

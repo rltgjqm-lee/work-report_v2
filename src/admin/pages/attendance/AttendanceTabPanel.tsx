@@ -52,14 +52,14 @@ const emptyStats: AttendanceStats = {
 
 interface AttendanceTabPanelProps {
   programId: number;
-  participantIds: Set<number> | null;
+  demandSiteId: number | null;
 }
 
 /**
  * 관리자 페이지 > 근무 관리 페이지의 "근무" 탭 내용입니다.
  *
  */
-const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelProps) => {
+const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps) => {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [month, setMonth] = useState(getLocalYearMonth());
@@ -81,7 +81,9 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
     reason: "",
   });
 
-  const { data: monthlyAttendance } = useQuery(monthlyAttendanceQueryOptions(programId, month));
+  const { data: monthlyAttendance } = useQuery(
+    monthlyAttendanceQueryOptions(programId, month, demandSiteId),
+  );
   const logs = monthlyAttendance?.logs ?? [];
   const stats = monthlyAttendance?.stats ?? emptyStats;
 
@@ -92,19 +94,17 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
 
   const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
-  // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체)
-  const scopedLogs = participantIds
-    ? logs.filter((row) => participantIds.has(row.log.participantId))
-    : logs;
-
+  // 수요처 필터는 서버가 이미 반영해서 내려준다(demandSiteId 쿼리 파라미터) — 여기선
+  // 날짜(일별) 필터만 클라이언트에서 추가로 좁힌다.
   const filteredLogs =
     dayFilter === "all"
-      ? scopedLogs
-      : scopedLogs.filter((row) => row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`);
+      ? logs
+      : logs.filter((row) => row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`);
 
-  // 서버가 준 stats는 사업단 전체 기준이라, 수요처나 날짜로 걸렀으면 직접 다시 센다
+  // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 날짜로 더 좁혔을
+  // 때만 직접 다시 센다.
   const dayStatsTotals =
-    dayFilter === "all" && !participantIds
+    dayFilter === "all"
       ? null
       : filteredLogs.reduce(
           (acc, row) => ({

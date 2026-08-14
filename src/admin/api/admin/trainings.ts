@@ -51,9 +51,13 @@ export const trainingsKeys = {
   all: ["trainings"] as const,
   definitions: (programId: number) => [...trainingsKeys.all, "definitions", programId] as const,
   logs: (programId: number) => [...trainingsKeys.all, "logs", programId] as const,
-  logsFiltered: (programId: number, trainingId: number | undefined) =>
-    [...trainingsKeys.logs(programId), trainingId ?? "all"] as const,
+  // logs(programId)를 prefix로 두므로, 수요처/교육 필터 없이 그 키로 무효화하면 이 아래
+  // 모든 trainingId·demandSiteId 조합이 다 같이 무효화된다.
+  logsFiltered: (programId: number, trainingId: number | undefined, demandSiteId: number | null) =>
+    [...trainingsKeys.logs(programId), trainingId ?? "all", demandSiteId ?? "all"] as const,
   compliance: (programId: number) => [...trainingsKeys.all, "compliance", programId] as const,
+  complianceFiltered: (programId: number, demandSiteId: number | null) =>
+    [...trainingsKeys.compliance(programId), demandSiteId ?? "all"] as const,
 };
 
 const listTrainings = (programId: number) =>
@@ -130,19 +134,27 @@ export const updateTrainingMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-const listTrainingLogs = (programId: number, trainingId?: number) =>
-  request<TrainingLogRow[]>(
-    `/api/trainings/logs?programId=${programId}${trainingId ? `&trainingId=${trainingId}` : ""}`,
-  );
+// demandSiteId를 주면 그 수요처 소속 참여자의 이수 기록만 DB에서 걸러서 받는다.
+const listTrainingLogs = (
+  programId: number,
+  trainingId: number | undefined,
+  demandSiteId: number | null,
+) => {
+  const params = new URLSearchParams({ programId: String(programId) });
+  if (trainingId) params.set("trainingId", String(trainingId));
+  if (demandSiteId) params.set("demandSiteId", String(demandSiteId));
+  return request<TrainingLogRow[]>(`/api/trainings/logs?${params.toString()}`);
+};
 
 export const trainingLogsQueryOptions = (
   programId: number,
   trainingId: number | undefined,
+  demandSiteId: number | null,
   enabled: boolean,
 ) =>
   queryOptions({
-    queryKey: trainingsKeys.logsFiltered(programId, trainingId),
-    queryFn: () => listTrainingLogs(programId, trainingId),
+    queryKey: trainingsKeys.logsFiltered(programId, trainingId, demandSiteId),
+    queryFn: () => listTrainingLogs(programId, trainingId, demandSiteId),
     enabled,
   });
 
@@ -200,12 +212,20 @@ export const cancelTrainingLogMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-const getTrainingCompliance = (programId: number) =>
-  request<TrainingComplianceRow[]>(`/api/trainings/summary?programId=${programId}`);
+// demandSiteId를 주면 그 수요처 소속 참여자만 대상으로 미이수자 현황을 받는다.
+const getTrainingCompliance = (programId: number, demandSiteId: number | null) => {
+  const params = new URLSearchParams({ programId: String(programId) });
+  if (demandSiteId) params.set("demandSiteId", String(demandSiteId));
+  return request<TrainingComplianceRow[]>(`/api/trainings/summary?${params.toString()}`);
+};
 
-export const trainingComplianceQueryOptions = (programId: number, enabled: boolean) =>
+export const trainingComplianceQueryOptions = (
+  programId: number,
+  demandSiteId: number | null,
+  enabled: boolean,
+) =>
   queryOptions({
-    queryKey: trainingsKeys.compliance(programId),
-    queryFn: () => getTrainingCompliance(programId),
+    queryKey: trainingsKeys.complianceFiltered(programId, demandSiteId),
+    queryFn: () => getTrainingCompliance(programId, demandSiteId),
     enabled,
   });

@@ -33,6 +33,8 @@ export const programKeys = {
   detail: (id: number) => [...programKeys.all, id] as const,
   editDetail: (id: number) => [...programKeys.all, id, "edit"] as const,
   participants: (id: number) => [...programKeys.all, id, "participants"] as const,
+  participantsByDemandSite: (id: number, demandSiteId: number | null) =>
+    [...programKeys.participants(id), demandSiteId ?? "all"] as const,
 };
 
 // 유형 필터가 있는 드롭다운용 — 여러 화면이 같이 쓰므로 이름/유형까지만 받는다.
@@ -81,15 +83,27 @@ export const programEditQueryOptions = (id: number) =>
     queryFn: () => getProgramFields(id),
   });
 
-// 근무 관리 화면(근무/교육/휴가 탭)의 수요처 필터·참여자 선택용 — GET /:id처럼 오늘 조
-// 임시배정을 조인하지 않는 가벼운 참여자 목록만 받는다.
-const getProgramParticipants = (id: number) =>
-  request<ProgramParticipant[]>(`/api/programs/${id}/participants`);
+// 근무 관리 화면 교육 탭의 "이수 등록" 모달 참여자 선택용 — GET /:id처럼 오늘 조
+// 임시배정을 조인하지 않는 가벼운 참여자 목록만 받는다. demandSiteId를 주면 그
+// 수요처 소속 참여자만 DB에서 걸러서 받는다.
+const getProgramParticipants = (id: number, demandSiteId: number | null) => {
+  const params = new URLSearchParams();
+  if (demandSiteId) params.set("demandSiteId", String(demandSiteId));
+  const query = params.toString();
+  return request<ProgramParticipant[]>(
+    `/api/programs/${id}/participants${query ? `?${query}` : ""}`,
+  );
+};
 
-export const programParticipantsQueryOptions = (id: number) =>
+export const programParticipantsQueryOptions = (
+  id: number,
+  demandSiteId: number | null,
+  enabled: boolean,
+) =>
   queryOptions({
-    queryKey: programKeys.participants(id),
-    queryFn: () => getProgramParticipants(id),
+    queryKey: programKeys.participantsByDemandSite(id, demandSiteId),
+    queryFn: () => getProgramParticipants(id, demandSiteId),
+    enabled,
   });
 
 const createProgram = (data: Partial<Omit<Program, "id" | "createdAt">>) =>

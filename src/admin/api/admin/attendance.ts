@@ -24,15 +24,28 @@ export type MonthlyAttendance = {
 export const attendanceKeys = {
   all: ["attendance"] as const,
   monthly: (programId: number, month: string) => [...attendanceKeys.all, programId, month] as const,
+  // monthly(programId, month)를 prefix로 두므로, 수요처 필터 없이 그 키로 무효화하면
+  // 이 아래 모든 demandSiteId 변형이 다 같이 무효화된다.
+  monthlyByDemandSite: (programId: number, month: string, demandSiteId: number | null) =>
+    [...attendanceKeys.monthly(programId, month), demandSiteId ?? "all"] as const,
 };
 
-const getMonthlyAttendance = (programId: number, month: string) =>
-  request<MonthlyAttendance>(`/api/programs/${programId}/attendance?month=${month}`);
+// demandSiteId를 주면 그 수요처 소속 참여자의 근무 기록만 DB에서 걸러서 받는다 —
+// 참여자 목록을 따로 받아 브라우저에서 다시 조인할 필요가 없다.
+const getMonthlyAttendance = (programId: number, month: string, demandSiteId: number | null) => {
+  const params = new URLSearchParams({ month });
+  if (demandSiteId) params.set("demandSiteId", String(demandSiteId));
+  return request<MonthlyAttendance>(`/api/programs/${programId}/attendance?${params.toString()}`);
+};
 
-export const monthlyAttendanceQueryOptions = (programId: number, month: string) =>
+export const monthlyAttendanceQueryOptions = (
+  programId: number,
+  month: string,
+  demandSiteId: number | null = null,
+) =>
   queryOptions({
-    queryKey: attendanceKeys.monthly(programId, month),
-    queryFn: () => getMonthlyAttendance(programId, month),
+    queryKey: attendanceKeys.monthlyByDemandSite(programId, month, demandSiteId),
+    queryFn: () => getMonthlyAttendance(programId, month, demandSiteId),
   });
 
 export interface CorrectAttendanceVariables {

@@ -2,6 +2,7 @@ import { useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalToday } from "../../../utils/timeFormat";
+import { programParticipantsQueryOptions } from "../../api/admin/programs";
 import {
   cancelTrainingLogMutationOptions,
   createTrainingLogMutationOptions,
@@ -16,7 +17,6 @@ import {
   type TrainingPayMode,
 } from "../../api/admin/trainings";
 import { useToast } from "../../context/useToast";
-import type { ProgramParticipant } from "../../types/participants";
 
 import SubTabBar from "../../components/bar/SubTabBar";
 import Button from "../../components/Button";
@@ -89,15 +89,14 @@ const emptyLogForm = {
 
 interface TrainingTabPanelProps {
   programId: number;
-  participants: ProgramParticipant[];
-  participantIds: Set<number> | null;
+  demandSiteId: number | null;
 }
 
 /**
  * 관리자 페이지 > 근무 관리 페이지의 "교육" 탭 내용입니다.
  * 교육 정의/이수 현황/필수교육 현황 하위 탭 3개.
  */
-const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingTabPanelProps) => {
+const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) => {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [subTab, setSubTab] = useState<SubTab>("definitions");
@@ -114,15 +113,22 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
 
   // 교육 목록은 "이수 현황" 탭의 필터/모달과 "필수교육 현황" 탭에서도 참조하니 탭과 무관하게 받아둔다.
   const { data: trainings = [] } = useQuery(trainingsQueryOptions(programId));
+  // 수요처 필터는 서버가 이미 반영해서 내려준다(demandSiteId 쿼리 파라미터).
   const { data: logs = [] } = useQuery(
     trainingLogsQueryOptions(
       programId,
       logTrainingFilter === "all" ? undefined : Number(logTrainingFilter),
+      demandSiteId,
       subTab === "logs",
     ),
   );
   const { data: compliance = [] } = useQuery(
-    trainingComplianceQueryOptions(programId, subTab === "compliance"),
+    trainingComplianceQueryOptions(programId, demandSiteId, subTab === "compliance"),
+  );
+
+  // 이수 등록 모달에서 고를 참여자 목록 — 수요처를 선택했으면 그 소속 참여자만 받는다.
+  const { data: participants = [] } = useQuery(
+    programParticipantsQueryOptions(programId, demandSiteId, logModalOpen),
   );
 
   // 💡 이수등록 모달에서 선택한 교육을 이미 이수(COMPLETED)한 참여자는 체크박스를
@@ -133,6 +139,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     trainingLogsQueryOptions(
       programId,
       selectedLogTrainingId,
+      demandSiteId,
       logModalOpen && selectedLogTrainingId !== undefined,
     ),
   );
@@ -312,16 +319,8 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
     );
   };
 
-  // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체)
-  const filteredLogs = logs.filter(
-    (row) =>
-      row.participantName.includes(logSearch) &&
-      (!participantIds || participantIds.has(row.log.participantId)),
-  );
-
-  const filteredCompliance = participantIds
-    ? compliance.filter((row) => participantIds.has(row.participantId))
-    : compliance;
+  // 수요처 필터는 서버가 이미 반영해서 내려준다 — 여기선 검색어만 클라이언트에서 좁힌다.
+  const filteredLogs = logs.filter((row) => row.participantName.includes(logSearch));
 
   const trainingFilterOptions = [
     { value: "all", label: "전체 교육" },
@@ -513,7 +512,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                 </tr>
               </thead>
               <tbody>
-                {filteredCompliance.map((row) => (
+                {compliance.map((row) => (
                   <tr key={row.participantId} className="hover:bg-admin-row-hover">
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       {row.participantName}
@@ -523,7 +522,7 @@ const TrainingTabPanel = ({ programId, participants, participantIds }: TrainingT
                     </td>
                   </tr>
                 ))}
-                {filteredCompliance.length === 0 && (
+                {compliance.length === 0 && (
                   <tr>
                     <td
                       colSpan={2}

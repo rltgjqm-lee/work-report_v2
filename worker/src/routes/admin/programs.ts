@@ -487,6 +487,7 @@ app.get("/:id/participants", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
+  const demandSiteIdParam = c.req.query("demandSiteId");
 
   const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
@@ -495,7 +496,15 @@ app.get("/:id/participants", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const rows = await db.select().from(participants).where(eq(participants.programId, programId));
+  const conditions = [eq(participants.programId, programId)];
+  if (demandSiteIdParam) {
+    conditions.push(eq(participants.demandSiteId, Number(demandSiteIdParam)));
+  }
+
+  const rows = await db
+    .select()
+    .from(participants)
+    .where(and(...conditions));
 
   return c.json(rows);
 });
@@ -810,6 +819,7 @@ app.get("/:id/attendance", async (c) => {
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
   const month = c.req.query("month"); // "YYYY-MM"
+  const demandSiteIdParam = c.req.query("demandSiteId");
 
   if (!month) return c.json({ error: "조회할 월을 지정해주세요." }, 400);
 
@@ -818,6 +828,16 @@ app.get("/:id/attendance", async (c) => {
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  // 수요처 필터가 있으면 그 수요처 소속 참여자의 근무 기록만 DB에서 바로 걸러서 내려준다
+  // (참여자 목록을 따로 받아 브라우저에서 다시 조인할 필요가 없게).
+  const conditions = [
+    eq(attendanceLogs.programId, programId),
+    like(attendanceLogs.workDate, `${month}%`),
+  ];
+  if (demandSiteIdParam) {
+    conditions.push(eq(participants.demandSiteId, Number(demandSiteIdParam)));
   }
 
   const rows = await db
@@ -845,9 +865,7 @@ app.get("/:id/attendance", async (c) => {
         eq(activityLogs.actDate, attendanceLogs.workDate),
       ),
     )
-    .where(
-      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
-    );
+    .where(and(...conditions));
 
   // 참여자가 같은 날짜에 활동일지를 중복 제출하면(오프라인 재동기화 등) 위 조인이 근무
   // 기록 하나를 여러 번 복제해서 내려보낸다 — 근무 기록 id당 가장 최근 활동일지 하나만 남긴다.
@@ -916,11 +934,15 @@ app.get("/:id/attendance", async (c) => {
   return c.json({ logs, stats });
 });
 
+// 연도 전체 휴가 행을 한 번만 조회해서 원본 목록과 월별 집계를 같이 내려준다 — 월별
+// 집계가 어차피 그 해 전체를 훑어야 나오는 값이라, 월 목록을 따로 또 조회할 필요가
+// 없다. 프론트는 월을 바꿔도(같은 연도 안이면) 이 응답을 다시 걸러 쓰기만 하면 된다.
 app.get("/:id/leaves", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
-  const month = c.req.query("month"); // "YYYY-MM"
+  const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
+  const demandSiteIdParam = c.req.query("demandSiteId");
 
   const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
@@ -929,8 +951,13 @@ app.get("/:id/leaves", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const conditions = [eq(participants.programId, programId)];
-  if (month) conditions.push(like(participantLeaves.leaveStart, `${month}%`));
+  const conditions = [
+    eq(participants.programId, programId),
+    like(participantLeaves.leaveStart, `${year}%`),
+  ];
+  if (demandSiteIdParam) {
+    conditions.push(eq(participants.demandSiteId, Number(demandSiteIdParam)));
+  }
 
   const rows = await db
     .select({
@@ -954,33 +981,9 @@ app.get("/:id/leaves", async (c) => {
     .where(and(...conditions))
     .orderBy(sql`${participantLeaves.leaveStart} DESC`);
 
-  return c.json(rows);
-});
-
-app.get("/:id/leaves/stats", async (c) => {
-  const auth = getAuth(c);
-  const db = drizzle(c.env.DB);
-  const programId = Number(c.req.param("id"));
-  const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
-
-  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
-  const program = programRows[0];
-  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program)) {
-    return c.json({ error: "권한이 없습니다." }, 403);
-  }
-
-  const leaveRows = await db
-    .select({ leave: participantLeaves })
-    .from(participantLeaves)
-    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
-    .where(
-      and(eq(participants.programId, programId), like(participantLeaves.leaveStart, `${year}%`)),
-    );
-
   const monthly = Array.from({ length: 12 }, (_, index) => {
     const month = String(index + 1).padStart(2, "0");
-    const monthRows = leaveRows.filter((row) => row.leave.leaveStart.slice(5, 7) === month);
+    const monthRows = rows.filter((row) => row.leave.leaveStart.slice(5, 7) === month);
     return {
       month,
       totalLeaves: monthRows.length,
@@ -990,20 +993,7 @@ app.get("/:id/leaves/stats", async (c) => {
     };
   });
 
-  const annualRows = await db
-    .select({ annual: participantAnnualLeave })
-    .from(participantAnnualLeave)
-    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
-    .where(and(eq(participants.programId, programId), eq(participantAnnualLeave.year, year)));
-
-  const annual = {
-    participants: annualRows.length,
-    totalAnnual: annualRows.reduce((sum, row) => sum + row.annual.totalDays, 0),
-    usedAnnual: annualRows.reduce((sum, row) => sum + row.annual.usedDays, 0),
-    remainingAnnual: annualRows.reduce((sum, row) => sum + row.annual.remainingDays, 0),
-  };
-
-  return c.json({ monthly, annual });
+  return c.json({ leaves: rows, monthly });
 });
 
 app.get("/:id/escapes", async (c) => {

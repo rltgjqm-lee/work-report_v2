@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import { programParticipantsQueryOptions, programsQueryOptions } from "../../api/admin/programs";
+import { programsQueryOptions } from "../../api/admin/programs";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 
 import TabBar from "../../components/bar/TabBar";
@@ -46,11 +46,6 @@ const AttendancePage = () => {
     [programs, programTypeFilter],
   );
 
-  const { data: participants = [] } = useQuery({
-    ...programParticipantsQueryOptions(programId),
-    enabled: !!programId,
-  });
-
   const { data: demandSitesData } = useQuery({
     ...demandSitesQueryOptions(programId),
     enabled: !!programId,
@@ -58,27 +53,7 @@ const AttendancePage = () => {
   const demandSites = demandSitesData?.demandSites ?? [];
   const programName = demandSitesData?.programName ?? "";
 
-  // 근무/교육/휴가 데이터에는 수요처 정보가 없고 참여자 id만 있다 —
-  // 선택한 수요처 소속 참여자 id 집합을 만들어 각 탭에서 그걸로 걸러낸다.
-  // 선택 안 했으면 null을 내려서 필터를 끈다.
-  const filteredParticipantIds = useMemo(() => {
-    if (!selectedDemandSiteId) return null;
-
-    return new Set(
-      participants
-        .filter((participant) => String(participant.demandSiteId) === selectedDemandSiteId)
-        .map((participant) => participant.id),
-    );
-  }, [participants, selectedDemandSiteId]);
-
-  // 교육 탭에는 걸러낸 참여자 목록을 그대로 넘긴다
-  const filteredParticipants = useMemo(
-    () =>
-      filteredParticipantIds
-        ? participants.filter((participant) => filteredParticipantIds.has(participant.id))
-        : participants,
-    [participants, filteredParticipantIds],
-  );
+  const demandSiteId = selectedDemandSiteId ? Number(selectedDemandSiteId) : null;
 
   const handleProgramTypeFilterChange = (value: string) => {
     setProgramTypeFilter(value);
@@ -169,18 +144,12 @@ const AttendancePage = () => {
       ) : (
         <>
           {tab === "attendance" && (
-            <AttendanceTabPanel programId={programId} participantIds={filteredParticipantIds} />
+            <AttendanceTabPanel programId={programId} demandSiteId={demandSiteId} />
           )}
           {tab === "training" && (
-            <TrainingTabPanel
-              programId={programId}
-              participants={filteredParticipants}
-              participantIds={filteredParticipantIds}
-            />
+            <TrainingTabPanel programId={programId} demandSiteId={demandSiteId} />
           )}
-          {tab === "leave" && (
-            <LeaveTabPanel programId={programId} participantIds={filteredParticipantIds} />
-          )}
+          {tab === "leave" && <LeaveTabPanel programId={programId} demandSiteId={demandSiteId} />}
         </>
       )}
     </div>

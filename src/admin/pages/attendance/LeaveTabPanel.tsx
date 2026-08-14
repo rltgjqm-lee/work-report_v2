@@ -2,11 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import {
-  leavesQueryOptions,
-  leaveStatsQueryOptions,
-  type LeaveStats,
-} from "../../api/admin/leaves";
+import { leavesQueryOptions } from "../../api/admin/leaves";
 
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
 import MonthPicker from "../../components/MonthPicker";
@@ -21,42 +17,26 @@ const LEAVE_TYPE_VARIANT: Record<string, StatusChipVariant> = {
   UNPAID: "pending",
 };
 
-const emptyStats: LeaveStats = {
-  monthly: [],
-  annual: {
-    participants: 0,
-    totalAnnual: 0,
-    usedAnnual: 0,
-    remainingAnnual: 0,
-  },
-};
-
 interface LeaveTabPanelProps {
   programId: number;
-  participantIds: Set<number> | null;
+  demandSiteId: number | null;
 }
 
 /**
  * 관리자 페이지 > 근무 관리 페이지의 "휴가" 탭 내용입니다.
  *
  */
-const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
+const LeaveTabPanel = ({ programId, demandSiteId }: LeaveTabPanelProps) => {
   const [month, setMonth] = useState(getLocalYearMonth());
 
-  const { data: leaves = [] } = useQuery(leavesQueryOptions(programId, month));
-  const { data: stats = emptyStats } = useQuery(
-    leaveStatsQueryOptions(programId, month.slice(0, 4)),
-  );
-
-  // 수요처 필터는 상위 페이지가 참여자 id 집합으로 내려준다 (null이면 전체).
-  // 상단 통계는 사업단/연 단위 집계라 필터와 무관하게 그대로 둔다.
-  const filteredLeaves = participantIds
-    ? leaves.filter((row) => participantIds.has(row.leave.participantId))
-    : leaves;
+  // 그 해 전체 휴가 목록 + 월별 집계를 한 번에 받는다(수요처별)
+  const { data } = useQuery(leavesQueryOptions(programId, month.slice(0, 4), demandSiteId));
+  const monthly = data?.monthly ?? [];
+  const leaves = (data?.leaves ?? []).filter((row) => row.leave.leaveStart.startsWith(month));
 
   // month는 "2026-07" 형식이라, slice(5, 7)로 "-" 뒤 월 부분("07")만 꺼내서
-  // stats.monthly[].month("01"~"12")와 비교한다
-  const monthStat = stats.monthly.find((row) => row.month === month.slice(5, 7));
+  // monthly[].month("01"~"12")와 비교한다
+  const monthStat = monthly.find((row) => row.month === month.slice(5, 7));
 
   return (
     <div>
@@ -119,7 +99,7 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
               </tr>
             </thead>
             <tbody>
-              {filteredLeaves.map((row) => (
+              {leaves.map((row) => (
                 <tr key={row.leave.id} className="hover:bg-admin-row-hover">
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.participantName}
@@ -151,7 +131,7 @@ const LeaveTabPanel = ({ programId, participantIds }: LeaveTabPanelProps) => {
                   </td>
                 </tr>
               ))}
-              {filteredLeaves.length === 0 && (
+              {leaves.length === 0 && (
                 <tr>
                   <td
                     colSpan={8}
