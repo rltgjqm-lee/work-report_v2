@@ -8,10 +8,8 @@ import {
   monthlyAttendanceQueryOptions,
   type AttendanceRow,
 } from "../../api/admin/attendance";
-import { allProgramEscapesQueryOptions } from "../../api/admin/escapes";
 import { useToast } from "../../context/useToast";
 import type { AttendanceStats } from "../../types/attendance";
-import type { EscapeRow } from "../../types/escapes";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import Button from "../../components/Button";
@@ -86,10 +84,6 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
   const { data: monthlyAttendance } = useQuery(monthlyAttendanceQueryOptions(programId, month));
   const logs = monthlyAttendance?.logs ?? [];
   const stats = monthlyAttendance?.stats ?? emptyStats;
-
-  // 위치 열 옆에 안전관제(EscapesPage)에서 이미 처리한 이탈 상태/메모를 그대로 보여준다 —
-  // 여기서 별도로 확인 처리를 하지는 않는다(처리는 안전관제에서만).
-  const { data: escapes = [] } = useQuery(allProgramEscapesQueryOptions(programId));
 
   const correctAttendanceMutation = useMutation(correctAttendanceMutationOptions(queryClient));
   const invalidateAttendanceMutation = useMutation(
@@ -186,22 +180,6 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
           alert(error instanceof Error ? error.message : "무효화에 실패했습니다."),
       },
     );
-  };
-
-  // 같은 참여자가 같은 날 이탈이 여러 건이면, 아직 처리 안 된 게 있으면 그게 더
-  // 급하니 그것부터 보여주고, 전부 처리됐으면 가장 최근 처리 건의 메모를 보여준다.
-  const findEscapeForRow = (row: AttendanceRow): EscapeRow | null => {
-    const sameDayEscapes = escapes.filter(
-      (escapeRow) =>
-        escapeRow.escape.participantId === row.log.participantId &&
-        escapeRow.escape.detectedAt.slice(0, 10) === row.log.workDate,
-    );
-    if (sameDayEscapes.length === 0) return null;
-
-    const openEscape = sameDayEscapes.find((escapeRow) => escapeRow.escape.status === "OPEN");
-    if (openEscape) return openEscape;
-
-    return sameDayEscapes.sort((a, b) => b.escape.detectedAt.localeCompare(a.escape.detectedAt))[0];
   };
 
   const dayFilterOptions = [
@@ -317,25 +295,22 @@ const AttendanceTabPanel = ({ programId, participantIds }: AttendanceTabPanelPro
                     <AttendanceLocationCell log={row.log} />
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {(() => {
-                      const escapeRow = findEscapeForRow(row);
-                      if (!escapeRow) return "-";
-
-                      return (
-                        <div className="flex flex-col gap-1 items-start">
-                          {escapeRow.escape.status === "OPEN" ? (
-                            <StatusChip variant="bad">이탈중</StatusChip>
-                          ) : (
-                            <StatusChip variant="ok">처리완료</StatusChip>
-                          )}
-                          {escapeRow.escape.memo && (
-                            <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
-                              {escapeRow.escape.memo}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    {row.escapeStatus ? (
+                      <div className="flex flex-col gap-1 items-start">
+                        {row.escapeStatus === "OPEN" ? (
+                          <StatusChip variant="bad">이탈중</StatusChip>
+                        ) : (
+                          <StatusChip variant="ok">처리완료</StatusChip>
+                        )}
+                        {row.escapeMemo && (
+                          <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
+                            {row.escapeMemo}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      "-"
+                    )}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.totalMinutes ?? "-"}

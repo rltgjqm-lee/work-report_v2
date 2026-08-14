@@ -25,6 +25,7 @@ import {
   pushSubscriptions,
 } from "../../db/schema";
 import { canAccessProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
+import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
 
 const app = new Hono<Env>();
@@ -850,21 +851,44 @@ app.get("/:id/attendance", async (c) => {
     ),
   };
 
+  // 위치 열 옆에 안전관제(EscapesPage)에서 이미 처리한 이탈 상태/메모를 같이 보여준다 —
+  // detectedAt이 이 월 안이면 workDate도 반드시 같은 월이라(위 attendanceLogs 필터와
+  // 동일한 이유) 이 범위로 좁혀도 매칭 결과는 전체 조회와 같다.
+  const escapeRows = await db
+    .select({
+      participantId: escapeLogs.participantId,
+      detectedAt: escapeLogs.detectedAt,
+      status: escapeLogs.status,
+      memo: escapeLogs.memo,
+    })
+    .from(escapeLogs)
+    .where(and(eq(escapeLogs.programId, programId), like(escapeLogs.detectedAt, `${month}%`)));
+
   // 원본 서명 텍스트(base64)는 목록 응답에 실을 필요가 없어 있는지 여부만 boolean으로 내려준다.
-  const logs = dedupedRows.map((row) => ({
-    log: row.log,
-    participantName: row.participantName,
-    groupName: row.groupName,
-    shiftStart: row.shiftStart,
-    shiftEnd: row.shiftEnd,
-    activity: {
-      hasAccident: row.hasAccident ?? false,
-      accidentChecked: row.accidentChecked ?? false,
-      accidentDetail: row.accidentDetail ?? null,
-      accidentAction: row.accidentAction ?? null,
-      signed: !!row.userSignature,
-    },
-  }));
+  const logs = dedupedRows.map((row) => {
+    const matchedEscape = matchEscapeToWorkDate(
+      escapeRows,
+      row.log.participantId,
+      row.log.workDate,
+    );
+
+    return {
+      log: row.log,
+      participantName: row.participantName,
+      groupName: row.groupName,
+      shiftStart: row.shiftStart,
+      shiftEnd: row.shiftEnd,
+      activity: {
+        hasAccident: row.hasAccident ?? false,
+        accidentChecked: row.accidentChecked ?? false,
+        accidentDetail: row.accidentDetail ?? null,
+        accidentAction: row.accidentAction ?? null,
+        signed: !!row.userSignature,
+      },
+      escapeStatus: matchedEscape?.status ?? null,
+      escapeMemo: matchedEscape?.memo ?? null,
+    };
+  });
 
   return c.json({ logs, stats });
 });

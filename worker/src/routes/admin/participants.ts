@@ -8,6 +8,7 @@ import {
   activityLogs,
   attendanceLogs,
   demandSites,
+  escapeLogs,
   groups,
   organizations,
   participantAnnualLeave,
@@ -18,6 +19,7 @@ import {
   programs,
 } from "../../db/schema";
 import { canAccessProgram, getAuth } from "../../lib/authz";
+import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
 
 const toLeaveDays = (leaveStart: string, leaveEnd: string): number => {
@@ -186,25 +188,45 @@ app.get("/:id/attendance", async (c) => {
     ),
   };
 
+  // 위치 열 옆에 안전관제(EscapesPage)에서 이미 처리한 이탈 상태/메모를 같이 보여준다 —
+  // detectedAt이 이 월 안이면 workDate도 반드시 같은 월이라 이 범위로 좁혀도 매칭 결과는
+  // 전체 조회와 같다.
+  const escapeRows = await db
+    .select({
+      participantId: escapeLogs.participantId,
+      detectedAt: escapeLogs.detectedAt,
+      status: escapeLogs.status,
+      memo: escapeLogs.memo,
+    })
+    .from(escapeLogs)
+    .where(and(eq(escapeLogs.participantId, id), like(escapeLogs.detectedAt, `${month}%`)));
+
   // 원본 서명 텍스트(base64)는 목록 응답에 실을 필요가 없어 있는지 여부만 boolean으로 내려준다.
-  const logs = dedupedRows.map((row) => ({
-    log: row.log,
-    groupName: row.groupName,
-    shiftStart: row.shiftStart,
-    shiftEnd: row.shiftEnd,
-    activity: {
-      hasAccident: row.hasAccident ?? false,
-      accidentChecked: row.accidentChecked ?? false,
-      accidentDetail: row.accidentDetail ?? null,
-      accidentAction: row.accidentAction ?? null,
-      signed: !!row.userSignature,
-    },
-  }));
+  const logs = dedupedRows.map((row) => {
+    const matchedEscape = matchEscapeToWorkDate(escapeRows, id, row.log.workDate);
+
+    return {
+      log: row.log,
+      groupName: row.groupName,
+      shiftStart: row.shiftStart,
+      shiftEnd: row.shiftEnd,
+      activity: {
+        hasAccident: row.hasAccident ?? false,
+        accidentChecked: row.accidentChecked ?? false,
+        accidentDetail: row.accidentDetail ?? null,
+        accidentAction: row.accidentAction ?? null,
+        signed: !!row.userSignature,
+      },
+      escapeStatus: matchedEscape?.status ?? null,
+      escapeMemo: matchedEscape?.memo ?? null,
+    };
+  });
 
   return c.json({ logs, stats });
 });
 
-// 참여자 개인 휴가 이력 — 연차 현황(annual-leave)과 별개로 실제 휴가 신청 기록 목록
+// 참여자 상세 페이지의 "휴가 이력" 섹션용 — 실제 휴가 신청 기록 전체(연도 무관)와, 그
+// 화면이 같이 보여주는 연차 현황(그 해 총 부여일/사용/잔여)을 한 번에 내려준다.
 app.get("/:id/leaves", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -216,13 +238,32 @@ app.get("/:id/leaves", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const rows = await db
-    .select()
-    .from(participantLeaves)
-    .where(eq(participantLeaves.participantId, id))
-    .orderBy(desc(participantLeaves.leaveStart));
+  const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
 
-  return c.json(rows);
+  const [leaveRows, annualLeaveRows] = await Promise.all([
+    db
+      .select()
+      .from(participantLeaves)
+      .where(eq(participantLeaves.participantId, id))
+      .orderBy(desc(participantLeaves.leaveStart)),
+    db
+      .select()
+      .from(participantAnnualLeave)
+      .where(
+        and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
+      ),
+  ]);
+
+  return c.json({
+    leaves: leaveRows,
+    annualLeave: annualLeaveRows[0] ?? {
+      participantId: id,
+      year,
+      totalDays: 0,
+      usedDays: 0,
+      remainingDays: 0,
+    },
+  });
 });
 
 app.put("/:id", async (c) => {

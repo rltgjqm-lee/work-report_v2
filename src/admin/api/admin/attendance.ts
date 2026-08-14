@@ -11,6 +11,9 @@ export type AttendanceRow = {
   shiftStart: string | null;
   shiftEnd: string | null;
   activity: ActivityLogSummary;
+  // 위치 열 옆에 보여주는, 그날 처리된 안전관제 이탈 상태/메모(서버가 조인해서 내려줌).
+  escapeStatus: "OPEN" | "RESOLVED" | null;
+  escapeMemo: string | null;
 };
 
 export type MonthlyAttendance = {

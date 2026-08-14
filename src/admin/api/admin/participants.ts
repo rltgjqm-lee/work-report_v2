@@ -19,7 +19,8 @@ const participantKeys = {
   detail: (id: number) => [...participantKeys.all, id] as const,
   attendance: (id: number, month: string) =>
     [...participantKeys.detail(id), "attendance", month] as const,
-  leaves: (id: number) => [...participantKeys.detail(id), "leaves"] as const,
+  leaveHistory: (id: number, year: string) =>
+    [...participantKeys.detail(id), "leaves", year] as const,
   annualLeave: (id: number, year: string) =>
     [...participantKeys.detail(id), "annual-leave", year] as const,
   groupOverrides: (id: number) => [...participantKeys.detail(id), "group-overrides"] as const,
@@ -51,13 +52,20 @@ export const participantAttendanceQueryOptions = (id: number, month: string) =>
     queryFn: () => getParticipantAttendance(id, month),
   });
 
-const getParticipantLeaves = (id: number) =>
-  request<ParticipantLeave[]>(`/api/participants/${id}/leaves`);
+// 참여자 상세 페이지의 "휴가 이력" 섹션용 — 휴가 신청 기록 전체와, 그 화면이 같이
+// 보여주는 연차 현황(그 해)을 한 번에 받는다.
+export interface ParticipantLeaveHistory {
+  leaves: ParticipantLeave[];
+  annualLeave: AnnualLeave;
+}
 
-export const participantLeavesQueryOptions = (id: number) =>
+const getParticipantLeaveHistory = (id: number, year: string) =>
+  request<ParticipantLeaveHistory>(`/api/participants/${id}/leaves?year=${year}`);
+
+export const participantLeaveHistoryQueryOptions = (id: number, year: string) =>
   queryOptions({
-    queryKey: participantKeys.leaves(id),
-    queryFn: () => getParticipantLeaves(id),
+    queryKey: participantKeys.leaveHistory(id, year),
+    queryFn: () => getParticipantLeaveHistory(id, year),
   });
 
 export interface AddParticipantVariables {

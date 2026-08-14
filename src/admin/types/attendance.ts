@@ -47,6 +47,9 @@ export type ParticipantAttendanceRow = {
   shiftStart: string | null;
   shiftEnd: string | null;
   activity: ActivityLogSummary;
+  // 위치 열 옆에 보여주는, 그날 처리된 안전관제 이탈 상태/메모
+  escapeStatus: "OPEN" | "RESOLVED" | null;
+  escapeMemo: string | null;
 };
 
 export type AttendanceStats = {

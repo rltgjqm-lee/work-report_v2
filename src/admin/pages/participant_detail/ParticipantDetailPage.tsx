@@ -3,15 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import { allProgramEscapesQueryOptions } from "../../api/admin/escapes";
 import {
-  participantAnnualLeaveQueryOptions,
   participantAttendanceQueryOptions,
-  participantLeavesQueryOptions,
+  participantLeaveHistoryQueryOptions,
   participantQueryOptions,
 } from "../../api/admin/participants";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
-import type { EscapeRow } from "../../types/escapes";
 import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
@@ -58,13 +55,12 @@ const ParticipantDetailPage = () => {
   const [payrollModalOpen, setPayrollModalOpen] = useState(false);
 
   const { data: participant } = useQuery(participantQueryOptions(participantId));
-  const { data: leaves = [] } = useQuery(participantLeavesQueryOptions(participantId));
-  const { data: annualLeave } = useQuery(
-    participantAnnualLeaveQueryOptions(participantId, new Date().getFullYear().toString()),
+  const { data: leaveHistory } = useQuery(
+    participantLeaveHistoryQueryOptions(participantId, new Date().getFullYear().toString()),
   );
+  const leaves = leaveHistory?.leaves ?? [];
+  const annualLeave = leaveHistory?.annualLeave;
   const { data: attendance } = useQuery(participantAttendanceQueryOptions(participantId, month));
-  // 근무 이력의 위치 열 옆에 안전관제에서 처리한 이탈 상태/메모를 같이 보여준다.
-  const { data: escapes = [] } = useQuery(allProgramEscapesQueryOptions(participant?.programId));
 
   const attendanceLogs = attendance?.logs ?? [];
   const attendanceStats = attendance?.stats ?? emptyStats;
@@ -115,7 +111,6 @@ const ParticipantDetailPage = () => {
         onMonthChange={setMonth}
         stats={attendanceStats}
         logs={attendanceLogs}
-        escapes={escapes}
       />
 
       {/* 휴가 이력 */}
@@ -137,7 +132,6 @@ interface AttendanceHistorySectionProps {
   onMonthChange: (month: string) => void;
   stats: AttendanceStats;
   logs: ParticipantAttendanceRow[];
-  escapes: EscapeRow[];
 }
 
 const AttendanceHistorySection = ({
@@ -145,24 +139,7 @@ const AttendanceHistorySection = ({
   onMonthChange,
   stats,
   logs,
-  escapes,
 }: AttendanceHistorySectionProps) => {
-  // 같은 날 이탈이 여러 건이면 미처리 건을 우선 보여주고, 다 처리됐으면 가장 최근
-  // 처리 건의 메모를 보여준다 (AttendanceTabPanel의 근무 목록과 동일한 규칙).
-  const findEscapeForRow = (row: ParticipantAttendanceRow): EscapeRow | null => {
-    const sameDayEscapes = escapes.filter(
-      (escapeRow) =>
-        escapeRow.escape.participantId === row.log.participantId &&
-        escapeRow.escape.detectedAt.slice(0, 10) === row.log.workDate,
-    );
-    if (sameDayEscapes.length === 0) return null;
-
-    const openEscape = sameDayEscapes.find((escapeRow) => escapeRow.escape.status === "OPEN");
-    if (openEscape) return openEscape;
-
-    return sameDayEscapes.sort((a, b) => b.escape.detectedAt.localeCompare(a.escape.detectedAt))[0];
-  };
-
   return (
     <>
       <div className="flex items-center justify-between mb-3 gap-3">
@@ -244,21 +221,18 @@ const AttendanceHistorySection = ({
                     <AttendanceLocationCell log={row.log} />
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {(() => {
-                      const escapeRow = findEscapeForRow(row);
-                      if (!escapeRow) return "-";
-
-                      return (
-                        <div className="flex flex-col gap-0.5">
-                          <span>{escapeRow.escape.status === "OPEN" ? "이탈중" : "처리완료"}</span>
-                          {escapeRow.escape.memo && (
-                            <span className="text-[12px] text-admin-text-placeholder whitespace-pre-wrap break-words">
-                              {escapeRow.escape.memo}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    {row.escapeStatus ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span>{row.escapeStatus === "OPEN" ? "이탈중" : "처리완료"}</span>
+                        {row.escapeMemo && (
+                          <span className="text-[12px] text-admin-text-placeholder whitespace-pre-wrap break-words">
+                            {row.escapeMemo}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      "-"
+                    )}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.totalMinutes ?? "-"}
