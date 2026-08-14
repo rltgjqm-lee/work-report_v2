@@ -20,7 +20,10 @@ export type Program = {
   createdAt: string;
 };
 
-export type ProgramWithParticipants = Program & { participants: Participant[] };
+export type ProgramWithParticipants = Program & {
+  organizationName: string | null;
+  participants: Participant[];
+};
 
 // 목록 화면(사업단 관리)용 — 급여 계산에만 쓰는 보험료율 등은 빼고 화면에 실제로
 // 표시하는 필드 + 참여자 수·소속 기관명·담당자명(서버에서 조인)을 담는다.

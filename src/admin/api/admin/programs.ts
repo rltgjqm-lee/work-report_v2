@@ -72,9 +72,8 @@ export const programQueryOptions = (id: number) =>
     queryFn: () => getProgram(id),
   });
 
-// 사업단 수정 폼용 — 참여자 목록(조인 필요) 없이 사업단 필드만 받는다.
-const getProgramFields = (id: number) =>
-  request<Program>(`/api/programs/${id}?withParticipants=false`);
+// 사업단 수정 폼·breadcrumb용 — 참여자 목록(조인 필요) 없이 사업단 필드만 받는다.
+const getProgramFields = (id: number) => request<Program>(`/api/programs/${id}/edit`);
 
 export const programEditQueryOptions = (id: number) =>
   queryOptions({

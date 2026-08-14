@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import {
-  demandSiteSchedulesQueryOptions,
+  demandSiteSchedulesByProgramQueryOptions,
   demandSitesQueryOptions,
 } from "../../api/admin/demandSites";
 import { groupsQueryOptions } from "../../api/admin/groups";
-import { organizationQueryOptions } from "../../api/admin/organizations";
 import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
 
 import TabBar from "../../components/bar/TabBar";
@@ -54,27 +53,27 @@ const ProgramDetailPage = () => {
 
   const { data: allPrograms = [] } = useQuery(programsQueryOptions);
   const { data: program } = useQuery(programQueryOptions(programId));
-  const { data: organization } = useQuery({
-    ...organizationQueryOptions(program?.organizationId ?? 0),
-    enabled: !!program,
-  });
   const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
-  const { data: demandSites = [] } = useQuery(demandSitesQueryOptions(programId));
-  const demandSiteScheduleQueries = useQueries({
-    queries: demandSites.map((demandSite) => demandSiteSchedulesQueryOptions(demandSite.id)),
-  });
+  const { data: demandSitesData } = useQuery(demandSitesQueryOptions(programId));
+  const demandSites = useMemo(() => demandSitesData?.demandSites ?? [], [demandSitesData]);
+  const { data: allDemandSiteSchedules = [] } = useQuery(
+    demandSiteSchedulesByProgramQueryOptions(programId),
+  );
 
-  const organizationName = organization?.name ?? "-";
+  const organizationName = program?.organizationName ?? "-";
 
   const demandSiteSchedules = useMemo(
     () =>
-      Object.fromEntries(
-        demandSites.map((demandSite, index) => [
-          demandSite.id,
-          demandSiteScheduleQueries[index]?.data ?? [],
-        ]),
+      demandSites.reduce<Record<number, typeof allDemandSiteSchedules>>(
+        (byDemandSiteId, demandSite) => {
+          byDemandSiteId[demandSite.id] = allDemandSiteSchedules.filter(
+            (schedule) => schedule.demandSiteId === demandSite.id,
+          );
+          return byDemandSiteId;
+        },
+        {},
       ),
-    [demandSites, demandSiteScheduleQueries],
+    [demandSites, allDemandSiteSchedules],
   );
 
   const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);

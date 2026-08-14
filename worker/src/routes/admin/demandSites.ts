@@ -272,7 +272,10 @@ app.get("/", async (c) => {
     .leftJoin(admins, eq(demandSites.contactAdminId, admins.id))
     .where(eq(demandSites.programId, programId));
 
-  return c.json(rows);
+  // program은 위에서 접근 권한 체크하려고 이미 조회해둔 것이라, breadcrumb용 이름을
+  // 추가 쿼리 없이 같이 내려준다 — EscapesPage/AttendancePage가 이 라우트 하나로
+  // 사업단명 + 수요처 목록을 둘 다 받게 하기 위함.
+  return c.json({ programName: program.name, demandSites: rows });
 });
 
 // 수요처 담당자로 지정할 수 있는 계정 목록. 계정 관리 화면(GET /api/admins)은 부관리자/
@@ -626,6 +629,40 @@ app.post("/locations/:locationId/promote", async (c) => {
   ]);
 
   return c.json({ success: true });
+});
+
+// 사업단 상세 화면용 — 수요처 개수만큼 반복 호출하지 않도록 그 사업단의 모든 수요처
+// 조 배정을 한 번에 내려준다. `/:id/schedules`와 세그먼트 수가 달라 안 겹친다.
+app.get("/schedules", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.query("programId"));
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
+
+  const program = await loadAccessibleProgram(db, auth, programId);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+
+  const siteRows = await db
+    .select({ id: demandSites.id })
+    .from(demandSites)
+    .where(eq(demandSites.programId, programId));
+  const demandSiteIds = siteRows.map((site) => site.id);
+  if (demandSiteIds.length === 0) return c.json([]);
+
+  const rows = await db
+    .select({
+      id: demandSiteSchedules.id,
+      demandSiteId: demandSiteSchedules.demandSiteId,
+      groupId: demandSiteSchedules.groupId,
+      groupName: groups.name,
+      shiftStart: groups.shiftStart,
+      shiftEnd: groups.shiftEnd,
+    })
+    .from(demandSiteSchedules)
+    .innerJoin(groups, eq(demandSiteSchedules.groupId, groups.id))
+    .where(inArray(demandSiteSchedules.demandSiteId, demandSiteIds));
+
+  return c.json(rows);
 });
 
 app.get("/:id/schedules", async (c) => {

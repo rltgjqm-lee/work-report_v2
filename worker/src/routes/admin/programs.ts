@@ -168,21 +168,24 @@ app.get("/:id", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  // 편집 폼처럼 참여자 목록 없이 사업단 필드만 필요한 소비자는 참여자 조인을 스킵한다.
-  if (c.req.query("withParticipants") === "false") {
-    return c.json(program);
-  }
-
   // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
   // 참여자는 있을 수 있어서, 그 경우 수요처명을 채워서 내려준다.
-  const participantRows = await db
-    .select({
-      ...getTableColumns(participants),
-      demandSiteName: demandSites.name,
-    })
-    .from(participants)
-    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
-    .where(eq(participants.programId, id));
+  // 소속 기관명도 같이 내려준다 — ProgramDetailPage가 이걸 따로 순차 조회(waterfall)하지
+  // 않아도 되게 하기 위함.
+  const [participantRows, organizationRows] = await Promise.all([
+    db
+      .select({
+        ...getTableColumns(participants),
+        demandSiteName: demandSites.name,
+      })
+      .from(participants)
+      .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
+      .where(eq(participants.programId, id)),
+    db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, program.organizationId)),
+  ]);
 
   // 오늘 하루만 다른 조로 임시 배정된 참여자가 있으면 목록에서 바로 보이도록 같이 내려준다.
   const { date: today } = getKstNow();
@@ -222,7 +225,27 @@ app.get("/:id", async (c) => {
     };
   });
 
-  return c.json({ ...program, participants: resolvedParticipants });
+  return c.json({
+    ...program,
+    organizationName: organizationRows[0]?.name ?? null,
+    participants: resolvedParticipants,
+  });
+});
+
+// 수정 폼·breadcrumb처럼 참여자 목록 없이 사업단 필드만 필요한 소비자용 — 참여자 조인을 스킵한다.
+app.get("/:id/edit", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const programRows = await db.select().from(programs).where(eq(programs.id, id));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  return c.json(program);
 });
 
 app.post("/", async (c) => {

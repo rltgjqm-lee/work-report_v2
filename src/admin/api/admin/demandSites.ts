@@ -14,6 +14,8 @@ const demandSiteKeys = {
   all: ["demand-sites"] as const,
   byProgram: (programId: number) => [...demandSiteKeys.all, "program", programId] as const,
   schedules: (demandSiteId: number) => [...demandSiteKeys.all, "schedules", demandSiteId] as const,
+  schedulesByProgram: (programId: number) =>
+    [...demandSiteKeys.all, "schedules", "program", programId] as const,
   assignableAdmins: (programId: number) =>
     [...demandSiteKeys.all, "assignable-admins", programId] as const,
   locations: (demandSiteId: number) => [...demandSiteKeys.all, "locations", demandSiteId] as const,
@@ -21,8 +23,16 @@ const demandSiteKeys = {
     [...demandSiteKeys.all, "locations", "program", programId] as const,
 };
 
-export const listDemandSites = (programId: number) =>
-  request<DemandSite[]>(`/api/demand-sites?programId=${programId}`);
+// 접근 권한 체크하려고 서버가 이미 조회해둔 program row에서 이름만 같이 내려준다 —
+// EscapesPage/AttendancePage처럼 수요처 목록과 사업단명을 둘 다 쓰는 화면은 이 쿼리
+// 하나로 breadcrumb까지 해결한다(program 조회를 따로 안 해도 됨).
+export interface ProgramDemandSites {
+  programName: string;
+  demandSites: DemandSite[];
+}
+
+const listDemandSites = (programId: number) =>
+  request<ProgramDemandSites>(`/api/demand-sites?programId=${programId}`);
 
 export const demandSitesQueryOptions = (programId: number) =>
   queryOptions({
@@ -106,8 +116,20 @@ export const demandSiteSchedulesQueryOptions = (demandSiteId: number) =>
     queryFn: () => listDemandSiteSchedules(demandSiteId),
   });
 
+// 사업단 상세 화면용 — 수요처 개수만큼 반복 호출하지 않도록 그 사업단의 모든 수요처
+// 조 배정을 한 번에 받는다.
+const listDemandSiteSchedulesByProgram = (programId: number) =>
+  request<DemandSiteSchedule[]>(`/api/demand-sites/schedules?programId=${programId}`);
+
+export const demandSiteSchedulesByProgramQueryOptions = (programId: number) =>
+  queryOptions({
+    queryKey: demandSiteKeys.schedulesByProgram(programId),
+    queryFn: () => listDemandSiteSchedulesByProgram(programId),
+  });
+
 export interface CreateDemandSiteScheduleVariables {
   demandSiteId: number;
+  programId: number;
   data: { groupId: number };
 }
 
@@ -128,12 +150,16 @@ export const createDemandSiteScheduleMutationOptions = (queryClient: QueryClient
       queryClient.invalidateQueries({
         queryKey: demandSiteKeys.schedules(variables.demandSiteId),
       });
+      queryClient.invalidateQueries({
+        queryKey: demandSiteKeys.schedulesByProgram(variables.programId),
+      });
     },
   });
 
 export interface DeleteDemandSiteScheduleVariables {
   scheduleId: number;
   demandSiteId: number;
+  programId: number;
 }
 
 const deleteDemandSiteSchedule = (scheduleId: number) =>
@@ -148,6 +174,9 @@ export const deleteDemandSiteScheduleMutationOptions = (queryClient: QueryClient
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: demandSiteKeys.schedules(variables.demandSiteId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: demandSiteKeys.schedulesByProgram(variables.programId),
       });
     },
   });

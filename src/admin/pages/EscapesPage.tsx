@@ -19,7 +19,7 @@ import {
   markEscapeAlertedMutationOptions,
   resolveEscapeMutationOptions,
 } from "../api/admin/escapes";
-import { programQueryOptions, programsQueryOptions } from "../api/admin/programs";
+import { programsQueryOptions } from "../api/admin/programs";
 import FilterSelect from "../components/FilterSelect";
 import PromptModal from "../components/modal/PromptModal";
 import SearchInput from "../components/SearchInput";
@@ -90,12 +90,6 @@ const EscapesPage = () => {
     ...programsQueryOptions,
     enabled: !preselectedProgramId,
   });
-  const { data: preselectedProgram } = useQuery({
-    ...programQueryOptions(preselectedProgramId ?? 0),
-    enabled: !!preselectedProgramId,
-  });
-  const programName = preselectedProgram?.name ?? "";
-
   const filteredPrograms = useMemo(
     () =>
       programTypeFilter === "all"
@@ -120,10 +114,12 @@ const EscapesPage = () => {
   });
   const rows = status === "OPEN" ? openEscapes : resolvedEscapes;
 
-  const { data: demandSites = [] } = useQuery({
+  const { data: demandSitesData } = useQuery({
     ...demandSitesQueryOptions(programId),
     enabled: !!programId,
   });
+  const demandSites = useMemo(() => demandSitesData?.demandSites ?? [], [demandSitesData]);
+  const programName = demandSitesData?.programName ?? "";
   const { data: demandSiteLocations = [] } = useQuery({
     ...demandSiteLocationsByProgramQueryOptions(programId),
     enabled: !!programId,

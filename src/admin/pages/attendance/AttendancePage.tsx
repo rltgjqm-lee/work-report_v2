@@ -3,11 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import {
-  programEditQueryOptions,
-  programParticipantsQueryOptions,
-  programsQueryOptions,
-} from "../../api/admin/programs";
+import { programParticipantsQueryOptions, programsQueryOptions } from "../../api/admin/programs";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 
 import TabBar from "../../components/bar/TabBar";
@@ -34,7 +30,7 @@ const AttendancePage = () => {
   const [selectedDemandSiteId, setSelectedDemandSiteId] = useState("");
   const [tab, setTab] = useState<Tab>("attendance");
 
-  // 사이드바로 바로 들어온 경우(사업단 id 없음) 고를 수 있게 전체 사업단 목록을 가져온다
+  // 사이드바로 바로 들어온 경우(사업단 id 없음) 전체 사업단 목록을 가져온다
   const { data: programs = [] } = useQuery({
     ...programsQueryOptions,
     enabled: !preselectedProgramId,
@@ -50,20 +46,17 @@ const AttendancePage = () => {
     [programs, programTypeFilter],
   );
 
-  const { data: program } = useQuery({
-    ...programEditQueryOptions(programId),
-    enabled: !!programId,
-  });
-  const programName = program?.name ?? "";
   const { data: participants = [] } = useQuery({
     ...programParticipantsQueryOptions(programId),
     enabled: !!programId,
   });
 
-  const { data: demandSites = [] } = useQuery({
+  const { data: demandSitesData } = useQuery({
     ...demandSitesQueryOptions(programId),
     enabled: !!programId,
   });
+  const demandSites = demandSitesData?.demandSites ?? [];
+  const programName = demandSitesData?.programName ?? "";
 
   // 근무/교육/휴가 데이터에는 수요처 정보가 없고 참여자 id만 있다 —
   // 선택한 수요처 소속 참여자 id 집합을 만들어 각 탭에서 그걸로 걸러낸다.

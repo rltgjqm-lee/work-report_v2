@@ -89,6 +89,7 @@ const DemandSiteGroupAssignModal = ({
         ...toAdd.map((groupId) =>
           createDemandSiteScheduleMutation.mutateAsync({
             demandSiteId: demandSite.id,
+            programId: demandSite.programId,
             data: { groupId },
           }),
         ),
@@ -96,6 +97,7 @@ const DemandSiteGroupAssignModal = ({
           deleteDemandSiteScheduleMutation.mutateAsync({
             scheduleId: schedule.id,
             demandSiteId: demandSite.id,
+            programId: demandSite.programId,
           }),
         ),
       ]);
