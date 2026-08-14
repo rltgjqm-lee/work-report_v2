@@ -851,61 +851,59 @@ app.post("/location", async (c) => {
         alertCount: newAlertCount,
       });
 
-      // 1단계(1회 이탈)만 참여자 본인에게 푸시(웹+네이티브 앱) — 2·3단계는 관리자 콘솔 "이탈 현황" 화면에서 확인
-      if (newAlertCount === 1) {
-        const escapePushPayload = {
-          title: "⚠️ 이탈 경고",
-          body: `${demandSite.name} 활동 구역을 벗어났습니다.`,
-        };
+      // 새 이탈이 시작될 때마다(1·2·3단계 이후 전부) 참여자 본인에게 푸시(웹+네이티브 앱).
+      const escapePushPayload = {
+        title: newAlertCount > 1 ? `⚠️ 이탈 경고 (${newAlertCount}회째)` : "⚠️ 이탈 경고",
+        body: `${demandSite.name} 활동 구역을 벗어났습니다.`,
+      };
 
-        const subscriptions = await db
-          .select()
-          .from(pushSubscriptions)
-          .where(eq(pushSubscriptions.participantId, participant.id));
+      const subscriptions = await db
+        .select()
+        .from(pushSubscriptions)
+        .where(eq(pushSubscriptions.participantId, participant.id));
 
-        for (const subscription of subscriptions) {
-          const result = await sendWebPush(
-            {
-              endpoint: subscription.endpoint,
-              keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-            },
-            escapePushPayload,
-            {
-              privateJWK: c.env.VAPID_PRIVATE_KEY,
-              subject: c.env.VAPID_SUBJECT,
-            },
-          );
-          if (!result.ok && result.expired) {
-            await db
-              .delete(pushSubscriptions)
-              .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
-          }
+      for (const subscription of subscriptions) {
+        const result = await sendWebPush(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+          },
+          escapePushPayload,
+          {
+            privateJWK: c.env.VAPID_PRIVATE_KEY,
+            subject: c.env.VAPID_SUBJECT,
+          },
+        );
+        if (!result.ok && result.expired) {
+          await db
+            .delete(pushSubscriptions)
+            .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
         }
+      }
 
-        const deviceTokens = await db
-          .select()
-          .from(pushDeviceTokens)
-          .where(eq(pushDeviceTokens.participantId, participant.id));
+      const deviceTokens = await db
+        .select()
+        .from(pushDeviceTokens)
+        .where(eq(pushDeviceTokens.participantId, participant.id));
 
-        if (deviceTokens.length > 0) {
-          try {
-            const fcmAuth = await getFcmAccessToken(c.env.FCM_SERVICE_ACCOUNT_KEY);
-            for (const deviceToken of deviceTokens) {
-              const result = await sendFcmPush(
-                fcmAuth.projectId,
-                fcmAuth.accessToken,
-                deviceToken.token,
-                escapePushPayload,
-              );
-              if (!result.ok && result.expired) {
-                await db
-                  .delete(pushDeviceTokens)
-                  .where(eq(pushDeviceTokens.token, deviceToken.token));
-              }
+      if (deviceTokens.length > 0) {
+        try {
+          const fcmAuth = await getFcmAccessToken(c.env.FCM_SERVICE_ACCOUNT_KEY);
+          for (const deviceToken of deviceTokens) {
+            const result = await sendFcmPush(
+              fcmAuth.projectId,
+              fcmAuth.accessToken,
+              deviceToken.token,
+              escapePushPayload,
+            );
+            if (!result.ok && result.expired) {
+              await db
+                .delete(pushDeviceTokens)
+                .where(eq(pushDeviceTokens.token, deviceToken.token));
             }
-          } catch (error) {
-            console.error("이탈 경고 FCM 발송 실패:", error);
           }
+        } catch (error) {
+          console.error("이탈 경고 FCM 발송 실패:", error);
         }
       }
     }

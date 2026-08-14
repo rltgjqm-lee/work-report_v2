@@ -36,7 +36,11 @@ interface DemandSiteGeofence {
   baseArea: { lat: number; lng: number; radius: number } | null;
 }
 
-const POLL_INTERVAL_MS = 10000;
+// 참여자 위치 보고 자체가 최대 10분 주기(locationReporting.ts)라 그보다 훨씬 짧게 잡아도
+// 실제로 더 새 데이터를 받지는 못한다. 이제 이탈 발생 시 참여자에게 단계 무관 즉시 푸시가
+// 나가므로(worker/src/routes/user/public.ts) 이 폴링은 "화면을 보고 있을 때 알아채는"
+// 보조 채널 — 서버 부하를 줄이면서도 화면이 오래 안 바뀌었다는 느낌은 안 들 선에서 1분.
+const POLL_INTERVAL_MS = 60 * 1000;
 
 const ESCAPE_STATUS_OPTIONS = [
   { value: "OPEN", label: "확인 필요" },
