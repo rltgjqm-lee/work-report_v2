@@ -17,6 +17,8 @@ const demandSiteKeys = {
   assignableAdmins: (programId: number) =>
     [...demandSiteKeys.all, "assignable-admins", programId] as const,
   locations: (demandSiteId: number) => [...demandSiteKeys.all, "locations", demandSiteId] as const,
+  locationsByProgram: (programId: number) =>
+    [...demandSiteKeys.all, "locations", "program", programId] as const,
 };
 
 export const listDemandSites = (programId: number) =>
@@ -157,6 +159,17 @@ export const demandSiteLocationsQueryOptions = (demandSiteId: number) =>
   queryOptions({
     queryKey: demandSiteKeys.locations(demandSiteId),
     queryFn: () => listDemandSiteLocations(demandSiteId),
+  });
+
+// 안전 관제 지도용 — 수요처 개수만큼 반복 호출하지 않도록 그 사업단의 모든 수요처
+// 거점을 한 번에 받는다.
+const listDemandSiteLocationsByProgram = (programId: number) =>
+  request<DemandSiteLocation[]>(`/api/demand-sites/locations?programId=${programId}`);
+
+export const demandSiteLocationsByProgramQueryOptions = (programId: number) =>
+  queryOptions({
+    queryKey: demandSiteKeys.locationsByProgram(programId),
+    queryFn: () => listDemandSiteLocationsByProgram(programId),
   });
 
 export interface CreateDemandSiteLocationVariables {

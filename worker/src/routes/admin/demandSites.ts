@@ -422,6 +422,32 @@ app.put("/:id", async (c) => {
 
 // ── 수요처 하위 거점(원형/다각형) ──
 
+// 안전 관제 지도용 — 수요처 개수만큼 거점을 반복 호출하지 않도록 그 사업단의 모든
+// 수요처 거점을 한 번에 내려준다. `/:id/locations`보다 세그먼트가 하나 적어 겹치지 않는다.
+app.get("/locations", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.query("programId"));
+  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
+
+  const program = await loadAccessibleProgram(db, auth, programId);
+  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
+
+  const siteRows = await db
+    .select({ id: demandSites.id })
+    .from(demandSites)
+    .where(eq(demandSites.programId, programId));
+  const demandSiteIds = siteRows.map((site) => site.id);
+  if (demandSiteIds.length === 0) return c.json([]);
+
+  const rows = await db
+    .select()
+    .from(demandSiteLocations)
+    .where(inArray(demandSiteLocations.demandSiteId, demandSiteIds));
+
+  return c.json(rows.map(serializeLocation));
+});
+
 app.get("/:id/locations", async (c) => {
   const auth = getAuth(c);
   const id = Number(c.req.param("id"));

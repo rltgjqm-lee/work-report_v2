@@ -1018,8 +1018,9 @@ app.get("/:id/escapes", async (c) => {
   return c.json(rows);
 });
 
-// 관제 지도용 — 오늘 출근 중인 전체 활성 참여자의 마지막 위치+이탈상태
-app.get("/:id/workers/live", async (c) => {
+// 안전 관제 지도용 — 실시간 근무자 위치와 확인 필요(OPEN) 이탈을 한 번에 내려준다.
+// EscapesPage가 둘 다 10초 폴링으로 같이 쓰는 데이터라 폴링 요청을 하나로 묶는다.
+app.get("/:id/live-map", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const programId = Number(c.req.param("id"));
@@ -1033,34 +1034,49 @@ app.get("/:id/workers/live", async (c) => {
 
   const { date } = getKstNow();
 
-  const rows = await db
-    .select({
-      participantId: participants.id,
-      name: participants.name,
-      groupName: groups.name,
-      demandSiteId: participants.demandSiteId,
-      demandSiteName: demandSites.name,
-      lat: participantEscapeMeta.lastLat,
-      lng: participantEscapeMeta.lastLng,
-      lastLocationAt: participantEscapeMeta.lastLocationAt,
-      alertCount: participantEscapeMeta.alertCount,
-      outsideStart: participantEscapeMeta.outsideStart,
-    })
-    .from(participants)
-    .innerJoin(
-      attendanceLogs,
-      and(
-        eq(attendanceLogs.participantId, participants.id),
-        eq(attendanceLogs.workDate, date),
-        isNull(attendanceLogs.clockOut),
-      ),
-    )
-    .leftJoin(groups, eq(participants.groupId, groups.id))
-    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
-    .leftJoin(participantEscapeMeta, eq(participantEscapeMeta.participantId, participants.id))
-    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+  const [openEscapeRows, workerRows] = await Promise.all([
+    db
+      .select({
+        escape: escapeLogs,
+        participantName: participants.name,
+        groupName: groups.name,
+        demandSiteName: demandSites.name,
+      })
+      .from(escapeLogs)
+      .innerJoin(participants, eq(escapeLogs.participantId, participants.id))
+      .leftJoin(groups, eq(participants.groupId, groups.id))
+      .leftJoin(demandSites, eq(escapeLogs.demandSiteId, demandSites.id))
+      .where(and(eq(escapeLogs.programId, programId), eq(escapeLogs.status, "OPEN")))
+      .orderBy(sql`${escapeLogs.detectedAt} DESC`),
+    db
+      .select({
+        participantId: participants.id,
+        name: participants.name,
+        groupName: groups.name,
+        demandSiteId: participants.demandSiteId,
+        demandSiteName: demandSites.name,
+        lat: participantEscapeMeta.lastLat,
+        lng: participantEscapeMeta.lastLng,
+        lastLocationAt: participantEscapeMeta.lastLocationAt,
+        alertCount: participantEscapeMeta.alertCount,
+        outsideStart: participantEscapeMeta.outsideStart,
+      })
+      .from(participants)
+      .innerJoin(
+        attendanceLogs,
+        and(
+          eq(attendanceLogs.participantId, participants.id),
+          eq(attendanceLogs.workDate, date),
+          isNull(attendanceLogs.clockOut),
+        ),
+      )
+      .leftJoin(groups, eq(participants.groupId, groups.id))
+      .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
+      .leftJoin(participantEscapeMeta, eq(participantEscapeMeta.participantId, participants.id))
+      .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE"))),
+  ]);
 
-  const workers = rows.map((row) => ({
+  const workers = workerRows.map((row) => ({
     participantId: row.participantId,
     name: row.name,
     groupName: row.groupName ?? "미배정",
@@ -1073,7 +1089,7 @@ app.get("/:id/workers/live", async (c) => {
     status: row.outsideStart ? ("ESCAPE" as const) : ("NORMAL" as const),
   }));
 
-  return c.json(workers);
+  return c.json({ openEscapes: openEscapeRows, workers });
 });
 
 export default app;

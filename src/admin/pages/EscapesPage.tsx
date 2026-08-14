@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import L from "leaflet";
 
@@ -9,10 +9,13 @@ import "leaflet/dist/leaflet.css";
 import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
 import { useToast } from "../context/useToast";
 
-import { demandSiteLocationsQueryOptions, demandSitesQueryOptions } from "../api/admin/demandSites";
+import {
+  demandSiteLocationsByProgramQueryOptions,
+  demandSitesQueryOptions,
+} from "../api/admin/demandSites";
 import {
   escapesQueryOptions,
-  liveWorkersQueryOptions,
+  liveMapQueryOptions,
   markEscapeAlertedMutationOptions,
   resolveEscapeMutationOptions,
 } from "../api/admin/escapes";
@@ -100,35 +103,36 @@ const EscapesPage = () => {
     [programs, programTypeFilter],
   );
 
-  // OPEN은 위급 이탈 감지를 위해 항상 폴링하고, RESOLVED는 상태 탭을 볼 때만 조회한다.
-  const { data: openEscapes = [] } = useQuery({
-    ...escapesQueryOptions(programId, "OPEN"),
+  // 실시간 근무자 위치 + 확인 필요(OPEN) 이탈 — 위급 이탈 감지를 위해 항상 폴링한다.
+  // RESOLVED는 상태 탭을 볼 때만 따로 조회한다(폴링 안 함).
+  const { data: liveMap } = useQuery({
+    ...liveMapQueryOptions(programId),
     enabled: !!programId,
     refetchInterval: POLL_INTERVAL_MS,
   });
+  const openEscapes = liveMap?.openEscapes ?? [];
+  const workers = useMemo(() => liveMap?.workers ?? [], [liveMap]);
+
   const { data: resolvedEscapes = [] } = useQuery({
     ...escapesQueryOptions(programId, "RESOLVED"),
     enabled: !!programId && status === "RESOLVED",
   });
   const rows = status === "OPEN" ? openEscapes : resolvedEscapes;
 
-  const { data: workers = [] } = useQuery({
-    ...liveWorkersQueryOptions(programId),
-    enabled: !!programId,
-    refetchInterval: POLL_INTERVAL_MS,
-  });
-
   const { data: demandSites = [] } = useQuery({
     ...demandSitesQueryOptions(programId),
     enabled: !!programId,
   });
-  const demandSiteLocationQueries = useQueries({
-    queries: demandSites.map((demandSite) => demandSiteLocationsQueryOptions(demandSite.id)),
+  const { data: demandSiteLocations = [] } = useQuery({
+    ...demandSiteLocationsByProgramQueryOptions(programId),
+    enabled: !!programId,
   });
   const geofences = useMemo(
     () =>
-      demandSites.flatMap((demandSite, index) => {
-        const locations = demandSiteLocationQueries[index]?.data ?? [];
+      demandSites.flatMap((demandSite) => {
+        const locations = demandSiteLocations.filter(
+          (location) => location.demandSiteId === demandSite.id,
+        );
         const siteGeofences: DemandSiteGeofence[] = locations.map((location) => ({
           demandSiteId: demandSite.id,
           demandSiteName: demandSite.name,
@@ -157,7 +161,7 @@ const EscapesPage = () => {
 
         return siteGeofences;
       }),
-    [demandSites, demandSiteLocationQueries],
+    [demandSites, demandSiteLocations],
   );
 
   const resolveEscapeMutation = useMutation(resolveEscapeMutationOptions(queryClient));
@@ -190,16 +194,11 @@ const EscapesPage = () => {
     [workers, search, selectedDemandSiteId],
   );
 
-  // 이탈 목록에는 수요처 id가 없고 이름만 내려온다 — 선택한 수요처 이름으로 맞춘다
   const filteredRows = useMemo(() => {
     if (!selectedDemandSiteId) return rows;
 
-    const selectedDemandSite = demandSites.find(
-      (demandSite) => String(demandSite.id) === selectedDemandSiteId,
-    );
-
-    return rows.filter((row) => row.demandSiteName === selectedDemandSite?.name);
-  }, [rows, demandSites, selectedDemandSiteId]);
+    return rows.filter((row) => row.escape.demandSiteId === Number(selectedDemandSiteId));
+  }, [rows, selectedDemandSiteId]);
 
   const visibleGeofences = useMemo(
     () =>
