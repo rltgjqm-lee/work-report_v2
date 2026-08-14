@@ -9,7 +9,7 @@ import {
 import { PROGRAM_TYPE_SELECT_OPTIONS } from "../../constants/programTypes";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
-import type { Organization } from "../../types/organizations";
+import type { OrganizationOption } from "../../types/organizations";
 import type { Program } from "../../types/programs";
 
 import Button from "../../components/Button";
@@ -42,7 +42,7 @@ interface ProgramFormModalProps {
   onClose: () => void;
   editingProgram: Program | null;
   currentRole: Role;
-  organizations: Organization[];
+  organizations: OrganizationOption[];
   managerAdmins: Admin[];
 }
 

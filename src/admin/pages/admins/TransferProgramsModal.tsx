@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { transferAdminProgramsMutationOptions } from "../../api/admin/admins";
-import { programsByOrganizationQueryOptions } from "../../api/admin/programs";
+import { programOptionsByOrganizationQueryOptions } from "../../api/admin/programs";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
 
@@ -41,7 +41,7 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
   );
 
   const { data: organizationPrograms = [] } = useQuery(
-    programsByOrganizationQueryOptions(target.organizationId ?? undefined),
+    programOptionsByOrganizationQueryOptions(target.organizationId ?? undefined),
   );
   const targetPrograms = useMemo(
     () => organizationPrograms.filter((program) => target.programIds.includes(program.id)),
