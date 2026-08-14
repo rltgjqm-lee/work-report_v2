@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminsQueryOptions, updateAdminMutationOptions } from "../../api/admin/admins";
-import { organizationOptionsQueryOptions } from "../../api/admin/organizations";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
@@ -46,10 +45,6 @@ const AdminsPage = () => {
   const { showToast } = useToast();
 
   const { data: admins = [] } = useQuery(adminsQueryOptions);
-  const { data: organizations = [] } = useQuery({
-    ...organizationOptionsQueryOptions,
-    enabled: role === ROLES.SUPER_ADMIN,
-  });
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -223,7 +218,6 @@ const AdminsPage = () => {
           currentRole={role}
           assignableRoles={assignableRoles}
           roleLabel={ROLE_LABEL}
-          organizations={organizations}
         />
       )}
 

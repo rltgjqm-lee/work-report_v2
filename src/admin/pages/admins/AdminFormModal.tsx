@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createAdminMutationOptions, updateAdminMutationOptions } from "../../api/admin/admins";
+import { organizationOptionsQueryOptions } from "../../api/admin/organizations";
 import { useToast } from "../../context/useToast";
 import { ROLES, type Admin, type Role } from "../../types/admins";
-import type { OrganizationOption } from "../../types/organizations";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";
@@ -26,7 +26,6 @@ interface AdminFormModalProps {
   currentRole: Role;
   assignableRoles: Role[];
   roleLabel: Record<Role, string>;
-  organizations: OrganizationOption[];
 }
 
 /**
@@ -41,12 +40,17 @@ const AdminFormModal = ({
   currentRole,
   assignableRoles,
   roleLabel,
-  organizations,
 }: AdminFormModalProps) => {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const createAdminMutation = useMutation(createAdminMutationOptions(queryClient));
   const updateAdminMutation = useMutation(updateAdminMutationOptions(queryClient));
+
+  const needsOrganizationOptions = currentRole === ROLES.SUPER_ADMIN && !editingAdmin;
+  const { data: organizations = [] } = useQuery({
+    ...organizationOptionsQueryOptions,
+    enabled: needsOrganizationOptions,
+  });
   // 총괄 관리자 계정은 소속 기관이 없어서, 기본 역할이 총괄이면 모달을 열자마자
   // 기관 선택이 비활성으로 뜬다. 총괄 계정을 새로 만드는 일은 드물기 때문에
   // 기본값은 기관을 고를 수 있는 역할로 잡는다.
@@ -173,7 +177,7 @@ const AdminFormModal = ({
           />
         </FormField>
       )}
-      {currentRole === ROLES.SUPER_ADMIN && !editingAdmin && (
+      {needsOrganizationOptions && (
         <FormField label="소속 기관">
           <FilterSelect
             className="w-full"
