@@ -1,5 +1,3 @@
-import type { AdminSession } from "../types/admins";
-
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let onUnauthorized: (() => void) | null = null;
@@ -40,5 +38,3 @@ export const request = async <T>(path: string, options: RequestInit = {}): Promi
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 };
-
-export const getMe = () => request<AdminSession>("/api/me");
