@@ -35,6 +35,22 @@ const STATUS_VARIANT: Record<string, StatusChipVariant> = {
   INVALID: "bad",
 };
 
+// 지각 기준은 기관마다 달라서 status를 자동으로 바꾸지 않고(관리자가 근태 강제수정에서
+// 수동 판단), 조 시작시간보다 15분 넘게 늦게 찍힌 출근만 눈에 띄게 표시해 관리자가
+// 놓치지 않게 돕는다.
+const LATE_CLOCK_IN_TOLERANCE_MINUTES = 15;
+
+const toMinutes = (hhmm: string) => {
+  const [hour, minute] = hhmm.split(":").map(Number);
+  return hour * 60 + minute;
+};
+
+const needsClockInReview = (row: AttendanceRow): boolean => {
+  if (!row.log.clockIn || !row.shiftStart) return false;
+  const clockInMinutes = toMinutes(row.log.clockIn.slice(11, 16));
+  return clockInMinutes > toMinutes(row.shiftStart) + LATE_CLOCK_IN_TOLERANCE_MINUTES;
+};
+
 interface CorrectionForm {
   clockIn: string;
   clockOut: string;
@@ -286,7 +302,10 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                     {row.groupName ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.log.clockIn?.slice(11, 16) ?? "-"}
+                    <div className="flex items-center gap-1.5">
+                      <span>{row.log.clockIn?.slice(11, 16) ?? "-"}</span>
+                      {needsClockInReview(row) && <StatusChip variant="warn">확인 필요</StatusChip>}
+                    </div>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.clockOut?.slice(11, 16) ?? "-"}
