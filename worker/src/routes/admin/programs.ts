@@ -45,6 +45,7 @@ type ProgramBody = {
   employmentInsuranceEmployerRate?: number;
   industrialAccidentRate?: number;
   annualLeaveDailyWage?: number;
+  activityLogTitle?: string | null;
   isActive?: boolean;
 };
 

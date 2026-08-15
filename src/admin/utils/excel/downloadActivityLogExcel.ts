@@ -2,11 +2,15 @@ import ExcelJS from "exceljs";
 
 import type { ActivityLogItem } from "../../../types/form";
 
+export const DEFAULT_ACTIVITY_LOG_TITLE = "노인일자리 및 사회활동 지원사업 공익활동 활동일지(예시)";
+
 export interface ActivityLogSheetHeader {
   orgName: string;
   programName: string;
   participantName: string;
   demandName: string;
+  // 1행 제목 — 관리자가 사업단 설정에서 입력 안 했으면 기본 문구를 쓴다.
+  title?: string | null;
 }
 
 /**
@@ -23,7 +27,7 @@ export const addActivityLogSheet = (
 
   // 1. 제목 셀 설정 및 병합
   sheet.mergeCells("A1:J1");
-  sheet.getCell("A1").value = "노인일자리 및 사회활동 지원사업 공익활동 활동일지(예시)";
+  sheet.getCell("A1").value = header.title || DEFAULT_ACTIVITY_LOG_TITLE;
   sheet.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
   sheet.getCell("A1").font = { size: 16, bold: true, underline: true };
   sheet.getRow(1).height = 40;

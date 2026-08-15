@@ -16,6 +16,8 @@ export type Program = {
   employmentInsuranceEmployerRate: number;
   industrialAccidentRate: number;
   annualLeaveDailyWage: number;
+  // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다.
+  activityLogTitle: string | null;
   isActive: boolean;
   createdAt: string;
 };

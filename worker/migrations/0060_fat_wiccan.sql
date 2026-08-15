@@ -1,0 +1,1 @@
+ALTER TABLE `programs` ADD `activity_log_title` text;

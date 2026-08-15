@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import {
@@ -10,8 +10,11 @@ import {
   downloadPayslipExcel,
   downloadWorkScheduleExcel,
 } from "../../api/admin/excel";
+import { updateProgramMutationOptions } from "../../api/admin/programs";
+import { DEFAULT_ACTIVITY_LOG_TITLE } from "../../utils/excel/downloadActivityLogExcel";
 
 import ConfirmModal from "../../../components/molecule/ConfirmModal";
+import Input from "../../components/Input";
 
 import {
   exportBtnClass,
@@ -26,6 +29,7 @@ import {
 interface ProgramExcelExportSectionProps {
   programId: number;
   programType: string | null;
+  activityLogTitle: string | null;
 }
 
 type ExcelExportItem = {
@@ -33,7 +37,7 @@ type ExcelExportItem = {
   icon: string;
   name: string;
   desc: string;
-  download: ((programId: number, month: string) => void) | null;
+  download: ((programId: number, month: string, activityLogTitle?: string | null) => void) | null;
 };
 
 const PUBLIC_INTEREST_ITEMS: ExcelExportItem[] = [
@@ -88,16 +92,24 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
  * 관리자 페이지 > 사업단 상세 페이지의 양식 출력 섹션입니다.
  *
  */
-const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExportSectionProps) => {
+const ProgramExcelExportSection = ({
+  programId,
+  programType,
+  activityLogTitle,
+}: ProgramExcelExportSectionProps) => {
+  const queryClient = useQueryClient();
   const [months, setMonths] = useState<Record<string, string>>({});
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [titleInput, setTitleInput] = useState(activityLogTitle ?? "");
 
   // 로딩/에러 상태 관리 용도로만 사용
   const downloadMutation = useMutation({
     mutationFn: async ({ item, month }: { item: ExcelExportItem; month: string }) => {
-      await item.download?.(programId, month);
+      await item.download?.(programId, month, item.key === "activityLog" ? titleInput : undefined);
     },
   });
+
+  const updateProgramMutation = useMutation(updateProgramMutationOptions(queryClient));
 
   // 사업 유형이 없거나(null) 예상 못한 값이면 두 유형 서식을 모두 노출
   const items =
@@ -117,6 +129,16 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
     );
   };
 
+  const handleTitleInputBlur = () => {
+    const trimmed = titleInput.trim();
+    if (trimmed === (activityLogTitle ?? "")) return;
+
+    updateProgramMutation.mutate({
+      id: programId,
+      data: { activityLogTitle: trimmed || null },
+    });
+  };
+
   return (
     <div className={exportGridClass}>
       {items.map((exportItem) => {
@@ -130,6 +152,15 @@ const ProgramExcelExportSection = ({ programId, programType }: ProgramExcelExpor
             <div className={exportIconClass}>{exportItem.icon}</div>
             <div className={exportNameClass}>{exportItem.name}</div>
             <div className={exportDescClass}>{exportItem.desc}</div>
+            {exportItem.key === "activityLog" && (
+              <Input
+                className="mb-2.5 text-[12.5px]"
+                value={titleInput}
+                placeholder={DEFAULT_ACTIVITY_LOG_TITLE}
+                onChange={(event) => setTitleInput(event.target.value)}
+                onBlur={handleTitleInputBlur}
+              />
+            )}
             <div className="flex flex-col gap-2.5">
               <input
                 type="month"

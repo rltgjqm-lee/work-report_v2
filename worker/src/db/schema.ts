@@ -44,6 +44,9 @@ export const programs = sqliteTable("programs", {
     .default(1.15),
   industrialAccidentRate: real("industrial_accident_rate").notNull().default(1.5),
   annualLeaveDailyWage: integer("annual_leave_daily_wage").notNull().default(31710),
+  // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다
+  // (addActivityLogSheet 참고).
+  activityLogTitle: text("activity_log_title"),
   // 계약 종료 시 소프트 삭제 — 비활성화하면 소속 활성 참여자도 함께 참여종료 처리한다
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")

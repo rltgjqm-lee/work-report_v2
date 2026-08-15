@@ -48,7 +48,11 @@ export const subTabBtnActiveClass =
   "border border-admin-brand bg-admin-brand px-4 py-2 text-[13px] font-semibold rounded-full cursor-pointer text-white";
 // 양식 출력 카드(관리자 페이지.dc.html의 .export-grid/.export-card) — 사업단 상세 >
 // 양식 출력 탭에서 서식별로 카드 하나씩 보여줄 때 쓴다.
-export const exportGridClass = "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4";
+// items-start: 카드마다 내용 길이가 달라서(예: 활동 대장만 제목 입력창이 더 있음),
+// grid 기본값(align-items: stretch)대로 두면 짧은 카드가 옆 카드 높이에 맞춰 늘어나
+// 버튼 아래에 빈 공간이 생긴다.
+export const exportGridClass =
+  "grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 items-start";
 export const exportCardClass = "bg-white border border-admin-border-subtle rounded-lg p-[22px]";
 export const exportIconClass = "text-[26px] mb-2.5";
 export const exportNameClass = "text-[15px] font-bold text-text-strong mb-1.5";

@@ -69,7 +69,11 @@ const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
   return candidate;
 };
 
-export const downloadActivityLogExcel = async (programId: number, month: string) => {
+export const downloadActivityLogExcel = async (
+  programId: number,
+  month: string,
+  title?: string | null,
+) => {
   const data = await request<ActivityLogExportResponse>(
     `/api/programs/${programId}/export/activity-log?month=${month}`,
   );
@@ -102,6 +106,7 @@ export const downloadActivityLogExcel = async (programId: number, month: string)
         programName: data.programName,
         participantName: participant.participantName,
         demandName: participant.demandName ?? "",
+        title,
       },
       logs,
     );
@@ -116,6 +121,7 @@ export const downloadActivityLogExcel = async (programId: number, month: string)
         programName: data.programName,
         participantName: "",
         demandName: "",
+        title,
       },
       [],
     );

@@ -207,7 +207,11 @@ const ProgramDetailPage = () => {
       )}
 
       {tab === PROGRAM_DETAIL_TAB.EXCEL && (
-        <ProgramExcelExportSection programId={programId} programType={program.programType} />
+        <ProgramExcelExportSection
+          programId={programId}
+          programType={program.programType}
+          activityLogTitle={program.activityLogTitle}
+        />
       )}
 
       {isModalOpen && (
