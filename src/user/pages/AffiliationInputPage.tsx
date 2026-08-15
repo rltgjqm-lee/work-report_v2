@@ -59,7 +59,7 @@ const findRestoredSelection = (
 };
 
 /**
- * Page 1: 사용자 정보 입력 — 지역/기관유형/사업유형 캐스케이딩 선택
+ * 사용자 정보 입력 페이지입니다.
  */
 const AffiliationInputPage = ({
   formData,
@@ -140,8 +140,7 @@ const AffiliationInputPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demandSitesErrored]);
 
-  // 💡 등록된 기관이 있는 지역만이 아니라 전국 시/도·시/군/구를 다 보여준다 — 아직 기관이
-  // 등록되지 않은 지역이라도 참여자가 자기 지역을 선택할 수 있어야 한다.
+  // 등록된 기관이 있는 지역만이 아니라 전국 시/도·시/군/구를 다 보여준다
   const sidoList = SIDO_LIST;
 
   const sigunguList = useMemo(() => KOREAN_REGIONS[sido] ?? [], [sido]);

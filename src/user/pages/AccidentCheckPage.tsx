@@ -22,14 +22,14 @@ import SafetySaveConfirmModal from "../components/molecule/SafetySaveConfirmModa
 interface Page5Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
-  onBack: () => void; // 💡 홈으로 돌아가기(취소)
-  onSave: () => Promise<void>; // 💡 IndexedDB 임시저장 브릿지
-  onNext: () => void; // 💡 저장 후 홈으로 돌아가기
+  onBack: () => void;
+  onSave: () => Promise<void>;
+  onNext: () => void;
   onAlert: (messages: string[]) => Promise<void>;
 }
 
 /**
- * 안전 등록 모듈 — 홈 대시보드에서 진입, 저장하면 다시 홈으로 돌아간다.
+ * 안전 등록 페이지입니다.
  */
 const AccidentCheckPage = ({
   formData,
@@ -46,7 +46,6 @@ const AccidentCheckPage = ({
       ...prev,
       hasAccident,
       accidentChecked: true,
-      // '무'를 선택하면 기존에 입력했던 상세 정보들을 깔끔하게 초기화해줍니다.
       ...(!hasAccident && { accidentDetail: "", accidentAction: "업무수행" }),
     }));
   };
@@ -72,6 +71,7 @@ const AccidentCheckPage = ({
   return (
     <div className={pageClass}>
       <AppBar title="안전 일지 등록" onBack={onBack} />
+
       <div className={bodyClass}>
         <PageHeaderCard
           icon="/icons/icon-safety.png"

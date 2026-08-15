@@ -31,8 +31,9 @@ const ConfirmRow = ({ label, value }: { label: string; value: ReactNode }) => (
 );
 
 /**
- * Page 2: 등록 확인 — 기본정보에서 입력한 내용을 요약해 보여주고, 참여자 상태(휴무/탈락)나
- * 사업 기간(시작 전/종료됨)에 문제가 있으면 다음 단계로 넘어가지 못하도록 안내한다.
+ * 등록 확인 페이지 입니다.
+ * — 기본정보에서 입력한 내용을 요약해 보여주고,
+ * - 참여자 상태(휴무/탈락)나 사업 기간(시작 전/종료됨)에 문제가 있으면 다음 단계로 넘어가지 못한다.
  */
 const RegistrationConfirmPage = ({
   formData,
@@ -58,8 +59,10 @@ const RegistrationConfirmPage = ({
 
   useEffect(() => {
     if (!participantId || !formData.programId) return;
+
     onChange("participantId", participantId);
     registerNativePush(formData.programId, participantId);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participantId]);
 

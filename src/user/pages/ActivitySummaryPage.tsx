@@ -25,8 +25,9 @@ const SummaryRow = ({ icon, label, value }: { icon: string; label: string; value
 );
 
 /**
- * Canvas "6. 전체 확인" — 오늘의 모듈별 기록을 요약해 보여주고 서명 페이지로 안내한다.
- * 공익활동은 업무/안전 항목도 같이 보여주고, 역량활동은 출근/퇴근만 보여준다.
+ * 전체 확인 페이지입니다.
+ * — 오늘의 모듈별 기록을 요약해 보여주고 서명 페이지로 안내한다.
+ * - 공익활동은 업무/안전 항목도 같이 보여주고, 역량활동은 출근/퇴근만 보여준다.
  */
 const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활동";

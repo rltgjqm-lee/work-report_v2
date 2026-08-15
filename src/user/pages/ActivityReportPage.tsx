@@ -21,14 +21,14 @@ import PageHeaderCard from "../components/molecule/PageHeaderCard";
 interface Page4Props {
   formData: ActivityLogFormData;
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
-  onBack: () => void; // 💡 홈으로 돌아가기(취소)
-  onSave: () => Promise<void>; // 💡 IndexedDB 임시저장 브릿지
-  onNext: () => void; // 💡 저장 후 홈으로 돌아가기
+  onBack: () => void;
+  onSave: () => Promise<void>;
+  onNext: () => void;
   onAlert: (messages: string[]) => Promise<void>;
 }
 
 /**
- * 업무 등록 모듈 — 홈 대시보드에서 진입, 저장하면 다시 홈으로 돌아간다.
+ * 업무 등록 페이지입니다.
  */
 const ActivityReportPage = ({
   formData,
@@ -40,8 +40,8 @@ const ActivityReportPage = ({
 }: Page4Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // 💡 아직 안 적었으면 사업단명/수요처명을 기본값으로 채워둔다 — 참여자는 그대로 쓰거나
-  // 고쳐 쓸 수 있다. 이미 적은 내용은 덮어쓰지 않는다.
+  // 사업단명/수요처명을 기본값으로 채워둔다
+  // — 참여자는 그대로 쓰거나 고쳐 쓸 수 있다. 이미 적은 내용은 덮어쓰지 않는다.
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,

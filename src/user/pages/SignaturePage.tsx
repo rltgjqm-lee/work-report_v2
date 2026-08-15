@@ -35,7 +35,6 @@ const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert 
     await onSave();
 
     if (!formData.demandSignature) {
-      // 💡 "확인" 누를 때까지 기다렸다가 홈으로 이동한다.
       await onAlert(["월말 제출을 위해 확인자 서명이 필요해요"]);
     }
 
