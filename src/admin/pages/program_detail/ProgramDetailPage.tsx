@@ -2,10 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  demandSiteSchedulesByProgramQueryOptions,
-  demandSitesQueryOptions,
-} from "../../api/admin/demandSites";
+import { demandSitesQueryOptions } from "../../api/admin/demandSites";
 import { groupsQueryOptions } from "../../api/admin/groups";
 import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
 
@@ -56,25 +53,8 @@ const ProgramDetailPage = () => {
   const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
   const { data: demandSitesData } = useQuery(demandSitesQueryOptions(programId));
   const demandSites = useMemo(() => demandSitesData?.demandSites ?? [], [demandSitesData]);
-  const { data: allDemandSiteSchedules = [] } = useQuery(
-    demandSiteSchedulesByProgramQueryOptions(programId),
-  );
 
   const organizationName = program?.organizationName ?? "-";
-
-  const demandSiteSchedules = useMemo(
-    () =>
-      demandSites.reduce<Record<number, typeof allDemandSiteSchedules>>(
-        (byDemandSiteId, demandSite) => {
-          byDemandSiteId[demandSite.id] = allDemandSiteSchedules.filter(
-            (schedule) => schedule.demandSiteId === demandSite.id,
-          );
-          return byDemandSiteId;
-        },
-        {},
-      ),
-    [demandSites, allDemandSiteSchedules],
-  );
 
   const activeGroups = useMemo(() => groups.filter((group) => group.isActive), [groups]);
 
@@ -204,7 +184,6 @@ const ProgramDetailPage = () => {
         <ProgramDemandSitesSection
           programId={programId}
           demandSites={demandSites}
-          demandSiteSchedules={demandSiteSchedules}
           groups={groups}
         />
       )}

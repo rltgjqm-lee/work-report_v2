@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { updateDemandSiteMutationOptions } from "../../api/admin/demandSites";
 import { useToast } from "../../context/useToast";
-import type { DemandSite, DemandSiteSchedule } from "../../types/demandSites";
+import type { DemandSite } from "../../types/demandSites";
 import type { Group } from "../../types/groups";
 
 import Button from "../../components/Button";
@@ -17,7 +17,6 @@ import DemandSiteLocationsPanel from "./DemandSiteLocationsPanel";
 interface ProgramDemandSitesSectionProps {
   programId: number;
   demandSites: DemandSite[];
-  demandSiteSchedules: Record<number, DemandSiteSchedule[]>;
   groups: Group[];
 }
 
@@ -28,7 +27,6 @@ interface ProgramDemandSitesSectionProps {
 const ProgramDemandSitesSection = ({
   programId,
   demandSites,
-  demandSiteSchedules,
   groups,
 }: ProgramDemandSitesSectionProps) => {
   const [demandSiteModalOpen, setDemandSiteModalOpen] = useState(false);
@@ -138,8 +136,8 @@ const ProgramDemandSitesSection = ({
                       className="text-left text-admin-brand underline decoration-dotted underline-offset-2 hover:decoration-solid"
                       onClick={() => setGroupAssignTarget(demandSite)}
                     >
-                      {(demandSiteSchedules[demandSite.id] ?? []).length > 0
-                        ? (demandSiteSchedules[demandSite.id] ?? [])
+                      {(demandSite.schedules ?? []).length > 0
+                        ? (demandSite.schedules ?? [])
                             .map((schedule) => schedule.groupName)
                             .join(", ")
                         : "조 배정"}
@@ -147,7 +145,7 @@ const ProgramDemandSitesSection = ({
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <div className="flex flex-col">
-                      {(demandSiteSchedules[demandSite.id] ?? []).map((schedule, index) => (
+                      {(demandSite.schedules ?? []).map((schedule, index) => (
                         <span
                           key={schedule.id}
                           className={`py-1 whitespace-nowrap ${

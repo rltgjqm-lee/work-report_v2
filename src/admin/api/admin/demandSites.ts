@@ -14,8 +14,6 @@ const demandSiteKeys = {
   all: ["demand-sites"] as const,
   byProgram: (programId: number) => [...demandSiteKeys.all, "program", programId] as const,
   schedules: (demandSiteId: number) => [...demandSiteKeys.all, "schedules", demandSiteId] as const,
-  schedulesByProgram: (programId: number) =>
-    [...demandSiteKeys.all, "schedules", "program", programId] as const,
   assignableAdmins: (programId: number) =>
     [...demandSiteKeys.all, "assignable-admins", programId] as const,
   locations: (demandSiteId: number) => [...demandSiteKeys.all, "locations", demandSiteId] as const,
@@ -116,17 +114,6 @@ export const demandSiteSchedulesQueryOptions = (demandSiteId: number) =>
     queryFn: () => listDemandSiteSchedules(demandSiteId),
   });
 
-// 사업단 상세 화면용 — 수요처 개수만큼 반복 호출하지 않도록 그 사업단의 모든 수요처
-// 조 배정을 한 번에 받는다.
-const listDemandSiteSchedulesByProgram = (programId: number) =>
-  request<DemandSiteSchedule[]>(`/api/demand-sites/schedules?programId=${programId}`);
-
-export const demandSiteSchedulesByProgramQueryOptions = (programId: number) =>
-  queryOptions({
-    queryKey: demandSiteKeys.schedulesByProgram(programId),
-    queryFn: () => listDemandSiteSchedulesByProgram(programId),
-  });
-
 export interface CreateDemandSiteScheduleVariables {
   demandSiteId: number;
   programId: number;
@@ -150,8 +137,10 @@ export const createDemandSiteScheduleMutationOptions = (queryClient: QueryClient
       queryClient.invalidateQueries({
         queryKey: demandSiteKeys.schedules(variables.demandSiteId),
       });
+      // 사업단 상세의 수요처 목록(GET /demand-sites?programId=)이 조 배정을 같이
+      // 내려주므로, 그 목록도 무효화해야 화면이 새 배정을 반영한다.
       queryClient.invalidateQueries({
-        queryKey: demandSiteKeys.schedulesByProgram(variables.programId),
+        queryKey: demandSiteKeys.byProgram(variables.programId),
       });
     },
   });
@@ -176,7 +165,7 @@ export const deleteDemandSiteScheduleMutationOptions = (queryClient: QueryClient
         queryKey: demandSiteKeys.schedules(variables.demandSiteId),
       });
       queryClient.invalidateQueries({
-        queryKey: demandSiteKeys.schedulesByProgram(variables.programId),
+        queryKey: demandSiteKeys.byProgram(variables.programId),
       });
     },
   });

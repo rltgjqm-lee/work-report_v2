@@ -15,6 +15,9 @@ export type DemandSite = {
   baseAreaEnabled: boolean;
   isActive: boolean;
   createdAt: string;
+  // 목록 조회(GET /api/demand-sites?programId=)에서만 조 배정까지 조인해서 내려준다 —
+  // 생성/수정 응답에는 없다.
+  schedules?: DemandSiteSchedule[];
 };
 
 export type DemandSiteSchedule = {
