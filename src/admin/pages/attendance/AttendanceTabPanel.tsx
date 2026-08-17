@@ -240,7 +240,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1670px] table-fixed border-collapse">
+          <table className="w-full min-w-[1730px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -252,7 +252,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   조
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   출근
                 </th>
                 <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -302,7 +302,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                     {row.groupName ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
                       <span>{row.log.clockIn?.slice(11, 16) ?? "-"}</span>
                       {needsClockInReview(row) && <StatusChip variant="warn">확인 필요</StatusChip>}
                     </div>
