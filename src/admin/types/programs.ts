@@ -18,6 +18,8 @@ export type Program = {
   annualLeaveDailyWage: number;
   // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다.
   activityLogTitle: string | null;
+  // 역량활동 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다.
+  capacityAttendanceBannerText: string | null;
   isActive: boolean;
   createdAt: string;
 };

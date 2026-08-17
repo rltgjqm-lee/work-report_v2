@@ -145,11 +145,20 @@ interface CapacityAttendanceExportResponse {
   participants: CapacityAttendanceParticipant[];
 }
 
-export const downloadAttendanceExcel = async (programId: number, month: string) => {
+export const downloadAttendanceExcel = async (
+  programId: number,
+  month: string,
+  bannerText?: string | null,
+) => {
   const data = await request<CapacityAttendanceExportResponse>(
     `/api/programs/${programId}/export/attendance?month=${month}`,
   );
-  await downloadCapacityAttendanceWorkbook(data.programName, data.month, data.participants);
+  await downloadCapacityAttendanceWorkbook(
+    data.programName,
+    data.month,
+    data.participants,
+    bannerText,
+  );
 };
 
 interface PaymentLedgerExportResponse {

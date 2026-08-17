@@ -47,6 +47,9 @@ export const programs = sqliteTable("programs", {
   // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다
   // (addActivityLogSheet 참고).
   activityLogTitle: text("activity_log_title"),
+  // 역량활동 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다
+  // (addCapacityAttendanceSheet 참고).
+  capacityAttendanceBannerText: text("capacity_attendance_banner_text"),
   // 계약 종료 시 소프트 삭제 — 비활성화하면 소속 활성 참여자도 함께 참여종료 처리한다
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")

@@ -1,0 +1,1 @@
+ALTER TABLE `programs` ADD `capacity_attendance_banner_text` text;

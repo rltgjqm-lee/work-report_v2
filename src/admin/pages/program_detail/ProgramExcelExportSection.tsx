@@ -11,7 +11,7 @@ import {
   downloadWorkScheduleExcel,
 } from "../../api/admin/excel";
 import { updateProgramMutationOptions } from "../../api/admin/programs";
-import { DEFAULT_ACTIVITY_LOG_TITLE } from "../../utils/excel/downloadActivityLogExcel";
+import { DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT } from "../../utils/excel/downloadCapacityAttendanceExcel";
 
 import ConfirmModal from "../../../components/molecule/ConfirmModal";
 import Input from "../../components/Input";
@@ -30,6 +30,7 @@ interface ProgramExcelExportSectionProps {
   programId: number;
   programType: string | null;
   activityLogTitle: string | null;
+  capacityAttendanceBannerText: string | null;
 }
 
 type ExcelExportItem = {
@@ -37,7 +38,7 @@ type ExcelExportItem = {
   icon: string;
   name: string;
   desc: string;
-  download: ((programId: number, month: string, activityLogTitle?: string | null) => void) | null;
+  download: ((programId: number, month: string, customText?: string | null) => void) | null;
 };
 
 const PUBLIC_INTEREST_ITEMS: ExcelExportItem[] = [
@@ -96,16 +97,23 @@ const ProgramExcelExportSection = ({
   programId,
   programType,
   activityLogTitle,
+  capacityAttendanceBannerText,
 }: ProgramExcelExportSectionProps) => {
   const queryClient = useQueryClient();
   const [months, setMonths] = useState<Record<string, string>>({});
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [titleInput, setTitleInput] = useState(activityLogTitle ?? "");
+  const [bannerTextInput, setBannerTextInput] = useState(capacityAttendanceBannerText ?? "");
 
   // 로딩/에러 상태 관리 용도로만 사용
   const downloadMutation = useMutation({
     mutationFn: async ({ item, month }: { item: ExcelExportItem; month: string }) => {
-      await item.download?.(programId, month, item.key === "activityLog" ? titleInput : undefined);
+      const customText =
+        item.key === "activityLog"
+          ? activityLogTitle
+          : item.key === "attendance"
+            ? bannerTextInput
+            : undefined;
+      await item.download?.(programId, month, customText);
     },
   });
 
@@ -129,13 +137,13 @@ const ProgramExcelExportSection = ({
     );
   };
 
-  const handleTitleInputBlur = () => {
-    const trimmed = titleInput.trim();
-    if (trimmed === (activityLogTitle ?? "")) return;
+  const handleBannerTextInputBlur = () => {
+    const trimmed = bannerTextInput.trim();
+    if (trimmed === (capacityAttendanceBannerText ?? "")) return;
 
     updateProgramMutation.mutate({
       id: programId,
-      data: { activityLogTitle: trimmed || null },
+      data: { capacityAttendanceBannerText: trimmed || null },
     });
   };
 
@@ -152,13 +160,13 @@ const ProgramExcelExportSection = ({
             <div className={exportIconClass}>{exportItem.icon}</div>
             <div className={exportNameClass}>{exportItem.name}</div>
             <div className={exportDescClass}>{exportItem.desc}</div>
-            {exportItem.key === "activityLog" && (
+            {exportItem.key === "attendance" && (
               <Input
                 className="mb-2.5 text-[12.5px]"
-                value={titleInput}
-                placeholder={DEFAULT_ACTIVITY_LOG_TITLE}
-                onChange={(event) => setTitleInput(event.target.value)}
-                onBlur={handleTitleInputBlur}
+                value={bannerTextInput}
+                placeholder={DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT.replace(/\n/g, " ")}
+                onChange={(event) => setBannerTextInput(event.target.value)}
+                onBlur={handleBannerTextInputBlur}
               />
             )}
             <div className="flex flex-col gap-2.5">

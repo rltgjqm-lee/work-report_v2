@@ -428,6 +428,13 @@
       "when": 1786774324838,
       "tag": "0060_fat_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1786942610011,
+      "tag": "0061_wandering_nova",
+      "breakpoints": true
     }
   ]
 }

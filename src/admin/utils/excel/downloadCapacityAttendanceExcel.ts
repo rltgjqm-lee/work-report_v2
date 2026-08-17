@@ -47,12 +47,18 @@ const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
 // 열 순서(반쪽당 5열): 날짜 · 근무시작시간 · 근무종료시간 · 결근 · 참여자서명
 const COL_COUNT_PER_HALF = 5;
 
+export const DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT =
+  "안전수칙을 지켜서 즐겁고 안전한 일자리를 우리가 만들어요!\n" +
+  "안전한 복장 착용하기 ⇒ 안전하게 이동하기 ⇒ 간단한 스트레칭하기\n" +
+  "※ 주변 잘 살피고 장애물은 내가 먼저 치우기";
+
 const addCapacityAttendanceSheet = (
   workbook: ExcelJS.Workbook,
   sheetName: string,
   programName: string,
   month: string,
   participant: CapacityAttendanceParticipant,
+  bannerText: string | null | undefined,
 ): void => {
   const sheet = workbook.addWorksheet(sheetName);
   const monthNum = Number(month.slice(5, 7));
@@ -277,9 +283,7 @@ const addCapacityAttendanceSheet = (
   const bannerRow = guideRow + 1;
   sheet.mergeCells(`${c1(0)}${bannerRow}:${c1(9)}${bannerRow}`);
   sheet.getCell(`${c1(0)}${bannerRow}`).value =
-    "안전수칙을 지켜서 즐겁고 안전한 일자리를 우리가 만들어요!\n" +
-    "안전한 복장 착용하기 ⇒ 안전하게 이동하기 ⇒ 간단한 스트레칭하기\n" +
-    "※ 주변 잘 살피고 장애물은 내가 먼저 치우기";
+    bannerText || DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT;
   sheet.getCell(`${c1(0)}${bannerRow}`).font = {
     bold: true,
     size: 12,
@@ -299,6 +303,7 @@ export const downloadCapacityAttendanceWorkbook = async (
   programName: string,
   month: string,
   participants: CapacityAttendanceParticipant[],
+  bannerText?: string | null,
 ): Promise<void> => {
   const workbook = new ExcelJS.Workbook();
   const usedSheetNames = new Set<string>();
@@ -310,6 +315,7 @@ export const downloadCapacityAttendanceWorkbook = async (
       programName,
       month,
       participant,
+      bannerText,
     );
   });
 

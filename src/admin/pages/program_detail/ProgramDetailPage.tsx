@@ -211,6 +211,7 @@ const ProgramDetailPage = () => {
           programId={programId}
           programType={program.programType}
           activityLogTitle={program.activityLogTitle}
+          capacityAttendanceBannerText={program.capacityAttendanceBannerText}
         />
       )}
 

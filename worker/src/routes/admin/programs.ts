@@ -46,6 +46,7 @@ type ProgramBody = {
   industrialAccidentRate?: number;
   annualLeaveDailyWage?: number;
   activityLogTitle?: string | null;
+  capacityAttendanceBannerText?: string | null;
   isActive?: boolean;
 };
 
