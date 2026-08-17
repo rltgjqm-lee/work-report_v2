@@ -435,6 +435,13 @@
       "when": 1786942610011,
       "tag": "0061_wandering_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "6",
+      "when": 1786945380853,
+      "tag": "0062_bouncy_giant_man",
+      "breakpoints": true
     }
   ]
 }

@@ -53,6 +53,13 @@ const needsClockInReview = (row: AttendanceRow): boolean => {
   return clockInMinutes > toMinutes(row.shiftStart) + LATE_CLOCK_IN_TOLERANCE_MINUTES;
 };
 
+// 자동퇴근이 마지막 위치를 확인 못 해서(구역 밖 의심/신호 끊김) 마감을 보류한 상태 —
+// clockOut이 아직 비어있는 동안만 사유가 남아있다(autoClockOut.ts 참고).
+const CLOCK_OUT_REVIEW_LABEL: Record<"OUTSIDE_AREA" | "LOCATION_UNKNOWN", string> = {
+  OUTSIDE_AREA: "구역 이탈 의심",
+  LOCATION_UNKNOWN: "위치 확인 불가",
+};
+
 interface CorrectionForm {
   clockIn: string;
   clockOut: string;
@@ -264,7 +271,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1760px] table-fixed border-collapse">
+          <table className="w-full min-w-[1860px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -279,7 +286,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                 <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   출근
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   퇴근
                 </th>
                 <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -332,7 +339,14 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                     </div>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.log.clockOut?.slice(11, 16) ?? "-"}
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span>{row.log.clockOut?.slice(11, 16) ?? "-"}</span>
+                      {!row.log.clockOut && row.log.clockOutReviewReason && (
+                        <StatusChip variant="warn">
+                          {CLOCK_OUT_REVIEW_LABEL[row.log.clockOutReviewReason]}
+                        </StatusChip>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <AttendanceLocationCell log={row.log} />

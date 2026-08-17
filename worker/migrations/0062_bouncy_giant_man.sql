@@ -1,0 +1,1 @@
+ALTER TABLE `attendance_logs` ADD `clock_out_review_reason` text;

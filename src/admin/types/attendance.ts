@@ -29,6 +29,9 @@ export type AttendanceLog = {
   // 이 날 받은 좌표 중 위치 조작 앱이 주입한 것으로 표시된 건수(출퇴근 + 근무 중 보고).
   // 하이브리드 앱에서만 채워지고 웹 사용자는 항상 0이므로, 0을 결백으로 읽으면 안 된다.
   simulatedCount: number;
+  // 자동퇴근이 위치를 확인 못 해서 마감을 보류했을 때만 채워진다(clockOut이 null인
+  // 동안만 의미 있음) — 관리자가 근무 강제수정으로 직접 퇴근 시각을 채워야 한다.
+  clockOutReviewReason: "OUTSIDE_AREA" | "LOCATION_UNKNOWN" | null;
 };
 
 // 같은 참여자+근무일의 활동일지(업무/안전/서명) 완료 여부. 그날 활동일지 자체가 없으면

@@ -607,6 +607,14 @@ export const attendanceLogs = sqliteTable(
     // 숨길 수 있으므로 "0이면 결백"이 아니라 "0보다 크면 확인 필요"로만 읽어야 한다.
     // 개발자 옵션을 다른 목적으로 켜둔 기기도 있으니 자동 판정하지 않고 관리자가 확인한다.
     simulatedCount: integer("simulated_count").notNull().default(0),
+    // 자동퇴근(autoClockOut)이 마지막 위치를 확인했는데 구역 밖으로 보이거나(OUTSIDE_AREA)
+    // 위치 신호가 오래돼 판단을 못 하면(LOCATION_UNKNOWN) 정규 종료시각으로 자동 마감하지
+    // 않고 이 사유만 남긴 채 clockOut을 비워둔다 — 관리자가 근무 강제수정으로 직접
+    // 채워야 한다. 매분 재평가하다 위치가 나중에 확인되면(신선+구역 안) 그때 자동으로
+    // 마감되면서 사유는 그대로 남아 왜 늦게 마감됐는지 감사 기록이 된다.
+    clockOutReviewReason: text("clock_out_review_reason").$type<
+      "OUTSIDE_AREA" | "LOCATION_UNKNOWN"
+    >(),
   },
   (table) => [
     index("idx_attendance_participant_date").on(table.participantId, table.workDate),
