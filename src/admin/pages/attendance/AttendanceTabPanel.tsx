@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   correctAttendanceMutationOptions,
   invalidateAttendanceMutationOptions,
   monthlyAttendanceQueryOptions,
   type AttendanceRow,
 } from "../../api/admin/attendance";
+import { groupsQueryOptions } from "../../api/admin/groups";
 import { useToast } from "../../context/useToast";
 import type { AttendanceStats } from "../../types/attendance";
 
@@ -18,6 +19,7 @@ import FilterSelect from "../../components/FilterSelect";
 import Input from "../../components/Input";
 import PromptModal from "../../components/modal/PromptModal";
 import MonthPicker from "../../components/MonthPicker";
+import SearchInput from "../../components/SearchInput";
 
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
 
@@ -79,7 +81,10 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [month, setMonth] = useState(getLocalYearMonth());
-  const [dayFilter, setDayFilter] = useState("all");
+  // 기본값은 오늘 — 이번 달 전체보다 당일 근무 현황을 먼저 보여준다.
+  const [dayFilter, setDayFilter] = useState(() => String(Number(getLocalToday().slice(8, 10))));
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다.
   const [prevMonth, setPrevMonth] = useState(month);
@@ -87,6 +92,8 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
     setPrevMonth(month);
     setDayFilter("all");
   }
+
+  const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
 
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
   const [invalidateTarget, setInvalidateTarget] = useState<AttendanceRow | null>(null);
@@ -111,28 +118,30 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
   // 수요처 필터는 서버가 이미 반영해서 내려준다(demandSiteId 쿼리 파라미터) — 여기선
-  // 날짜(일별) 필터만 클라이언트에서 추가로 좁힌다.
-  const filteredLogs =
-    dayFilter === "all"
-      ? logs
-      : logs.filter((row) => row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`);
+  // 날짜/조/참여자명 필터만 클라이언트에서 추가로 좁힌다.
+  const isFiltered = dayFilter !== "all" || groupFilter !== "all" || search.trim() !== "";
+  const filteredLogs = logs
+    .filter(
+      (row) => dayFilter === "all" || row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
+    )
+    .filter((row) => groupFilter === "all" || row.log.groupId === Number(groupFilter))
+    .filter((row) => row.participantName.includes(search));
 
-  // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 날짜로 더 좁혔을
-  // 때만 직접 다시 센다.
-  const dayStatsTotals =
-    dayFilter === "all"
-      ? null
-      : filteredLogs.reduce(
-          (acc, row) => ({
-            total: acc.total + 1,
-            normal: acc.normal + (row.log.status === "NORMAL" ? 1 : 0),
-            late: acc.late + (row.log.status === "LATE" ? 1 : 0),
-            earlyLeave: acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
-            totalMinutes:
-              acc.totalMinutes + (row.log.status !== "INVALID" ? (row.log.totalMinutes ?? 0) : 0),
-          }),
-          { total: 0, normal: 0, late: 0, earlyLeave: 0, totalMinutes: 0 },
-        );
+  // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 그 외 필터로 더
+  // 좁혔을 때만 직접 다시 센다.
+  const dayStatsTotals = !isFiltered
+    ? null
+    : filteredLogs.reduce(
+        (acc, row) => ({
+          total: acc.total + 1,
+          normal: acc.normal + (row.log.status === "NORMAL" ? 1 : 0),
+          late: acc.late + (row.log.status === "LATE" ? 1 : 0),
+          earlyLeave: acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
+          totalMinutes:
+            acc.totalMinutes + (row.log.status !== "INVALID" ? (row.log.totalMinutes ?? 0) : 0),
+        }),
+        { total: 0, normal: 0, late: 0, earlyLeave: 0, totalMinutes: 0 },
+      );
   const displayStats: AttendanceStats = dayStatsTotals
     ? {
         ...dayStatsTotals,
@@ -206,13 +215,13 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
     }),
   ];
 
+  const groupFilterOptions = [
+    { value: "all", label: "전체 조" },
+    ...groups.map((group) => ({ value: String(group.id), label: group.name })),
+  ];
+
   return (
     <div>
-      <div className="flex items-center justify-end gap-2.5 mb-3">
-        <MonthPicker value={month} onChange={setMonth} />
-        <FilterSelect value={dayFilter} onChange={setDayFilter} options={dayFilterOptions} />
-      </div>
-
       <div className="grid grid-cols-5 mb-5">
         <div className="px-5 py-4 border border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">총 건수</div>
@@ -239,8 +248,23 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
       </div>
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-faint flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <FilterSelect
+              value={groupFilter}
+              onChange={setGroupFilter}
+              options={groupFilterOptions}
+            />
+            <SearchInput value={search} onChange={setSearch} placeholder="참여자 이름 검색" />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <MonthPicker value={month} onChange={setMonth} />
+            <FilterSelect value={dayFilter} onChange={setDayFilter} options={dayFilterOptions} />
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1730px] table-fixed border-collapse">
+          <table className="w-full min-w-[1760px] table-fixed border-collapse">
             <thead>
               <tr>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -267,7 +291,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   근무시간(분)
                 </th>
-                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   상태
                 </th>
                 <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
@@ -334,7 +358,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.log.totalMinutes ?? "-"}
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     <StatusChip variant={STATUS_VARIANT[row.log.status]}>
                       {STATUS_LABEL[row.log.status]}
                     </StatusChip>
@@ -391,9 +415,9 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                     colSpan={13}
                     className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                   >
-                    {dayFilter === "all"
-                      ? "해당 월에 근무 기록이 없습니다."
-                      : "해당 일자에 근무 기록이 없습니다."}
+                    {isFiltered
+                      ? "조건에 맞는 근무 기록이 없습니다."
+                      : "해당 월에 근무 기록이 없습니다."}
                   </td>
                 </tr>
               )}
