@@ -142,19 +142,25 @@ export const updateProgramMutationOptions = (queryClient: QueryClient) =>
 export interface SetProgramManagerVariables {
   programId: number;
   adminId: number | null;
+  // 그 사업단 소속 수요처 담당자도 같이 바꿀지 — 기본값은 true(기존 동작과 동일).
+  updateDemandSiteContacts?: boolean;
 }
 
 // 사업단 담당자 지정
-const setProgramManager = (programId: number, adminId: number | null) =>
+const setProgramManager = (
+  programId: number,
+  adminId: number | null,
+  updateDemandSiteContacts?: boolean,
+) =>
   request<{ ok: true; adminId: number | null }>(`/api/programs/${programId}/manager`, {
     method: "PUT",
-    body: JSON.stringify({ adminId }),
+    body: JSON.stringify({ adminId, updateDemandSiteContacts }),
   });
 
 export const setProgramManagerMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ programId, adminId }: SetProgramManagerVariables) =>
-      setProgramManager(programId, adminId),
+    mutationFn: ({ programId, adminId, updateDemandSiteContacts }: SetProgramManagerVariables) =>
+      setProgramManager(programId, adminId, updateDemandSiteContacts),
     onSuccess: () => {
       // 담당자 배정이 바뀌면 그 계정의 programIds도 같이 바뀐다 — 계정 목록도 무효화한다.
       queryClient.invalidateQueries({ queryKey: adminKeys.all });

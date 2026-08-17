@@ -174,8 +174,12 @@ app.put("/:id/transfer-programs", async (c) => {
     return c.json({ error: "소속 기관이 없는 계정은 이관할 수 없습니다." }, 400);
   }
 
-  const body = await c.req.json<{ assignments?: { programId: number; toAdminId: number }[] }>();
+  const body = await c.req.json<{
+    assignments?: { programId: number; toAdminId: number }[];
+    updateDemandSiteContacts?: boolean;
+  }>();
   const assignments = body.assignments ?? [];
+  const updateDemandSiteContacts = body.updateDemandSiteContacts ?? true;
   if (assignments.length === 0) {
     return c.json({ error: "이관할 사업단과 담당자를 선택해주세요." }, 400);
   }
@@ -239,24 +243,25 @@ app.put("/:id/transfer-programs", async (c) => {
     ];
   });
 
-  // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자는 사업단 담당자를 따라간다.
-  // 모든 갱신은 하나로 묶어서 보낸다(D1 batch = 단일 트랜잭션) — 중간에 실패해서 일부
-  // 사업단만 넘어가고 수요처엔 떠난 사람이 남는 어긋난 상태가 생기면 관제까지 영향이 간다.
-  const demandSiteUpdates = assignments.map(({ programId, toAdminId }) =>
-    db
-      .update(demandSites)
-      .set({ contactAdminId: toAdminId })
-      .where(eq(demandSites.programId, programId))
-      .returning({ id: demandSites.id }),
-  );
+  // 사업단 담당자 변경과 같은 규칙 — 그 사업단의 수요처 담당자를 같이 따라가게 할지는
+  // 관리자가 고른다(updateDemandSiteContacts). 모든 갱신은 하나로 묶어서 보낸다(D1 batch =
+  // 단일 트랜잭션) — 중간에 실패해서 일부 사업단만 넘어가고 수요처엔 떠난 사람이 남는
+  // 어긋난 상태가 생기면 관제까지 영향이 간다.
+  const demandSiteUpdates = updateDemandSiteContacts
+    ? assignments.map(({ programId, toAdminId }) =>
+        db
+          .update(demandSites)
+          .set({ contactAdminId: toAdminId })
+          .where(eq(demandSites.programId, programId))
+          .returning({ id: demandSites.id }),
+      )
+    : [];
 
-  // db.batch()는 최소 1개짜리 튜플 타입을 요구해서, 항상 1개 이상 있는 demandSiteUpdates의
-  // 첫 원소를 명시적으로 꺼내 타입을 맞춘다.
-  const results = await db.batch([
-    demandSiteUpdates[0],
-    ...demandSiteUpdates.slice(1),
-    ...managerUpdates,
-  ]);
+  const operations = [...demandSiteUpdates, ...managerUpdates];
+  const results =
+    operations.length > 0
+      ? await db.batch(operations as unknown as Parameters<typeof db.batch>[0])
+      : [];
   const demandSiteCount = results
     .slice(0, demandSiteUpdates.length)
     .reduce((sum, result) => sum + (Array.isArray(result) ? result.length : 0), 0);

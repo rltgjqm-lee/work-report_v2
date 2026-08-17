@@ -302,8 +302,9 @@ app.post("/", async (c) => {
 });
 
 // 사업단 담당자 지정 — 담당자는 MANAGER 또는 SUB_ADMIN 계정의 programIds로 표현되므로,
-// 이전 담당자에게서 떼어내고 새 담당자에게 붙이는 걸 한 번에 처리한다. 소속 수요처 담당자도
-// 같이 갈아끼운다: 사업단 담당자가 바뀌면 그 사업단 수요처 담당자도 따라가는 게 자연스럽다.
+// 이전 담당자에게서 떼어내고 새 담당자에게 붙이는 걸 한 번에 처리한다. 소속 수요처 담당자를
+// 같이 갈아끼울지는 관리자가 고른다(updateDemandSiteContacts) — 기본값은 지금까지의 동작과
+// 같게 true.
 app.put("/:id/manager", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -316,8 +317,9 @@ app.put("/:id/manager", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const body = await c.req.json<{ adminId?: number | null }>();
+  const body = await c.req.json<{ adminId?: number | null; updateDemandSiteContacts?: boolean }>();
   const nextManagerId = body.adminId ?? null;
+  const updateDemandSiteContacts = body.updateDemandSiteContacts ?? true;
 
   const managerCandidates = await db
     .select({ id: admins.id, programIds: admins.programIds })
@@ -355,16 +357,22 @@ app.put("/:id/manager", async (c) => {
     ];
   });
 
-  // 계정 정리와 수요처 전파를 하나로 묶어 보낸다(D1 batch = 단일 트랜잭션) — 중간에
+  // 계정 정리와 수요처 전파(선택)를 하나로 묶어 보낸다(D1 batch = 단일 트랜잭션) — 중간에
   // 실패해서 한쪽만 반영되면 사업단과 수요처의 담당자가 서로 어긋난다.
-  await db.batch([
-    // 수요처 담당자도 함께 갱신 — 이게 "전파"다
-    db
-      .update(demandSites)
-      .set({ contactAdminId: nextManagerId })
-      .where(eq(demandSites.programId, programId)),
+  const operations = [
+    ...(updateDemandSiteContacts
+      ? [
+          db
+            .update(demandSites)
+            .set({ contactAdminId: nextManagerId })
+            .where(eq(demandSites.programId, programId)),
+        ]
+      : []),
     ...managerUpdates,
-  ]);
+  ];
+  if (operations.length > 0) {
+    await db.batch(operations as unknown as Parameters<typeof db.batch>[0]);
+  }
 
   return c.json({ ok: true, adminId: nextManagerId });
 });

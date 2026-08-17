@@ -89,6 +89,8 @@ const ProgramFormModal = ({
   // 처음 담긴 값을 붙잡아 두고 바뀐 경우에만 서버에 보낸다 — 계정 목록이 아직 안 실려서
   // 선택이 비어있는 상태로 저장해도 멀쩡한 담당자가 해제되지 않게 한다.
   const [initialManagerAdminId] = useState(managerAdminId);
+  // 담당자를 바꿀 때 그 사업단 수요처 담당자도 같이 바꿀지 — 기본은 같이 바꾸는 쪽(기존 동작).
+  const [updateDemandSiteContacts, setUpdateDemandSiteContacts] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 슈퍼 관리자는 전 기관 계정을 다 받아오므로 선택한 기관으로 좁힌다.
@@ -108,6 +110,7 @@ const ProgramFormModal = ({
     await setProgramManagerMutation.mutateAsync({
       programId,
       adminId: managerAdminId ? Number(managerAdminId) : null,
+      updateDemandSiteContacts,
     });
   };
 
@@ -227,6 +230,17 @@ const ProgramFormModal = ({
           />
         )}
       </FormField>
+
+      {editingProgram && (
+        <label className="flex items-center gap-2 text-[13px]">
+          <input
+            type="checkbox"
+            checked={updateDemandSiteContacts}
+            onChange={(event) => setUpdateDemandSiteContacts(event.target.checked)}
+          />
+          이 사업단 수요처 담당자도 함께 변경
+        </label>
+      )}
 
       {/* 사업 유형 */}
       <FormField label="사업 유형">

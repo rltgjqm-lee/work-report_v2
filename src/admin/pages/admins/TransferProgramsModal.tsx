@@ -50,6 +50,8 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
 
   // programId -> 이관받을 담당자 id(문자열, FilterSelect 값 형식)
   const [assignmentByProgramId, setAssignmentByProgramId] = useState<Record<number, string>>({});
+  // 이관하는 사업단들의 수요처 담당자도 같이 바꿀지 — 기본은 같이 바꾸는 쪽(기존 동작).
+  const [updateDemandSiteContacts, setUpdateDemandSiteContacts] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const targetName = target.name ?? target.email;
@@ -74,7 +76,7 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
 
     setError(null);
     transferAdminProgramsMutation.mutate(
-      { id: target.id, assignments },
+      { id: target.id, assignments, updateDemandSiteContacts },
       {
         // UI 한정: 이관 결과 안내와 모달 닫기는 이 화면에서만 의미 있다.
         onSuccess: (result) => {
@@ -113,8 +115,16 @@ const TransferProgramsModal = ({ onClose, target, candidates }: TransferPrograms
     >
       <p className="text-xs text-text-subtle">
         담당 사업단 {targetPrograms.length}개를 사업단별로 다른 담당자에게 나눠서 넘길 수 있습니다.
-        해당 사업단의 수요처 담당자도 함께 변경됩니다.
       </p>
+
+      <label className="flex items-center gap-2 text-[13px]">
+        <input
+          type="checkbox"
+          checked={updateDemandSiteContacts}
+          onChange={(event) => setUpdateDemandSiteContacts(event.target.checked)}
+        />
+        이관하는 사업단들의 수요처 담당자도 함께 변경
+      </label>
 
       {candidates.length === 0 ? (
         <p className="text-[12.5px] text-admin-text-placeholder">
