@@ -131,13 +131,3 @@ export const canAccessProgram = (
   if (admin.role === ROLES.MANAGER) return admin.programIds.includes(program.id);
   return admin.organizationId === program.organizationId;
 };
-
-// 조 단위 접근: 기관/사업단 담당이면 통과, SUB_ADMIN은 담당 조(groupIds)만
-export const canAccessGroup = (
-  admin: AdminSession,
-  group: { id: number; programId: number },
-  program: { organizationId: number; id: number },
-): boolean => {
-  if (admin.role === ROLES.SUB_ADMIN) return admin.groupIds.includes(group.id);
-  return canAccessProgram(admin, program);
-};

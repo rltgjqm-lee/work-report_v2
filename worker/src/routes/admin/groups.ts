@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import type { Env } from "../../types";
 
 import { groupMonthlySchedule, groups, participants, programs } from "../../db/schema";
-import { canAccessGroup, getAuth } from "../../lib/authz";
+import { canAccessProgram, getAuth } from "../../lib/authz";
 
 const app = new Hono<Env>();
 
@@ -28,7 +28,7 @@ app.put("/:id", async (c) => {
 
   const found = await loadGroupWithProgram(db, id);
   if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
-  if (!canAccessGroup(auth, found.group, found.program)) {
+  if (!canAccessProgram(auth, found.program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -70,7 +70,7 @@ app.get("/:id/monthly-schedule", async (c) => {
 
   const found = await loadGroupWithProgram(db, id);
   if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
-  if (!canAccessGroup(auth, found.group, found.program)) {
+  if (!canAccessProgram(auth, found.program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -100,7 +100,7 @@ app.put("/:id/monthly-schedule", async (c) => {
 
   const found = await loadGroupWithProgram(db, id);
   if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
-  if (!canAccessGroup(auth, found.group, found.program)) {
+  if (!canAccessProgram(auth, found.program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -170,7 +170,7 @@ app.post("/bulk-assign", async (c) => {
 
   const found = await loadGroupWithProgram(db, body.groupId);
   if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
-  if (!canAccessGroup(auth, found.group, found.program)) {
+  if (!canAccessProgram(auth, found.program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
