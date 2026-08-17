@@ -91,6 +91,15 @@ const ProgramFormModal = ({
   const [initialManagerAdminId] = useState(managerAdminId);
   // 담당자를 바꿀 때 그 사업단 수요처 담당자도 같이 바꿀지 — 기본은 같이 바꾸는 쪽(기존 동작).
   const [updateDemandSiteContacts, setUpdateDemandSiteContacts] = useState(true);
+  // 역량 활동 사업단 생성 시에만 쓰는 4대보험 적용 여부 — 급여대장/명세서(역량 활동
+  // 전용 서식)에서만 이 요율들을 쓰므로 공익 활동은 노출하지 않는다. 기본은 전부 적용
+  // (기존 동작과 동일한 기본 요율), 체크 해제한 항목만 0%로 보내 공제를 뺀다.
+  const [insuranceEnabled, setInsuranceEnabled] = useState({
+    health: true,
+    longtermCare: true,
+    employment: true,
+    industrialAccident: true,
+  });
   const [error, setError] = useState<string | null>(null);
 
   // 슈퍼 관리자는 전 기관 계정을 다 받아오므로 선택한 기관으로 좁힌다.
@@ -149,6 +158,15 @@ const ProgramFormModal = ({
         hourlyWage: Number(form.hourlyWage),
         ...(currentRole === ROLES.SUPER_ADMIN && !editingProgram
           ? { organizationId: Number(form.organizationId) }
+          : {}),
+        ...(!editingProgram && form.programType === "역량 활동"
+          ? {
+              healthInsuranceRate: insuranceEnabled.health ? undefined : 0,
+              longtermCareRate: insuranceEnabled.longtermCare ? undefined : 0,
+              employmentInsuranceRate: insuranceEnabled.employment ? undefined : 0,
+              employmentInsuranceEmployerRate: insuranceEnabled.employment ? undefined : 0,
+              industrialAccidentRate: insuranceEnabled.industrialAccident ? undefined : 0,
+            }
           : {}),
       };
 
@@ -251,6 +269,66 @@ const ProgramFormModal = ({
           options={PROGRAM_TYPE_SELECT_OPTIONS}
         />
       </FormField>
+
+      {/* 4대보험 적용 — 역량 활동 신규 생성 시에만, 급여대장/명세서에서 이 요율을 쓴다 */}
+      {!editingProgram && form.programType === "역량 활동" && (
+        <FormField label="4대보험 적용">
+          <div className="flex flex-col gap-1.5">
+            <label className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={insuranceEnabled.health}
+                onChange={(event) =>
+                  setInsuranceEnabled((insuranceEnabled) => ({
+                    ...insuranceEnabled,
+                    health: event.target.checked,
+                  }))
+                }
+              />
+              건강보험
+            </label>
+            <label className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={insuranceEnabled.longtermCare}
+                onChange={(event) =>
+                  setInsuranceEnabled((insuranceEnabled) => ({
+                    ...insuranceEnabled,
+                    longtermCare: event.target.checked,
+                  }))
+                }
+              />
+              장기요양보험
+            </label>
+            <label className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={insuranceEnabled.employment}
+                onChange={(event) =>
+                  setInsuranceEnabled((insuranceEnabled) => ({
+                    ...insuranceEnabled,
+                    employment: event.target.checked,
+                  }))
+                }
+              />
+              고용보험
+            </label>
+            <label className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={insuranceEnabled.industrialAccident}
+                onChange={(event) =>
+                  setInsuranceEnabled((insuranceEnabled) => ({
+                    ...insuranceEnabled,
+                    industrialAccident: event.target.checked,
+                  }))
+                }
+              />
+              산재보험
+            </label>
+          </div>
+        </FormField>
+      )}
 
       {/* 사업단 명 */}
       <FormField label="사업단 명">
