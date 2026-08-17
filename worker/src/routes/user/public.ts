@@ -359,9 +359,10 @@ app.post("/attendance/location-consent", async (c) => {
   return c.json({ locationConsentAt });
 });
 
-// lat/lng/accuracy는 있으면 기록하고 없으면 그냥 넘어간다 — 위치로 출근을 막지 않는다.
-// 위치 권한을 거부하는 참여자나 실내에서 GPS를 못 잡는 기기가 적지 않아서, 먼저 기록만
-// 쌓아 실제 분포를 보고 나서 차단 정책을 정한다.
+// lat/lng는 필수다 — 없으면(위치 동의를 안 했거나 권한이 막혀 있으면) LOCATION_REQUIRED로
+// 막는다. 좌표가 있는데 관제구역 밖으로 명확히 판정되면(position.inside === false)
+// OUTSIDE_AREA로 막는다. 좌표는 있지만 그 수요처에 관제구역이 아직 등록 안 돼 있어
+// 판정 자체가 안 되는 경우(position.inside === null)는 비교 대상이 없으니 막지 않는다.
 app.post("/attendance/clock-in", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
@@ -531,6 +532,19 @@ app.post("/attendance/clock-in", async (c) => {
 
   if (existing.length > 0) {
     return c.json({ error: "이미 출근 처리되었습니다." }, 400);
+  }
+
+  // 위치 자체를 안 보냈으면(위치 동의를 안 했거나 브라우저/OS 권한이 막혀 있으면) 막는다 —
+  // 관제구역 판정과 별개로 좌표 자체가 필수다. 프론트는 이 코드를 받으면 위치 동의
+  // 모달을 다시 띄워 재시도할 수 있게 안내한다.
+  if (body.lat === undefined || body.lat === null || body.lng === undefined || body.lng === null) {
+    return c.json({ error: "LOCATION_REQUIRED" }, 400);
+  }
+
+  // position.inside가 false(명확히 구역 밖)일 때만 막는다 — null(관제구역이 아직 등록 안
+  // 돼서 판정 불가)은 좌표는 있어도 비교 대상이 없는 경우라 막지 않는다.
+  if (position.inside === false) {
+    return c.json({ error: "OUTSIDE_AREA", distanceM: position.distanceM }, 400);
   }
 
   const result = await db

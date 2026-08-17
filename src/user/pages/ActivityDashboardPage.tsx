@@ -273,6 +273,22 @@ const ActivityDashboardPage = ({
             setNotWorkDayOpen(true);
             return;
           }
+          if (body?.error === "OUTSIDE_AREA") {
+            const { distanceM } = body as Extract<typeof body, { error: "OUTSIDE_AREA" }>;
+            onAlert([
+              "근무지 관제구역 밖에서는 출근할 수 없습니다.",
+              ...(distanceM !== null ? [`구역까지 약 ${distanceM}m 남았습니다.`] : []),
+            ]);
+            return;
+          }
+          if (body?.error === "LOCATION_REQUIRED") {
+            // 위치 동의 모달을 다시 띄워서 재시도할 수 있게 한다 — 확인을 누르면
+            // handleLocationConsentConfirm이 다시 submitClockIn을 호출한다.
+            onAlert(["위치 확인이 필요합니다.", "위치 접근을 허용한 뒤 다시 시도해주세요."]).then(
+              () => setLocationConsentOpen(true),
+            );
+            return;
+          }
           onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다"]);
         },
       },

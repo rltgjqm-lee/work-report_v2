@@ -188,6 +188,8 @@ const coordinatesPayload = (coordinates?: Coordinates | null) =>
 export type ClockInErrorBody =
   | { error: "TOO_EARLY"; now: string; shiftStart: string; shiftEnd: string }
   | { error: "NOT_WORK_DAY" }
+  | { error: "OUTSIDE_AREA"; distanceM: number | null }
+  | { error: "LOCATION_REQUIRED" }
   | { error: string };
 
 export class ClockInError extends Error {

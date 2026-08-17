@@ -546,8 +546,10 @@ export const disasterPushLogs = sqliteTable(
 );
 
 // 참여자 셀프 체크인/아웃 근무 기록. 시간은 조의 shiftStart/shiftEnd 기준으로 판정한다.
-// 출퇴근 시점의 위치도 같이 남기지만 이걸로 출퇴근을 막지는 않는다 — 실제 분포를 먼저
-// 모아보고(GPS 미허용률, 구역 중심까지 거리) 차단 정책을 정하기 위한 기록용이다.
+// 출퇴근 시점의 위치도 같이 남긴다 — 출근은 좌표 자체가 없으면(위치 미동의/권한 거부)
+// LOCATION_REQUIRED로, 관제구역 밖으로 명확히 판정되면(clockInInside === false)
+// OUTSIDE_AREA로 막는다(public.ts의 /attendance/clock-in 참고). 좌표는 있는데 그
+// 수요처에 관제구역이 아직 없어 판정 자체가 안 되는 경우(null)만 막지 않는다.
 export const attendanceLogs = sqliteTable(
   "attendance_logs",
   {
