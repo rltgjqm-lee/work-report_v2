@@ -14,6 +14,7 @@ import { updateProgramMutationOptions } from "../../api/admin/programs";
 import { DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT } from "../../utils/excel/downloadCapacityAttendanceExcel";
 
 import ConfirmModal from "../../../components/molecule/ConfirmModal";
+import FormField from "../../components/FormField";
 import Input from "../../components/Input";
 
 import {
@@ -161,13 +162,15 @@ const ProgramExcelExportSection = ({
             <div className={exportNameClass}>{exportItem.name}</div>
             <div className={exportDescClass}>{exportItem.desc}</div>
             {exportItem.key === "attendance" && (
-              <Input
-                className="mb-2.5 text-[12.5px]"
-                value={bannerTextInput}
-                placeholder={DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT.replace(/\n/g, " ")}
-                onChange={(event) => setBannerTextInput(event.target.value)}
-                onBlur={handleBannerTextInputBlur}
-              />
+              <FormField label="출근부 공통 문구">
+                <Input
+                  className="mb-2.5 text-[12.5px]"
+                  value={bannerTextInput}
+                  placeholder={DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT.replace(/\n/g, " ")}
+                  onChange={(event) => setBannerTextInput(event.target.value)}
+                  onBlur={handleBannerTextInputBlur}
+                />
+              </FormField>
             )}
             <div className="flex flex-col gap-2.5">
               <input
