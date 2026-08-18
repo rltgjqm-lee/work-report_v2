@@ -32,6 +32,10 @@ export type AttendanceLog = {
   // 자동퇴근이 위치를 확인 못 해서 마감을 보류했을 때만 채워진다(clockOut이 null인
   // 동안만 의미 있음) — 관리자가 근무 강제수정으로 직접 퇴근 시각을 채워야 한다.
   clockOutReviewReason: "OUTSIDE_AREA" | "LOCATION_UNKNOWN" | null;
+  // 근태 강제수정(PUT /api/attendance/:id)이 한 번이라도 저장되면 채워지는 감사용
+  // 시각 — 화면엔 값 자체를 안 보여주고, null 여부로 "관리자가 이 기록을 한 번도
+  // 손대지 않았다"만 판단하는 용도로 쓴다(AttendanceTabPanel의 확인필요 칩 참고).
+  correctedAt: string | null;
 };
 
 // 같은 참여자+근무일의 활동일지(업무/안전/서명) 완료 여부. 그날 활동일지 자체가 없으면

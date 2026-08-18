@@ -53,6 +53,12 @@ const needsClockInReview = (row: AttendanceRow): boolean => {
   return clockInMinutes > toMinutes(row.shiftStart) + LATE_CLOCK_IN_TOLERANCE_MINUTES;
 };
 
+// 지각 의심(확인 필요)인데 상태는 기본값 "정상"으로 찍혀있어서 서로 모순돼 보이는 문제 —
+// 관리자가 근태 수정을 한 번이라도 저장하면(정상으로 재확인하든 지각으로 바꾸든)
+// correctedAt이 채워지므로, 그 전까지만 "정상" 대신 "확인필요"로 보여준다.
+const isUnreviewedLateArrival = (row: AttendanceRow): boolean =>
+  row.log.status === "NORMAL" && !row.log.correctedAt && needsClockInReview(row);
+
 // 자동퇴근이 마지막 위치를 확인 못 해서(구역 밖 의심/신호 끊김) 마감을 보류한 상태 —
 // clockOut이 아직 비어있는 동안만 사유가 남아있다(autoClockOut.ts 참고).
 const CLOCK_OUT_REVIEW_LABEL: Record<"OUTSIDE_AREA" | "LOCATION_UNKNOWN", string> = {
@@ -335,7 +341,12 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     <div className="flex items-center gap-1.5 whitespace-nowrap">
                       <span>{row.log.clockIn?.slice(11, 16) ?? "-"}</span>
-                      {needsClockInReview(row) && <StatusChip variant="warn">확인 필요</StatusChip>}
+                      {needsClockInReview(row) &&
+                        (row.log.correctedAt ? (
+                          <StatusChip variant="ok">확인 완료</StatusChip>
+                        ) : (
+                          <StatusChip variant="warn">확인 필요</StatusChip>
+                        ))}
                     </div>
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
@@ -373,9 +384,13 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                     {row.log.totalMinutes ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    <StatusChip variant={STATUS_VARIANT[row.log.status]}>
-                      {STATUS_LABEL[row.log.status]}
-                    </StatusChip>
+                    {isUnreviewedLateArrival(row) ? (
+                      <StatusChip variant="warn">확인필요</StatusChip>
+                    ) : (
+                      <StatusChip variant={STATUS_VARIANT[row.log.status]}>
+                        {STATUS_LABEL[row.log.status]}
+                      </StatusChip>
+                    )}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {row.activity.hasAccident ? (
