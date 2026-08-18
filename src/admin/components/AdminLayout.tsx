@@ -8,6 +8,7 @@ import { organizationQueryOptions } from "../api/admin/organizations";
 import { logout } from "../api/auth";
 import { ROLES } from "../types/admins";
 import ChangePasswordModal from "./modal/ChangePasswordModal";
+import SessionExpiryBanner from "./SessionExpiryBanner";
 
 const BASE_NAV_ITEMS = [
   { to: "/admin/organizations", label: "기관 관리", badge: "1" },
@@ -168,6 +169,8 @@ const AdminLayout = () => {
             </button>
           </div>
         </div>
+
+        {admin && <SessionExpiryBanner expiresAt={admin.expiresAt} now={now} />}
 
         <div className="flex-1 p-7 px-8 overflow-auto">
           <Outlet />
