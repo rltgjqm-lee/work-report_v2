@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import AdminsPage from "./pages/admins/AdminsPage";
 import AttendancePage from "./pages/attendance/AttendancePage";
+import ContactPage from "./pages/ContactPage";
 import DisasterMessagesPage from "./pages/DisasterMessagesTestPage";
 import DisasterPushLogsPage from "./pages/DisasterPushLogsPage";
 import EscapesPage from "./pages/EscapesPage";
@@ -46,6 +47,7 @@ const AdminApp = () => (
               <Route path="disaster-push-logs" element={<DisasterPushLogsPage />} />
               <Route path="admins" element={<AdminsPage />} />
               <Route path="login-history" element={<LoginHistoryPage />} />
+              <Route path="contact" element={<ContactPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/admin" replace />} />

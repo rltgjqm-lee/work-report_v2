@@ -31,11 +31,17 @@ const ADMIN_ACCOUNTS_NAV_ITEM = {
   badge: "8",
 };
 
+const CONTACT_NAV_ITEM = {
+  to: "/admin/contact",
+  label: "문의하기",
+  badge: "9",
+};
+
 // SUPER_ADMIN에게만 노출
 const LOGIN_HISTORY_NAV_ITEM = {
   to: "/admin/login-history",
   label: "로그인 이력",
-  badge: "9",
+  badge: "10",
 };
 
 const getTopbarTitle = (pathname: string) => {
@@ -50,6 +56,7 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 테스트";
   if (pathname.startsWith("/admin/admins")) return "관리자 계정";
   if (pathname.startsWith("/admin/login-history")) return "로그인 이력";
+  if (pathname.startsWith("/admin/contact")) return "문의하기";
   return "관리자 콘솔";
 };
 
@@ -75,6 +82,7 @@ const AdminLayout = () => {
     ...(admin?.role === ROLES.SUPER_ADMIN || admin?.role === ROLES.ORGANIZATION_ADMIN
       ? [ADMIN_ACCOUNTS_NAV_ITEM]
       : []),
+    CONTACT_NAV_ITEM,
     ...(admin?.role === ROLES.SUPER_ADMIN ? [LOGIN_HISTORY_NAV_ITEM] : []),
   ];
 
