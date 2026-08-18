@@ -39,11 +39,10 @@ const LOGIN_HISTORY_NAV_ITEM = {
 };
 
 const getTopbarTitle = (pathname: string) => {
-  if (/^\/admin\/programs\/\d+\/attendance/.test(pathname)) return "근무 관리";
-  if (/^\/admin\/programs\/\d+\/escapes/.test(pathname)) return "안전 관제";
-  if (/^\/admin\/programs\/\d+/.test(pathname)) return "사업단 상세";
+  if (pathname === "/admin/program") return "사업단 관리 > 사업단 상세";
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
   if (pathname.startsWith("/admin/organizations")) return "기관 관리";
+  if (pathname === "/admin/participant") return "참여자 관리 > 참여자 상세";
   if (pathname.startsWith("/admin/participants")) return "참여자 관리";
   if (pathname.startsWith("/admin/attendance")) return "근무 관리";
   if (pathname.startsWith("/admin/escapes")) return "안전 관제";
