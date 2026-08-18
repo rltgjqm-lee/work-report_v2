@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --font-sans: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
 
   /* 참여자용 메인 앱 / 관리자 콘솔에서 공유 */
   --color-text-strong: #1f2937;
