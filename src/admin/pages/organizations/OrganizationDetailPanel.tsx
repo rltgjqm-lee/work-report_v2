@@ -2,7 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { organizationDetailQueryOptions } from "../../api/admin/organizations";
+import { usePagination } from "../../hooks/usePagination";
 import { ROLES, type Role } from "../../types/admins";
+
+import Pagination from "../../components/Pagination";
 
 const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUPER_ADMIN]: "서비스 총괄 관리자",
@@ -10,6 +13,10 @@ const ROLE_LABEL: Record<Role, string> = {
   [ROLES.SUB_ADMIN]: "부관리자",
   [ROLES.MANAGER]: "담당자",
 };
+
+// 수요처는 기관 하나에 수십 개 이상 붙을 수 있어서(소속 직원/담당 사업단과 달리) 이
+// 열만 클라이언트 사이드로 페이지네이션한다 — ProgramParticipantsSection.tsx와 같은 패턴.
+const SITES_PER_PAGE = 5;
 
 interface OrganizationDetailPanelProps {
   organizationId: number;
@@ -30,6 +37,12 @@ const OrganizationDetailPanel = ({
   const staffItems = data?.staff ?? [];
   const programItems = data?.programs ?? [];
   const siteItems = data?.sites ?? [];
+  const {
+    page: sitesPage,
+    totalPages: sitesTotalPages,
+    pageItems: pagedSiteItems,
+    setPage: setSitesPage,
+  } = usePagination(siteItems, SITES_PER_PAGE);
 
   return (
     <div className="flex bg-admin-surface-header border border-admin-border-subtle rounded-[2px] px-6 py-6">
@@ -89,16 +102,21 @@ const OrganizationDetailPanel = ({
         {siteItems.length === 0 ? (
           <span className="text-[11.5px] text-admin-text-placeholder">담당 수요처가 없습니다.</span>
         ) : (
-          <div className="flex flex-col gap-4">
-            {siteItems.map((site) => (
-              <div key={site.id} className="flex flex-col gap-1">
-                <span className="text-[13px] font-semibold text-text-strong">{site.site}</span>
-                <span className="text-[11.5px] text-admin-text-faint">
-                  배치 {site.count}명 · 담당자 {site.manager}
-                </span>
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="flex flex-col gap-4">
+              {pagedSiteItems.map((site) => (
+                <div key={site.id} className="flex flex-col gap-1">
+                  <span className="text-[13px] font-semibold text-text-strong">{site.site}</span>
+                  <span className="text-[11.5px] text-admin-text-faint">
+                    배치 {site.count}명 · 담당자 {site.manager}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {sitesTotalPages > 1 && (
+              <Pagination page={sitesPage} totalPages={sitesTotalPages} onChange={setSitesPage} />
+            )}
+          </>
         )}
       </div>
     </div>
