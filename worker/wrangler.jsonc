@@ -29,6 +29,6 @@
   // 아니라 vars(평문)로 둔다.
   "vars": {
     // capacitor://localhost(iOS), https://localhost(Android)는 Capacitor 하이브리드 앱의 기본 오리진
-    "ALLOWED_ORIGINS": "https://work-report-v3.pages.dev,http://localhost:5173,capacitor://localhost,https://localhost",
+    "ALLOWED_ORIGINS": "https://worksafe.co.kr,https://work-report-v3.pages.dev,http://localhost:5173,capacitor://localhost,https://localhost",
   },
 }
