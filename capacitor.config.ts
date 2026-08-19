@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.workreport.senioractivity",
-  appName: "Work Report",
+  appName: "Work Safe",
   webDir: "dist-hybrid",
   android: {
     // 백그라운드 위치 감시(@capacitor-community/background-geolocation)가 백그라운드

@@ -1,6 +1,6 @@
 {
-  "name": "Work Report",
-  "short_name": "Work Report",
+  "name": "Work Safe",
+  "short_name": "Work Safe",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

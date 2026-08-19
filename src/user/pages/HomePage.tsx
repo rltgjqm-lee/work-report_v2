@@ -57,7 +57,7 @@ const HomePage = ({
           <div className="flex gap-1.5">
             <img src="/icons/app-icon-1024.png" alt="" className="w-5 h-5 rounded-[6px]" />
             <p className="text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
-              WORK REPORT
+              WORK SAFE
             </p>
           </div>
 

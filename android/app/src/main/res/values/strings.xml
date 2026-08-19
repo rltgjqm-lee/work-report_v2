@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Work Report</string>
-    <string name="title_activity_main">Work Report</string>
+    <string name="app_name">Work Safe</string>
+    <string name="title_activity_main">Work Safe</string>
     <string name="package_name">com.workreport.senioractivity</string>
     <string name="custom_url_scheme">com.workreport.senioractivity</string>
     <!-- 근무 중 위치 관제가 켜져 있는 동안 상단에 상주하는 알림의 채널 이름 -->
