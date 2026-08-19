@@ -1,15 +1,21 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import AdminApp from "./admin/AdminApp";
 import MobileApp from "./MobileApp";
+
+const AdminApp = lazy(() => import("./admin/AdminApp"));
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/admin/*" element={<AdminApp />} />
-        <Route path="*" element={<MobileApp />} />
-      </Routes>
+      <Suspense
+        fallback={<div className="p-6 text-center text-sm text-gray-400">불러오는 중...</div>}
+      >
+        <Routes>
+          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="*" element={<MobileApp />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
