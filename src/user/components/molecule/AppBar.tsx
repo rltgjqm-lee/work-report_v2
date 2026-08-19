@@ -53,10 +53,10 @@ const AppBar = ({ title, onBack, onHome, right, participantId }: AppBarProps) =>
       {participantId && (
         <button
           onClick={() => setIsSosModalOpen(true)}
-          className="w-11 h-11 rounded-full bg-danger-tint border-none flex items-center justify-center flex-none cursor-pointer"
+          className="w-10 h-10 rounded-xl bg-danger-tint border-none flex items-center justify-center flex-none cursor-pointer"
           aria-label="SOS 긴급 도움 요청"
         >
-          <span className="text-xl leading-none">🚨</span>
+          <span className="text-lg leading-none">🚨</span>
         </button>
       )}
       {right ?? (!participantId && <span className="w-10 flex-none" />)}
