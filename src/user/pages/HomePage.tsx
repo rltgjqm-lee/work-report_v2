@@ -118,7 +118,7 @@ const StatusPill = ({ label, active }: { label: string; active: boolean }) => (
     }`}
   >
     <span className={`w-[5px] h-[5px] rounded-full ${active ? "bg-brand" : "bg-[#c7ccd4]"}`} />
-    <p className="flex items-center text-center h-3.5 leading-[14px] mt-[1px]">{label}</p>
+    <p className="flex items-center text-center h-3.5 leading-[14px] mb-[1px]">{label}</p>
   </div>
 );
 
