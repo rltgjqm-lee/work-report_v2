@@ -5,7 +5,7 @@ import { getCookie, setCookie } from "hono/cookie";
 
 import type { Env } from "../../types";
 
-import { admins, adminSessions } from "../../db/schema";
+import { adminPushSubscriptions, admins, adminSessions } from "../../db/schema";
 import { getAuth } from "../../lib/authz";
 import { hashPassword, verifyPassword } from "../../lib/password";
 import {
@@ -88,6 +88,51 @@ app.put("/password", async (c) => {
 
   const passwordHash = await hashPassword(body.newPassword);
   await db.update(admins).set({ passwordHash }).where(eq(admins.id, auth.id));
+
+  return c.json({ ok: true });
+});
+
+// 관리자 콘솔(/admin 스코프로 좁힌 서비스워커)의 웹 푸시 구독 등록 — SOS 발생 시
+// /public/sos가 이 구독으로 알림을 보낸다. endpoint가 unique라 같은 브라우저가 다시
+// 구독해도 upsert로 처리된다.
+app.post("/push-subscriptions", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{
+    endpoint?: string;
+    keys?: { p256dh?: string; auth?: string };
+  }>();
+
+  if (!body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {
+    return c.json({ error: "푸시 구독 정보가 올바르지 않습니다." }, 400);
+  }
+
+  const result = await db
+    .insert(adminPushSubscriptions)
+    .values({
+      adminId: auth.id,
+      endpoint: body.endpoint,
+      p256dh: body.keys.p256dh,
+      auth: body.keys.auth,
+    })
+    .onConflictDoUpdate({
+      target: adminPushSubscriptions.endpoint,
+      set: { adminId: auth.id, p256dh: body.keys.p256dh, auth: body.keys.auth },
+    })
+    .returning();
+
+  return c.json(result[0], 201);
+});
+
+// 알림을 끄거나 로그아웃할 때 구독을 정리한다.
+app.delete("/push-subscriptions", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{ endpoint?: string }>();
+  if (!body.endpoint) {
+    return c.json({ error: "endpoint를 지정해주세요." }, 400);
+  }
+
+  await db.delete(adminPushSubscriptions).where(eq(adminPushSubscriptions.endpoint, body.endpoint));
 
   return c.json({ ok: true });
 });

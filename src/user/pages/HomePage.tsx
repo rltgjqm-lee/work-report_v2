@@ -1,8 +1,12 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Building2, Settings } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
+
+import { sendSos } from "../api/sosApi";
+import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosIdentificationRequiredModal from "../components/molecule/SosIdentificationRequiredModal";
 
 interface TodayStatus {
   isWorkDay: boolean;
@@ -47,6 +51,30 @@ const HomePage = ({
   onStartActivityLog,
   onOpenSettings,
 }: HomePageProps) => {
+  const [isSosConfirmModalOpen, setIsSosConfirmModalOpen] = useState(false);
+  const [isSosIdentificationModalOpen, setIsSosIdentificationModalOpen] = useState(false);
+
+  // 본인확인 전(participantId 없음)엔 누구의 SOS인지 알 수 없으니 확인 카운트다운 대신
+  // 안내 모달로 보낸다. 확인이 끝난 뒤엔 한 번만 눌러도 바로 SOS 확인 모달이 뜬다 —
+  // 오탐 방지는 탭 횟수가 아니라 그 모달의 3초 취소 카운트다운이 맡는다.
+  const handleSosButtonClick = () => {
+    if (!formData.participantId) {
+      setIsSosIdentificationModalOpen(true);
+      return;
+    }
+    setIsSosConfirmModalOpen(true);
+  };
+
+  const handleSosSend = () => {
+    setIsSosConfirmModalOpen(false);
+    if (!formData.participantId) return;
+    sendSos(formData.participantId);
+  };
+
+  const handleSosCancel = () => {
+    setIsSosConfirmModalOpen(false);
+  };
+
   return (
     <div
       className="flex flex-col h-full min-h-0 flex-1 overflow-y-auto"
@@ -105,8 +133,18 @@ const HomePage = ({
             }
           />
         </div>
+
+        <SosButton onClick={handleSosButtonClick} />
+
         <div className="flex-1 min-h-[24px]" />
       </div>
+
+      {isSosConfirmModalOpen && (
+        <SosConfirmModal onSend={handleSosSend} onCancel={handleSosCancel} />
+      )}
+      {isSosIdentificationModalOpen && (
+        <SosIdentificationRequiredModal onConfirm={() => setIsSosIdentificationModalOpen(false)} />
+      )}
     </div>
   );
 };
@@ -278,6 +316,23 @@ const HomeActionCard = ({ onClick, iconSrc, title, description }: HomeActionCard
     <span className="text-[clamp(12.5px,3.3vw,14px)] text-text-muted font-medium leading-[1.5] mt-2.5">
       {description}
     </span>
+  </button>
+);
+
+// 본인확인 여부와 무관하게 항상 눌리는 버튼이다 — 본인확인 전이면 클릭 시
+// SosIdentificationRequiredModal로 안내하고, 후면 SosConfirmModal로 이어진다(HomePage에서 분기).
+const SosButton = ({ onClick }: { onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="mt-3.5 w-full rounded-[12px] px-4 py-3.5 flex flex-col items-center justify-center bg-white cursor-pointer shadow-[0_2px_8px_rgba(20,30,50,.05)]"
+  >
+    <div className="flex items-center gap-2">
+      <span className="text-[20px] leading-none">🚨</span>
+      <span className="text-base font-extrabold tracking-[0.02em] text-text-tertiary">
+        SOS 긴급 도움 요청
+      </span>
+    </div>
+    <span className="text-[12px] font-semibold text-text-muted">위급 시에 버튼을 눌러주세요</span>
   </button>
 );
 

@@ -479,7 +479,11 @@ const Main = () => {
 
         {/* 설정 */}
         {view === VIEW_TYPE.SETTINGS && (
-          <SettingsPage todayStatus={todayStatus} onBack={() => setView(VIEW_TYPE.MAIN)} />
+          <SettingsPage
+            todayStatus={todayStatus}
+            participantId={formData.participantId}
+            onBack={() => setView(VIEW_TYPE.MAIN)}
+          />
         )}
 
         {/* 업무 등록 모듈 */}

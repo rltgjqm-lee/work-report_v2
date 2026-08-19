@@ -43,7 +43,7 @@ const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert 
 
   return (
     <div className={pageClass}>
-      <AppBar title="서명" onBack={onBack} />
+      <AppBar title="서명" onBack={onBack} participantId={formData.participantId} />
       <div className={bodyClass}>
         <PageHeaderCard
           icon="/icons/icon-signature.png"

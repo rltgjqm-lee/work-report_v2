@@ -442,6 +442,20 @@
       "when": 1786945380853,
       "tag": "0062_bouncy_giant_man",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "6",
+      "when": 1787112400734,
+      "tag": "0063_fair_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1787113001066,
+      "tag": "0064_neat_metal_master",
+      "breakpoints": true
     }
   ]
 }

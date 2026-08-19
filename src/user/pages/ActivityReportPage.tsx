@@ -71,7 +71,7 @@ const ActivityReportPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="업무 일지 등록" onBack={onBack} />
+      <AppBar title="업무 일지 등록" onBack={onBack} participantId={formData.participantId} />
       <div className={bodyClass}>
         <PageHeaderCard
           icon="/icons/icon-task.png"
