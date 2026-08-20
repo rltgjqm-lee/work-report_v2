@@ -37,10 +37,13 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes("/admin") && "focus" in client) {
-          return client.focus();
-        }
+      // 이미 admin 탭이 열려있으면 보고 있던 화면 그대로 두지 않고, 안전 관제로
+      // 이동시킨 뒤 포커스한다 — 알림을 클릭했는데 엉뚱한 화면이 그대로면 헷갈리므로.
+      const adminClient = clientList.find((client) => client.url.includes("/admin"));
+      if (adminClient && "navigate" in adminClient) {
+        return adminClient
+          .navigate("/admin/escapes")
+          .then((navigatedClient) => (navigatedClient ?? adminClient).focus());
       }
       if (clients.openWindow) {
         return clients.openWindow("/admin/escapes");
