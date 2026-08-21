@@ -35,8 +35,9 @@ interface GroupAddModalProps {
 
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 조를 추가하는 모달입니다.
- * 월간 근무 근무일도 같이 지정할 수 있고(선택), 근무일을 하나도 안 고르면
- * 근무일 없이 조만 만들어져서 나중에 "수정"으로 따로 설정해도 된다.
+ * 월간 근무일을 하나도 안 고르면 저장할 수 없다 — 근무일이 없으면 참여자가
+ * 근무일 여부와 무관하게 아무 날에나 출근 처리될 수 있어서, 조를 만드는
+ * 시점에 최소 하루 이상의 근무일을 반드시 같이 등록하게 한다.
  */
 const GroupAddModal = ({
   onClose,
@@ -118,19 +119,15 @@ const GroupAddModal = ({
       alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
       return;
     }
+    if (workDates.length === 0) {
+      alert("월간 근무일을 하나 이상 선택해주세요.");
+      return;
+    }
 
     createGroupMutation.mutate(
       { programId, data: form },
       {
         onSuccess: (created) => {
-          // 근무일을 하나도 안 골랐으면 월간 근무일 없이 조만 만들고 끝낸다 — 나중에
-          // "수정"으로 따로 설정해도 된다.
-          if (workDates.length === 0) {
-            showToast(`'${form.name}' 조를 추가했습니다.`);
-            onClose();
-            return;
-          }
-
           updateGroupMonthlyScheduleMutation.mutate(
             {
               groupId: created.id,
@@ -215,9 +212,7 @@ const GroupAddModal = ({
       </div>
 
       <div className="border-t border-border-faint pt-4 flex flex-col gap-4">
-        <div className="text-[13px] font-bold text-text-strong">
-          월간 근무일 (선택 — 지금 안 정해도 나중에 수정할 수 있어요)
-        </div>
+        <div className="text-[13px] font-bold text-text-strong">월간 근무일</div>
 
         <FormField label="월">
           <Input
