@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -11,10 +11,11 @@ import Button from "../../components/Button";
 import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
 
 import ParticipantAddModal from "./ParticipantAddModal";
-import ProgramDemandSitesSection from "./ProgramDemandSitesSection";
-import ProgramExcelExportSection from "./ProgramExcelExportSection";
-import ProgramGroupsSection from "./ProgramGroupsSection";
-import ProgramParticipantsSection from "./ProgramParticipantsSection";
+
+const ProgramDemandSitesSection = lazy(() => import("./ProgramDemandSitesSection"));
+const ProgramExcelExportSection = lazy(() => import("./ProgramExcelExportSection"));
+const ProgramGroupsSection = lazy(() => import("./ProgramGroupsSection"));
+const ProgramParticipantsSection = lazy(() => import("./ProgramParticipantsSection"));
 
 const PROGRAM_DETAIL_TAB = {
   GROUPS: "groups",
@@ -170,50 +171,54 @@ const ProgramDetailPage = () => {
 
       <TabBar tabs={PROGRAM_DETAIL_TABS} active={tab} onChange={setTab} />
 
-      {tab === PROGRAM_DETAIL_TAB.GROUPS && (
-        <ProgramGroupsSection
-          programId={programId}
-          groups={groups}
-          programEndDate={program.endDate}
-          programStartTime={program.startTime}
-          programEndTime={program.endTime}
-        />
-      )}
+      <Suspense
+        fallback={<div className="p-6 text-center text-sm text-gray-400">불러오는 중...</div>}
+      >
+        {tab === PROGRAM_DETAIL_TAB.GROUPS && (
+          <ProgramGroupsSection
+            programId={programId}
+            groups={groups}
+            programEndDate={program.endDate}
+            programStartTime={program.startTime}
+            programEndTime={program.endTime}
+          />
+        )}
 
-      {tab === PROGRAM_DETAIL_TAB.DEMAND_SITES && (
-        <ProgramDemandSitesSection
-          programId={programId}
-          demandSites={demandSites}
-          groups={groups}
-        />
-      )}
+        {tab === PROGRAM_DETAIL_TAB.DEMAND_SITES && (
+          <ProgramDemandSitesSection
+            programId={programId}
+            demandSites={demandSites}
+            groups={groups}
+          />
+        )}
 
-      {tab === PROGRAM_DETAIL_TAB.PARTICIPANTS && (
-        <ProgramParticipantsSection
-          programId={programId}
-          participants={filtered}
-          groups={groups}
-          demandSites={demandSites}
-          search={search}
-          onSearchChange={setSearch}
-          demandOptions={demandOptions}
-          demandFilter={demandFilter}
-          onDemandFilterChange={setDemandFilter}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          groupFilter={groupFilter}
-          onGroupFilterChange={setGroupFilter}
-        />
-      )}
+        {tab === PROGRAM_DETAIL_TAB.PARTICIPANTS && (
+          <ProgramParticipantsSection
+            programId={programId}
+            participants={filtered}
+            groups={groups}
+            demandSites={demandSites}
+            search={search}
+            onSearchChange={setSearch}
+            demandOptions={demandOptions}
+            demandFilter={demandFilter}
+            onDemandFilterChange={setDemandFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            groupFilter={groupFilter}
+            onGroupFilterChange={setGroupFilter}
+          />
+        )}
 
-      {tab === PROGRAM_DETAIL_TAB.EXCEL && (
-        <ProgramExcelExportSection
-          programId={programId}
-          programType={program.programType}
-          activityLogTitle={program.activityLogTitle}
-          capacityAttendanceBannerText={program.capacityAttendanceBannerText}
-        />
-      )}
+        {tab === PROGRAM_DETAIL_TAB.EXCEL && (
+          <ProgramExcelExportSection
+            programId={programId}
+            programType={program.programType}
+            activityLogTitle={program.activityLogTitle}
+            capacityAttendanceBannerText={program.capacityAttendanceBannerText}
+          />
+        )}
+      </Suspense>
 
       {isModalOpen && (
         <ParticipantAddModal

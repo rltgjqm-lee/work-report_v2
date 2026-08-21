@@ -1,7 +1,9 @@
 import { useState, type ChangeEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalToday } from "../../../utils/timeFormat";
+import { groupsQueryOptions } from "../../api/admin/groups";
+import { groupMonthlyScheduleQueryOptions } from "../../api/admin/monthlySchedule";
 import { programParticipantsQueryOptions } from "../../api/admin/programs";
 import {
   cancelTrainingLogMutationOptions,
@@ -126,10 +128,60 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
     trainingComplianceQueryOptions(programId, demandSiteId, subTab === "compliance"),
   );
 
+  // 💡 교육 추가/수정 시점엔 아직 참여자·조가 정해지지 않으니(사업단 전체 대상 교육),
+  // 사업단의 활성 조 전체를 기준으로 "이 날짜가 몇 개 조의 근무일인지" 요약만 보여준다.
+  const { data: groups = [] } = useQuery({
+    ...groupsQueryOptions(programId),
+    enabled: trainingModalOpen,
+  });
+  const activeGroups = groups.filter((group) => group.isActive);
+  const trainingYearMonth = trainingForm.trainingDate.slice(0, 7);
+  const trainingGroupScheduleQueries = useQueries({
+    queries: activeGroups.map((group) => ({
+      ...groupMonthlyScheduleQueryOptions(group.id, trainingYearMonth),
+      enabled: trainingModalOpen && !!trainingForm.trainingDate,
+    })),
+  });
+  const loadedTrainingGroupScheduleCount = trainingGroupScheduleQueries.filter(
+    (query) => query.data !== undefined,
+  ).length;
+  const groupsNotOnSchedule = activeGroups.filter((_group, index) => {
+    const workDates = trainingGroupScheduleQueries[index]?.data?.workDates;
+    return workDates !== undefined && !workDates.includes(trainingForm.trainingDate);
+  });
+
   // 이수 등록 모달에서 고를 참여자 목록 — 수요처를 선택했으면 그 소속 참여자만 받는다.
   const { data: participants = [] } = useQuery(
     programParticipantsQueryOptions(programId, demandSiteId, logModalOpen),
   );
+
+  // 💡 이수일자가 선택한 참여자 소속 조의 근무일이 아니면 알려주기만 한다(막지는 않음) —
+  // 조 스케줄 밖에서 일부러 교육을 진행하는 정상 케이스도 있어서 강제 검증은 하지 않는다.
+  const logYearMonth = logForm.attendDate.slice(0, 7);
+  const selectedParticipantsWithGroup = participants.filter(
+    (participant) =>
+      logForm.participantIds.includes(participant.id) && participant.groupId !== null,
+  );
+  const distinctLogGroupIds = Array.from(
+    new Set(selectedParticipantsWithGroup.map((participant) => participant.groupId as number)),
+  );
+  const groupScheduleQueries = useQueries({
+    queries: distinctLogGroupIds.map((groupId) => ({
+      ...groupMonthlyScheduleQueryOptions(groupId, logYearMonth),
+      enabled: logModalOpen && !!logYearMonth,
+    })),
+  });
+  const loadedGroupWorkDates = new Map<number, string[]>(
+    distinctLogGroupIds
+      .map((groupId, index) => [groupId, groupScheduleQueries[index]?.data?.workDates] as const)
+      .filter((entry): entry is [number, string[]] => entry[1] !== undefined),
+  );
+  const offScheduleParticipantNames = selectedParticipantsWithGroup
+    .filter((participant) => {
+      const workDates = loadedGroupWorkDates.get(participant.groupId as number);
+      return workDates !== undefined && !workDates.includes(logForm.attendDate);
+    })
+    .map((participant) => participant.name);
 
   // 💡 이수등록 모달에서 선택한 교육을 이미 이수(COMPLETED)한 참여자는 체크박스를
   // 막아서 중복 등록을 예방한다 — 참여자를 먼저 고르고 교육을 나중에 고르는 순서라,
@@ -606,6 +658,20 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
                 }))
               }
             />
+            {trainingForm.trainingDate &&
+              activeGroups.length > 0 &&
+              loadedTrainingGroupScheduleCount === activeGroups.length && (
+                <div
+                  className={`text-[12px] mt-1.5 ${
+                    groupsNotOnSchedule.length > 0 ? "text-admin-map-warning" : "text-text-subtle"
+                  }`}
+                >
+                  전체 조 {activeGroups.length}개 중 이 날짜가 근무일인 조{" "}
+                  {activeGroups.length - groupsNotOnSchedule.length}개
+                  {groupsNotOnSchedule.length > 0 &&
+                    ` · 근무일 아닌 조: ${groupsNotOnSchedule.map((group) => group.name).join(", ")}`}
+                </div>
+              )}
           </FormField>
           <div className="flex gap-3">
             <div className="flex-1">
@@ -735,6 +801,11 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
                 }))
               }
             />
+            {offScheduleParticipantNames.length > 0 && (
+              <div className="text-[12px] text-admin-map-warning mt-1.5">
+                이 날짜는 조 근무일이 아닙니다: {offScheduleParticipantNames.join(", ")}
+              </div>
+            )}
           </FormField>
           <FormField label="이수시간(선택, 비우면 교육 기준시간 사용)">
             <Input
