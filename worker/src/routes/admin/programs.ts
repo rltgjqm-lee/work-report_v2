@@ -23,6 +23,7 @@ import {
   programs,
   pushDeviceTokens,
   pushSubscriptions,
+  sosEvents,
 } from "../../db/schema";
 import { canAccessProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
@@ -1057,7 +1058,7 @@ app.get("/:id/live-map", async (c) => {
 
   const { date } = getKstNow();
 
-  const [openEscapeRows, workerRows] = await Promise.all([
+  const [openEscapeRows, openSosRows, workerRows] = await Promise.all([
     db
       .select({
         escape: escapeLogs,
@@ -1071,6 +1072,19 @@ app.get("/:id/live-map", async (c) => {
       .leftJoin(demandSites, eq(escapeLogs.demandSiteId, demandSites.id))
       .where(and(eq(escapeLogs.programId, programId), eq(escapeLogs.status, "OPEN")))
       .orderBy(sql`${escapeLogs.detectedAt} DESC`),
+    db
+      .select({
+        sos: sosEvents,
+        participantName: participants.name,
+        groupName: groups.name,
+        demandSiteName: demandSites.name,
+      })
+      .from(sosEvents)
+      .innerJoin(participants, eq(sosEvents.participantId, participants.id))
+      .leftJoin(groups, eq(participants.groupId, groups.id))
+      .leftJoin(demandSites, eq(sosEvents.demandSiteId, demandSites.id))
+      .where(and(eq(sosEvents.programId, programId), eq(sosEvents.status, "OPEN")))
+      .orderBy(sql`${sosEvents.triggeredAt} DESC`),
     db
       .select({
         participantId: participants.id,
@@ -1112,7 +1126,7 @@ app.get("/:id/live-map", async (c) => {
     status: row.outsideStart ? ("ESCAPE" as const) : ("NORMAL" as const),
   }));
 
-  return c.json({ openEscapes: openEscapeRows, workers });
+  return c.json({ openEscapes: openEscapeRows, openSosEvents: openSosRows, workers });
 });
 
 export default app;

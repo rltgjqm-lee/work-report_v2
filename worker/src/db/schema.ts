@@ -471,6 +471,27 @@ export const pushDeviceTokens = sqliteTable(
   (table) => [index("idx_push_device_tokens_participant").on(table.participantId)],
 );
 
+// 관리자 웹 푸시 구독. 참여자 쪽(pushSubscriptions)과 별도 테이블인 이유는 관리자는
+// 사업단이 아니라 admins.id로 식별되고, 담당 범위(canAccessProgram)로 대상을 골라야 해서다.
+// 관리자 콘솔은 /admin 스코프로 좁힌 서비스워커(public/admin/sw.js)로만 구독하므로,
+// 참여자 화면의 서비스워커 유무와 무관하게 독립적으로 동작한다.
+export const adminPushSubscriptions = sqliteTable(
+  "admin_push_subscriptions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    adminId: integer("admin_id")
+      .notNull()
+      .references(() => admins.id),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [index("idx_admin_push_subscriptions_admin").on(table.adminId)],
+);
+
 // 매칭은 됐지만 아직 실제 발송(외부 fetch) 전인 푸시 대기열.
 // Workers 무료 플랜의 "실행당 외부 요청 50개" 한도 때문에, 매칭 즉시 보내지 않고
 // 여기 쌓아뒀다가 실행마다 정해진 개수만큼만 꺼내서 보낸다 (checkDisasterAlerts.ts 참고).
@@ -728,6 +749,43 @@ export const participantEscapeMeta = sqliteTable("participant_escape_meta", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// SOS 이벤트 1건 = 참여자가 화면의 SOS 버튼(화면 두드림)으로 긴급 도움을 요청한 시점.
+// escapeStatusAtTrigger는 그 순간 이탈 진행 중이었는지(participantEscapeMeta.outsideStart)를
+// 스냅샷으로 남긴다 — 관제 화면이 "이탈 중 SOS(최우선)"와 "구역 내 SOS"를 구분해 보여주기 위함.
+// 좌표는 그 순간 새로 측위하지 않고 participantEscapeMeta의 마지막 위치 보고를 그대로 쓴다
+// (10분 주기라 실시간은 아니지만, 3초 카운트다운 안에 새 측위를 기다리게 하지 않기 위함).
+export const sosEvents = sqliteTable(
+  "sos_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    programId: integer("program_id")
+      .notNull()
+      .references(() => programs.id),
+    demandSiteId: integer("demand_site_id").references(() => demandSites.id),
+    triggeredAt: text("triggered_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    lat: real("lat"),
+    lng: real("lng"),
+    escapeStatusAtTrigger: text("escape_status_at_trigger")
+      .$type<"OUTSIDE" | "INSIDE" | "UNKNOWN">()
+      .notNull(),
+    status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
+    // 관제 화면이 이 SOS를 팝업으로 띄운 시점 — 있으면 이미 알린 것이라 새로고침해도
+    // 다시 안 띄운다. 이탈(escapeLogs)의 alertedAtCount와 같은 역할이지만, SOS는 단계가
+    // 없는 단발성 이벤트라 카운트 대신 "떴는지 여부"만 있으면 된다.
+    notifiedAt: text("notified_at"),
+    resolvedBy: integer("resolved_by").references(() => admins.id),
+    resolvedAt: text("resolved_at"),
+    memo: text("memo"),
+  },
+  // 관제 화면이 programId + status(OPEN/RESOLVED)로 필터해서 조회할 것 (escapeLogs와 동일 패턴)
+  (table) => [index("idx_sos_program_status").on(table.programId, table.status)],
+);
 
 export const activityLogs = sqliteTable(
   "activity_logs",

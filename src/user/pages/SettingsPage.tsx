@@ -9,16 +9,19 @@ import LocationConsentModal from "../components/molecule/LocationConsentModal";
 
 interface SettingsPageProps {
   todayStatus: { locationConsentAt: string | null } | null;
+  // 설정 화면은 홈의 톱니바퀴 아이콘으로 본인확인 전에도 들어올 수 있어서, 다른 화면들과
+  // 달리 participantId가 없을 수 있다 — 그때는 SOS 버튼을 아예 안 띄운다.
+  participantId: number | undefined;
   onBack: () => void;
 }
 
-const SettingsPage = ({ todayStatus, onBack }: SettingsPageProps) => {
+const SettingsPage = ({ todayStatus, participantId, onBack }: SettingsPageProps) => {
   const [isLocationGuideOpen, setIsLocationGuideOpen] = useState(false);
   const locationConsentAt = todayStatus?.locationConsentAt ?? null;
 
   return (
     <div className={pageClass}>
-      <AppBar title="설정" onBack={onBack} />
+      <AppBar title="설정" onBack={onBack} participantId={participantId} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
           <div className="text-[15px] font-extrabold text-text-strong mb-1">위치 수집 안내</div>

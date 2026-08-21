@@ -7,6 +7,7 @@ import { useAuth } from "../context/useAuth";
 import { organizationQueryOptions } from "../api/admin/organizations";
 import { logout } from "../api/auth";
 import { ROLES } from "../types/admins";
+import { subscribeAdminToPush } from "../utils/adminPushSubscription";
 import ChangePasswordModal from "./modal/ChangePasswordModal";
 import SessionExpiryBanner from "./SessionExpiryBanner";
 
@@ -99,6 +100,14 @@ const AdminLayout = () => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // SOS 등 긴급 알림을 관리자 웹 푸시로 받기 위한 구독 — 로그인된 관리자가 확정될 때
+  // (재로그인/세션 갱신으로 admin.id가 바뀔 때) 한 번씩 시도한다.
+  useEffect(() => {
+    if (!admin) return;
+    subscribeAdminToPush();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin?.id]);
 
   const sessionRemainingLabel = (() => {
     if (!admin) return "";

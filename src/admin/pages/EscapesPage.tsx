@@ -20,12 +20,14 @@ import {
   resolveEscapeMutationOptions,
 } from "../api/admin/escapes";
 import { programsQueryOptions } from "../api/admin/programs";
+import { markSosNotifiedMutationOptions, resolveSosMutationOptions } from "../api/admin/sos";
 import FilterSelect from "../components/FilterSelect";
 import PromptModal from "../components/modal/PromptModal";
 import SearchInput from "../components/SearchInput";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
 import type { DemandSiteLocation } from "../types/demandSites";
 import type { EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
+import type { SosRow } from "../types/sos";
 
 // 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
 // location이 null이면 거점이 아니라 수요처 자체에 잡아둔 기본 원이다.
@@ -46,6 +48,14 @@ const ESCAPE_STATUS_OPTIONS = [
   { value: "OPEN", label: "확인 필요" },
   { value: "RESOLVED", label: "처리 완료" },
 ];
+
+// 이탈/SOS 팝업을 한 번에 하나씩 순서대로 보여주기 위한 큐 항목. 폴링 한 번에 여러
+// 건이 동시에 새로 잡혀도 먼저 잡힌 팝업이 사용자가 보기 전에 다음 걸로 덮어써지지
+// 않도록, state 하나를 계속 갈아끼우는 대신 큐에 쌓아 앞에서부터 하나씩 뺀다.
+type AlertQueueItem =
+  | { kind: "escape-critical"; row: EscapeRow }
+  | { kind: "escape-lower"; row: EscapeRow; tier: 1 | 2 }
+  | { kind: "sos"; row: SosRow };
 
 // 3단계 신호등 — alertCount 기준 (설계의 outside_minutes는 이번 구현에서 안 씀)
 const getMarkerColor = (worker: LiveWorker): string => {
@@ -69,11 +79,9 @@ const EscapesPage = () => {
   const [selectedProgramId, setSelectedProgramId] = useState<string>(programIdParam ?? "");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
   const [search, setSearch] = useState("");
-  const [criticalEscape, setCriticalEscape] = useState<EscapeRow | null>(null);
-  const [lowerTierEscapeAlert, setLowerTierEscapeAlert] = useState<{
-    row: EscapeRow;
-    tier: 1 | 2;
-  } | null>(null);
+  const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
+  const queuedAlertKeysRef = useRef<Set<string>>(new Set());
+  const currentAlert = alertQueue[0] ?? null;
   const [resolveTarget, setResolveTarget] = useState<{
     escapeId: number;
     participantName: string;
@@ -110,6 +118,7 @@ const EscapesPage = () => {
     refetchInterval: POLL_INTERVAL_MS,
   });
   const openEscapes = liveMap?.openEscapes ?? [];
+  const openSosEvents = liveMap?.openSosEvents ?? [];
   const workers = useMemo(() => liveMap?.workers ?? [], [liveMap]);
 
   const { data: resolvedEscapes = [] } = useQuery({
@@ -167,23 +176,48 @@ const EscapesPage = () => {
 
   const resolveEscapeMutation = useMutation(resolveEscapeMutationOptions(queryClient));
   const markEscapeAlertedMutation = useMutation(markEscapeAlertedMutationOptions(queryClient));
+  const resolveSosMutation = useMutation(resolveSosMutationOptions(queryClient));
+  const markSosNotifiedMutation = useMutation(markSosNotifiedMutationOptions(queryClient));
 
-  // 새로 다음 단계(1/2/3단계)로 악화된 이탈을 감지해 팝업 — openEscapes가 폴링될 때마다
-  // 확인한다. alertedAtCount가 서버에 남아있어 새로고침해도 같은 단계로는 다시 안 뜨고,
-  // 더 악화될 때만(alertCount가 alertedAtCount를 넘어설 때) 다시 뜬다.
+  // 새로 악화된 이탈(1/2/3단계)과 새 SOS를 감지해 팝업 큐에 쌓는다 — openEscapes/
+  // openSosEvents가 폴링될 때마다 확인한다. escape는 alertedAtCount, sos는 notifiedAt이
+  // 서버에 남아있어 새로고침해도 같은 걸로 다시 안 쌓이고, 더 악화되거나(escape) 새로
+  // 발생해야(sos) 다시 쌓인다. 큐 dedupe 키에 escape는 alertCount를 포함해서, 팝업을
+  // 아직 못 봤어도 더 악화되면 새 항목으로 다시 쌓이게 한다.
   useEffect(() => {
-    const next = openEscapes.find((row) => row.escape.alertCount > row.escape.alertedAtCount);
-    if (!next) return;
+    const newItems: AlertQueueItem[] = [];
 
-    if (next.escape.alertCount >= 3) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 폴링된 서버 상태를 감지해 팝업을 띄운다
-      setCriticalEscape(next);
-    } else {
-      setLowerTierEscapeAlert({ row: next, tier: next.escape.alertCount >= 2 ? 2 : 1 });
-    }
-    markEscapeAlertedMutation.mutate({ escapeId: next.escape.id, programId });
+    openEscapes.forEach((row) => {
+      if (row.escape.alertCount <= row.escape.alertedAtCount) return;
+      const key = `escape-${row.escape.id}-${row.escape.alertCount}`;
+      if (queuedAlertKeysRef.current.has(key)) return;
+      queuedAlertKeysRef.current.add(key);
+
+      newItems.push(
+        row.escape.alertCount >= 3
+          ? { kind: "escape-critical", row }
+          : { kind: "escape-lower", row, tier: row.escape.alertCount >= 2 ? 2 : 1 },
+      );
+      markEscapeAlertedMutation.mutate({ escapeId: row.escape.id, programId });
+    });
+
+    openSosEvents.forEach((row) => {
+      if (row.sos.notifiedAt) return;
+      const key = `sos-${row.sos.id}`;
+      if (queuedAlertKeysRef.current.has(key)) return;
+      queuedAlertKeysRef.current.add(key);
+
+      newItems.push({ kind: "sos", row });
+      markSosNotifiedMutation.mutate({ sosId: row.sos.id, programId });
+    });
+
+    if (newItems.length === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 폴링된 서버 상태를 감지해 큐에 쌓는다
+    setAlertQueue((queue) => [...queue, ...newItems]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openEscapes]);
+  }, [openEscapes, openSosEvents]);
+
+  const dismissCurrentAlert = () => setAlertQueue((queue) => queue.slice(1));
 
   const filteredWorkers = useMemo(
     () =>
@@ -355,14 +389,31 @@ const EscapesPage = () => {
   };
 
   const handleResolveCriticalButtonClick = () => {
-    if (!criticalEscape) return;
+    if (currentAlert?.kind !== "escape-critical") return;
+    const { row } = currentAlert;
 
     resolveEscapeMutation.mutate(
-      { escapeId: criticalEscape.escape.id, programId },
+      { escapeId: row.escape.id, programId },
       {
         onSuccess: () => {
-          showToast(`'${criticalEscape.participantName}' 님의 이탈을 확인 처리했습니다.`);
-          setCriticalEscape(null);
+          showToast(`'${row.participantName}' 님의 이탈을 확인 처리했습니다.`);
+          dismissCurrentAlert();
+        },
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
+  };
+
+  const handleResolveSosButtonClick = () => {
+    if (currentAlert?.kind !== "sos") return;
+    const { row } = currentAlert;
+
+    resolveSosMutation.mutate(
+      { sosId: row.sos.id, programId },
+      {
+        onSuccess: () => {
+          showToast(`'${row.participantName}' 님의 SOS를 확인 처리했습니다.`);
+          dismissCurrentAlert();
         },
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
@@ -570,7 +621,13 @@ const EscapesPage = () => {
         </>
       )}
 
-      {criticalEscape && (
+      {alertQueue.length > 1 && (
+        <div className="fixed top-4 right-4 z-[10000] bg-admin-escape-critical-text text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+          확인 대기 중 {alertQueue.length}건
+        </div>
+      )}
+
+      {currentAlert?.kind === "escape-critical" && (
         <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
           <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
             <div className="text-admin-escape-critical-text text-xl font-bold mb-4">
@@ -578,16 +635,16 @@ const EscapesPage = () => {
             </div>
             <div className="text-sm space-y-1.5 mb-5">
               <p>
-                <strong>참여자:</strong> {criticalEscape.participantName}
+                <strong>참여자:</strong> {currentAlert.row.participantName}
               </p>
               <p>
-                <strong>수요처:</strong> {criticalEscape.demandSiteName ?? "-"}
+                <strong>수요처:</strong> {currentAlert.row.demandSiteName ?? "-"}
               </p>
               <p>
-                <strong>이탈 횟수:</strong> {criticalEscape.escape.alertCount}회
+                <strong>이탈 횟수:</strong> {currentAlert.row.escape.alertCount}회
               </p>
               <p>
-                <strong>이탈 거리:</strong> {criticalEscape.escape.distanceKm.toFixed(2)}km
+                <strong>이탈 거리:</strong> {currentAlert.row.escape.distanceKm.toFixed(2)}km
               </p>
             </div>
             <div className="flex gap-2.5">
@@ -599,7 +656,7 @@ const EscapesPage = () => {
               </button>
               <button
                 className="flex-1 py-3 text-sm font-bold rounded-[2px] border border-admin-border bg-white"
-                onClick={() => setCriticalEscape(null)}
+                onClick={dismissCurrentAlert}
               >
                 닫기
               </button>
@@ -608,35 +665,69 @@ const EscapesPage = () => {
         </div>
       )}
 
-      {lowerTierEscapeAlert && (
+      {currentAlert?.kind === "escape-lower" && (
         <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
           <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
             <div
               className="text-xl font-bold mb-4"
-              style={{ color: lowerTierEscapeAlert.tier >= 2 ? "#FF7800" : "#FFD200" }}
+              style={{ color: currentAlert.tier >= 2 ? "#FF7800" : "#FFD200" }}
             >
-              ⚠️ {lowerTierEscapeAlert.tier}단계 이탈
+              ⚠️ {currentAlert.tier}단계 이탈
             </div>
             <div className="text-sm space-y-1.5 mb-5">
               <p>
-                <strong>참여자:</strong> {lowerTierEscapeAlert.row.participantName}
+                <strong>참여자:</strong> {currentAlert.row.participantName}
               </p>
               <p>
-                <strong>수요처:</strong> {lowerTierEscapeAlert.row.demandSiteName ?? "-"}
+                <strong>수요처:</strong> {currentAlert.row.demandSiteName ?? "-"}
               </p>
               <p>
-                <strong>이탈 횟수:</strong> {lowerTierEscapeAlert.row.escape.alertCount}회
+                <strong>이탈 횟수:</strong> {currentAlert.row.escape.alertCount}회
               </p>
               <p>
-                <strong>이탈 거리:</strong> {lowerTierEscapeAlert.row.escape.distanceKm.toFixed(2)}
-                km
+                <strong>이탈 거리:</strong> {currentAlert.row.escape.distanceKm.toFixed(2)}km
               </p>
             </div>
             <button
               className="w-full py-3 text-sm font-bold rounded-[2px] bg-admin-brand text-white"
-              onClick={() => setLowerTierEscapeAlert(null)}
+              onClick={dismissCurrentAlert}
             >
               확인
+            </button>
+          </div>
+        </div>
+      )}
+
+      {currentAlert?.kind === "sos" && (
+        <div className="fixed inset-0 w-full h-full bg-black/60 z-[9999] flex justify-center items-center">
+          <div className="bg-white p-[30px] rounded-xl max-w-[420px] w-[90%] shadow-lg">
+            <div className="text-admin-escape-critical-text text-xl font-bold mb-4">
+              🚨 SOS 발생
+            </div>
+            <div className="text-sm space-y-1.5 mb-5">
+              <p>
+                <strong>참여자:</strong> {currentAlert.row.participantName}
+              </p>
+              <p>
+                <strong>수요처:</strong> {currentAlert.row.demandSiteName ?? "-"}
+              </p>
+              <p>
+                <strong>발생 시각:</strong> {isoToKstMinuteString(currentAlert.row.sos.triggeredAt)}
+              </p>
+              <p>
+                <strong>이탈 여부:</strong>{" "}
+                {currentAlert.row.sos.escapeStatusAtTrigger === "OUTSIDE"
+                  ? "이탈 중"
+                  : currentAlert.row.sos.escapeStatusAtTrigger === "INSIDE"
+                    ? "구역 내"
+                    : "확인 불가"}
+              </p>
+            </div>
+            <button
+              className="w-full py-3 text-sm font-bold rounded-[2px] bg-admin-brand text-white"
+              onClick={handleResolveSosButtonClick}
+            >
+              확인 완료
             </button>
           </div>
         </div>

@@ -386,7 +386,7 @@ const ActivityDashboardPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="근무 기록" onHome={onHome} />
+      <AppBar title="근무 기록" onHome={onHome} participantId={formData.participantId} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
           <div className="text-[13px] text-text-muted font-bold mb-3.5">

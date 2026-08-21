@@ -70,7 +70,7 @@ const AccidentCheckPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="안전 일지 등록" onBack={onBack} />
+      <AppBar title="안전 일지 등록" onBack={onBack} participantId={formData.participantId} />
 
       <div className={bodyClass}>
         <PageHeaderCard

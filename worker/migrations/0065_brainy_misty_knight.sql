@@ -1,0 +1,1 @@
+ALTER TABLE `sos_events` ADD `notified_at` text;

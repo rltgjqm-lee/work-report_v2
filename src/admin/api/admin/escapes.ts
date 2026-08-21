@@ -1,6 +1,7 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
 import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../../types/escapes";
+import type { SosRow } from "../../types/sos";
 
 import { request } from "../client";
 
@@ -19,7 +20,7 @@ export const escapesQueryOptions = (programId: number, status: EscapeStatus) =>
     queryFn: () => getEscapes(programId, status),
   });
 
-const liveMapKeys = {
+export const liveMapKeys = {
   all: ["live-map"] as const,
   byProgram: (programId: number) => [...liveMapKeys.all, programId] as const,
 };
@@ -27,6 +28,7 @@ const liveMapKeys = {
 export interface LiveMap {
   workers: LiveWorker[];
   openEscapes: EscapeRow[];
+  openSosEvents: SosRow[];
 }
 
 // 안전 관제 지도용 — 실시간 근무자 위치와 확인 필요(OPEN) 이탈을 한 번에 받는다.

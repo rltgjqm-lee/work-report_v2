@@ -1,4 +1,4 @@
-import { and, eq, isNull, like } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -6,6 +6,8 @@ import type { Env } from "../../types";
 
 import {
   activityLogs,
+  adminPushSubscriptions,
+  admins,
   attendanceLogs,
   demandSiteLocations,
   demandSites,
@@ -21,7 +23,9 @@ import {
   programs,
   pushDeviceTokens,
   pushSubscriptions,
+  sosEvents,
 } from "../../db/schema";
+import { canAccessProgram, parseIdArray } from "../../lib/authz";
 import { readDebugOverride } from "../../lib/debugTime";
 import { getFcmAccessToken, sendFcmPush } from "../../lib/fcmPush";
 import {
@@ -1113,6 +1117,186 @@ app.get("/activity-logs", async (c) => {
     );
 
   return c.json(rows);
+});
+
+// 화면 SOS 버튼(3초 카운트다운 뒤 자동 전송) — 참여자 본인 확인 이후 화면에서만 호출된다.
+// 좌표는 그 순간 새로 측위하지 않고 participantEscapeMeta의 마지막 위치 보고를 그대로 쓴다
+// (10분 주기라 실시간은 아니지만, 3초 카운트다운 안에 새 측위를 기다리게 하지 않기 위함).
+app.post("/sos", async (c) => {
+  const db = drizzle(c.env.DB);
+  const body = await c.req.json<{ participantId?: number }>();
+  if (!body.participantId) {
+    return c.json({ error: "참여자를 지정해주세요." }, 400);
+  }
+
+  const participantRows = await db
+    .select()
+    .from(participants)
+    .where(eq(participants.id, body.participantId));
+  const participant = participantRows[0];
+  if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+
+  const { date, iso } = getKstNow();
+
+  const metaRows = await db
+    .select()
+    .from(participantEscapeMeta)
+    .where(eq(participantEscapeMeta.participantId, participant.id));
+  const meta = metaRows[0];
+
+  // 관제 화면이 "이탈 중 SOS(최우선)"와 "구역 내 SOS"를 구분해 보여줄 수 있도록, 그 순간
+  // 이탈 진행 중이었는지(outsideStart)를 스냅샷으로 남긴다.
+  const escapeStatusAtTrigger: "OUTSIDE" | "INSIDE" | "UNKNOWN" = !meta
+    ? "UNKNOWN"
+    : meta.outsideStart
+      ? "OUTSIDE"
+      : "INSIDE";
+
+  const result = await db
+    .insert(sosEvents)
+    .values({
+      participantId: participant.id,
+      programId: participant.programId,
+      demandSiteId: participant.demandSiteId,
+      triggeredAt: iso,
+      lat: meta?.lastLat ?? null,
+      lng: meta?.lastLng ?? null,
+      escapeStatusAtTrigger,
+    })
+    .returning();
+
+  // 같은 수요처에 배정되고 지금 근무 중인(퇴근 안 한) 동료들에게만 알린다 — 퇴근한 동료는
+  // 알려도 도우러 올 수 없다. 이탈 경고 발송(/location)과 동일한 웹푸시/FCM 이중 채널.
+  if (participant.demandSiteId) {
+    const colleagueRows = await db
+      .select({ participantId: participants.id })
+      .from(participants)
+      .innerJoin(
+        attendanceLogs,
+        and(
+          eq(attendanceLogs.participantId, participants.id),
+          eq(attendanceLogs.workDate, date),
+          isNull(attendanceLogs.clockOut),
+        ),
+      )
+      .where(
+        and(
+          eq(participants.demandSiteId, participant.demandSiteId),
+          ne(participants.id, participant.id),
+        ),
+      );
+
+    if (colleagueRows.length > 0) {
+      const colleagueIds = colleagueRows.map((colleague) => colleague.participantId);
+      const sosPushPayload = {
+        title: "🚨 동료 SOS",
+        body: `${participant.name}님이 도움을 요청했습니다. 확인해주세요.`,
+      };
+
+      const subscriptions = await db
+        .select()
+        .from(pushSubscriptions)
+        .where(inArray(pushSubscriptions.participantId, colleagueIds));
+      for (const subscription of subscriptions) {
+        const pushResult = await sendWebPush(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+          },
+          sosPushPayload,
+          { privateJWK: c.env.VAPID_PRIVATE_KEY, subject: c.env.VAPID_SUBJECT },
+        );
+        if (!pushResult.ok && pushResult.expired) {
+          await db
+            .delete(pushSubscriptions)
+            .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+        }
+      }
+
+      // FCM 액세스 토큰은 발급 비용이 있어 동료 수만큼 반복 발급하지 않고 한 번만 받아 재사용한다.
+      const deviceTokens = await db
+        .select()
+        .from(pushDeviceTokens)
+        .where(inArray(pushDeviceTokens.participantId, colleagueIds));
+      if (deviceTokens.length > 0) {
+        try {
+          const fcmAuth = await getFcmAccessToken(c.env.FCM_SERVICE_ACCOUNT_KEY);
+          for (const deviceToken of deviceTokens) {
+            const pushResult = await sendFcmPush(
+              fcmAuth.projectId,
+              fcmAuth.accessToken,
+              deviceToken.token,
+              sosPushPayload,
+            );
+            if (!pushResult.ok && pushResult.expired) {
+              await db
+                .delete(pushDeviceTokens)
+                .where(eq(pushDeviceTokens.token, deviceToken.token));
+            }
+          }
+        } catch (error) {
+          console.error("SOS 동료 알림 FCM 발송 실패:", error);
+        }
+      }
+    }
+  }
+
+  // 이 사업단에 접근 권한 있는 관리자 전원(canAccessProgram과 동일 기준)에게 알린다.
+  const programRows = await db
+    .select()
+    .from(programs)
+    .where(eq(programs.id, participant.programId));
+  const program = programRows[0];
+  if (program) {
+    const activeAdminRows = await db.select().from(admins).where(eq(admins.isActive, true));
+    const eligibleAdminIds = activeAdminRows
+      .filter((admin) =>
+        canAccessProgram(
+          {
+            id: admin.id,
+            email: admin.email as string,
+            name: admin.name,
+            role: admin.role,
+            organizationId: admin.organizationId,
+            programIds: parseIdArray(admin.programIds),
+            groupIds: parseIdArray(admin.groupIds),
+            expiresAt: "",
+          },
+          program,
+        ),
+      )
+      .map((admin) => admin.id);
+
+    if (eligibleAdminIds.length > 0) {
+      const adminSubscriptions = await db
+        .select()
+        .from(adminPushSubscriptions)
+        .where(inArray(adminPushSubscriptions.adminId, eligibleAdminIds));
+
+      const adminPushPayload = {
+        title: "🚨 SOS 발생",
+        body: `${participant.name}님이 SOS를 요청했습니다. 관제 화면을 확인해주세요.`,
+      };
+
+      for (const subscription of adminSubscriptions) {
+        const pushResult = await sendWebPush(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+          },
+          adminPushPayload,
+          { privateJWK: c.env.VAPID_PRIVATE_KEY, subject: c.env.VAPID_SUBJECT },
+        );
+        if (!pushResult.ok && pushResult.expired) {
+          await db
+            .delete(adminPushSubscriptions)
+            .where(eq(adminPushSubscriptions.endpoint, subscription.endpoint));
+        }
+      }
+    }
+  }
+
+  return c.json(result[0], 201);
 });
 
 export default app;
