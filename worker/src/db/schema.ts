@@ -775,6 +775,10 @@ export const sosEvents = sqliteTable(
       .$type<"OUTSIDE" | "INSIDE" | "UNKNOWN">()
       .notNull(),
     status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
+    // 관제 화면이 이 SOS를 팝업으로 띄운 시점 — 있으면 이미 알린 것이라 새로고침해도
+    // 다시 안 띄운다. 이탈(escapeLogs)의 alertedAtCount와 같은 역할이지만, SOS는 단계가
+    // 없는 단발성 이벤트라 카운트 대신 "떴는지 여부"만 있으면 된다.
+    notifiedAt: text("notified_at"),
     resolvedBy: integer("resolved_by").references(() => admins.id),
     resolvedAt: text("resolved_at"),
     memo: text("memo"),
