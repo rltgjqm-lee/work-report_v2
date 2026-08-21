@@ -9,7 +9,7 @@ export type SendPushResult = { ok: true } | { ok: false; expired: boolean; statu
 
 export const sendWebPush = async (
   subscription: PushSubscriptionInput,
-  payload: { title: string; body: string },
+  payload: { title: string; body: string; url?: string },
   vapid: { privateJWK: string; subject: string },
 ): Promise<SendPushResult> => {
   const { endpoint, headers, body } = await buildPushHTTPRequest({

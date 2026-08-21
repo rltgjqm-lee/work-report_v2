@@ -28,25 +28,29 @@ self.addEventListener("push", (event) => {
       icon: "/icons/app-icon-1024.png",
       tag: "admin-alert",
       renotify: true,
+      // url이 있으면(예: SOS는 사업단+참여자 이름까지 실어 보낸다) 클릭 시 그 경로로
+      // 이동한다 — 없으면 기본 안전 관제 화면으로 보낸다.
+      data: { url: data.url ?? "/admin/escapes" },
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const targetUrl = event.notification.data?.url ?? "/admin/escapes";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // 이미 admin 탭이 열려있으면 보고 있던 화면 그대로 두지 않고, 안전 관제로
-      // 이동시킨 뒤 포커스한다 — 알림을 클릭했는데 엉뚱한 화면이 그대로면 헷갈리므로.
+      // 이미 admin 탭이 열려있으면 보고 있던 화면 그대로 두지 않고, 알림이 가리키는
+      // 화면으로 이동시킨 뒤 포커스한다 — 알림을 클릭했는데 엉뚱한 화면이 그대로면 헷갈리므로.
       const adminClient = clientList.find((client) => client.url.includes("/admin"));
       if (adminClient && "navigate" in adminClient) {
         return adminClient
-          .navigate("/admin/escapes")
+          .navigate(targetUrl)
           .then((navigatedClient) => (navigatedClient ?? adminClient).focus());
       }
       if (clients.openWindow) {
-        return clients.openWindow("/admin/escapes");
+        return clients.openWindow(targetUrl);
       }
     }),
   );

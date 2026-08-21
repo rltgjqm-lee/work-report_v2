@@ -75,11 +75,15 @@ const EscapesPage = () => {
   const navigate = useNavigate();
   const programIdParam = searchParams.get("programId");
   const preselectedProgramId = programIdParam ? Number(programIdParam) : null;
+  // SOS 웹 푸시 클릭 등으로 특정 참여자를 바로 찾아와야 할 때 쓴다(worker/.../public.ts의
+  // adminPushPayload.url 참고) — programId와 같이 오면 사업단 선택 없이 바로 그 사람
+  // 이름으로 검색된 상태로 뜬다.
+  const nameParam = searchParams.get("name");
 
   const [programTypeFilter, setProgramTypeFilter] = useState("all");
   const [selectedProgramId, setSelectedProgramId] = useState<string>(programIdParam ?? "");
   const [status, setStatus] = useState<EscapeStatus>("OPEN");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(nameParam ?? "");
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const queuedAlertKeysRef = useRef<Set<string>>(new Set());
   const currentAlert = alertQueue[0] ?? null;
