@@ -19,6 +19,7 @@ import {
   markEscapeAlertedMutationOptions,
   resolveEscapeMutationOptions,
 } from "../api/admin/escapes";
+import { participantsQueryOptions } from "../api/admin/participants";
 import { programsQueryOptions } from "../api/admin/programs";
 import { markSosNotifiedMutationOptions, resolveSosMutationOptions } from "../api/admin/sos";
 import FilterSelect from "../components/FilterSelect";
@@ -109,6 +110,32 @@ const EscapesPage = () => {
         : programs.filter((program) => program.programType === programTypeFilter),
     [programs, programTypeFilter],
   );
+
+  // 사업단을 아직 안 골랐는데 이름을 검색한 경우 — 전체 참여자에서 이름이 일치하는
+  // 사람을 찾아 그 사업단을 자동으로 선택해준다. 검색창은 수요처 필터와 달리 사업단
+  // 선택 전에도 입력할 수 있게 열려 있어서, 안 그러면 "검색해도 지도가 안 뜨는"
+  // 것처럼 보인다. 검색으로 자동 선택된 동안은 계속 타이핑해서 다른 사람을 검색하면
+  // 그때마다 다시 매칭한다 — 단, 드롭다운으로 직접 고르면(handleProgramFilterChange)
+  // 그 뒤로는 검색이 그 선택을 덮어쓰지 않는다.
+  const isAutoSelectedProgramRef = useRef(false);
+  const { data: allParticipants = [] } = useQuery({
+    ...participantsQueryOptions,
+    enabled:
+      !preselectedProgramId &&
+      (!selectedProgramId || isAutoSelectedProgramRef.current) &&
+      search.trim() !== "",
+  });
+  useEffect(() => {
+    if (preselectedProgramId || !search.trim()) return;
+    if (selectedProgramId && !isAutoSelectedProgramRef.current) return;
+
+    const matched = allParticipants.find((participant) => participant.name.includes(search));
+    if (matched && String(matched.programId) !== selectedProgramId) {
+      isAutoSelectedProgramRef.current = true;
+      setSelectedProgramId(String(matched.programId));
+      setSelectedDemandSiteId("");
+    }
+  }, [allParticipants, search, preselectedProgramId, selectedProgramId]);
 
   // 실시간 근무자 위치 + 확인 필요(OPEN) 이탈 — 위급 이탈 감지를 위해 항상 폴링한다.
   // RESOLVED는 상태 탭을 볼 때만 따로 조회한다(폴링 안 함).
@@ -421,12 +448,14 @@ const EscapesPage = () => {
   };
 
   const handleProgramTypeFilterChange = (value: string) => {
+    isAutoSelectedProgramRef.current = false;
     setProgramTypeFilter(value);
     setSelectedProgramId("");
     setSelectedDemandSiteId("");
   };
 
   const handleProgramFilterChange = (value: string) => {
+    isAutoSelectedProgramRef.current = false;
     setSelectedProgramId(value);
     setSelectedDemandSiteId("");
   };
@@ -497,7 +526,9 @@ const EscapesPage = () => {
 
       {!programId ? (
         <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center text-[13px] text-admin-text-placeholder">
-          조회할 사업단을 선택해주세요.
+          {search.trim()
+            ? `'${search}'와 일치하는 참여자를 찾을 수 없습니다.`
+            : "조회할 사업단을 선택해주세요."}
         </div>
       ) : (
         <>
