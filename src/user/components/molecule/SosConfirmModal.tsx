@@ -8,7 +8,7 @@ interface SosConfirmModalProps {
 
 // 취소를 안 누르면 이 시간 뒤 자동 전송 — 쓰러지는 등 더 조작할 수 없는 상황에서도
 // 기본 동작이 "전송"이 되도록, 확인이 아니라 취소를 받는 구조로 둔다.
-const COUNTDOWN_SECONDS = 3;
+const COUNTDOWN_SECONDS = 10;
 
 const SosConfirmModal = ({ onSend, onCancel }: SosConfirmModalProps) => {
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);

@@ -56,7 +56,7 @@ const HomePage = ({
 
   // 본인확인 전(participantId 없음)엔 누구의 SOS인지 알 수 없으니 확인 카운트다운 대신
   // 안내 모달로 보낸다. 확인이 끝난 뒤엔 한 번만 눌러도 바로 SOS 확인 모달이 뜬다 —
-  // 오탐 방지는 탭 횟수가 아니라 그 모달의 3초 취소 카운트다운이 맡는다.
+  // 오탐 방지는 탭 횟수가 아니라 그 모달의 10초 취소 카운트다운이 맡는다.
   const handleSosButtonClick = () => {
     if (!formData.participantId) {
       setIsSosIdentificationModalOpen(true);
