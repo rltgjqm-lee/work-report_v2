@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   participantAttendanceQueryOptions,
   participantLeaveHistoryQueryOptions,
@@ -13,6 +13,7 @@ import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
 import MonthPicker from "../../components/MonthPicker";
 
 import ParticipantPayrollSettingsModal from "./ParticipantPayrollSettingsModal";
@@ -52,7 +53,16 @@ const ParticipantDetailPage = () => {
   const participantId = Number(searchParams.get("id"));
 
   const [month, setMonth] = useState(getLocalYearMonth());
+  // 기본값은 오늘 — 이번 달 전체보다 당일 근무 기록을 먼저 보여준다.
+  const [dayFilter, setDayFilter] = useState(() => String(Number(getLocalToday().slice(8, 10))));
   const [payrollModalOpen, setPayrollModalOpen] = useState(false);
+
+  // 달을 바꾸면 예전 달 날짜가 남아있지 않도록 일별 필터를 초기화한다.
+  const [prevMonth, setPrevMonth] = useState(month);
+  if (month !== prevMonth) {
+    setPrevMonth(month);
+    setDayFilter("all");
+  }
 
   const { data: participant } = useQuery(participantQueryOptions(participantId));
   const { data: leaveHistory } = useQuery(
@@ -109,6 +119,8 @@ const ParticipantDetailPage = () => {
       <AttendanceHistorySection
         month={month}
         onMonthChange={setMonth}
+        dayFilter={dayFilter}
+        onDayFilterChange={setDayFilter}
         stats={attendanceStats}
         logs={attendanceLogs}
       />
@@ -130,6 +142,8 @@ const ParticipantDetailPage = () => {
 interface AttendanceHistorySectionProps {
   month: string;
   onMonthChange: (month: string) => void;
+  dayFilter: string;
+  onDayFilterChange: (dayFilter: string) => void;
   stats: AttendanceStats;
   logs: ParticipantAttendanceRow[];
 }
@@ -137,34 +151,75 @@ interface AttendanceHistorySectionProps {
 const AttendanceHistorySection = ({
   month,
   onMonthChange,
+  dayFilter,
+  onDayFilterChange,
   stats,
   logs,
 }: AttendanceHistorySectionProps) => {
+  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+  const dayFilterOptions = [
+    { value: "all", label: "전체 일자" },
+    ...Array.from({ length: daysInMonth }, (_unused, dayIndex) => {
+      const day = String(dayIndex + 1);
+      return { value: day, label: `${day}일` };
+    }),
+  ];
+
+  const isFiltered = dayFilter !== "all";
+  const filteredLogs = logs.filter(
+    (row) => dayFilter === "all" || row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
+  );
+
+  // 서버가 준 stats는 월 전체 기준으로 이미 정확하다 — 특정 날짜로 좁혔을 때만 직접 다시 센다.
+  const dayStatsTotals = !isFiltered
+    ? null
+    : filteredLogs.reduce(
+        (acc, row) => ({
+          normal: acc.normal + (row.log.status === "NORMAL" ? 1 : 0),
+          late: acc.late + (row.log.status === "LATE" ? 1 : 0),
+          earlyLeave: acc.earlyLeave + (row.log.status === "EARLY_LEAVE" ? 1 : 0),
+          totalMinutes: acc.totalMinutes + (row.log.totalMinutes ?? 0),
+        }),
+        { normal: 0, late: 0, earlyLeave: 0, totalMinutes: 0 },
+      );
+  const displayStats: AttendanceStats = dayStatsTotals
+    ? {
+        total: filteredLogs.length,
+        normal: dayStatsTotals.normal,
+        late: dayStatsTotals.late,
+        earlyLeave: dayStatsTotals.earlyLeave,
+        totalHours: Math.round((dayStatsTotals.totalMinutes / 60) * 10) / 10,
+      }
+    : stats;
+
   return (
     <>
       <div className="flex items-center justify-between mb-3 gap-3">
         <span className="text-sm font-bold whitespace-nowrap">근무 이력</span>
-        <MonthPicker value={month} onChange={onMonthChange} />
+        <div className="flex items-center gap-2.5">
+          <MonthPicker value={month} onChange={onMonthChange} />
+          <FilterSelect value={dayFilter} onChange={onDayFilterChange} options={dayFilterOptions} />
+        </div>
       </div>
 
       <div className="grid grid-cols-4 mb-5">
         <div className="px-5 py-4 border border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">정상</div>
-          <div className="text-sm font-bold">{stats.normal}건</div>
+          <div className="text-sm font-bold">{displayStats.normal}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">지각</div>
-          <div className="text-sm font-bold">{stats.late}건</div>
+          <div className="text-sm font-bold">{displayStats.late}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">조퇴</div>
-          <div className="text-sm font-bold">{stats.earlyLeave}건</div>
+          <div className="text-sm font-bold">{displayStats.earlyLeave}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">
             총 근무시간
           </div>
-          <div className="text-sm font-bold">{stats.totalHours}시간</div>
+          <div className="text-sm font-bold">{displayStats.totalHours}시간</div>
         </div>
       </div>
 
@@ -206,7 +261,7 @@ const AttendanceHistorySection = ({
               </tr>
             </thead>
             <tbody>
-              {logs.map((row) => (
+              {filteredLogs.map((row) => (
                 <tr key={row.log.id} className="hover:bg-admin-row-hover">
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                     {row.log.workDate}
@@ -265,13 +320,15 @@ const AttendanceHistorySection = ({
                 </tr>
               ))}
 
-              {logs.length === 0 && (
+              {filteredLogs.length === 0 && (
                 <tr>
                   <td
                     colSpan={10}
                     className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                   >
-                    해당 월에 근무 기록이 없습니다.
+                    {isFiltered
+                      ? "조건에 맞는 근무 기록이 없습니다."
+                      : "해당 월에 근무 기록이 없습니다."}
                   </td>
                 </tr>
               )}
