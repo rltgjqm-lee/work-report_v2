@@ -7,6 +7,7 @@ import type { ActivityLogFormData } from "../../types/form";
 import { sendSos } from "../api/sosApi";
 import SosConfirmModal from "../components/molecule/SosConfirmModal";
 import SosIdentificationRequiredModal from "../components/molecule/SosIdentificationRequiredModal";
+import SosUnavailableModal from "../components/molecule/SosUnavailableModal";
 
 interface TodayStatus {
   isWorkDay: boolean;
@@ -53,6 +54,7 @@ const HomePage = ({
 }: HomePageProps) => {
   const [isSosConfirmModalOpen, setIsSosConfirmModalOpen] = useState(false);
   const [isSosIdentificationModalOpen, setIsSosIdentificationModalOpen] = useState(false);
+  const [isSosUnavailableModalOpen, setIsSosUnavailableModalOpen] = useState(false);
 
   // participantId는 있지만 서버 응답 전(로딩 중)엔 근무일로 가정한다(TodayWorkCard와 동일 기준).
   const isWorkDay = todayStatus?.isWorkDay ?? true;
@@ -63,9 +65,13 @@ const HomePage = ({
 
   // 본인확인 전(participantId 없음)엔 누구의 SOS인지 알 수 없으니 확인 카운트다운 대신
   // 안내 모달로 보낸다. 확인이 끝난 뒤엔 한 번만 눌러도 바로 SOS 확인 모달이 뜬다 —
-  // 오탐 방지는 탭 횟수가 아니라 그 모달의 10초 취소 카운트다운이 맡는다.
+  // 오탐 방지는 탭 횟수가 아니라 그 모달의 10초 취소 카운트다운이 맡는다. 버튼 자체는
+  // 항상 활성화된 것처럼 보이고, 근무 중이 아닐 때 눌리면 안내 모달로 이유를 알려준다.
   const handleSosButtonClick = () => {
-    if (!isSosAvailable) return;
+    if (!isSosAvailable) {
+      setIsSosUnavailableModalOpen(true);
+      return;
+    }
     if (!formData.participantId) {
       setIsSosIdentificationModalOpen(true);
       return;
@@ -142,7 +148,7 @@ const HomePage = ({
           />
         </div>
 
-        <SosButton onClick={handleSosButtonClick} disabled={!isSosAvailable} />
+        <SosButton onClick={handleSosButtonClick} />
 
         <div className="flex-1 min-h-[24px]" />
       </div>
@@ -152,6 +158,9 @@ const HomePage = ({
       )}
       {isSosIdentificationModalOpen && (
         <SosIdentificationRequiredModal onConfirm={() => setIsSosIdentificationModalOpen(false)} />
+      )}
+      {isSosUnavailableModalOpen && (
+        <SosUnavailableModal onConfirm={() => setIsSosUnavailableModalOpen(false)} />
       )}
     </div>
   );
@@ -328,29 +337,20 @@ const HomeActionCard = ({ onClick, iconSrc, title, description }: HomeActionCard
 );
 
 // 본인확인 여부와 무관하게 항상 눌리는 버튼이다 — 본인확인 전이면 클릭 시
-// SosIdentificationRequiredModal로 안내하고, 후면 SosConfirmModal로 이어진다(HomePage에서 분기).
-// 근무 중(근무일 + 퇴근 전)이 아니면(disabled) 눌러도 반응하지 않는다.
-const SosButton = ({ onClick, disabled }: { onClick: () => void; disabled: boolean }) => (
+// SosIdentificationRequiredModal로 안내하고, 근무 중이 아니면 SosUnavailableModal로
+// 안내한다. 둘 다 아니면 SosConfirmModal로 이어진다(HomePage에서 분기).
+const SosButton = ({ onClick }: { onClick: () => void }) => (
   <button
     onClick={onClick}
-    disabled={disabled}
-    className={`mt-3.5 w-full rounded-[12px] px-4 py-3.5 flex flex-col items-center justify-center shadow-[0_2px_8px_rgba(20,30,50,.05)] ${
-      disabled ? "bg-surface-page cursor-not-allowed" : "bg-white cursor-pointer"
-    }`}
+    className="mt-3.5 w-full rounded-[12px] px-4 py-3.5 flex flex-col items-center justify-center bg-white cursor-pointer shadow-[0_2px_8px_rgba(20,30,50,.05)]"
   >
     <div className="flex items-center gap-2">
-      <span className={`text-[20px] leading-none ${disabled ? "opacity-40" : ""}`}>🚨</span>
-      <span
-        className={`text-base font-extrabold tracking-[0.02em] ${
-          disabled ? "text-text-muted" : "text-text-tertiary"
-        }`}
-      >
+      <span className="text-[20px] leading-none">🚨</span>
+      <span className="text-base font-extrabold tracking-[0.02em] text-text-tertiary">
         SOS 긴급 도움 요청
       </span>
     </div>
-    <span className="text-[12px] font-semibold text-text-muted">
-      {disabled ? "근무 중에만 이용할 수 있어요" : "위급 시에 버튼을 눌러주세요"}
-    </span>
+    <span className="text-[12px] font-semibold text-text-muted">위급 시에 버튼을 눌러주세요</span>
   </button>
 );
 
