@@ -1206,10 +1206,15 @@ app.post("/sos", async (c) => {
           sosPushPayload,
           { privateJWK: c.env.VAPID_PRIVATE_KEY, subject: c.env.VAPID_SUBJECT },
         );
-        if (!pushResult.ok && pushResult.expired) {
-          await db
-            .delete(pushSubscriptions)
-            .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+        if (!pushResult.ok) {
+          console.error(
+            `SOS 동료 웹푸시 실패: participantId=${subscription.participantId} status=${pushResult.status} expired=${pushResult.expired}`,
+          );
+          if (pushResult.expired) {
+            await db
+              .delete(pushSubscriptions)
+              .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
+          }
         }
       }
 
@@ -1291,10 +1296,17 @@ app.post("/sos", async (c) => {
           adminPushPayload,
           { privateJWK: c.env.VAPID_PRIVATE_KEY, subject: c.env.VAPID_SUBJECT },
         );
-        if (!pushResult.ok && pushResult.expired) {
-          await db
-            .delete(adminPushSubscriptions)
-            .where(eq(adminPushSubscriptions.endpoint, subscription.endpoint));
+        if (!pushResult.ok) {
+          console.error(
+            `SOS 관리자 웹푸시 실패: adminId=${subscription.adminId} status=${pushResult.status} expired=${pushResult.expired}`,
+          );
+          if (pushResult.expired) {
+            await db
+              .delete(adminPushSubscriptions)
+              .where(eq(adminPushSubscriptions.endpoint, subscription.endpoint));
+          }
+        } else {
+          console.log(`SOS 관리자 웹푸시 성공: adminId=${subscription.adminId}`);
         }
       }
     }
