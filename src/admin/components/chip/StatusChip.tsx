@@ -22,7 +22,7 @@ interface StatusChipProps {
  */
 const StatusChip = ({ variant, children }: StatusChipProps) => (
   <span
-    className={`inline-flex px-2.5 py-[3px] rounded-[2px] text-[11.5px] font-bold ${VARIANT_CLASSES[variant]}`}
+    className={`inline-flex whitespace-nowrap px-2.5 py-[3px] rounded-[2px] text-[11.5px] font-bold ${VARIANT_CLASSES[variant]}`}
   >
     {children}
   </span>
