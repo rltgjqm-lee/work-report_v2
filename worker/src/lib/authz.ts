@@ -131,3 +131,18 @@ export const canAccessProgram = (
   if (admin.role === ROLES.MANAGER) return admin.programIds.includes(program.id);
   return admin.organizationId === program.organizationId;
 };
+
+// "사업단 관리"(상세조회/수정/비활성화) 전용 — canAccessProgram과 달리 SUB_ADMIN도
+// MANAGER처럼 본인이 담당하는(programIds) 사업단만 허용한다. canAccessProgram은
+// 근태/안전관제 등 운영 화면 전반에서 기관 전체를 허용하는 넓은 게이트라 그대로
+// 두고, 사업단 자체의 관리 권한만 이걸로 따로 좁힌다.
+export const canManageProgram = (
+  admin: AdminSession,
+  program: { organizationId: number; id: number },
+): boolean => {
+  if (admin.role === ROLES.SUPER_ADMIN) return true;
+  if (admin.role === ROLES.ORGANIZATION_ADMIN) {
+    return admin.organizationId === program.organizationId;
+  }
+  return admin.programIds.includes(program.id); // SUB_ADMIN, MANAGER 공통
+};

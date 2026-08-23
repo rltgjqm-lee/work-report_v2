@@ -25,7 +25,7 @@ import {
   pushSubscriptions,
   sosEvents,
 } from "../../db/schema";
-import { canAccessProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
+import { canAccessProgram, canManageProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
 
@@ -49,6 +49,7 @@ type ProgramBody = {
   activityLogTitle?: string | null;
   capacityAttendanceBannerText?: string | null;
   isActive?: boolean;
+  secondaryContactAdminId?: number | null;
 };
 
 app.get("/", async (c) => {
@@ -67,10 +68,9 @@ app.get("/", async (c) => {
     ? await db.select().from(programs).where(eq(programs.organizationId, organizationId))
     : await db.select().from(programs);
 
-  const visible =
-    auth.role === ROLES.MANAGER ? rows.filter((p) => auth.programIds.includes(p.id)) : rows;
-
-  return c.json(visible);
+  // 사업단 관리 목록은 4개 역할 모두 기관 전체(또는 SUPER_ADMIN이 고른 기관)를
+  // 본다 — 상세조회/수정/비활성화만 canManageProgram으로 본인 담당 사업단으로 좁힌다.
+  return c.json(rows);
 });
 
 // 사업단 관리 목록 화면용 — 참여자 수 집계, 소속 기관명, 담당자명까지 서버에서 한 번에
@@ -87,12 +87,11 @@ app.get("/summary", async (c) => {
         : undefined
       : (auth.organizationId as number);
 
-  const rows = organizationId
+  // 사업단 관리 목록은 4개 역할 모두 기관 전체(또는 SUPER_ADMIN이 고른 기관)를
+  // 본다 — 상세조회/수정/비활성화만 canManageProgram으로 본인 담당 사업단으로 좁힌다.
+  const visible = organizationId
     ? await db.select().from(programs).where(eq(programs.organizationId, organizationId))
     : await db.select().from(programs);
-
-  const visible =
-    auth.role === ROLES.MANAGER ? rows.filter((p) => auth.programIds.includes(p.id)) : rows;
 
   if (visible.length === 0) return c.json([]);
 
@@ -120,26 +119,43 @@ app.get("/summary", async (c) => {
     organizationRows.map((organization) => [organization.id, organization.name]),
   );
 
-  // 담당자 열은 계정 목록(GET /api/admins)과 같은 기준으로 가린다 — SUB_ADMIN/MANAGER는 못 본다.
-  const canViewManager = hasMinRole(auth, ROLES.ORGANIZATION_ADMIN);
-  const managerCandidates = canViewManager
-    ? await db
-        .select({ name: admins.name, email: admins.email, programIds: admins.programIds })
-        .from(admins)
-        .where(
-          and(
-            inArray(admins.organizationId, organizationIds),
-            inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
-            eq(admins.isActive, true),
-          ),
-        )
-    : [];
+  // 담당자는 MANAGER/SUB_ADMIN 계정의 programIds로 표현되므로 그 두 role만 조회한다.
+  const managerCandidates = await db
+    .select({ name: admins.name, email: admins.email, programIds: admins.programIds })
+    .from(admins)
+    .where(
+      and(
+        inArray(admins.organizationId, organizationIds),
+        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
+        eq(admins.isActive, true),
+      ),
+    );
   const managerNameByProgramId = (programId: number) => {
     const manager = managerCandidates.find((candidate) =>
       parseIdArray(candidate.programIds).includes(programId),
     );
     return manager?.name ?? manager?.email ?? "-";
   };
+
+  // 보조 담당자는 programs.secondaryContactAdminId 컬럼 하나로 바로 참조되므로,
+  // 그 값들만 모아 한 번에 조회한다.
+  const secondaryContactAdminIds = [
+    ...new Set(
+      visible
+        .map((program) => program.secondaryContactAdminId)
+        .filter((id): id is number => id !== null),
+    ),
+  ];
+  const secondaryContactAdminRows =
+    secondaryContactAdminIds.length === 0
+      ? []
+      : await db
+          .select({ id: admins.id, name: admins.name, email: admins.email })
+          .from(admins)
+          .where(inArray(admins.id, secondaryContactAdminIds));
+  const secondaryContactAdminById = new Map(
+    secondaryContactAdminRows.map((row) => [row.id, row.name ?? row.email]),
+  );
 
   const summaries = visible.map((program) => ({
     id: program.id,
@@ -153,10 +169,75 @@ app.get("/summary", async (c) => {
     programType: program.programType,
     isActive: program.isActive,
     participantCount: participantCountByProgramId.get(program.id) ?? 0,
-    managerName: canViewManager ? managerNameByProgramId(program.id) : "-",
+    managerName: managerNameByProgramId(program.id),
+    secondaryContactAdminName:
+      program.secondaryContactAdminId !== null
+        ? (secondaryContactAdminById.get(program.secondaryContactAdminId) ?? "-")
+        : "-",
   }));
 
   return c.json(summaries);
+});
+
+// 사업단 담당자로 지정할 수 있는 계정(담당자/부관리자 역할) 목록 — 계정 관리 화면
+// (GET /api/admins)은 부관리자/담당자에게 막혀 있어서, 사업단을 만들 수 있는
+// 사람이면 누구나 이 목록으로 자기 자신이나 동료를 담당자로 고를 수 있게 한다.
+// `/:id`보다 먼저 등록해야 "manager-candidates"가 id로 안 잡힌다.
+app.get("/manager-candidates", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const queryOrgId = c.req.query("organizationId");
+  const organizationId =
+    auth.role === ROLES.SUPER_ADMIN ? Number(queryOrgId) : auth.organizationId;
+  if (!organizationId) return c.json({ error: "기관을 지정해주세요." }, 400);
+
+  const rows = await db
+    .select({
+      id: admins.id,
+      name: admins.name,
+      email: admins.email,
+      role: admins.role,
+      programIds: admins.programIds,
+    })
+    .from(admins)
+    .where(
+      and(
+        eq(admins.organizationId, organizationId),
+        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
+        eq(admins.isActive, true),
+      ),
+    );
+
+  return c.json(
+    rows.map((row) => ({ ...row, programIds: parseIdArray(row.programIds) })),
+  );
+});
+
+// 보조 담당자(수요처 담당자 "+1") 후보 목록 — 계정 관리 화면(GET /api/admins)은
+// 부관리자/담당자에게 막혀 있어서, 사업단을 만들 수 있는 사람이면 누구나 이
+// 목록을 쓸 수 있게 한다. manager-candidates와 달리 역할 제한은 총괄관리자
+// 제외뿐이다. 사업단 생성 시점(아직 id 없음)에도 쓸 수 있게 organizationId
+// 기준으로만 조회한다 — `/:id`보다 먼저 등록해야 id로 안 잡힌다.
+app.get("/secondary-contact-candidates", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const queryOrgId = c.req.query("organizationId");
+  const organizationId =
+    auth.role === ROLES.SUPER_ADMIN ? Number(queryOrgId) : auth.organizationId;
+  if (!organizationId) return c.json({ error: "기관을 지정해주세요." }, 400);
+
+  const rows = await db
+    .select({ id: admins.id, name: admins.name })
+    .from(admins)
+    .where(
+      and(
+        eq(admins.organizationId, organizationId),
+        ne(admins.role, ROLES.SUPER_ADMIN),
+        eq(admins.isActive, true),
+      ),
+    );
+
+  return c.json(rows);
 });
 
 app.get("/:id", async (c) => {
@@ -167,7 +248,7 @@ app.get("/:id", async (c) => {
   const programRows = await db.select().from(programs).where(eq(programs.id, id));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program)) {
+  if (!canManageProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -244,21 +325,22 @@ app.get("/:id/edit", async (c) => {
   const programRows = await db.select().from(programs).where(eq(programs.id, id));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!canAccessProgram(auth, program)) {
+  if (!canManageProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   return c.json(program);
 });
 
+// 사업단 추가는 4개 역할 모두 가능 — MANAGER가 최하위라 별도 hasMinRole 체크가
+// 필요 없다. SUB_ADMIN/MANAGER가 만들면 아래에서 본인을 그 사업단 담당자로
+// 자동 등록한다(그래야 canManageProgram 기준으로 자기가 만든 사업단을 바로
+// 조회/수정할 수 있다). ORGANIZATION_ADMIN 이상이 만들 때는 지금처럼 프론트가
+// 담당자를 따로 골라 PUT /:id/manager로 지정하는 흐름을 그대로 쓴다.
 app.post("/", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const body = await c.req.json<ProgramBody>();
-
-  if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)) {
-    return c.json({ error: "권한이 없습니다." }, 403);
-  }
 
   const organizationId =
     auth.role === ROLES.SUPER_ADMIN ? body.organizationId : (auth.organizationId as number);
@@ -280,6 +362,25 @@ app.post("/", async (c) => {
     return c.json({ error: "같은 기관에 동일한 이름의 사업단이 이미 있습니다." }, 400);
   }
 
+  // 보조 담당자(수요처 담당자 "+1" 후보)는 같은 기관 소속이면서 총괄관리자가 아닌
+  // 계정만 지정할 수 있다 — PUT /:id와 동일한 검증.
+  if (body.secondaryContactAdminId != null) {
+    const candidateRows = await db
+      .select({ id: admins.id })
+      .from(admins)
+      .where(
+        and(
+          eq(admins.id, body.secondaryContactAdminId),
+          eq(admins.organizationId, organizationId),
+          ne(admins.role, ROLES.SUPER_ADMIN),
+          eq(admins.isActive, true),
+        ),
+      );
+    if (candidateRows.length === 0) {
+      return c.json({ error: "이 기관에서 지정 가능한 계정이 아닙니다." }, 400);
+    }
+  }
+
   const result = await db
     .insert(programs)
     .values({
@@ -297,10 +398,24 @@ app.post("/", async (c) => {
       employmentInsuranceEmployerRate: body.employmentInsuranceEmployerRate,
       industrialAccidentRate: body.industrialAccidentRate,
       annualLeaveDailyWage: body.annualLeaveDailyWage,
+      secondaryContactAdminId: body.secondaryContactAdminId,
     })
     .returning();
+  const createdProgram = result[0];
 
-  return c.json(result[0], 201);
+  if (auth.role === ROLES.SUB_ADMIN || auth.role === ROLES.MANAGER) {
+    const creatorRows = await db
+      .select({ programIds: admins.programIds })
+      .from(admins)
+      .where(eq(admins.id, auth.id));
+    const currentProgramIds = parseIdArray(creatorRows[0]?.programIds ?? null);
+    await db
+      .update(admins)
+      .set({ programIds: JSON.stringify([...currentProgramIds, createdProgram.id]) })
+      .where(eq(admins.id, auth.id));
+  }
+
+  return c.json(createdProgram, 201);
 });
 
 // 사업단 담당자 지정 — 담당자는 MANAGER 또는 SUB_ADMIN 계정의 programIds로 표현되므로,
@@ -315,7 +430,11 @@ app.put("/:id/manager", async (c) => {
   const programRows = await db.select().from(programs).where(eq(programs.id, programId));
   const program = programRows[0];
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) || !canAccessProgram(auth, program)) {
+  // ORGANIZATION_ADMIN 이상은 기관 전체 사업단의 담당자를 재배정할 수 있고,
+  // SUB_ADMIN/MANAGER는 지금 본인이 담당하는 사업단에 한해 재배정(핸드오프 포함)할
+  // 수 있다 — 사업단 생성 직후엔 POST /에서 본인을 자동 배정해두므로 이 조건을
+  // 바로 만족한다.
+  if (!hasMinRole(auth, ROLES.ORGANIZATION_ADMIN) && !canManageProgram(auth, program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
@@ -387,16 +506,33 @@ app.put("/:id", async (c) => {
   const existingRows = await db.select().from(programs).where(eq(programs.id, id));
   const existing = existingRows[0];
   if (!existing) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
-  // 사업단 수정은 SUB_ADMIN까지 허용 (등록/삭제는 ORGANIZATION_ADMIN 이상)
-  if (!hasMinRole(auth, ROLES.SUB_ADMIN) || !canAccessProgram(auth, existing)) {
+  // 사업단 수정/비활성화는 canManageProgram이 이미 "본인 담당 사업단만"으로
+  // 걸러준다 — SUB_ADMIN/MANAGER 모두 본인이 담당하는 사업단이면 수정·비활성화
+  // 둘 다 가능하다.
+  if (!canManageProgram(auth, existing)) {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
   const body = await c.req.json<ProgramBody>();
 
-  // 활성/비활성 전환(소프트 삭제)은 ORGANIZATION_ADMIN 이상만 — 일반 정보 수정과는 별개 권한
-  if (body.isActive !== undefined && !hasMinRole(auth, ROLES.ORGANIZATION_ADMIN)) {
-    return c.json({ error: "권한이 없습니다." }, 403);
+  // 보조 담당자(수요처 담당자 "+1" 후보)는 같은 기관 소속이면서 총괄관리자가 아닌
+  // 계정만 지정할 수 있다 — 다른 기관 계정이나 총괄관리자가 수요처 담당자 후보로
+  // 새는 걸 막는다.
+  if (body.secondaryContactAdminId !== undefined && body.secondaryContactAdminId !== null) {
+    const candidateRows = await db
+      .select({ id: admins.id })
+      .from(admins)
+      .where(
+        and(
+          eq(admins.id, body.secondaryContactAdminId),
+          eq(admins.organizationId, existing.organizationId),
+          ne(admins.role, ROLES.SUPER_ADMIN),
+          eq(admins.isActive, true),
+        ),
+      );
+    if (candidateRows.length === 0) {
+      return c.json({ error: "이 기관에서 지정 가능한 계정이 아닙니다." }, 400);
+    }
   }
 
   const result = await db.update(programs).set(body).where(eq(programs.id, id)).returning();

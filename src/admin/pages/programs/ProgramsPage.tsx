@@ -2,7 +2,6 @@ import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { adminsQueryOptions } from "../../api/admin/admins";
 import { organizationOptionsQueryOptions } from "../../api/admin/organizations";
 import {
   programEditQueryOptions,
@@ -46,26 +45,14 @@ const ProgramsPage = () => {
 
   const { data: organizations = [] } = useQuery(organizationOptionsQueryOptions);
 
-  // 담당자 목록을 못 받아오는 역할(부관리자/담당자)에겐 "-"만 늘어놓는 대신 열 자체를 숨긴다.
-  const canViewManagerColumn = role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
+  // 목록 자체는 전체가 보이지만(백엔드 GET /summary), 수정/비활성화는 본인이
+  // 담당하는 사업단만 가능하다(canManageProgram과 같은 기준) — 눌러봤자 403 나는
+  // 죽은 버튼을 안 보이게 미리 걸러준다.
+  const canManageProgramRow = (program: ProgramListItem) =>
+    role === ROLES.SUPER_ADMIN ||
+    role === ROLES.ORGANIZATION_ADMIN ||
+    !!admin?.programIds.includes(program.id);
 
-  // 계정 목록 조회 권한이 없는 역할(부관리자/담당자)은 아예 호출하지 않는다 — 403이 난다.
-  const { data: admins = [] } = useQuery({
-    ...adminsQueryOptions,
-    enabled: canViewManagerColumn,
-  });
-  // 사업단 담당자로 지정할 수 있는 계정 — 서버가 권한에 맞는 범위(슈퍼 관리자는 전체,
-  // 기관 관리자는 자기 기관)만 내려주므로 여기선 역할/활성 여부만 걸러낸다.
-  // 담당자(MANAGER)뿐 아니라 부관리자(SUB_ADMIN)도 사업단 담당자가 될 수 있다.
-  const managerAdmins = useMemo(
-    () =>
-      admins.filter(
-        (adminRow) =>
-          (adminRow.role === ROLES.MANAGER || adminRow.role === ROLES.SUB_ADMIN) &&
-          adminRow.isActive,
-      ),
-    [admins],
-  );
 
   const selectedOrganizationId =
     role === ROLES.SUPER_ADMIN
@@ -217,36 +204,33 @@ const ProgramsPage = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table
-            className={`w-full table-fixed border-collapse ${
-              canViewManagerColumn ? "min-w-[1220px]" : "min-w-[1100px]"
-            }`}
-          >
+          <table className="w-full table-fixed border-collapse min-w-[1350px]">
             <thead>
               <tr>
-                <th className="w-[230px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[210px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   사업단명
                 </th>
-                <th className="w-[170px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[150px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   소속기관
                 </th>
-                <th className="w-[210px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[190px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   기간
                 </th>
-                <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   운영시간
                 </th>
-                <th className="w-[100px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   참여자수
                 </th>
-                <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <th className="w-[80px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   상태
                 </th>
-                {canViewManagerColumn && (
-                  <th className="w-[120px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                    담당자
-                  </th>
-                )}
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  담당자
+                </th>
+                <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                  보조 담당자
+                </th>
                 <th className="w-[160px] bg-admin-surface-header border-b border-admin-border-subtle" />
               </tr>
             </thead>
@@ -278,21 +262,29 @@ const ProgramsPage = () => {
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {program.isActive ? "활성" : "비활성"}
                   </td>
-                  {canViewManagerColumn && (
-                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
-                      {program.managerName}
-                    </td>
-                  )}
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
+                    {program.managerName}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
+                    {program.secondaryContactAdminName}
+                  </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    <button className={rowActionBtnClass} onClick={handleEditButtonClick(program)}>
-                      수정
-                    </button>
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={handleToggleActiveButtonClick(program)}
-                    >
-                      {program.isActive ? "비활성화" : "활성화"}
-                    </button>
+                    {canManageProgramRow(program) && (
+                      <>
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={handleEditButtonClick(program)}
+                        >
+                          수정
+                        </button>
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={handleToggleActiveButtonClick(program)}
+                        >
+                          {program.isActive ? "비활성화" : "활성화"}
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -309,7 +301,6 @@ const ProgramsPage = () => {
           editingProgram={editingProgram}
           currentRole={role ?? ROLES.MANAGER}
           organizations={organizations}
-          managerAdmins={managerAdmins}
         />
       )}
     </div>

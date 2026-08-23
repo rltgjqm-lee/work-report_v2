@@ -78,11 +78,9 @@ app.get("/:id/detail", async (c) => {
 
   const db = drizzle(c.env.DB);
 
-  // 소속 직원 목록(GET /api/admins)과 같은 기준 — SUB_ADMIN/MANAGER는 못 본다.
-  const canViewStaff = hasMinRole(auth, ROLES.ORGANIZATION_ADMIN);
-  const staffRows = canViewStaff
-    ? await db.select().from(admins).where(eq(admins.organizationId, organizationId))
-    : [];
+  // 소속 직원 목록 — 계정 관리 화면(GET /api/admins)과 달리 role 제한 없이 이 기관에
+  // 접근 가능하면(canAccessOrg) 누구나 볼 수 있다.
+  const staffRows = await db.select().from(admins).where(eq(admins.organizationId, organizationId));
   const staff = staffRows.map((admin) => ({
     id: admin.id,
     name: admin.name,
@@ -90,7 +88,7 @@ app.get("/:id/detail", async (c) => {
     role: admin.role,
   }));
 
-  // 사업단 담당자 = MANAGER 또는 SUB_ADMIN. staff를 못 보는 역할은 담당자명도 "-"로 통일한다.
+  // 사업단 담당자 = MANAGER 또는 SUB_ADMIN.
   const managerAdmins = staffRows.filter(
     (admin) => (admin.role === ROLES.MANAGER || admin.role === ROLES.SUB_ADMIN) && admin.isActive,
   );
@@ -124,7 +122,7 @@ app.get("/:id/detail", async (c) => {
     name: program.name,
     type: program.programType ?? "-",
     participantCount: participantCountByProgramId.get(program.id) ?? 0,
-    managerName: canViewStaff ? managerNameByProgramId(program.id) : "-",
+    managerName: managerNameByProgramId(program.id),
   }));
 
   const siteRows =

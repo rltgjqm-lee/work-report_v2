@@ -6,12 +6,12 @@ import {
   createDemandSiteMutationOptions,
   updateDemandSiteMutationOptions,
 } from "../../api/admin/demandSites";
-// import FilterSelect from "../../components/FilterSelect"; // 담당자 지정 UI와 함께 임시로 뺐다
 import { useToast } from "../../context/useToast";
 import type { DemandSite } from "../../types/demandSites";
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 
 import Button from "../../components/Button";
+import FilterSelect from "../../components/FilterSelect";
 import FormField from "../../components/FormField";
 import Input from "../../components/Input";
 import SlideModal from "../../components/modal/SlideModal";
@@ -63,8 +63,9 @@ const DemandSiteFormModal = ({
   const createDemandSiteMutation = useMutation(createDemandSiteMutationOptions(queryClient));
   const updateDemandSiteMutation = useMutation(updateDemandSiteMutationOptions(queryClient));
 
-  // 담당자 지정 UI는 임시로 숨겼지만(아래 주석 처리된 FormField 참고) 조회 로직은 남겨둔다.
-  useQuery({
+  // 후보는 서버가 이미 사업단 담당자 + 보조 담당자(최대 2명)로 좁혀서 내려준다 —
+  // 프론트는 받은 목록을 그대로 보여주면 된다.
+  const { data: assignableAdmins = [] } = useQuery({
     ...assignableDemandSiteAdminsQueryOptions(programId),
     enabled: !!editingDemandSite,
   });
@@ -161,9 +162,8 @@ const DemandSiteFormModal = ({
         </div>
       </FormField>
 
-      {/* 담당자 지정 UI는 임시로 숨긴다 — MANAGER가 programIds에 없는 수요처의 담당자로
-          지정될 수 있는 권한 불일치가 있어 정리 전까지 노출하지 않는다. 저장 로직
-          (form.contactAdminId, handleSaveButtonClick의 contactAdminId 전달)은 그대로 둔다.
+      {/* 담당자로 지정 가능한 사람은 이 사업단 담당자와 보조 담당자(사업단 수정 화면에서
+          지정) 둘뿐이다 — assignableAdmins가 서버에서부터 그 후보로 좁혀져 내려온다. */}
       {editingDemandSite && (
         <FormField label="담당자">
           <FilterSelect
@@ -185,7 +185,6 @@ const DemandSiteFormModal = ({
           )}
         </FormField>
       )}
-      */}
 
       {/* 수요처 단위 관제구역 — 거점을 따로 안 그려도 이 원으로 이탈 판정이 된다 */}
       <FormField label="기본 관제구역 사용">

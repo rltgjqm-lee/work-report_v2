@@ -1,5 +1,6 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
+import type { Admin } from "../../types/admins";
 import type { ProgramParticipant } from "../../types/participants";
 import type {
   Program,
@@ -35,6 +36,10 @@ export const programKeys = {
   participants: (id: number) => [...programKeys.all, id, "participants"] as const,
   participantsByDemandSite: (id: number, demandSiteId: number | null) =>
     [...programKeys.participants(id), demandSiteId ?? "all"] as const,
+  secondaryContactCandidates: (organizationId: number | undefined) =>
+    [...programKeys.all, "secondary-contact-candidates", organizationId ?? "none"] as const,
+  managerCandidates: (organizationId: number | undefined) =>
+    [...programKeys.all, "manager-candidates", organizationId ?? "none"] as const,
 };
 
 // 유형 필터가 있는 드롭다운용 — 여러 화면이 같이 쓰므로 이름/유형까지만 받는다.
@@ -165,4 +170,39 @@ export const setProgramManagerMutationOptions = (queryClient: QueryClient) =>
       // 담당자 배정이 바뀌면 그 계정의 programIds도 같이 바뀐다 — 계정 목록도 무효화한다.
       queryClient.invalidateQueries({ queryKey: adminKeys.all });
     },
+  });
+
+// 보조 담당자(수요처 담당자 "+1")로 지정할 수 있는 계정 목록 — 계정 관리 화면과 달리
+// 부관리자/담당자도 조회할 수 있고 id/이름만 내려온다. organizationId 기준이라
+// 사업단 생성 시점(아직 id 없음)에도 쓸 수 있다 — managerCandidatesQueryOptions와
+// 같은 organizationId를 그대로 넘기면 된다.
+const listSecondaryContactCandidates = (organizationId: number | undefined) =>
+  request<{ id: number; name: string | null }[]>(
+    `/api/programs/secondary-contact-candidates${organizationId ? `?organizationId=${organizationId}` : ""}`,
+  );
+
+export const secondaryContactCandidatesQueryOptions = (organizationId: number | undefined) =>
+  queryOptions({
+    queryKey: programKeys.secondaryContactCandidates(organizationId),
+    queryFn: () => listSecondaryContactCandidates(organizationId),
+    enabled: organizationId !== undefined,
+  });
+
+// 사업단 담당자로 지정할 수 있는 계정(담당자/부관리자) 목록 — 계정 관리 화면과 달리
+// 부관리자/담당자 본인도 조회할 수 있다. organizationId는 SUPER_ADMIN이 사업단을
+// 새로 만들 때 고른 기관을 넘길 때만 쓰고, 그 외 역할은 서버가 자기 기관으로 고정한다.
+type ManagerCandidate = Pick<Admin, "id" | "name" | "email" | "role" | "programIds">;
+
+const listManagerCandidates = (organizationId: number | undefined) =>
+  request<ManagerCandidate[]>(
+    `/api/programs/manager-candidates${organizationId ? `?organizationId=${organizationId}` : ""}`,
+  );
+
+// SUPER_ADMIN이 아직 기관을 안 고른 상태(organizationId undefined)에서도 호출부가
+// 매번 조건 분기하지 않도록 enabled를 팩토리 안에서 계산한다.
+export const managerCandidatesQueryOptions = (organizationId: number | undefined) =>
+  queryOptions({
+    queryKey: programKeys.managerCandidates(organizationId),
+    queryFn: () => listManagerCandidates(organizationId),
+    enabled: organizationId !== undefined,
   });

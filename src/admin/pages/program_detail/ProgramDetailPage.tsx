@@ -50,7 +50,11 @@ const ProgramDetailPage = () => {
   const [tab, setTab] = useState<Tab>(PROGRAM_DETAIL_TAB.DEMAND_SITES);
 
   const { data: allPrograms = [] } = useQuery(programsQueryOptions);
-  const { data: program } = useQuery(programQueryOptions(programId));
+  const {
+    data: program,
+    isError: isProgramError,
+    error: programError,
+  } = useQuery(programQueryOptions(programId));
   const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
   const { data: demandSitesData } = useQuery(demandSitesQueryOptions(programId));
   const demandSites = useMemo(() => demandSitesData?.demandSites ?? [], [demandSitesData]);
@@ -87,6 +91,22 @@ const ProgramDetailPage = () => {
       }),
     [program, search, statusFilter, groupFilter, demandFilter],
   );
+
+  if (isProgramError) {
+    return (
+      <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-10 text-center">
+        <p className="text-[13px] text-admin-text-placeholder mb-3">
+          {programError instanceof Error ? programError.message : "사업단을 불러오지 못했습니다."}
+        </p>
+        <a
+          onClick={() => navigate("/admin/programs")}
+          className="cursor-pointer text-admin-brand hover:text-admin-brand-dark text-[13px] font-semibold"
+        >
+          사업단 관리로 돌아가기
+        </a>
+      </div>
+    );
+  }
 
   if (!program) return null;
 

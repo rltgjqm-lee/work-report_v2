@@ -21,6 +21,9 @@ export type Program = {
   // 역량활동 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다.
   capacityAttendanceBannerText: string | null;
   isActive: boolean;
+  // 수요처 담당자(contactAdminId)로 지정 가능한 "+1" 후보 — 사업단 담당자 외에
+  // 이 사업단 수요처들의 담당자가 될 수 있는 보조 인원 한 명.
+  secondaryContactAdminId: number | null;
   createdAt: string;
 };
 
@@ -42,7 +45,12 @@ export type ProgramListItem = Pick<
   | "endTime"
   | "programType"
   | "isActive"
-> & { participantCount: number; organizationName: string; managerName: string };
+> & {
+  participantCount: number;
+  organizationName: string;
+  managerName: string;
+  secondaryContactAdminName: string;
+};
 
 // 드롭다운 등 이름만 필요한 곳에서 쓴다.
 export type ProgramOption = Pick<Program, "id" | "name">;

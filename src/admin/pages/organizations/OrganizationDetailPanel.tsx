@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { organizationDetailQueryOptions } from "../../api/admin/organizations";
@@ -20,19 +19,16 @@ const SITES_PER_PAGE = 5;
 
 interface OrganizationDetailPanelProps {
   organizationId: number;
-  canViewStaff: boolean;
 }
 
 /**
  * 기관 관리 페이지에서 기관 하나의 소속 직원 · 담당 사업단 · 담당 수요처를 보여주는 패널입니다.
  * SUPER_ADMIN은 토글로, 그 외 역할은 항상 노출되는 영역으로 이 컴포넌트를 그대로 재사용합니다.
+ * 내용은 역할 상관없이 다 보여주되, 담당 사업단은 본인이 담당하지 않는 사업단일 수도
+ * 있어(canManageProgram) 클릭해서 상세로 들어가면 바로 권한 없음이 뜰 수 있으므로
+ * 링크로 만들지 않고 텍스트로만 보여준다.
  */
-const OrganizationDetailPanel = ({
-  organizationId,
-  canViewStaff,
-}: OrganizationDetailPanelProps) => {
-  const navigate = useNavigate();
-
+const OrganizationDetailPanel = ({ organizationId }: OrganizationDetailPanelProps) => {
   const { data } = useQuery(organizationDetailQueryOptions(organizationId));
   const staffItems = data?.staff ?? [];
   const programItems = data?.programs ?? [];
@@ -50,11 +46,7 @@ const OrganizationDetailPanel = ({
         <div className="text-xs font-bold text-text-subtle mb-4">
           소속 직원 · {staffItems.length}명
         </div>
-        {!canViewStaff ? (
-          <span className="text-[11.5px] text-admin-text-placeholder">
-            권한이 없어 볼 수 없습니다.
-          </span>
-        ) : staffItems.length === 0 ? (
+        {staffItems.length === 0 ? (
           <span className="text-[11.5px] text-admin-text-placeholder">소속 직원이 없습니다.</span>
         ) : (
           <div className="flex flex-col gap-4">
@@ -80,12 +72,7 @@ const OrganizationDetailPanel = ({
           <div className="flex flex-col gap-4">
             {programItems.map((program) => (
               <div key={program.id} className="flex flex-col gap-1">
-                <a
-                  className="text-[13px] font-semibold text-text-strong cursor-pointer hover:text-admin-brand"
-                  onClick={() => navigate(`/admin/program?id=${program.id}`)}
-                >
-                  {program.name}
-                </a>
+                <span className="text-[13px] font-semibold text-text-strong">{program.name}</span>
                 <span className="text-[11.5px] text-admin-text-faint">
                   {program.type} · {program.participantCount}명 · 담당자 {program.managerName}
                 </span>

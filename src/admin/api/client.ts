@@ -25,9 +25,13 @@ export const request = async <T>(path: string, options: RequestInit = {}): Promi
     throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
   }
 
-  if (response.status === 401 || response.status === 403) {
+  // 401(세션 만료/미로그인)만 로그아웃 처리한다 — 403(로그인은 됐지만 이 리소스에
+  // 접근 권한이 없음)까지 같이 로그아웃시키면, 담당 아닌 사업단에 들어가려다
+  // 403을 받은 것뿐인데 세션이 끊긴 것처럼 보여 혼란을 준다. 403은 아래
+  // !response.ok 처리로 흘려보내 백엔드가 보낸 실제 사유를 그대로 던진다.
+  if (response.status === 401) {
     onUnauthorized?.();
-    throw new Error("접근 권한이 없습니다.");
+    throw new Error("로그인이 필요합니다.");
   }
 
   if (!response.ok) {

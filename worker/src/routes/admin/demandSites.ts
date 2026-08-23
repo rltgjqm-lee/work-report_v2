@@ -302,8 +302,24 @@ app.get("/", async (c) => {
   return c.json({ programName: program.name, demandSites: rowsWithSchedules });
 });
 
-// 수요처 담당자로 지정할 수 있는 계정 목록. 계정 관리 화면(GET /api/admins)은 부관리자/
-// 담당자에게 막혀 있어서, 수요처를 다룰 수 있는 사람이면 누구나 쓸 수 있게 id/이름만 내려준다.
+// 수요처 담당자(contactAdminId)로 지정 가능한 후보 id — 사업단 담당자(findProgramManagerId)
+// 와 사업단의 보조 담당자(programs.secondaryContactAdminId) 딱 둘뿐이다. 한 사업단
+// 소속 수요처 전체가 이 최대 2명짜리 풀 밖으로 나가지 않게, 조회(/assignable-admins)와
+// 저장(POST/PUT) 검증이 이 함수 하나를 같이 쓴다.
+const getContactAdminCandidateIds = async (
+  db: ReturnType<typeof drizzle>,
+  program: typeof programs.$inferSelect,
+): Promise<number[]> => {
+  const managerId = await findProgramManagerId(db, program);
+  const ids = [managerId, program.secondaryContactAdminId].filter(
+    (id): id is number => id !== null,
+  );
+  return [...new Set(ids)];
+};
+
+// 수요처 담당자로 지정할 수 있는 계정 목록 — 사업단 담당자 + 보조 담당자, 최대 2명.
+// 계정 관리 화면(GET /api/admins)은 부관리자/담당자에게 막혀 있어서, 수요처를 다룰 수
+// 있는 사람이면 누구나 쓸 수 있게 id/이름만 내려준다.
 app.get("/assignable-admins", async (c) => {
   const auth = getAuth(c);
   const programId = Number(c.req.query("programId"));
@@ -313,16 +329,13 @@ app.get("/assignable-admins", async (c) => {
   const program = await loadAccessibleProgram(db, auth, programId);
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
+  const candidateIds = await getContactAdminCandidateIds(db, program);
+  if (candidateIds.length === 0) return c.json([]);
+
   const rows = await db
     .select({ id: admins.id, name: admins.name })
     .from(admins)
-    .where(
-      and(
-        eq(admins.organizationId, program.organizationId),
-        inArray(admins.role, [ROLES.MANAGER, ROLES.SUB_ADMIN]),
-        eq(admins.isActive, true),
-      ),
-    );
+    .where(inArray(admins.id, candidateIds));
 
   return c.json(rows);
 });
@@ -345,6 +358,15 @@ app.post("/", async (c) => {
     .where(and(eq(demandSites.programId, body.programId), eq(demandSites.name, body.name)));
   if (duplicateRows.length > 0) {
     return c.json({ error: "같은 사업단에 동일한 이름의 수요처가 이미 있습니다." }, 400);
+  }
+
+  // 담당자는 사업단 담당자 또는 보조 담당자만 지정할 수 있다 — 값을 안 보내면 검증 없이
+  // 사업단 담당자로 자동 채운다(아래 insert의 폴백).
+  if (body.contactAdminId != null) {
+    const candidateIds = await getContactAdminCandidateIds(db, program);
+    if (!candidateIds.includes(body.contactAdminId)) {
+      return c.json({ error: "이 사업단에서 지정 가능한 담당자가 아닙니다." }, 400);
+    }
   }
 
   // 좌표를 직접 보내지 않았으면 주소로 잡아준다
@@ -392,6 +414,15 @@ app.put("/:id", async (c) => {
   if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
 
   const body = await c.req.json<DemandSiteBody>();
+
+  // 담당자는 사업단 담당자 또는 보조 담당자만 지정할 수 있다 — null은 명시적으로
+  // 비우는 것이라 검증 없이 통과시킨다.
+  if (body.contactAdminId != null) {
+    const candidateIds = await getContactAdminCandidateIds(db, program);
+    if (!candidateIds.includes(body.contactAdminId)) {
+      return c.json({ error: "이 사업단에서 지정 가능한 담당자가 아닙니다." }, 400);
+    }
+  }
 
   const address = body.address ?? existing.address;
   // 관제 중심은 주소를 따라간다 — 주소가 바뀌었거나 아직 좌표가 없으면 다시 잡고,

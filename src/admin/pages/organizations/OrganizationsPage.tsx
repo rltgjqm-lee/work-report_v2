@@ -36,9 +36,6 @@ const OrganizationsPage = () => {
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
   const [expandedOrgId, setExpandedOrgId] = useState<number | null>(null);
 
-  // 소속 직원 목록(/api/admins)은 SUPER_ADMIN/ORGANIZATION_ADMIN만 조회 권한이 있다.
-  const canViewStaff = role === ROLES.SUPER_ADMIN || role === ROLES.ORGANIZATION_ADMIN;
-
   const filtered = useMemo(
     () =>
       organizations.filter(
@@ -194,10 +191,7 @@ const OrganizationsPage = () => {
                   {role === ROLES.SUPER_ADMIN && expandedOrgId === organization.id && (
                     <tr>
                       <td colSpan={9} className="p-3 bg-white border-b border-admin-border-subtle">
-                        <OrganizationDetailPanel
-                          organizationId={organization.id}
-                          canViewStaff={canViewStaff}
-                        />
+                        <OrganizationDetailPanel organizationId={organization.id} />
                       </td>
                     </tr>
                   )}
@@ -217,10 +211,7 @@ const OrganizationsPage = () => {
           <div key={organization.id} className="mt-5">
             <div className="text-sm font-bold mb-2.5">{organization.name} 상세</div>
             <div className="bg-white border border-admin-border-subtle rounded-[2px] p-3">
-              <OrganizationDetailPanel
-                organizationId={organization.id}
-                canViewStaff={canViewStaff}
-              />
+              <OrganizationDetailPanel organizationId={organization.id} />
             </div>
           </div>
         ))}
