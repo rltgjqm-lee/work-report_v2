@@ -39,11 +39,19 @@ const CONTACT_NAV_ITEM = {
   badge: "9",
 };
 
+// 외부 매뉴얼 페이지 — 새 탭으로 연다(NavLink가 아니라 일반 링크로 렌더링).
+const ADMIN_MANUAL_NAV_ITEM = {
+  to: "https://ichenny.github.io/worksafe-manual/admin-manual.html",
+  label: "관리자 매뉴얼",
+  badge: "10",
+  external: true,
+};
+
 // SUPER_ADMIN에게만 노출
 const LOGIN_HISTORY_NAV_ITEM = {
   to: "/admin/login-history",
   label: "로그인 이력",
-  badge: "10",
+  badge: "11",
 };
 
 const getTopbarTitle = (pathname: string) => {
@@ -78,13 +86,14 @@ const AdminLayout = () => {
   });
   const sidebarSubtitle = organization?.name ?? "일자리 사업 관리";
 
-  const navItems = [
+  const navItems: { to: string; label: string; badge: string; external?: boolean }[] = [
     ...BASE_NAV_ITEMS,
     ...(admin?.role === ROLES.SUPER_ADMIN ? [SAFETY_ALERT_TEST_NAV_ITEM] : []),
     ...(admin?.role === ROLES.SUPER_ADMIN || admin?.role === ROLES.ORGANIZATION_ADMIN
       ? [ADMIN_ACCOUNTS_NAV_ITEM]
       : []),
     CONTACT_NAV_ITEM,
+    ADMIN_MANUAL_NAV_ITEM,
     ...(admin?.role === ROLES.SUPER_ADMIN ? [LOGIN_HISTORY_NAV_ITEM] : []),
   ];
 
@@ -129,32 +138,47 @@ const AdminLayout = () => {
             {sidebarSubtitle}
           </div>
         </div>
-        {navItems.map((navItem) => (
-          <NavLink
-            key={navItem.to}
-            to={navItem.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-6 py-[13px] text-sm font-medium border-l-[3px] ${
-                isActive
-                  ? "bg-white/[0.08] text-white border-l-admin-brand"
-                  : "text-admin-sidebar-border border-l-transparent hover:bg-white/5 hover:text-white"
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  className={`w-[22px] h-[22px] flex-none rounded-[4px] flex items-center justify-center text-xs font-bold ${
-                    isActive ? "bg-admin-brand text-white" : "bg-white/[0.12]"
-                  }`}
-                >
-                  {navItem.badge}
-                </span>
-                {navItem.label}
-              </>
-            )}
-          </NavLink>
-        ))}
+        {navItems.map((navItem) =>
+          navItem.external ? (
+            <a
+              key={navItem.to}
+              href={navItem.to}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-6 py-[13px] text-sm font-medium border-l-[3px] text-admin-sidebar-border border-l-transparent hover:bg-white/5 hover:text-white"
+            >
+              <span className="w-[22px] h-[22px] flex-none rounded-[4px] flex items-center justify-center text-xs font-bold bg-white/[0.12]">
+                {navItem.badge}
+              </span>
+              {navItem.label}
+            </a>
+          ) : (
+            <NavLink
+              key={navItem.to}
+              to={navItem.to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-6 py-[13px] text-sm font-medium border-l-[3px] ${
+                  isActive
+                    ? "bg-white/[0.08] text-white border-l-admin-brand"
+                    : "text-admin-sidebar-border border-l-transparent hover:bg-white/5 hover:text-white"
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`w-[22px] h-[22px] flex-none rounded-[4px] flex items-center justify-center text-xs font-bold ${
+                      isActive ? "bg-admin-brand text-white" : "bg-white/[0.12]"
+                    }`}
+                  >
+                    {navItem.badge}
+                  </span>
+                  {navItem.label}
+                </>
+              )}
+            </NavLink>
+          ),
+        )}
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
