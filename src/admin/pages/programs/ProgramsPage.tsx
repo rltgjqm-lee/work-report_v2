@@ -46,12 +46,13 @@ const ProgramsPage = () => {
   const { data: organizations = [] } = useQuery(organizationOptionsQueryOptions);
 
   // 목록 자체는 전체가 보이지만(백엔드 GET /summary), 수정/비활성화는 본인이
-  // 담당하는 사업단만 가능하다(canManageProgram과 같은 기준) — 눌러봤자 403 나는
-  // 죽은 버튼을 안 보이게 미리 걸러준다.
+  // 담당하는 사업단만 가능하다(canManageProgram과 같은 기준 — 담당자 본인이거나
+  // 그 사업단의 보조 담당자) — 눌러봤자 403 나는 죽은 버튼을 안 보이게 미리 걸러준다.
   const canManageProgramRow = (program: ProgramListItem) =>
     role === ROLES.SUPER_ADMIN ||
     role === ROLES.ORGANIZATION_ADMIN ||
-    !!admin?.programIds.includes(program.id);
+    !!admin?.programIds.includes(program.id) ||
+    admin?.id === program.secondaryContactAdminId;
 
 
   const selectedOrganizationId =

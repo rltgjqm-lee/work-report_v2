@@ -45,6 +45,7 @@ export type ProgramListItem = Pick<
   | "endTime"
   | "programType"
   | "isActive"
+  | "secondaryContactAdminId"
 > & {
   participantCount: number;
   organizationName: string;

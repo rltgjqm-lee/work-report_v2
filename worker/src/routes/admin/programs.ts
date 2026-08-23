@@ -170,6 +170,7 @@ app.get("/summary", async (c) => {
     isActive: program.isActive,
     participantCount: participantCountByProgramId.get(program.id) ?? 0,
     managerName: managerNameByProgramId(program.id),
+    secondaryContactAdminId: program.secondaryContactAdminId,
     secondaryContactAdminName:
       program.secondaryContactAdminId !== null
         ? (secondaryContactAdminById.get(program.secondaryContactAdminId) ?? "-")

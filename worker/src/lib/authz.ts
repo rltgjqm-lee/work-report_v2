@@ -138,11 +138,13 @@ export const canAccessProgram = (
 // 두고, 사업단 자체의 관리 권한만 이걸로 따로 좁힌다.
 export const canManageProgram = (
   admin: AdminSession,
-  program: { organizationId: number; id: number },
+  program: { organizationId: number; id: number; secondaryContactAdminId: number | null },
 ): boolean => {
   if (admin.role === ROLES.SUPER_ADMIN) return true;
   if (admin.role === ROLES.ORGANIZATION_ADMIN) {
     return admin.organizationId === program.organizationId;
   }
-  return admin.programIds.includes(program.id); // SUB_ADMIN, MANAGER 공통
+  // SUB_ADMIN, MANAGER 공통 — 담당자(programIds) 본인이거나, 그 사업단의
+  // 보조 담당자로 지정된 계정이면 관리 가능.
+  return admin.programIds.includes(program.id) || admin.id === program.secondaryContactAdminId;
 };
