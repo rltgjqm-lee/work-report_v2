@@ -1,0 +1,1 @@
+ALTER TABLE `programs` ADD `secondary_contact_admin_id` integer REFERENCES admins(id);

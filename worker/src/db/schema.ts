@@ -52,6 +52,11 @@ export const programs = sqliteTable("programs", {
   capacityAttendanceBannerText: text("capacity_attendance_banner_text"),
   // 계약 종료 시 소프트 삭제 — 비활성화하면 소속 활성 참여자도 함께 참여종료 처리한다
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  // 수요처 담당자(demandSites.contactAdminId)로 지정 가능한 "+1" 후보 — 사업단
+  // 담당자(admins.programIds로 표현됨) 외에 이 사업단 수요처들의 담당자가 될 수
+  // 있는 보조 인원 한 명. 같은 기관 소속이면 역할 무관하게 자유롭게 지정한다
+  // (총괄관리자 제외 — programs.ts PUT /:id에서 검증).
+  secondaryContactAdminId: integer("secondary_contact_admin_id").references(() => admins.id),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
