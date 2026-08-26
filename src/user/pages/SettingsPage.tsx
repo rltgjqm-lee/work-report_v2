@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { Capacitor } from "@capacitor/core";
+import { CapacitorUpdater } from "@capgo/capacitor-updater";
 
 import { isoToKstMinuteString } from "../../utils/timeFormat";
 
@@ -18,6 +21,17 @@ interface SettingsPageProps {
 const SettingsPage = ({ todayStatus, participantId, onBack }: SettingsPageProps) => {
   const [isLocationGuideOpen, setIsLocationGuideOpen] = useState(false);
   const locationConsentAt = todayStatus?.locationConsentAt ?? null;
+
+  const [otaVersion, setOtaVersion] = useState<string | null>(null);
+
+  // 원격 지원 시 참여자가 이 화면을 캡처해서 보내면, 기기에 실제로 어떤 OTA 번들이
+  // 적용돼 있는지(업데이트가 안 내려온 건지, 내려왔는데 안 먹은 건지) 바로 확인할 수 있다.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    CapacitorUpdater.current()
+      .then((current) => setOtaVersion(current.bundle.version))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className={pageClass}>
@@ -49,6 +63,11 @@ const SettingsPage = ({ todayStatus, participantId, onBack }: SettingsPageProps)
             전체 내용 보기
           </a>
         </div>
+        {otaVersion && (
+          <div className="text-center text-[12px] text-text-tertiary font-semibold">
+            앱 버전: {otaVersion}
+          </div>
+        )}
       </div>
 
       {isLocationGuideOpen && (
