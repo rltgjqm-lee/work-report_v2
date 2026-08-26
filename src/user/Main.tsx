@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import ConfirmModal from "../components/molecule/ConfirmModal";
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
@@ -354,7 +354,7 @@ const Main = () => {
   // 기기, 캐시 유실 등) 어긋나도 화면이 항상 실제 출퇴근 상태와 맞도록 서버 조회 결과로
   // 덮어쓴다. 위 IndexedDB 복원 effect와 별도로 두고 debugDate/debugTime도 deps에 넣어서,
   // 테스트 패널에서 날짜를 바꾸면 그 날짜 기준으로 바로 다시 조회되게 한다.
-  useEffect(() => {
+  const refreshTodayAttendance = useCallback(() => {
     if (!formData.participantId) return;
     getTodayAttendance(formData.participantId, {
       date: debugDate || undefined,
@@ -372,6 +372,10 @@ const Main = () => {
         // 네트워크 오류 등은 조용히 무시하고 로컬 캐시 값을 그대로 쓴다.
       });
   }, [formData.participantId, debugDate, debugTime]);
+
+  useEffect(() => {
+    refreshTodayAttendance();
+  }, [refreshTodayAttendance]);
 
   // 💡 근무 중(출근 완료 ~ 퇴근 전) 위치를 주기적으로 서버에 보고해 관제구역 이탈을
   // 판정받는다. 어느 화면에 있어도 계속 보고돼야 하므로 개별 페이지가 아니라 여기서 돌린다.
@@ -393,6 +397,32 @@ const Main = () => {
       setLocationReportState(IDLE_LOCATION_REPORT_STATE);
     };
   }, [formData.participantId, isWorking]);
+
+  // 💡 자동퇴근(worker/src/scheduled/autoClockOut.ts)은 조 근무 종료 시각 +10분
+  // 유예(GRACE_MINUTES)가 지나야 처리되는, 시각이 정해진 일회성 이벤트다 — 폴링할
+  // 필요 없이 "종료+10분(+크론 주기 1분 여유)" 딱 그 시점에 한 번만 다시 확인하면
+  // 된다. 화면이 다시 보일 때(백그라운드→포그라운드)는 시각과 무관하게 그 즉시
+  // 한 번 더 확인한다 — 비용이 거의 없는 이벤트 기반이라서다.
+  useEffect(() => {
+    if (!isWorking || !todayStatus?.shiftEnd) return;
+
+    const [endHour, endMinute] = todayStatus.shiftEnd.split(":").map(Number);
+    const autoClockOutCheckDate = new Date();
+    autoClockOutCheckDate.setHours(endHour, endMinute + 11, 0, 0);
+    const msUntilCheck = Math.max(0, autoClockOutCheckDate.getTime() - Date.now());
+
+    const timeoutId = window.setTimeout(refreshTodayAttendance, msUntilCheck);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshTodayAttendance();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isWorking, todayStatus?.shiftEnd, refreshTodayAttendance]);
 
   return (
     <div className="w-full h-full flex-shrink-0 flex justify-center items-stretch bg-app-shell-bg select-none">
