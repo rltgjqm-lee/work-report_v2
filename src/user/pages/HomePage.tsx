@@ -213,11 +213,15 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
   // participantId는 있지만 서버 응답 전(로딩 중)엔 근무일로 가정해 기존 화면과 동일하게 보여준다.
   const isWorkDay = todayStatus?.isWorkDay ?? true;
 
+  // 출근 전(둘 다 아직 안 함)과 퇴근 완료(둘 다 끝남)를 구분해야 하는데, isWorking은
+  // "근무중"만 가려낼 뿐이라 이 둘을 구분 못 한다 — attendanceOutDone을 따로 확인한다.
   let statusLabel = "출근 전";
   if (!isWorkDay) {
     statusLabel = "휴무";
   } else if (isWorking) {
     statusLabel = "근무중";
+  } else if (attendanceOutDone) {
+    statusLabel = "퇴근 완료";
   }
 
   // 오늘 일지 진행 상황 — ActivityDashboardPage와 같은 순서(출근→업무일지→안전일지→퇴근→서명).
