@@ -67,7 +67,6 @@ app.post("/", async (c) => {
     payMode?: "WORK" | "HOURLY" | "DAILY" | "NONE";
     hours?: number;
     dailyWage?: number;
-    isRequired?: boolean;
   }>();
 
   if (!body.programId || !body.name || !body.category) {
@@ -91,7 +90,6 @@ app.post("/", async (c) => {
       payMode: body.payMode ?? "NONE",
       hours: body.hours,
       dailyWage: body.dailyWage,
-      isRequired: body.isRequired ?? false,
     })
     .returning();
 
@@ -120,7 +118,6 @@ app.put("/:id", async (c) => {
     payMode?: "WORK" | "HOURLY" | "DAILY" | "NONE";
     hours?: number;
     dailyWage?: number;
-    isRequired?: boolean;
     isActive?: boolean;
   }>();
 
@@ -136,7 +133,6 @@ app.put("/:id", async (c) => {
       payMode: body.payMode ?? existing.payMode,
       hours: body.hours ?? existing.hours,
       dailyWage: body.dailyWage ?? existing.dailyWage,
-      isRequired: body.isRequired ?? existing.isRequired,
       isActive: body.isActive ?? existing.isActive,
     })
     .where(eq(projectTrainings.id, id))
@@ -321,77 +317,6 @@ app.delete("/logs/:id", async (c) => {
     .returning();
 
   return c.json(result[0]);
-});
-
-// ── 필수교육 현황 (미이수자 요약) ──
-
-app.get("/summary", async (c) => {
-  const auth = getAuth(c);
-  const programId = Number(c.req.query("programId"));
-  if (!programId) return c.json({ error: "사업단을 지정해주세요." }, 400);
-
-  const db = drizzle(c.env.DB);
-  const program = await loadAccessibleProgram(db, auth, programId);
-  if (!program) return c.json({ error: "이 사업단에 접근할 권한이 없습니다." }, 403);
-
-  const demandSiteId = c.req.query("demandSiteId");
-  const activeParticipantConditions = [
-    eq(participants.programId, programId),
-    eq(participants.status, "ACTIVE"),
-  ];
-  const completedLogConditions = [
-    eq(participants.programId, programId),
-    eq(participantTrainingLogs.status, "COMPLETED"),
-  ];
-  if (demandSiteId) {
-    activeParticipantConditions.push(eq(participants.demandSiteId, Number(demandSiteId)));
-    completedLogConditions.push(eq(participants.demandSiteId, Number(demandSiteId)));
-  }
-
-  const [activeParticipants, requiredTrainings, logs] = await Promise.all([
-    db
-      .select()
-      .from(participants)
-      .where(and(...activeParticipantConditions)),
-    db
-      .select()
-      .from(projectTrainings)
-      .where(
-        and(
-          eq(projectTrainings.programId, programId),
-          eq(projectTrainings.isRequired, true),
-          eq(projectTrainings.isActive, true),
-        ),
-      ),
-    db
-      .select({
-        participantId: participantTrainingLogs.participantId,
-        trainingId: participantTrainingLogs.trainingId,
-      })
-      .from(participantTrainingLogs)
-      .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
-      .where(and(...completedLogConditions)),
-  ]);
-
-  const completedKeySet = new Set(logs.map((log) => `${log.participantId}:${log.trainingId}`));
-
-  const summary = activeParticipants
-    .map((participant) => {
-      const missingTrainings = requiredTrainings.filter(
-        (training) => !completedKeySet.has(`${participant.id}:${training.id}`),
-      );
-      return {
-        participantId: participant.id,
-        participantName: participant.name,
-        missingTrainings: missingTrainings.map((training) => ({
-          id: training.id,
-          name: training.name,
-        })),
-      };
-    })
-    .filter((row) => row.missingTrainings.length > 0);
-
-  return c.json(summary);
 });
 
 export default app;

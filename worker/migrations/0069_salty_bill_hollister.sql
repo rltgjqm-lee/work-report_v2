@@ -1,0 +1,1 @@
+ALTER TABLE `project_trainings` DROP COLUMN `is_required`;

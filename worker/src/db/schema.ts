@@ -683,7 +683,6 @@ export const projectTrainings = sqliteTable("project_trainings", {
   // startTime~endTime으로부터 계산된 시간(선택 시). 이수 등록 시 attendHours 기본값으로 쓰인다.
   hours: real("hours"),
   dailyWage: integer("daily_wage"),
-  isRequired: integer("is_required", { mode: "boolean" }).notNull().default(false),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()

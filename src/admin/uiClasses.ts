@@ -39,7 +39,7 @@ export const tabBtnClass =
   "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-transparent text-text-subtle hover:text-text-strong";
 export const tabBtnActiveClass =
   "border-0 bg-transparent px-[18px] py-[11px] text-sm font-semibold cursor-pointer border-b-2 border-b-admin-brand text-admin-brand";
-// 탭 안의 서브탭(교육 정의/이수 현황/필수교육 현황)용 알약형 버튼 — 바깥 밑줄 탭과
+// 탭 안의 서브탭(교육 정의/이수 현황)용 알약형 버튼 — 바깥 밑줄 탭과
 // 시각적으로 구분되게 관리자 페이지.dc.html의 .sub-tabs/.sub-tab-btn을 그대로 따름.
 export const subTabBarClass = "flex gap-2 mb-4";
 export const subTabBtnClass =

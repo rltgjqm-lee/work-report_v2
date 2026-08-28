@@ -9,7 +9,6 @@ import {
   cancelTrainingLogMutationOptions,
   createTrainingLogMutationOptions,
   createTrainingMutationOptions,
-  trainingComplianceQueryOptions,
   trainingLogsQueryOptions,
   trainingsQueryOptions,
   updateTrainingMutationOptions,
@@ -58,7 +57,7 @@ const TRAINING_PAY_MODE_OPTIONS = [
   { value: "DAILY", label: "일당 별도지급" },
 ];
 
-type SubTab = "definitions" | "logs" | "compliance";
+type SubTab = "definitions" | "logs";
 
 const emptyTrainingForm = {
   name: "",
@@ -69,7 +68,6 @@ const emptyTrainingForm = {
   startTime: "",
   endTime: "",
   dailyWage: "",
-  isRequired: false,
 };
 
 // 시작/종료 시각(HH:MM)으로부터 교육 시간을 계산한다. 종료가 시작보다 빠르면 무효로 본다.
@@ -96,7 +94,7 @@ interface TrainingTabPanelProps {
 
 /**
  * 관리자 페이지 > 근무 관리 페이지의 "교육" 탭 내용입니다.
- * 교육 정의/이수 현황/필수교육 현황 하위 탭 3개.
+ * 교육 정의/이수 현황 하위 탭 2개.
  */
 const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) => {
   const queryClient = useQueryClient();
@@ -113,7 +111,7 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [logForm, setLogForm] = useState(emptyLogForm);
 
-  // 교육 목록은 "이수 현황" 탭의 필터/모달과 "필수교육 현황" 탭에서도 참조하니 탭과 무관하게 받아둔다.
+  // 교육 목록은 "이수 현황" 탭의 필터/모달에서도 참조하니 탭과 무관하게 받아둔다.
   const { data: trainings = [] } = useQuery(trainingsQueryOptions(programId));
   // 수요처 필터는 서버가 이미 반영해서 내려준다(demandSiteId 쿼리 파라미터).
   const { data: logs = [] } = useQuery(
@@ -123,9 +121,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
       demandSiteId,
       subTab === "logs",
     ),
-  );
-  const { data: compliance = [] } = useQuery(
-    trainingComplianceQueryOptions(programId, demandSiteId, subTab === "compliance"),
   );
 
   // 💡 교육 추가/수정 시점엔 아직 참여자·조가 정해지지 않으니(사업단 전체 대상 교육),
@@ -229,7 +224,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
       startTime: training.startTime ?? "",
       endTime: training.endTime ?? "",
       dailyWage: training.dailyWage !== null ? String(training.dailyWage) : "",
-      isRequired: training.isRequired,
     });
     setTrainingModalOpen(true);
   };
@@ -267,7 +261,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
       endTime: trainingForm.endTime || undefined,
       hours: computeTrainingHours(trainingForm.startTime, trainingForm.endTime),
       dailyWage: trainingForm.dailyWage ? Number(trainingForm.dailyWage) : undefined,
-      isRequired: trainingForm.isRequired,
     };
     const onSettled = {
       onSuccess: () => {
@@ -388,7 +381,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
         tabs={[
           ["definitions", "교육 정의"],
           ["logs", "이수 현황"],
-          ["compliance", "필수교육 현황"],
         ]}
         active={subTab}
         onChange={setSubTab}
@@ -433,7 +425,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
                     </>
                   }
                   size="comfortable"
-                  tags={training.isRequired ? ["필수교육"] : undefined}
                   actions={[
                     { label: "수정", onClick: () => handleEditTrainingButtonClick(training) },
                     {
@@ -537,50 +528,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
                       className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                     >
                       이수 기록이 없습니다.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {subTab === "compliance" && (
-        <div className="bg-white border border-admin-border-subtle rounded-[2px]">
-          <div className="px-5 py-4 border-b border-border-faint">
-            <span className="text-sm font-bold">필수교육 미이수자</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] table-fixed border-collapse">
-              <thead>
-                <tr>
-                  <th className="w-[140px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                    참여자명
-                  </th>
-                  <th className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                    미이수 필수교육
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {compliance.map((row) => (
-                  <tr key={row.participantId} className="hover:bg-admin-row-hover">
-                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                      {row.participantName}
-                    </td>
-                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                      {row.missingTrainings.map((training) => training.name).join(", ")}
-                    </td>
-                  </tr>
-                ))}
-                {compliance.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={2}
-                      className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
-                    >
-                      미이수자가 없습니다.
                     </td>
                   </tr>
                 )}
@@ -717,19 +664,6 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
               />
             </FormField>
           )}
-          <label className="flex items-center gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              checked={trainingForm.isRequired}
-              onChange={(event) =>
-                setTrainingForm((trainingForm) => ({
-                  ...trainingForm,
-                  isRequired: event.target.checked,
-                }))
-              }
-            />
-            필수 교육
-          </label>
         </SlideModal>
       )}
 
