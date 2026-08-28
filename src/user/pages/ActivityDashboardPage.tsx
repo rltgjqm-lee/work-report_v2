@@ -96,7 +96,7 @@ const ModuleItem = ({
 /**
  * 근무 기록 대시보드 페이지입니다.
  * — 오늘의 출근/업무/안전/퇴근/서명을 모듈별로 등록·확인
- * - 공익 활동은 5개 모듈, 역량 활동은 업무/안전이 없어 3개 모듈만 노출
+ * - 공익 활동은 5개 모듈, 역량 활용은 업무/안전이 없어 3개 모듈만 노출
  */
 const ActivityDashboardPage = ({
   formData,
@@ -113,7 +113,7 @@ const ActivityDashboardPage = ({
   debugTime,
   setDebugTime,
 }: ActivityDashboardPageProps) => {
-  const isCompetencyProgram = formData.programType === "역량 활동";
+  const isCompetencyProgram = formData.programType === "역량 활용";
 
   // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 테스트하기 위한 override(Main이
   // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에선 항상
@@ -440,7 +440,7 @@ const ActivityDashboardPage = ({
           </div>
         )}
 
-        {/* 업무·안전 모듈은 역량활동에는 표시되지 않는다 */}
+        {/* 업무·안전 모듈은 역량활용에는 표시되지 않는다 */}
         <ModuleItem
           index={moduleIndex++}
           icon="/icons/icon-checkin-clock.png"

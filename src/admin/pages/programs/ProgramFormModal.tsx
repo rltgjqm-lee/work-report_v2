@@ -116,7 +116,7 @@ const ProgramFormModal = ({
   const { data: secondaryContactCandidates = [] } = useQuery(
     secondaryContactCandidatesQueryOptions(organizationIdForManagerCandidates),
   );
-  // 역량 활동 사업단 생성 시에만 쓰는 4대보험 적용 여부 — 급여대장/명세서(역량 활동
+  // 역량 활용 사업단 생성 시에만 쓰는 4대보험 적용 여부 — 급여대장/명세서(역량 활용
   // 전용 서식)에서만 이 요율들을 쓰므로 공익 활동은 노출하지 않는다. 기본은 전부 적용
   // (기존 동작과 동일한 기본 요율), 체크 해제한 항목만 0%로 보내 공제를 뺀다.
   const [insuranceEnabled, setInsuranceEnabled] = useState({
@@ -176,7 +176,7 @@ const ProgramFormModal = ({
         ...(currentRole === ROLES.SUPER_ADMIN && !editingProgram
           ? { organizationId: Number(form.organizationId) }
           : {}),
-        ...(!editingProgram && form.programType === "역량 활동"
+        ...(!editingProgram && form.programType === "역량 활용"
           ? {
               healthInsuranceRate: insuranceEnabled.health ? undefined : 0,
               longtermCareRate: insuranceEnabled.longtermCare ? undefined : 0,
@@ -315,8 +315,8 @@ const ProgramFormModal = ({
         />
       </FormField>
 
-      {/* 4대보험 적용 — 역량 활동 신규 생성 시에만, 급여대장/명세서에서 이 요율을 쓴다 */}
-      {!editingProgram && form.programType === "역량 활동" && (
+      {/* 4대보험 적용 — 역량 활용 신규 생성 시에만, 급여대장/명세서에서 이 요율을 쓴다 */}
+      {!editingProgram && form.programType === "역량 활용" && (
         <FormField label="4대보험 적용">
           <div className="flex flex-col gap-1.5">
             <label className="flex items-center gap-2 text-[13px]">

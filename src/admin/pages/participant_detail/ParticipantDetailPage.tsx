@@ -104,7 +104,7 @@ const ParticipantDetailPage = () => {
         </div>
       </div>
 
-      {/* 급여 관련 설정 — 교육비/치매검진비는 항상, 4대보험/주휴수당은 역량활동만 모달에서 노출 */}
+      {/* 급여 관련 설정 — 교육비/치매검진비는 항상, 4대보험/주휴수당은 역량활용만 모달에서 노출 */}
       <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-4 mb-5">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-sm font-bold">급여 관련 설정</span>

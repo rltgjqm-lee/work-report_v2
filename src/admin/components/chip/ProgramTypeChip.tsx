@@ -5,7 +5,7 @@ interface ProgramTypeChipProps {
 }
 
 /**
- * 사업단명 앞에 붙는 사업 유형(공익 활동 / 역량 활동) 배지입니다.
+ * 사업단명 앞에 붙는 사업 유형(공익 활동 / 역량 활용) 배지입니다.
  *
  */
 const ProgramTypeChip = ({ programType }: ProgramTypeChipProps) => {

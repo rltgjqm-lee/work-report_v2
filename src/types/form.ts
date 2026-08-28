@@ -8,7 +8,7 @@ export interface ActivityLogFormData {
   demandName: string;
   gender: "남성" | "여성" | "";
   userName: string;
-  programType: "공익 활동" | "역량 활동" | ""; // 홈 대시보드 모듈 분기용
+  programType: "공익 활동" | "역량 활용" | ""; // 홈 대시보드 모듈 분기용
   // Page 3: 활동 일시
   actDate: string;
   startTime: {

@@ -21,7 +21,7 @@ export interface WorkScheduleParticipant {
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 // color 없이 style만 주면 구글 시트가 xlsx 가져올 때 테두리를 안 그리는 문제가 있어서
-// 명시적으로 검정을 지정한다 (역량활동 출근부 작업에서 확인된 이슈).
+// 명시적으로 검정을 지정한다 (역량활용 출근부 작업에서 확인된 이슈).
 const THIN_BORDER = { style: "thin" as const, color: { argb: "FF000000" } };
 const CENTER = { horizontal: "center" as const, vertical: "middle" as const };
 const HEADER_FILL: ExcelJS.Fill = {

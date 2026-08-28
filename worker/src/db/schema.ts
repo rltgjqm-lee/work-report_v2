@@ -55,7 +55,7 @@ export const programs = sqliteTable("programs", {
   // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다
   // (addActivityLogSheet 참고).
   activityLogTitle: text("activity_log_title"),
-  // 역량활동 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다
+  // 역량활용 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다
   // (addCapacityAttendanceSheet 참고).
   capacityAttendanceBannerText: text("capacity_attendance_banner_text"),
   // 계약 종료 시 소프트 삭제 — 비활성화하면 소속 활성 참여자도 함께 참여종료 처리한다
@@ -92,7 +92,7 @@ export const groups = sqliteTable(
   (table) => [index("idx_groups_program").on(table.programId)],
 );
 
-// 역량활동 월간 근무 스케줄(조 단위 기본값) — "월 24일"이 아니라 "월 30시간 10일" 같은
+// 역량활용 월간 근무 스케줄(조 단위 기본값) — "월 24일"이 아니라 "월 30시간 10일" 같은
 // 불규칙 근무일 패턴을 조 전체에 일괄 세팅한다. 참여자 개인 예외는 participantMonthlySchedule 참고.
 export const groupMonthlySchedule = sqliteTable(
   "group_monthly_schedule",
@@ -271,7 +271,7 @@ export const participants = sqliteTable(
       .$type<"add" | "deduct" | "none">()
       .notNull()
       .default("none"),
-    // 4대보험 가입여부/주휴시간은 역량활동 참여자만 의미가 있다 (공익활동은 UI에서 숨김).
+    // 4대보험 가입여부/주휴시간은 역량활용 참여자만 의미가 있다 (공익활동은 UI에서 숨김).
     // 요율(%) 자체는 그대로 programs에 있고, 여기는 "이 참여자가 어떤 보험 대상인지"만
     // 하나씩 켜고 끈다 — 보험마다 가입 여부가 다를 수 있어 넷을 따로 둔다.
     healthInsuranceEnrolled: integer("health_insurance_enrolled", { mode: "boolean" })
@@ -612,7 +612,7 @@ export const attendanceLogs = sqliteTable(
     // 않기 위함). INVALID가 아닌 동안은 항상 null.
     previousStatus: text("previous_status").$type<"NORMAL" | "LATE" | "EARLY_LEAVE">(),
     note: text("note"),
-    // 역량활동 하루 근무 종료 후 참여자 서명 — 실제 이미지는 R2에, 여기엔 객체 키만 저장
+    // 역량활용 하루 근무 종료 후 참여자 서명 — 실제 이미지는 R2에, 여기엔 객체 키만 저장
     signatureKey: text("signature_key"),
     createdAt: text("created_at")
       .notNull()

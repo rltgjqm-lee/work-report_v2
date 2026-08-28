@@ -297,7 +297,7 @@ const addCapacityAttendanceSheet = (
 };
 
 /**
- * 💡 사업단 1개월치 역량활동 출근부를 참여자별 시트로 만들어 바로 다운로드합니다.
+ * 💡 사업단 1개월치 역량활용 출근부를 참여자별 시트로 만들어 바로 다운로드합니다.
  */
 export const downloadCapacityAttendanceWorkbook = async (
   programName: string,

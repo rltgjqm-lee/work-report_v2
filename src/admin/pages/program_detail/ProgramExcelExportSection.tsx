@@ -124,7 +124,7 @@ const ProgramExcelExportSection = ({
   const items =
     programType === "공익 활동"
       ? PUBLIC_INTEREST_ITEMS
-      : programType === "역량 활동"
+      : programType === "역량 활용"
         ? COMPETENCY_ITEMS
         : [...PUBLIC_INTEREST_ITEMS, ...COMPETENCY_ITEMS];
 

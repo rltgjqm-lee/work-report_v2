@@ -225,8 +225,8 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
   }
 
   // 오늘 일지 진행 상황 — ActivityDashboardPage와 같은 순서(출근→업무일지→안전일지→퇴근→서명).
-  // 역량 활동은 업무·안전 일지가 없어서 건너뛴다. 다음 단계 이름과 "n/총" 둘 다 보여준다.
-  const isCompetencyProgram = formData.programType === "역량 활동";
+  // 역량 활용은 업무·안전 일지가 없어서 건너뛴다. 다음 단계 이름과 "n/총" 둘 다 보여준다.
+  const isCompetencyProgram = formData.programType === "역량 활용";
   const workDone = !!formData.actContent && !!formData.actPlace;
   const safetyDone = formData.accidentChecked;
   // 서명은 매일 새로 받아야 해서(Main.tsx) 오늘 저장된 게 없으면 항상 비어있다.

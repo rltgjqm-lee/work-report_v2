@@ -668,7 +668,7 @@ app.post("/attendance/clock-out", async (c) => {
   return c.json(result[0]);
 });
 
-// 역량활동 하루 근무 종료 후 참여자 서명 수집. base64를 거치지 않고 이미지 바이너리를
+// 역량활용 하루 근무 종료 후 참여자 서명 수집. base64를 거치지 않고 이미지 바이너리를
 // 그대로 요청 body로 받아 R2에 저장한다 — attendance_logs에는 객체 키만 남긴다.
 // (엑셀 출력 시 서버가 R2에서 읽어 base64로 되돌려준다: 그건 export 응답 JSON에만 필요)
 app.post("/attendance/sign", async (c) => {
@@ -968,13 +968,13 @@ type ActivityLogBody = {
   demandSignature?: string;
 };
 
-// 업무일지(내용/장소)·안전일지(사고유무 확인)·참여자 서명은 필수값이다. 역량활동은 참여자
+// 업무일지(내용/장소)·안전일지(사고유무 확인)·참여자 서명은 필수값이다. 역량활용은 참여자
 // 앱에서 업무/안전 모듈 자체를 보여주지 않으므로 그 두 항목은 요구하지 않는다(서명은 항상 필수).
 const validateActivityLogRequiredSections = (
   body: ActivityLogBody,
   programType: string | null,
 ): string | null => {
-  if (programType !== "역량 활동") {
+  if (programType !== "역량 활용") {
     if (!body.content?.trim() || !body.place?.trim()) {
       return "업무 일지(활동내용/활동장소)를 입력해주세요.";
     }

@@ -18,7 +18,7 @@ export type Program = {
   annualLeaveDailyWage: number;
   // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다.
   activityLogTitle: string | null;
-  // 역량활동 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다.
+  // 역량활용 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다.
   capacityAttendanceBannerText: string | null;
   isActive: boolean;
   // 수요처 담당자(contactAdminId)로 지정 가능한 "+1" 후보 — 사업단 담당자 외에

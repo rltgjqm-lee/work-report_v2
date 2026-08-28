@@ -98,7 +98,7 @@ app.post("/:id/leader", async (c) => {
   return c.json(result[0]);
 });
 
-// 역량활동 월간 근무 스케줄(조 기본값) 조회 — 참여자 개인 예외는 participants.ts 참고
+// 역량활용 월간 근무 스케줄(조 기본값) 조회 — 참여자 개인 예외는 participants.ts 참고
 app.get("/:id/monthly-schedule", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);

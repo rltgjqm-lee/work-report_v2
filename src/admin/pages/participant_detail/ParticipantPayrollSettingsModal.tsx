@@ -24,7 +24,7 @@ interface ParticipantPayrollSettingsModalProps {
 
 /**
  * 관리자 페이지 > 참여자 상세 페이지에서 참여자별 급여 관련 설정(교육비/치매검진비/
- * 4대보험/주휴수당)을 편집하는 모달입니다. 4대보험·주휴수당은 역량 활동에만 노출됩니다.
+ * 4대보험/주휴수당)을 편집하는 모달입니다. 4대보험·주휴수당은 역량 활용에만 노출됩니다.
  *
  */
 const ParticipantPayrollSettingsModal = ({
@@ -47,7 +47,7 @@ const ParticipantPayrollSettingsModal = ({
     weeklyHolidayHours: String(participant.weeklyHolidayHours),
   });
 
-  const isCompetencyProgram = participant.programType === "역량 활동";
+  const isCompetencyProgram = participant.programType === "역량 활용";
 
   const handleSaveButtonClick = () => {
     updateParticipantMutation.mutate(
