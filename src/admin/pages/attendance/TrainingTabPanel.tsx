@@ -145,9 +145,15 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
     return workDates !== undefined && !workDates.includes(trainingForm.trainingDate);
   });
 
-  // 이수 등록 모달에서 고를 참여자 목록 — 수요처를 선택했으면 그 소속 참여자만 받는다.
+  // 이수 등록 모달과 "이수 현황" 표의 미이수 계산에 같이 쓴다 — 수요처를 선택했으면
+  // 그 소속 참여자만 받는다.
+  const filterTrainingId = logTrainingFilter !== "all" ? Number(logTrainingFilter) : undefined;
   const { data: participants = [] } = useQuery(
-    programParticipantsQueryOptions(programId, demandSiteId, logModalOpen),
+    programParticipantsQueryOptions(
+      programId,
+      demandSiteId,
+      logModalOpen || (subTab === "logs" && filterTrainingId !== undefined),
+    ),
   );
 
   // 💡 이수일자가 선택한 참여자 소속 조의 근무일이 아니면 알려주기만 한다(막지는 않음) —
@@ -367,6 +373,34 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
   // 수요처 필터는 서버가 이미 반영해서 내려준다 — 여기선 검색어만 클라이언트에서 좁힌다.
   const filteredLogs = logs.filter((row) => row.participantName.includes(logSearch));
 
+  // 특정 교육을 골랐을 때만 "미이수"를 계산한다 — 여러 교육을 합친 "전체 교육" 상태에서는
+  // 이수 기준 자체가 모호해서(교육마다 이수 여부가 다르니) 기존처럼 기록만 보여준다.
+  // 활동중이 아닌 참여자(휴무/참여종료)는 대상에서 뺀다.
+  const filterTraining = trainings.find((training) => training.id === filterTrainingId);
+  const loggedParticipantIds = new Set(logs.map((row) => row.log.participantId));
+  const missingParticipants =
+    filterTraining !== undefined
+      ? participants.filter(
+          (participant) =>
+            participant.status === "ACTIVE" &&
+            !loggedParticipantIds.has(participant.id) &&
+            participant.name.includes(logSearch),
+        )
+      : [];
+
+  const handleQuickRegisterButtonClick = (participant: { id: number }) => {
+    setLogForm({
+      participantIds: [participant.id],
+      trainingId: filterTrainingId !== undefined ? String(filterTrainingId) : "",
+      attendDate: getLocalToday(),
+      attendHours:
+        filterTraining?.hours !== null && filterTraining?.hours !== undefined
+          ? String(filterTraining.hours)
+          : "",
+    });
+    setLogModalOpen(true);
+  };
+
   const trainingFilterOptions = [
     { value: "all", label: "전체 교육" },
     ...trainings.map((training) => ({
@@ -506,7 +540,7 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                       <StatusChip variant={row.log.status === "COMPLETED" ? "ok" : "bad"}>
-                        {row.log.status === "COMPLETED" ? "완료" : "취소됨"}
+                        {row.log.status === "COMPLETED" ? "이수" : "취소됨"}
                       </StatusChip>
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
@@ -521,7 +555,31 @@ const TrainingTabPanel = ({ programId, demandSiteId }: TrainingTabPanelProps) =>
                     </td>
                   </tr>
                 ))}
-                {filteredLogs.length === 0 && (
+                {missingParticipants.map((participant) => (
+                  <tr key={`missing-${participant.id}`} className="hover:bg-admin-row-hover">
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {participant.name}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {filterTraining?.name}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">-</td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">-</td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">-</td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      <StatusChip variant="pending">미이수</StatusChip>
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      <button
+                        className={rowActionBtnClass}
+                        onClick={() => handleQuickRegisterButtonClick(participant)}
+                      >
+                        이수 등록
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {filteredLogs.length === 0 && missingParticipants.length === 0 && (
                   <tr>
                     <td
                       colSpan={7}
