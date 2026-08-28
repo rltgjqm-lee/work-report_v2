@@ -527,9 +527,11 @@ app.post("/attendance/clock-in", async (c) => {
       return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);
     }
 
-    // 근무 시작 전(15분 여유 구간)에 눌렀으면 실제 시각이 아니라 정시로 기록한다 —
-    // 일찍 왔다고 근무시간이 더 인정되면 안 된다(퇴근의 effectiveClockOut과 동일 취지).
-    if (nowMinutes < shiftStartMinutes) {
+    // 근무 시작 15분 전부터 15분 후까지 눌렀으면 실제 시각이 아니라 정시로 기록한다 —
+    // 일찍 왔다고 근무시간이 더 인정되면 안 되고(퇴근의 effectiveClockOut과 동일 취지),
+    // 관리자 화면의 지각 확인 기준(LATE_CLOCK_IN_TOLERANCE_MINUTES=15)과도 맞춘다.
+    // earliest 체크를 이미 통과했으므로 아래쪽 경계는 별도로 볼 필요가 없다.
+    if (nowMinutes <= shiftStartMinutes + 15) {
       effectiveClockIn = `${date}T${group.shiftStart}:00.000Z`;
     }
   }
