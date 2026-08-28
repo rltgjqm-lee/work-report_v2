@@ -77,7 +77,7 @@ app.put("/:logId", async (c) => {
   return c.json(result[0]);
 });
 
-app.post("/:logId/invalidate", async (c) => {
+app.post("/:logId/deactivate", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const logId = Number(c.req.param("logId"));
@@ -88,7 +88,7 @@ app.post("/:logId/invalidate", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
   if (found.log.status === "INVALID") {
-    return c.json({ error: "이미 무효화된 기록입니다." }, 400);
+    return c.json({ error: "이미 비활성화된 기록입니다." }, 400);
   }
 
   const body = await c.req.json<{ reason?: string }>();
@@ -97,7 +97,40 @@ app.post("/:logId/invalidate", async (c) => {
     .update(attendanceLogs)
     .set({
       status: "INVALID",
-      note: `[무효화] ${body.reason || "사유 미입력"}`,
+      // 재활성화할 때 이 status로 되돌린다.
+      previousStatus: found.log.status,
+      note: found.log.note
+        ? `${found.log.note}\n[비활성화] ${body.reason || "사유 미입력"}`
+        : `[비활성화] ${body.reason || "사유 미입력"}`,
+      correctedByAdminId: auth.id,
+      correctedAt: new Date().toISOString(),
+    })
+    .where(eq(attendanceLogs.id, logId))
+    .returning();
+
+  return c.json(result[0]);
+});
+
+app.post("/:logId/activate", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const logId = Number(c.req.param("logId"));
+
+  const found = await loadAttendanceLogWithProgram(db, logId);
+  if (!found) return c.json({ error: "출퇴근 기록을 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+  if (found.log.status !== "INVALID") {
+    return c.json({ error: "비활성화된 기록이 아닙니다." }, 400);
+  }
+
+  const result = await db
+    .update(attendanceLogs)
+    .set({
+      status: found.log.previousStatus ?? "NORMAL",
+      previousStatus: null,
+      note: found.log.note ? `${found.log.note}\n[활성화]` : "[활성화]",
       correctedByAdminId: auth.id,
       correctedAt: new Date().toISOString(),
     })

@@ -592,11 +592,14 @@ export const attendanceLogs = sqliteTable(
     clockOut: text("clock_out"),
     totalMinutes: integer("total_minutes"),
     // LATE/EARLY_LEAVE는 관리자가 근무 강제수정에서 수동으로만 지정한다(자동 판정 없음).
-    // INVALID는 관리자가 잘못된 기록을 무효화한 상태 (4-2 근무 강제수정/무효화).
+    // INVALID는 관리자가 잘못된 기록을 비활성화한 상태 (4-2 근무 강제수정/비활성화).
     status: text("status")
       .$type<"NORMAL" | "LATE" | "EARLY_LEAVE" | "INVALID">()
       .notNull()
       .default("NORMAL"),
+    // 비활성화 직전 status를 담아뒀다가, 재활성화할 때 그대로 복원한다(NORMAL로 뭉개지
+    // 않기 위함). INVALID가 아닌 동안은 항상 null.
+    previousStatus: text("previous_status").$type<"NORMAL" | "LATE" | "EARLY_LEAVE">(),
     note: text("note"),
     // 역량활동 하루 근무 종료 후 참여자 서명 — 실제 이미지는 R2에, 여기엔 객체 키만 저장
     signatureKey: text("signature_key"),

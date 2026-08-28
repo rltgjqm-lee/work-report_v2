@@ -1,0 +1,1 @@
+ALTER TABLE `attendance_logs` ADD `previous_status` text;

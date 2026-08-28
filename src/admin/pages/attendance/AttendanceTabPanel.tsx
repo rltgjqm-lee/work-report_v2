@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import {
+  activateAttendanceMutationOptions,
   correctAttendanceMutationOptions,
-  invalidateAttendanceMutationOptions,
+  deactivateAttendanceMutationOptions,
   monthlyAttendanceQueryOptions,
   type AttendanceRow,
 } from "../../api/admin/attendance";
@@ -27,7 +28,7 @@ const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",
   LATE: "지각",
   EARLY_LEAVE: "조퇴",
-  INVALID: "무효화됨",
+  INVALID: "비활성화됨",
 };
 
 const STATUS_VARIANT: Record<string, StatusChipVariant> = {
@@ -109,7 +110,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
 
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
-  const [invalidateTarget, setInvalidateTarget] = useState<AttendanceRow | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<AttendanceRow | null>(null);
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
     clockOut: "",
@@ -124,9 +125,10 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const stats = monthlyAttendance?.stats ?? emptyStats;
 
   const correctAttendanceMutation = useMutation(correctAttendanceMutationOptions(queryClient));
-  const invalidateAttendanceMutation = useMutation(
-    invalidateAttendanceMutationOptions(queryClient),
+  const deactivateAttendanceMutation = useMutation(
+    deactivateAttendanceMutationOptions(queryClient),
   );
+  const activateAttendanceMutation = useMutation(activateAttendanceMutationOptions(queryClient));
 
   const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
 
@@ -201,21 +203,35 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
     );
   };
 
-  const handleInvalidateButtonClick = (row: AttendanceRow) => {
-    setInvalidateTarget(row);
+  const handleDeactivateButtonClick = (row: AttendanceRow) => {
+    setDeactivateTarget(row);
   };
 
-  const handleInvalidatePromptConfirm = (reason: string) => {
-    if (!invalidateTarget) return;
-    const row = invalidateTarget;
-    setInvalidateTarget(null);
+  const handleDeactivatePromptConfirm = (reason: string) => {
+    if (!deactivateTarget) return;
+    const row = deactivateTarget;
+    setDeactivateTarget(null);
 
-    invalidateAttendanceMutation.mutate(
+    deactivateAttendanceMutation.mutate(
       { logId: row.log.id, programId, month, reason: reason || undefined },
       {
-        onSuccess: () => showToast(`${row.participantName} 님의 근무 기록을 무효화했습니다.`),
+        onSuccess: () => showToast(`${row.participantName} 님의 근무 기록을 비활성화했습니다.`),
         onError: (error) =>
-          alert(error instanceof Error ? error.message : "무효화에 실패했습니다."),
+          alert(error instanceof Error ? error.message : "비활성화에 실패했습니다."),
+      },
+    );
+  };
+
+  const handleActivateButtonClick = (row: AttendanceRow) => {
+    if (!confirm(`'${row.participantName}' 님의 ${row.log.workDate} 근무 기록을 활성화하시겠습니까?`))
+      return;
+
+    activateAttendanceMutation.mutate(
+      { logId: row.log.id, programId, month },
+      {
+        onSuccess: () => showToast(`${row.participantName} 님의 근무 기록을 활성화했습니다.`),
+        onError: (error) =>
+          alert(error instanceof Error ? error.message : "활성화에 실패했습니다."),
       },
     );
   };
@@ -419,7 +435,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                     {row.log.note ?? "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {row.log.status !== "INVALID" && (
+                    {row.log.status !== "INVALID" ? (
                       <>
                         <button
                           className={rowActionBtnClass}
@@ -429,11 +445,18 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                         </button>
                         <button
                           className={rowActionBtnClass}
-                          onClick={() => handleInvalidateButtonClick(row)}
+                          onClick={() => handleDeactivateButtonClick(row)}
                         >
-                          무효화
+                          비활성화
                         </button>
                       </>
+                    ) : (
+                      <button
+                        className={rowActionBtnClass}
+                        onClick={() => handleActivateButtonClick(row)}
+                      >
+                        활성화
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -538,11 +561,11 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
         </div>
       )}
 
-      {invalidateTarget && (
+      {deactivateTarget && (
         <PromptModal
-          title={`'${invalidateTarget.participantName}' 님의 ${invalidateTarget.log.workDate} 근무 기록을 무효화합니다. 사유를 입력해주세요.`}
-          onConfirm={handleInvalidatePromptConfirm}
-          onCancel={() => setInvalidateTarget(null)}
+          title={`'${deactivateTarget.participantName}' 님의 ${deactivateTarget.log.workDate} 근무 기록을 비활성화합니다. 사유를 입력해주세요.`}
+          onConfirm={handleDeactivatePromptConfirm}
+          onCancel={() => setDeactivateTarget(null)}
         />
       )}
     </div>

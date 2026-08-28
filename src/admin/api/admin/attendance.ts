@@ -79,23 +79,42 @@ export const correctAttendanceMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-export interface InvalidateAttendanceVariables {
+export interface DeactivateAttendanceVariables {
   logId: number;
   programId: number;
   month: string;
   reason?: string;
 }
 
-const invalidateAttendance = (logId: number, reason?: string) =>
-  request<AttendanceLog>(`/api/attendance/${logId}/invalidate`, {
+const deactivateAttendance = (logId: number, reason?: string) =>
+  request<AttendanceLog>(`/api/attendance/${logId}/deactivate`, {
     method: "POST",
     body: JSON.stringify({ reason }),
   });
 
-export const invalidateAttendanceMutationOptions = (queryClient: QueryClient) =>
+export const deactivateAttendanceMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ logId, reason }: InvalidateAttendanceVariables) =>
-      invalidateAttendance(logId, reason),
+    mutationFn: ({ logId, reason }: DeactivateAttendanceVariables) =>
+      deactivateAttendance(logId, reason),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: attendanceKeys.monthly(variables.programId, variables.month),
+      });
+    },
+  });
+
+export interface ActivateAttendanceVariables {
+  logId: number;
+  programId: number;
+  month: string;
+}
+
+const activateAttendance = (logId: number) =>
+  request<AttendanceLog>(`/api/attendance/${logId}/activate`, { method: "POST" });
+
+export const activateAttendanceMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ logId }: ActivateAttendanceVariables) => activateAttendance(logId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: attendanceKeys.monthly(variables.programId, variables.month),

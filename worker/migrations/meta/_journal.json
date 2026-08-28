@@ -470,6 +470,13 @@
       "when": 1787488552213,
       "tag": "0066_unknown_edwin_jarvis",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "6",
+      "when": 1787875344563,
+      "tag": "0067_giant_hemingway",
+      "breakpoints": true
     }
   ]
 }
