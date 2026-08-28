@@ -28,6 +28,7 @@ import {
 import { canAccessProgram, canManageProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
+import { toLeaveDays } from "./participants";
 
 const app = new Hono<Env>();
 
@@ -960,6 +961,186 @@ app.post("/:id/participants/bulk-status", async (c) => {
     .where(inArray(participants.id, reactivatableIds))
     .returning();
   return c.json(result);
+});
+
+// 여러 참여자를 한 번에 휴무 등록 — 활동중이 아니거나(이미 휴무/탈락) PAID인데 잔여
+// 연차가 부족한 참여자는 건너뛰고 skipped로 사유와 함께 알려준다(전체 실패시키지 않음).
+app.post("/:id/participants/bulk-leave", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{
+    participantIds?: number[];
+    leaveStart?: string;
+    leaveEnd?: string;
+    leaveType?: "PAID" | "UNPAID";
+    reason?: string;
+  }>();
+
+  if (!body.participantIds?.length || !body.leaveStart || !body.leaveEnd) {
+    return c.json({ error: "참여자와 휴무 시작일·종료일을 지정해주세요." }, 400);
+  }
+
+  const leaveType = body.leaveType ?? "PAID";
+  const leaveDays = toLeaveDays(body.leaveStart, body.leaveEnd);
+  const year = getKstNow().date.slice(0, 4);
+
+  const targetRows = await db
+    .select()
+    .from(participants)
+    .where(
+      and(eq(participants.programId, programId), inArray(participants.id, body.participantIds)),
+    );
+
+  const skipped: { participantId: number; name: string; reason: string }[] = [];
+  const updated: (typeof participants.$inferSelect)[] = [];
+
+  for (const participant of targetRows) {
+    if (participant.status !== "ACTIVE") {
+      skipped.push({
+        participantId: participant.id,
+        name: participant.name,
+        reason: "활동중 상태가 아님",
+      });
+      continue;
+    }
+
+    if (leaveType === "PAID") {
+      const annualRows = await db
+        .select()
+        .from(participantAnnualLeave)
+        .where(
+          and(
+            eq(participantAnnualLeave.participantId, participant.id),
+            eq(participantAnnualLeave.year, year),
+          ),
+        );
+      const remainingDays = annualRows[0]?.remainingDays ?? 0;
+      if (remainingDays < leaveDays) {
+        skipped.push({
+          participantId: participant.id,
+          name: participant.name,
+          reason: `잔여 연차 부족(잔여 ${remainingDays}일, 신청 ${leaveDays}일)`,
+        });
+        continue;
+      }
+    }
+
+    const result = await db
+      .update(participants)
+      .set({ status: "ON_LEAVE", leaveStart: body.leaveStart, leaveEnd: body.leaveEnd })
+      .where(eq(participants.id, participant.id))
+      .returning();
+    updated.push(result[0]);
+
+    await db.insert(participantLeaves).values({
+      participantId: participant.id,
+      leaveStart: body.leaveStart,
+      leaveEnd: body.leaveEnd,
+      leaveType,
+      leaveDays,
+      reason: body.reason,
+      createdBy: auth.id,
+    });
+
+    if (leaveType === "PAID") {
+      await db
+        .update(participantAnnualLeave)
+        .set({
+          usedDays: sql`${participantAnnualLeave.usedDays} + ${leaveDays}`,
+          remainingDays: sql`${participantAnnualLeave.remainingDays} - ${leaveDays}`,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(
+          and(
+            eq(participantAnnualLeave.participantId, participant.id),
+            eq(participantAnnualLeave.year, year),
+          ),
+        );
+    }
+  }
+
+  return c.json({ updated, skipped });
+});
+
+// 여러 참여자에게 같은 연도의 총 연차 일수를 한 번에 설정 — 연초 일괄 지급 등에 사용.
+app.post("/:id/participants/bulk-annual-leave", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const programRows = await db.select().from(programs).where(eq(programs.id, programId));
+  const program = programRows[0];
+  if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{
+    participantIds?: number[];
+    year?: string;
+    totalDays?: number;
+  }>();
+
+  if (!body.participantIds?.length || !body.year || body.totalDays === undefined) {
+    return c.json({ error: "참여자와 연도·총 일수를 지정해주세요." }, 400);
+  }
+
+  const targetRows = await db
+    .select()
+    .from(participants)
+    .where(
+      and(eq(participants.programId, programId), inArray(participants.id, body.participantIds)),
+    );
+
+  const results: (typeof participantAnnualLeave.$inferSelect)[] = [];
+  for (const participant of targetRows) {
+    const existingRows = await db
+      .select()
+      .from(participantAnnualLeave)
+      .where(
+        and(
+          eq(participantAnnualLeave.participantId, participant.id),
+          eq(participantAnnualLeave.year, body.year),
+        ),
+      );
+    const existing = existingRows[0];
+
+    if (existing) {
+      const result = await db
+        .update(participantAnnualLeave)
+        .set({
+          totalDays: body.totalDays,
+          remainingDays: body.totalDays - existing.usedDays,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(participantAnnualLeave.id, existing.id))
+        .returning();
+      results.push(result[0]);
+    } else {
+      const result = await db
+        .insert(participantAnnualLeave)
+        .values({
+          participantId: participant.id,
+          year: body.year,
+          totalDays: body.totalDays,
+          usedDays: 0,
+          remainingDays: body.totalDays,
+        })
+        .returning();
+      results.push(result[0]);
+    }
+  }
+
+  return c.json(results);
 });
 
 app.get("/:id/attendance", async (c) => {

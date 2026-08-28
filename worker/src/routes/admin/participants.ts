@@ -22,7 +22,7 @@ import { canAccessProgram, getAuth } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
 
-const toLeaveDays = (leaveStart: string, leaveEnd: string): number => {
+export const toLeaveDays = (leaveStart: string, leaveEnd: string): number => {
   const start = new Date(`${leaveStart}T00:00:00Z`).getTime();
   const end = new Date(`${leaveEnd}T00:00:00Z`).getTime();
   return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;

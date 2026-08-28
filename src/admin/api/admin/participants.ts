@@ -461,6 +461,85 @@ export const setAnnualLeaveMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
+export type BulkLeaveResult = {
+  updated: Participant[];
+  skipped: { participantId: number; name: string; reason: string }[];
+};
+
+export interface BulkRegisterParticipantLeaveVariables {
+  programId: number;
+  participantIds: number[];
+  leaveStart: string;
+  leaveEnd: string;
+  leaveType: LeaveType;
+  reason?: string;
+}
+
+const bulkRegisterParticipantLeave = (
+  programId: number,
+  data: {
+    participantIds: number[];
+    leaveStart: string;
+    leaveEnd: string;
+    leaveType: LeaveType;
+    reason?: string;
+  },
+) =>
+  request<BulkLeaveResult>(`/api/programs/${programId}/participants/bulk-leave`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const bulkRegisterParticipantLeaveMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({
+      programId,
+      participantIds,
+      leaveStart,
+      leaveEnd,
+      leaveType,
+      reason,
+    }: BulkRegisterParticipantLeaveVariables) =>
+      bulkRegisterParticipantLeave(programId, {
+        participantIds,
+        leaveStart,
+        leaveEnd,
+        leaveType,
+        reason,
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });
+
+export interface BulkSetAnnualLeaveVariables {
+  programId: number;
+  participantIds: number[];
+  year: string;
+  totalDays: number;
+}
+
+const bulkSetAnnualLeave = (
+  programId: number,
+  data: { participantIds: number[]; year: string; totalDays: number },
+) =>
+  request<AnnualLeave[]>(`/api/programs/${programId}/participants/bulk-annual-leave`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+// critical: 여러 참여자의 연차 현황이 한 번에 바뀌므로, 개별 캐시 대신 사업단 상세를
+// 무효화해서 목록 재조회 때 반영되게 한다(연차 상세는 모달을 다시 열 때 새로 받음).
+export const bulkSetAnnualLeaveMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ programId, participantIds, year, totalDays }: BulkSetAnnualLeaveVariables) =>
+      bulkSetAnnualLeave(programId, { participantIds, year, totalDays }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+    },
+  });
+
 export interface BulkUpdateParticipantStatusVariables {
   programId: number;
   participantIds: number[];

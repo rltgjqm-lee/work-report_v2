@@ -21,6 +21,8 @@ import SearchInput from "../../components/SearchInput";
 
 import { rowActionBtnClass } from "../../uiClasses";
 import AnnualLeaveModal from "./AnnualLeaveModal";
+import BulkAnnualLeaveModal from "./BulkAnnualLeaveModal";
+import BulkLeaveModal from "./BulkLeaveModal";
 import ParticipantDemandSiteAssignModal from "./ParticipantDemandSiteAssignModal";
 import ParticipantGroupAssignModal from "./ParticipantGroupAssignModal";
 import ParticipantLeaveAddModal from "./ParticipantLeaveAddModal";
@@ -92,6 +94,8 @@ const ProgramParticipantsSection = ({
   const [demandSiteAssignTarget, setDemandSiteAssignTarget] = useState<Participant | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: number; name: string } | null>(null);
   const [bulkDropPromptOpen, setBulkDropPromptOpen] = useState(false);
+  const [bulkLeaveModalOpen, setBulkLeaveModalOpen] = useState(false);
+  const [bulkAnnualModalOpen, setBulkAnnualModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -112,6 +116,22 @@ const ProgramParticipantsSection = ({
         : [...current, participantId],
     );
   };
+
+  // 현재 필터에 걸린 전체 결과 기준으로 선택한다(페이지에 보이는 것만이 아니라) —
+  // 일괄 처리 대상을 "이 조건에 맞는 전원"으로 고르는 게 자연스럽다.
+  const allFilteredSelected =
+    participants.length > 0 &&
+    participants.every((participant) => selectedParticipantIds.includes(participant.id));
+
+  const handleSelectAllChange = () => {
+    setSelectedParticipantIds(
+      allFilteredSelected ? [] : participants.map((participant) => participant.id),
+    );
+  };
+
+  const selectedTargets = participants
+    .filter((participant) => selectedParticipantIds.includes(participant.id))
+    .map((participant) => ({ id: participant.id, name: participant.name }));
 
   const handleLeaveButtonClick = (participantId: number, name: string) => {
     setLeaveTarget({ id: participantId, name });
@@ -213,6 +233,14 @@ const ProgramParticipantsSection = ({
     );
   };
 
+  const handleBulkLeaveButtonClick = () => {
+    setBulkLeaveModalOpen(true);
+  };
+
+  const handleBulkAnnualButtonClick = () => {
+    setBulkAnnualModalOpen(true);
+  };
+
   const demandSiteOptions = [
     { value: "all", label: "전체 수요처" },
     ...demandOptions.map((demandName) => ({
@@ -256,6 +284,12 @@ const ProgramParticipantsSection = ({
           <span className="text-xs text-admin-brand font-semibold">
             {selectedParticipantIds.length}명 선택됨
           </span>
+          <button className={rowActionBtnClass} onClick={handleBulkLeaveButtonClick}>
+            일괄 휴무
+          </button>
+          <button className={rowActionBtnClass} onClick={handleBulkAnnualButtonClick}>
+            일괄 연차
+          </button>
           <button className={rowActionBtnClass} onClick={handleBulkDropButtonClick}>
             일괄 참여종료
           </button>
@@ -269,7 +303,9 @@ const ProgramParticipantsSection = ({
         <table className="w-full min-w-[1000px] table-fixed border-collapse">
           <thead>
             <tr>
-              <th className="w-[40px] bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle" />
+              <th className="w-[40px] text-left bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
+                <input type="checkbox" checked={allFilteredSelected} onChange={handleSelectAllChange} />
+              </th>
               <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 번호
               </th>
@@ -447,6 +483,24 @@ const ProgramParticipantsSection = ({
           title="일괄 참여종료 사유를 입력해주세요."
           onConfirm={handleBulkDropPromptConfirm}
           onCancel={() => setBulkDropPromptOpen(false)}
+        />
+      )}
+
+      {bulkLeaveModalOpen && (
+        <BulkLeaveModal
+          onClose={() => setBulkLeaveModalOpen(false)}
+          onSaved={() => setSelectedParticipantIds([])}
+          programId={programId}
+          targets={selectedTargets}
+        />
+      )}
+
+      {bulkAnnualModalOpen && (
+        <BulkAnnualLeaveModal
+          onClose={() => setBulkAnnualModalOpen(false)}
+          onSaved={() => setSelectedParticipantIds([])}
+          programId={programId}
+          targets={selectedTargets}
         />
       )}
     </div>
