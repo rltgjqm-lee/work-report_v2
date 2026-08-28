@@ -144,10 +144,19 @@ const LoginPage = () => {
           }}
         />
 
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-[12.5px] font-semibold text-admin-text-secondary">
-            비밀번호
-          </label>
+        <label className="block text-[12.5px] font-semibold text-admin-text-secondary mb-1.5">
+          비밀번호
+        </label>
+        <Input
+          type="password"
+          className="mb-2"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleLoginButtonClick();
+          }}
+        />
+        <div className="flex justify-end mb-10">
           <button
             className="text-[12px] text-admin-brand cursor-pointer"
             onClick={handleForgotPasswordLinkClick}
@@ -155,15 +164,6 @@ const LoginPage = () => {
             비밀번호를 잊으셨나요?
           </button>
         </div>
-        <Input
-          type="password"
-          className="mb-5"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") handleLoginButtonClick();
-          }}
-        />
 
         {error && <p className="text-[12.5px] text-admin-error-text mb-4">{error}</p>}
 
