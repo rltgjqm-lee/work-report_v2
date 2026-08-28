@@ -68,3 +68,25 @@ export const bulkAssignGroup = (participantIds: number[], groupId: number) =>
     method: "POST",
     body: JSON.stringify({ participantIds, groupId }),
   });
+
+export interface SetGroupLeaderVariables {
+  groupId: number;
+  programId: number;
+  participantId: number | null;
+}
+
+const setGroupLeader = (groupId: number, participantId: number | null) =>
+  request<Group>(`/api/groups/${groupId}/leader`, {
+    method: "POST",
+    body: JSON.stringify({ participantId }),
+  });
+
+// programId는 서버에 보내는 값이 아니라 캐시 무효화 대상(그 사업단의 조 목록)을 찾기 위한 것.
+export const setGroupLeaderMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ groupId, participantId }: SetGroupLeaderVariables) =>
+      setGroupLeader(groupId, participantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
+    },
+  });

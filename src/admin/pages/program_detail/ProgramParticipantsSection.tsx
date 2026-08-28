@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { setGroupLeaderMutationOptions } from "../../api/admin/groups";
 import {
   bulkUpdateParticipantStatusMutationOptions,
   deleteParticipantMutationOptions,
@@ -108,6 +109,7 @@ const ProgramParticipantsSection = ({
   const bulkUpdateParticipantStatusMutation = useMutation(
     bulkUpdateParticipantStatusMutationOptions(queryClient),
   );
+  const setGroupLeaderMutation = useMutation(setGroupLeaderMutationOptions(queryClient));
 
   const handleParticipantSelectionChange = (participantId: number) => {
     setSelectedParticipantIds((current) =>
@@ -178,6 +180,38 @@ const ProgramParticipantsSection = ({
       { participantId, programId },
       {
         onSuccess: () => showToast(`'${name}' 님을 다시 활동중 상태로 되돌렸습니다.`),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
+  };
+
+  const handleSetLeaderButtonClick = (participant: Participant) => {
+    const group = groups.find((group) => group.id === participant.groupId);
+    if (!group) return;
+
+    const confirmMessage = group.leaderId
+      ? `'${group.leaderName}' 님 대신 '${participant.name}' 님을 '${group.name}' 조의 팀장으로 지정하시겠습니까?`
+      : `'${participant.name}' 님을 '${group.name}' 조의 팀장으로 지정하시겠습니까?`;
+    if (!confirm(confirmMessage)) return;
+
+    setGroupLeaderMutation.mutate(
+      { groupId: group.id, programId, participantId: participant.id },
+      {
+        onSuccess: () => showToast(`'${participant.name}' 님을 팀장으로 지정했습니다.`),
+        onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
+      },
+    );
+  };
+
+  const handleUnsetLeaderButtonClick = (participant: Participant) => {
+    const group = groups.find((group) => group.id === participant.groupId);
+    if (!group) return;
+    if (!confirm(`'${participant.name}' 님의 팀장 지정을 해제하시겠습니까?`)) return;
+
+    setGroupLeaderMutation.mutate(
+      { groupId: group.id, programId, participantId: null },
+      {
+        onSuccess: () => showToast(`'${participant.name}' 님의 팀장 지정을 해제했습니다.`),
         onError: (error) => alert(error instanceof Error ? error.message : "처리에 실패했습니다."),
       },
     );
@@ -366,11 +400,37 @@ const ProgramParticipantsSection = ({
                       오늘만 {participant.todayGroupOverride.groupName}
                     </span>
                   )}
+                  {groups.find((group) => group.id === participant.groupId)?.leaderId ===
+                    participant.id && (
+                    <span className="ml-1.5 inline-block rounded-full bg-admin-selected-tint px-2 py-0.5 text-[11px] font-medium text-admin-brand">
+                      팀장
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                   {statusLabel[participant.status]}
                 </td>
                 <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                  {participant.status === "ACTIVE" && participant.groupId && (
+                    <>
+                      {groups.find((group) => group.id === participant.groupId)?.leaderId ===
+                      participant.id ? (
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleUnsetLeaderButtonClick(participant)}
+                        >
+                          팀장 해제
+                        </button>
+                      ) : (
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleSetLeaderButtonClick(participant)}
+                        >
+                          팀장 지정
+                        </button>
+                      )}
+                    </>
+                  )}
                   {participant.status === "ACTIVE" && (
                     <>
                       <button

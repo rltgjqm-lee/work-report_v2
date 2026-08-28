@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  type AnySQLiteColumn,
+  index,
+  integer,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 import { ROLES, type AdminRole } from "../types";
 
@@ -74,6 +82,9 @@ export const groups = sqliteTable(
     shiftStart: text("shift_start").notNull(),
     shiftEnd: text("shift_end").notNull(),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    // 그 조에 배정된 참여자 중 한 명만 가리킨다 — 새로 지정하면 이 값만 바뀌므로
+    // 조당 팀장이 항상 최대 1명으로 유지된다(별도로 이전 팀장을 해제할 필요 없음).
+    leaderId: integer("leader_id").references((): AnySQLiteColumn => participants.id),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

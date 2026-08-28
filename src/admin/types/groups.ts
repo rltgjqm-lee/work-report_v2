@@ -7,6 +7,8 @@ export type Group = {
   shiftEnd: string;
   isActive: boolean;
   participantCount: number;
+  leaderId: number | null;
+  leaderName: string | null;
   createdAt: string;
 };
 

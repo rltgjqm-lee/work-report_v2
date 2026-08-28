@@ -1,0 +1,1 @@
+ALTER TABLE `groups` ADD `leader_id` integer REFERENCES participants(id);

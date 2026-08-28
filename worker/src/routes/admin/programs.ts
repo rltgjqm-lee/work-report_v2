@@ -577,6 +577,7 @@ app.get("/:id/groups", async (c) => {
       shiftEnd: groups.shiftEnd,
       isActive: groups.isActive,
       createdAt: groups.createdAt,
+      leaderId: groups.leaderId,
       participantCount: sql<number>`COALESCE(SUM(CASE WHEN ${participants.status} = 'ACTIVE' THEN 1 ELSE 0 END), 0)`,
     })
     .from(groups)
@@ -584,7 +585,25 @@ app.get("/:id/groups", async (c) => {
     .where(eq(groups.programId, programId))
     .groupBy(groups.id);
 
-  return c.json(rows);
+  // leaderId → 이름은 위 집계 쿼리에 그대로 끼워 넣기 어려워서(GROUP BY와 안 맞음)
+  // 팀장 id만 따로 모아 한 번에 조회한다.
+  const leaderIds = rows
+    .map((row) => row.leaderId)
+    .filter((leaderId): leaderId is number => leaderId !== null);
+  const leaderRows = leaderIds.length
+    ? await db
+        .select({ id: participants.id, name: participants.name })
+        .from(participants)
+        .where(inArray(participants.id, leaderIds))
+    : [];
+  const leaderNameById = new Map(leaderRows.map((row) => [row.id, row.name]));
+
+  return c.json(
+    rows.map((row) => ({
+      ...row,
+      leaderName: row.leaderId ? (leaderNameById.get(row.leaderId) ?? null) : null,
+    })),
+  );
 });
 
 app.post("/:id/groups", async (c) => {

@@ -74,6 +74,7 @@ const ProgramGroupsSection = ({
             infoLine={
               <>
                 <div>{group.participantCount}명</div>
+                <div className="text-text-subtle">팀장 {group.leaderName ?? "미지정"}</div>
                 <div className="text-[13.5px] font-bold text-text-strong mt-1.5 mb-1">
                   {group.shiftStart}~{group.shiftEnd}
                 </div>

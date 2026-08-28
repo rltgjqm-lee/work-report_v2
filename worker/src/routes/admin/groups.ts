@@ -62,6 +62,42 @@ app.put("/:id", async (c) => {
   return c.json(result[0]);
 });
 
+// 참여자 쪽 명단에서 "팀장 지정"을 누르면 호출된다. participantId를 groups.leaderId에
+// 그대로 덮어쓰는 방식이라, 이전 팀장을 따로 해제하는 로직 없이도 조당 팀장이 항상
+// 최대 1명으로 유지된다. participantId가 null이면 팀장 해제.
+app.post("/:id/leader", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadGroupWithProgram(db, id);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const body = await c.req.json<{ participantId?: number | null }>();
+
+  if (body.participantId) {
+    const participantRows = await db
+      .select()
+      .from(participants)
+      .where(eq(participants.id, body.participantId));
+    const participant = participantRows[0];
+    if (!participant || participant.groupId !== id) {
+      return c.json({ error: "이 조에 배정된 참여자만 팀장으로 지정할 수 있습니다." }, 400);
+    }
+  }
+
+  const result = await db
+    .update(groups)
+    .set({ leaderId: body.participantId ?? null })
+    .where(eq(groups.id, id))
+    .returning();
+
+  return c.json(result[0]);
+});
+
 // 역량활동 월간 근무 스케줄(조 기본값) 조회 — 참여자 개인 예외는 participants.ts 참고
 app.get("/:id/monthly-schedule", async (c) => {
   const auth = getAuth(c);
