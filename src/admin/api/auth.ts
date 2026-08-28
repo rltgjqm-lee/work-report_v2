@@ -26,3 +26,47 @@ export const login = async (email: string, password: string) => {
 };
 
 export const logout = () => request<{ ok: true }>("/auth/logout", { method: "POST" });
+
+export const forgotPassword = async (email: string) => {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+  } catch (error) {
+    console.error("비밀번호 찾기 요청 실패:", error);
+    throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as { error?: string });
+    throw new Error(body.error || "요청에 실패했습니다.");
+  }
+
+  return res.json() as Promise<{ ok: true }>;
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, newPassword }),
+    });
+  } catch (error) {
+    console.error("비밀번호 재설정 요청 실패:", error);
+    throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as { error?: string });
+    throw new Error(body.error || "재설정에 실패했습니다.");
+  }
+
+  return res.json() as Promise<{ ok: true }>;
+};

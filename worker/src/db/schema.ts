@@ -371,6 +371,10 @@ export const admins = sqliteTable("admins", {
   // "salt:iterations:hash" 형식 (worker/src/lib/password.ts 참고). CF Access 시절 수동
   // 등록분엔 없을 수 있어 nullable — 없는 계정은 로그인 자체가 불가 (관리자가 새로 발급해야 함).
   passwordHash: text("password_hash"),
+  // 비밀번호 찾기(자가 재설정) 토큰 — 세션 토큰과 동일하게 원문은 이메일로만 보내고
+  // DB엔 SHA-256 해시만 저장한다(lib/sessionToken.ts 재사용). 재설정 완료/만료 시 둘 다 null로 비운다.
+  resetTokenHash: text("reset_token_hash"),
+  resetTokenExpiresAt: text("reset_token_expires_at"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
@@ -440,6 +444,15 @@ export const adminPasswordResetAttempts = sqliteTable("admin_password_reset_atte
   actorAdminId: integer("actor_admin_id")
     .primaryKey()
     .references(() => admins.id),
+  count: integer("count").notNull().default(0),
+  windowStart: text("window_start").notNull(),
+});
+
+// POST /auth/forgot-password(비로그인 상태의 자가 비밀번호 찾기)를 요청한 이메일별로
+// 1시간당 요청 횟수를 추적 — 로그인 세션이 없어 actorAdminId를 못 쓰므로 이메일로 대신 키를 잡는다.
+// 존재하지 않는 이메일로도 요청이 들어올 수 있어 admins.id 참조는 걸지 않는다.
+export const adminPasswordResetRequests = sqliteTable("admin_password_reset_requests", {
+  email: text("email").primaryKey(),
   count: integer("count").notNull().default(0),
   windowStart: text("window_start").notNull(),
 });

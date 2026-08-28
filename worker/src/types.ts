@@ -36,6 +36,11 @@ export type Env = {
     // 쿠키 기반 세션에 credentials를 포함한 CORS를 허용할 origin 콤마구분 목록
     // (wrangler.jsonc의 vars 참고).
     ALLOWED_ORIGINS: string;
+    // 비밀번호 찾기 이메일 발송(Resend, lib/email.ts). API 키는 시크릿, 발신 주소와
+    // 재설정 링크에 쓸 관리자 콘솔 주소는 민감정보가 아니라 vars로 둔다.
+    RESEND_API_KEY: string;
+    RESEND_FROM_EMAIL: string;
+    ADMIN_APP_URL: string;
   };
   Variables: {
     admin: AdminSession;

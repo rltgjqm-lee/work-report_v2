@@ -22,6 +22,7 @@ const ParticipantDetailPage = lazy(
 const ParticipantsPage = lazy(() => import("./pages/ParticipantsPage"));
 const ProgramDetailPage = lazy(() => import("./pages/program_detail/ProgramDetailPage"));
 const ProgramsPage = lazy(() => import("./pages/programs/ProgramsPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const AdminApp = () => (
         >
           <Routes>
             <Route path="login" element={<LoginPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AdminLayout />}>
                 <Route index element={<Navigate to="/admin/organizations" replace />} />

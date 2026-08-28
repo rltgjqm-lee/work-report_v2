@@ -498,6 +498,13 @@
       "when": 1787893888694,
       "tag": "0070_rename_competency_program_type",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1787895999379,
+      "tag": "0071_thick_magdalene",
+      "breakpoints": true
     }
   ]
 }

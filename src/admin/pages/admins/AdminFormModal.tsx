@@ -20,6 +20,11 @@ const emptyForm = {
   password: "",
 };
 
+// 엄격한 RFC 검증까지는 필요 없고, "@"와 도메인이 없는 값("test" 같은)만 걸러내면
+// 충분하다 — 이 이메일이 비밀번호 찾기 발송 주소로도 그대로 쓰이고, 계정 생성 후엔
+// 못 고치므로(의도적) 생성 시점에 걸러야 한다.
+const EMAIL_FORMAT_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 interface AdminFormModalProps {
   onClose: () => void;
   editingAdmin: Admin | null;
@@ -103,6 +108,11 @@ const AdminFormModal = ({
 
       return;
     }
+    if (!EMAIL_FORMAT_PATTERN.test(form.email)) {
+      setError("올바른 이메일 형식을 입력해주세요.");
+
+      return;
+    }
     if (form.password.length < 8) {
       setError("임시 비밀번호는 8자 이상이어야 합니다.");
 
@@ -167,6 +177,12 @@ const AdminFormModal = ({
           disabled={!!editingAdmin}
           onChange={(event) => setForm((form) => ({ ...form, email: event.target.value }))}
         />
+        {!editingAdmin && (
+          <p className="text-[12px] text-text-subtle mt-1.5">
+            비밀번호 변경(찾기) 시 이 이메일로 재설정 링크를 보내드립니다. 생성 후에는 이메일을
+            수정할 수 없으니, 실제로 사용 중인 이메일을 입력해주세요.
+          </p>
+        )}
       </FormField>
       {!editingAdmin && (
         <FormField label="임시 비밀번호 (8자 이상)">

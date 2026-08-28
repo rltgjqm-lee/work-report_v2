@@ -30,5 +30,10 @@
   "vars": {
     // capacitor://localhost(iOS), https://localhost(Android)는 Capacitor 하이브리드 앱의 기본 오리진
     "ALLOWED_ORIGINS": "https://worksafe.co.kr,https://www.worksafe.co.kr,https://work-report-v3.pages.dev,http://localhost:5173,capacitor://localhost,https://localhost",
+    // Resend에서 발신 도메인 인증(worksafe.co.kr) 전이라면 우선 Resend 기본 샌드박스 주소
+    // (onboarding@resend.dev)로 바꿔서 테스트할 수 있다 — 그 경우 실제 수신자도 Resend
+    // 계정 소유자 이메일로만 발송이 제한된다.
+    "RESEND_FROM_EMAIL": "no-reply@worksafe.co.kr",
+    "ADMIN_APP_URL": "https://worksafe.co.kr",
   },
 }
