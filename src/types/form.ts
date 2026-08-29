@@ -38,6 +38,10 @@ export interface ActivityLogFormData {
   demandSignature: string; // canvas에서 추출할 base64 이미지 스트링 등
 }
 
+// 사업 유형 뱃지는 "공익 활동"/"역량 활용" 전체 대신 앞 두 글자("공익"/"역량")만 보여준다.
+export const programTypeShortLabel = (programType: ActivityLogFormData["programType"]): string =>
+  programType.split(" ")[0];
+
 export interface ActivityLogItem {
   id?: number;
   participantId?: number;

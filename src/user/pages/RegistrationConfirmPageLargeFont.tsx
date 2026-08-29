@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
+import { programTypeShortLabel } from "../../types/form";
 
 import type { ExceptionInfo } from "./RegistrationConfirmPage";
 
@@ -22,7 +23,7 @@ const ICON_CLASS = {
 const ConfirmRowLarge = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-4 py-5 border-b border-surface-page last:border-b-0">
     <span className="text-[18px] text-text-muted font-semibold flex-none">{label}</span>
-    <span className="text-[20px] font-extrabold text-text-strong text-right">{value}</span>
+    <span className="min-w-0 text-[20px] font-extrabold text-text-strong text-right">{value}</span>
   </div>
 );
 
@@ -79,9 +80,11 @@ const RegistrationConfirmPageLargeFont = ({
       {(exception === "loading" || exception === null) && (
         <div className="bg-white border-[1.5px] border-border-faint rounded-[20px] p-6 shadow-[0_1px_2px_rgba(20,30,50,0.04)] flex items-center gap-5">
           <img src="/icons/icon-basic-info.png" alt="" className="w-14 h-14 flex-none" />
-          <div>
-            <div className="text-[21px] font-extrabold text-text-strong">등록 확인</div>
-            <div className="text-[17px] text-text-muted font-semibold mt-1">
+          <div className="min-w-0 flex-1">
+            <div className="text-[clamp(18px,5.2vw,21px)] font-extrabold text-text-strong break-keep">
+              등록 확인
+            </div>
+            <div className="text-[clamp(14px,4vw,17px)] text-text-muted font-semibold mt-1 break-keep">
               아래 내용이 맞는지 확인해주세요
             </div>
           </div>
@@ -114,10 +117,10 @@ const RegistrationConfirmPageLargeFont = ({
             <ConfirmRowLarge
               label="사업단"
               value={
-                <span className="inline-flex items-center gap-2.5">
+                <span className="flex flex-col items-end gap-1.5">
                   <span>{formData.programName}</span>
                   <span className="inline-flex text-[16px] font-extrabold px-3.5 py-1.5 rounded-full bg-brand-tint text-brand">
-                    {formData.programType}
+                    {programTypeShortLabel(formData.programType)}
                   </span>
                 </span>
               }

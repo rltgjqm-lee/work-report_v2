@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { Home } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
+import { programTypeShortLabel } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
 import SosConfirmModal from "../components/molecule/SosConfirmModal";
@@ -49,9 +50,9 @@ const ModuleItemLarge = ({
       highlighted ? "border-[1.5px] border-brand-tint" : ""
     }`}
   >
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 min-w-0 flex-1">
       <img src={icon} alt="" className="w-[52px] h-[52px] flex-none" />
-      <div>
+      <div className="min-w-0">
         <div className="text-[17px] font-extrabold text-brand mb-1.5">
           {index}. {category}
         </div>
@@ -130,9 +131,11 @@ const ActivityDashboardPageLargeFont = ({
             {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[24px] font-extrabold text-text-strong">{formData.orgName}</span>
-            <span className="inline-flex text-[16px] font-extrabold px-3.5 py-1.5 rounded-xl bg-brand-tint text-brand">
-              {formData.programType}
+            <span className="text-[clamp(19px,5.5vw,24px)] font-extrabold text-text-strong min-w-0">
+              {formData.orgName}
+            </span>
+            <span className="inline-flex flex-none text-[16px] font-extrabold px-3.5 py-1.5 rounded-xl bg-brand-tint text-brand">
+              {programTypeShortLabel(formData.programType)}
             </span>
           </div>
           <div className="text-[19px] text-text-tertiary font-semibold mt-2">

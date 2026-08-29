@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
+import { programTypeShortLabel } from "../../types/form";
 import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 
 import { bodyClass, pageClass } from "../../components/atoms/classes";
@@ -537,7 +538,7 @@ const ActivityDashboardPage = ({
           <div className="flex items-center justify-between gap-2.5">
             <span className="text-[19px] font-extrabold text-text-strong">{formData.orgName}</span>
             <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-xl bg-brand-tint text-brand">
-              {formData.programType}
+              {programTypeShortLabel(formData.programType)}
             </span>
           </div>
           <div className="text-[15px] text-text-tertiary font-semibold mt-1.5">

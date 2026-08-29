@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
+import { programTypeShortLabel } from "../../types/form";
 import { getLocalToday } from "../../utils/timeFormat";
 
 import Button from "../../components/atoms/Button";
@@ -195,7 +196,7 @@ const RegistrationConfirmPage = ({
                   <span className="inline-flex items-center gap-2">
                     <span>{formData.programName}</span>
                     <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-full bg-brand-tint text-brand">
-                      {formData.programType}
+                      {programTypeShortLabel(formData.programType)}
                     </span>
                   </span>
                 }
