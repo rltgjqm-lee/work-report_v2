@@ -110,11 +110,11 @@ const StatusPillLarge = ({ label, active }: { label: string; active: boolean }) 
   <div
     className={`flex items-center gap-2 rounded-full px-[clamp(12px,3.5vw,18px)] py-[clamp(6px,2vw,9px)] text-[clamp(14px,4vw,20px)] font-black flex-none border-2 ${
       active
-        ? "bg-large-font-working-bg border-large-font-working-border text-white"
+        ? "bg-white border-large-font-working text-large-font-working"
         : "bg-large-font-bg border-[#8b94a1] text-large-font-primary"
     }`}
   >
-    <span className={`w-[clamp(9px,2.5vw,13px)] h-[clamp(9px,2.5vw,13px)] rounded-full ${active ? "bg-white" : "bg-large-font-text"}`} />
+    <span className={`w-[clamp(9px,2.5vw,13px)] h-[clamp(9px,2.5vw,13px)] rounded-full ${active ? "bg-large-font-working" : "bg-large-font-text"}`} />
     {label}
   </div>
 );
@@ -239,21 +239,19 @@ const ActionButtonLarge = ({ onClick, title, description, variant }: ActionButto
   <button
     onClick={onClick}
     className={`w-full rounded-[22px] px-[clamp(20px,6vw,24px)] py-[clamp(20px,6vw,26px)] flex flex-col items-start gap-2 text-left cursor-pointer border-2 ${
-      variant === "primary"
-        ? "bg-large-font-action border-large-font-action-border"
-        : "bg-white border-large-font-primary"
+      variant === "primary" ? "bg-brand border-[#1b6ae0]" : "bg-white border-large-font-border"
     }`}
   >
     <span
       className={`text-[clamp(24px,7.5vw,38px)] font-black leading-[1.2] ${
-        variant === "primary" ? "text-white" : "text-large-font-primary"
+        variant === "primary" ? "text-white" : "text-[#3d566e]"
       }`}
     >
       {title}
     </span>
     <span
       className={`text-[clamp(14px,4vw,19px)] font-bold leading-[1.45] ${
-        variant === "primary" ? "text-large-font-action-tint" : "text-large-font-text"
+        variant === "primary" ? "text-brand-tint" : "text-large-font-text"
       }`}
     >
       {description}
