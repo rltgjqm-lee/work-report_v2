@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
@@ -48,7 +48,7 @@ type ModuleItemProps = {
   icon: string;
   category: string;
   title: string;
-  status: string;
+  status: ReactNode;
   done: boolean;
   highlighted?: boolean;
   isPending?: boolean;
@@ -409,9 +409,15 @@ const ActivityDashboardPage = ({
             icon: "/icons/icon-task.png",
             category: "업무",
             title: "업무 일지 등록",
-            status: workDone
-              ? `${formData.actContent} · ${formData.actPlace}`
-              : "업무 일지 기록 전이에요",
+            status: workDone ? (
+              <>
+                {formData.actContent}
+                <br />
+                {formData.actPlace}
+              </>
+            ) : (
+              "업무 일지 기록 전이에요"
+            ),
             done: workDone,
             onClick: handleOpenWorkButtonClick,
           },

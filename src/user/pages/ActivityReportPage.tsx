@@ -17,6 +17,7 @@ import Card from "../components/atoms/Card";
 import ActivitySaveConfirmModal from "../components/molecule/ActivitySaveConfirmModal";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
+import ActivityReportPageLargeFont from "./ActivityReportPageLargeFont";
 
 interface Page4Props {
   formData: ActivityLogFormData;
@@ -25,6 +26,7 @@ interface Page4Props {
   onSave: () => Promise<void>;
   onNext: () => void;
   onAlert: (messages: string[]) => Promise<void>;
+  isLargeFontMode: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ const ActivityReportPage = ({
   onSave,
   onNext,
   onAlert,
+  isLargeFontMode,
 }: Page4Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -68,6 +71,27 @@ const ActivityReportPage = ({
     await onSave();
     onNext();
   };
+
+  if (isLargeFontMode) {
+    return (
+      <>
+        <ActivityReportPageLargeFont
+          formData={formData}
+          setFormData={setFormData}
+          onBack={onBack}
+          onSaveButtonClick={handleSaveButtonClick}
+        />
+
+        {confirmOpen && (
+          <ActivitySaveConfirmModal
+            actContent={formData.actContent}
+            actPlace={formData.actPlace}
+            onConfirm={handleSaveConfirmButtonClick}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className={pageClass}>

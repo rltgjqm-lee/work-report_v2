@@ -553,6 +553,7 @@ const Main = () => {
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 
@@ -565,6 +566,7 @@ const Main = () => {
             onAlert={handleAlertModalOpen}
             onSave={handleStepDataSave}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 

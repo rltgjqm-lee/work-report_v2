@@ -18,6 +18,7 @@ import Card from "../components/atoms/Card";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
 import SafetySaveConfirmModal from "../components/molecule/SafetySaveConfirmModal";
+import AccidentCheckPageLargeFont from "./AccidentCheckPageLargeFont";
 
 interface Page5Props {
   formData: ActivityLogFormData;
@@ -26,6 +27,7 @@ interface Page5Props {
   onSave: () => Promise<void>;
   onNext: () => void;
   onAlert: (messages: string[]) => Promise<void>;
+  isLargeFontMode: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ const AccidentCheckPage = ({
   onSave,
   onNext,
   onAlert,
+  isLargeFontMode,
 }: Page5Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -67,6 +70,28 @@ const AccidentCheckPage = ({
     await onSave();
     onNext();
   };
+
+  if (isLargeFontMode) {
+    return (
+      <>
+        <AccidentCheckPageLargeFont
+          formData={formData}
+          setFormData={setFormData}
+          onBack={onBack}
+          onSaveButtonClick={handleSaveButtonClick}
+        />
+
+        {confirmOpen && (
+          <SafetySaveConfirmModal
+            hasAccident={formData.hasAccident}
+            accidentDetail={formData.accidentDetail}
+            accidentAction={formData.accidentAction}
+            onConfirm={handleSaveConfirmButtonClick}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className={pageClass}>

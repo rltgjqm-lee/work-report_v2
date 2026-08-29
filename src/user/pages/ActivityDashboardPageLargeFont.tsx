@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Home } from "lucide-react";
 
@@ -12,7 +12,7 @@ type ModuleItemLargeProps = {
   icon: string;
   category: string;
   title: string;
-  status: string;
+  status: ReactNode;
   done: boolean;
   highlighted?: boolean;
   isPending?: boolean;
