@@ -589,6 +589,7 @@ const Main = () => {
             onAlert={handleAlertModalOpen}
             onSave={() => handleStepDataSave(true)}
             onHome={() => setView(VIEW_TYPE.DASHBOARD)}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
       </div>

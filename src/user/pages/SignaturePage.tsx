@@ -15,6 +15,7 @@ import Card from "../components/atoms/Card";
 import SignatureCanvas from "../components/atoms/SignatureCanvas";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
+import SignaturePageLargeFont from "./SignaturePageLargeFont";
 
 interface Page6Props {
   formData: ActivityLogFormData;
@@ -23,9 +24,18 @@ interface Page6Props {
   onSave: () => Promise<void>;
   onHome: () => void;
   onAlert: (messages: string[]) => Promise<void>;
+  isLargeFontMode: boolean;
 }
 
-const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert }: Page6Props) => {
+const SignaturePage = ({
+  formData,
+  setFormData,
+  onBack,
+  onSave,
+  onHome,
+  onAlert,
+  isLargeFontMode,
+}: Page6Props) => {
   const handleSaveAndFinishButtonClick = async () => {
     if (!formData.userSignature) {
       onAlert(["참여자 서명이 누락되었습니다", "서명을 작성해주세요"]);
@@ -40,6 +50,17 @@ const SignaturePage = ({ formData, setFormData, onBack, onSave, onHome, onAlert 
 
     onHome();
   };
+
+  if (isLargeFontMode) {
+    return (
+      <SignaturePageLargeFont
+        formData={formData}
+        setFormData={setFormData}
+        onBack={onBack}
+        onSaveAndFinishButtonClick={handleSaveAndFinishButtonClick}
+      />
+    );
+  }
 
   return (
     <div className={pageClass}>

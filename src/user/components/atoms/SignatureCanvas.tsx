@@ -5,12 +5,21 @@ import { sigBoxClass, sigClearClass } from "../../../components/atoms/classes";
 interface SignatureCanvasProps {
   value: string;
   onChange: (dataUrl: string) => void;
+  // 큰글씨 화면처럼 더 큰 서명란이 필요한 곳에서 기본 박스/지우기 버튼 스타일을
+  // 통째로 바꿔 쓸 수 있게 한다 — 그리기 로직은 그대로 공유하고 크기만 다르게 하기 위함.
+  boxClassName?: string;
+  clearButtonClassName?: string;
 }
 
 /**
  * 손가락/마우스로 그리는 서명 캔버스. value가 data URL이면 마운트 시 복원한다.
  */
-const SignatureCanvas = ({ value, onChange }: SignatureCanvasProps) => {
+const SignatureCanvas = ({
+  value,
+  onChange,
+  boxClassName = sigBoxClass,
+  clearButtonClassName = sigClearClass,
+}: SignatureCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 마운트 시 1회만 초기화 (서명 저장으로 인한 재초기화 방지)
@@ -103,9 +112,9 @@ const SignatureCanvas = ({ value, onChange }: SignatureCanvasProps) => {
   };
 
   return (
-    <div className={sigBoxClass}>
+    <div className={boxClassName}>
       <canvas ref={canvasRef} className="w-full h-full rounded-2xl touch-none" />
-      <button onClick={handleClearButtonClick} className={sigClearClass}>
+      <button onClick={handleClearButtonClick} className={clearButtonClassName}>
         지우기
       </button>
     </div>
