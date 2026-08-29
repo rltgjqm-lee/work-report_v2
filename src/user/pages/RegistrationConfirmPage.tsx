@@ -15,8 +15,9 @@ import ExceptionCard from "../components/atoms/ExceptionCard";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
 import { registerNativePush } from "../utils/nativePushRegistration";
+import RegistrationConfirmPageLargeFont from "./RegistrationConfirmPageLargeFont";
 
-type ExceptionInfo = {
+export type ExceptionInfo = {
   variant: "warn" | "caution";
   title: string;
   body?: ReactNode;
@@ -40,11 +41,13 @@ const RegistrationConfirmPage = ({
   onChange,
   onBack,
   onNext,
+  isLargeFontMode,
 }: {
   formData: ActivityLogFormData;
   onChange: <T extends keyof ActivityLogFormData>(key: T, value: ActivityLogFormData[T]) => void;
   onBack: () => void;
   onNext: () => void;
+  isLargeFontMode: boolean;
 }) => {
   const {
     data: identified,
@@ -138,6 +141,18 @@ const RegistrationConfirmPage = ({
     }
   } else {
     exception = null;
+  }
+
+  if (isLargeFontMode) {
+    return (
+      <RegistrationConfirmPageLargeFont
+        formData={formData}
+        orgAddress={orgAddress}
+        exception={exception}
+        onBack={onBack}
+        onNext={onNext}
+      />
+    );
   }
 
   return (

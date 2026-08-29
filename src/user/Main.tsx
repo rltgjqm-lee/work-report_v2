@@ -510,6 +510,7 @@ const Main = () => {
             // 입력 화면으로 돌아간다 — 홈으로 보내면 "기본정보 등록"을 한 번 더 눌러야 했다.
             onBack={() => setView(VIEW_TYPE.AFFILIATION)}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 
