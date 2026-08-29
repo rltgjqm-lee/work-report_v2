@@ -338,7 +338,11 @@ const ProgramParticipantsSection = ({
           <thead>
             <tr>
               <th className="w-[40px] text-left bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
-                <input type="checkbox" checked={allFilteredSelected} onChange={handleSelectAllChange} />
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={handleSelectAllChange}
+                />
               </th>
               <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                 번호
