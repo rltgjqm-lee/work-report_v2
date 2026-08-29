@@ -530,6 +530,7 @@ const Main = () => {
             setDebugDate={setDebugDate}
             debugTime={debugTime}
             setDebugTime={setDebugTime}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 

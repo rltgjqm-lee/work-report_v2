@@ -24,6 +24,7 @@ import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal"
 import LocationConsentModal from "../components/molecule/LocationConsentModal";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
+import ActivityDashboardPageLargeFont from "./ActivityDashboardPageLargeFont";
 
 interface ActivityDashboardPageProps {
   formData: ActivityLogFormData;
@@ -39,6 +40,7 @@ interface ActivityDashboardPageProps {
   setDebugDate: React.Dispatch<React.SetStateAction<string>>;
   debugTime: string;
   setDebugTime: React.Dispatch<React.SetStateAction<string>>;
+  isLargeFontMode: boolean;
 }
 
 type ModuleItemProps = {
@@ -112,6 +114,7 @@ const ActivityDashboardPage = ({
   setDebugDate,
   debugTime,
   setDebugTime,
+  isLargeFontMode,
 }: ActivityDashboardPageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활용";
 
@@ -384,6 +387,139 @@ const ActivityDashboardPage = ({
 
   let moduleIndex = 1;
 
+  // 💡 업무·안전 모듈은 역량활용에는 표시되지 않는다 — 이 목록을 보통글씨/큰글씨 화면이
+  // 같이 써서 "어떤 모듈이 몇 번째로 보이는지"가 두 화면에서 어긋나지 않게 한다.
+  const modules: ModuleItemProps[] = [
+    {
+      index: moduleIndex++,
+      icon: "/icons/icon-checkin-clock.png",
+      category: "출근",
+      title: "출근 등록",
+      status: attendanceInDone
+        ? `${formatTimeField(formData.startTime)} 출근했어요`
+        : "출근 전이에요",
+      done: attendanceInDone,
+      isPending: clockInMutation.isPending,
+      onClick: handleAttendanceInButtonClick,
+    },
+    ...(!isCompetencyProgram
+      ? [
+          {
+            index: moduleIndex++,
+            icon: "/icons/icon-task.png",
+            category: "업무",
+            title: "업무 일지 등록",
+            status: workDone
+              ? `${formData.actContent} · ${formData.actPlace}`
+              : "업무 일지 기록 전이에요",
+            done: workDone,
+            onClick: handleOpenWorkButtonClick,
+          },
+        ]
+      : []),
+    ...(!isCompetencyProgram
+      ? [
+          {
+            index: moduleIndex++,
+            icon: "/icons/icon-safety.png",
+            category: "안전",
+            title: "안전 일지 등록",
+            status: !safetyDone
+              ? "안전 일지 기록 전이에요"
+              : formData.hasAccident
+                ? "사고가 있었어요"
+                : "이상 없었어요",
+            done: safetyDone,
+            onClick: handleOpenSafetyButtonClick,
+          },
+        ]
+      : []),
+    {
+      index: moduleIndex++,
+      icon: "/icons/icon-checkout-clock.png",
+      category: "퇴근",
+      title: "퇴근 등록",
+      status: attendanceOutDone
+        ? `${formatTimeField(formData.endTime)} 퇴근했어요`
+        : "퇴근 전이에요",
+      done: attendanceOutDone,
+      isPending: clockOutMutation.isPending,
+      onClick: handleAttendanceOutButtonClick,
+    },
+    {
+      index: moduleIndex,
+      icon: "/icons/icon-signature.png",
+      category: "서명",
+      title: "전체 확인·서명",
+      status: signatureDone ? "서명 완료" : "최종 확인이 필요해요",
+      done: signatureDone,
+      highlighted: true,
+      onClick: handleOpenSummaryButtonClick,
+    },
+  ];
+
+  if (isLargeFontMode) {
+    return (
+      <>
+        <ActivityDashboardPageLargeFont
+          formData={formData}
+          todayLabel={todayLabel}
+          notificationsBlocked={notificationsBlocked}
+          isDebugPanelVisible={import.meta.env.DEV || isSuperAdmin}
+          debugDate={debugDate}
+          setDebugDate={setDebugDate}
+          debugTime={debugTime}
+          setDebugTime={setDebugTime}
+          onDebugDateTimeReset={handleDebugDateTimeResetButtonClick}
+          modules={modules}
+          onHome={onHome}
+        />
+
+        {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
+
+        {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
+
+        {clockInRequiredOpen && (
+          <ClockInRequiredModal onConfirm={() => setClockInRequiredOpen(false)} />
+        )}
+
+        {clockOutRequiredOpen && (
+          <ClockOutRequiredModal onConfirm={() => setClockOutRequiredOpen(false)} />
+        )}
+
+        {timeGuide && (
+          <AttendanceTimeGuideModal
+            now={timeGuide.now}
+            shiftStart={timeGuide.shiftStart}
+            shiftEnd={timeGuide.shiftEnd}
+            onConfirm={() => setTimeGuide(null)}
+          />
+        )}
+
+        {clockOutTooEarlyShiftEnd && (
+          <ClockOutTooEarlyModal
+            shiftEnd={clockOutTooEarlyShiftEnd}
+            onConfirm={() => setClockOutTooEarlyShiftEnd(null)}
+          />
+        )}
+
+        {clockOutCompleteTime && (
+          <ClockOutCompleteModal
+            endTime={clockOutCompleteTime}
+            onConfirm={() => setClockOutCompleteTime(null)}
+          />
+        )}
+
+        {clockInCompleteTime && (
+          <ClockInCompleteModal
+            startTime={clockInCompleteTime}
+            onConfirm={() => setClockInCompleteTime(null)}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className={pageClass}>
       <AppBar title="근무 기록" onHome={onHome} participantId={formData.participantId} />
@@ -440,75 +576,9 @@ const ActivityDashboardPage = ({
           </div>
         )}
 
-        {/* 업무·안전 모듈은 역량활용에는 표시되지 않는다 */}
-        <ModuleItem
-          index={moduleIndex++}
-          icon="/icons/icon-checkin-clock.png"
-          category="출근"
-          title="출근 등록"
-          status={
-            attendanceInDone ? `${formatTimeField(formData.startTime)} 출근했어요` : "출근 전이에요"
-          }
-          done={attendanceInDone}
-          isPending={clockInMutation.isPending}
-          onClick={handleAttendanceInButtonClick}
-        />
-
-        {!isCompetencyProgram && (
-          <ModuleItem
-            index={moduleIndex++}
-            icon="/icons/icon-task.png"
-            category="업무"
-            title="업무 일지 등록"
-            status={
-              workDone ? `${formData.actContent} · ${formData.actPlace}` : "업무 일지 기록 전이에요"
-            }
-            done={workDone}
-            onClick={handleOpenWorkButtonClick}
-          />
-        )}
-
-        {!isCompetencyProgram && (
-          <ModuleItem
-            index={moduleIndex++}
-            icon="/icons/icon-safety.png"
-            category="안전"
-            title="안전 일지 등록"
-            status={
-              !safetyDone
-                ? "안전 일지 기록 전이에요"
-                : formData.hasAccident
-                  ? "사고가 있었어요"
-                  : "이상 없었어요"
-            }
-            done={safetyDone}
-            onClick={handleOpenSafetyButtonClick}
-          />
-        )}
-
-        <ModuleItem
-          index={moduleIndex++}
-          icon="/icons/icon-checkout-clock.png"
-          category="퇴근"
-          title="퇴근 등록"
-          status={
-            attendanceOutDone ? `${formatTimeField(formData.endTime)} 퇴근했어요` : "퇴근 전이에요"
-          }
-          done={attendanceOutDone}
-          isPending={clockOutMutation.isPending}
-          onClick={handleAttendanceOutButtonClick}
-        />
-
-        <ModuleItem
-          index={moduleIndex}
-          icon="/icons/icon-signature.png"
-          category="서명"
-          title="전체 확인·서명"
-          status={signatureDone ? "서명 완료" : "최종 확인이 필요해요"}
-          done={signatureDone}
-          highlighted
-          onClick={handleOpenSummaryButtonClick}
-        />
+        {modules.map((module) => (
+          <ModuleItem key={module.category} {...module} />
+        ))}
       </div>
 
       {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
