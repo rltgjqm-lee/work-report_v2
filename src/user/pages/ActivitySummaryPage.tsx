@@ -46,7 +46,7 @@ const ActivitySummaryPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="오늘의 활동 요약" onBack={onBack} participantId={formData.participantId} />
+      <AppBar title="활동 요약" onBack={onBack} participantId={formData.participantId} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
           <div className="text-[13px] text-text-muted font-bold mb-3.5">
@@ -107,7 +107,7 @@ const ActivitySummaryPage = ({
             이전
           </Button>
           <Button variant="primary" className="flex-1" onClick={onNext}>
-            서명하러 가기
+            서명하기
           </Button>
         </BottomBarRow>
       </BottomBar>

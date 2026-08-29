@@ -62,7 +62,7 @@ const ActivitySummaryPageLargeFont = ({
           <ChevronLeft size={28} color="#333d4b" strokeWidth={2.2} />
         </button>
         <span className="flex-1 text-center text-[24px] font-extrabold text-text-strong">
-          오늘의 활동 요약
+          활동 요약
         </span>
         {formData.participantId ? (
           <button
@@ -145,7 +145,7 @@ const ActivitySummaryPageLargeFont = ({
             onClick={onNext}
             className="flex-1 h-[74px] bg-brand text-white border-none rounded-2xl text-[23px] font-extrabold font-sans cursor-pointer"
           >
-            서명하러 가기
+            서명하기
           </button>
         </div>
       </div>
