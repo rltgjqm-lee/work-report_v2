@@ -95,6 +95,20 @@
   --color-admin-upload-success-text-muted: #5c7a53;
   --color-admin-upload-success-border: #d3e6cc;
   --color-admin-upload-success-bg: #f0f6ee;
+
+  /* 홈 화면 큰글씨 모드(HomePageLargeFont) 전용 팔레트 — 저시력 사용자를 위해 대비를
+     또렷하게 높인 별도 톤이라 메인 앱 기본 토큰과 분리해서 둔다. */
+  --color-large-font-bg: #eceff3;
+  --color-large-font-border: #cbd5e0;
+  --color-large-font-primary: #1e3a5f;
+  --color-large-font-text: #374151;
+  --color-large-font-action: #1565d8;
+  --color-large-font-action-border: #0f4ba8;
+  --color-large-font-action-tint: #dce9fb;
+  --color-large-font-working-bg: #15803d;
+  --color-large-font-working-border: #0f5f2d;
+  --color-large-font-danger: #a4231c;
+  --color-large-font-danger-text: #7f1d1a;
 }
 
 @layer base {

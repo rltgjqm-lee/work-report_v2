@@ -1,5 +1,6 @@
 export const LOCAL_STORAGE_KEYS = {
   FORM_DRAFT: "form_draft", // 기본 정보 입력 폼 임시 저장 (formData 전체 필드)
+  LARGE_FONT_MODE: "large_font_mode", // 홈 화면 큰글씨 모드 on/off
 } as const;
 
 /**

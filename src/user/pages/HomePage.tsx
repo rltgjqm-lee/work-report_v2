@@ -1,19 +1,16 @@
 import { useState, type ReactNode } from "react";
 
-import { Building2, Settings } from "lucide-react";
+import { ALargeSmall, Building2, Settings } from "lucide-react";
 
+import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 import type { ActivityLogFormData } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
 import SosConfirmModal from "../components/molecule/SosConfirmModal";
 import SosIdentificationRequiredModal from "../components/molecule/SosIdentificationRequiredModal";
 import SosUnavailableModal from "../components/molecule/SosUnavailableModal";
-
-interface TodayStatus {
-  isWorkDay: boolean;
-  shiftStart: string | null;
-  shiftEnd: string | null;
-}
+import { computeTodayWorkCardStatus, type TodayStatus } from "../utils/todayWorkStatus";
+import HomePageLargeFont from "./HomePageLargeFont";
 
 interface HomePageProps {
   formData: ActivityLogFormData;
@@ -35,11 +32,12 @@ interface TodayWorkCardProps {
   todayStatus: TodayStatus | null;
 }
 
-const WEEKDAY_LABEL = ["일", "월", "화", "수", "목", "금", "토"];
-
-const todayLabel = () => {
-  const now = new Date();
-  return `${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAY_LABEL[now.getDay()]}요일`;
+const readLargeFontModePreference = () => {
+  try {
+    return localStorage.getItem(LOCAL_STORAGE_KEYS.LARGE_FONT_MODE) === "true";
+  } catch {
+    return false;
+  }
 };
 
 /**
@@ -55,6 +53,7 @@ const HomePage = ({
   const [isSosConfirmModalOpen, setIsSosConfirmModalOpen] = useState(false);
   const [isSosIdentificationModalOpen, setIsSosIdentificationModalOpen] = useState(false);
   const [isSosUnavailableModalOpen, setIsSosUnavailableModalOpen] = useState(false);
+  const [isLargeFontMode, setIsLargeFontMode] = useState(readLargeFontModePreference);
 
   // participantId는 있지만 서버 응답 전(로딩 중)엔 근무일로 가정한다(TodayWorkCard와 동일 기준).
   const isWorkDay = todayStatus?.isWorkDay ?? true;
@@ -89,69 +88,104 @@ const HomePage = ({
     setIsSosConfirmModalOpen(false);
   };
 
+  const handleLargeFontToggleButtonClick = () => {
+    setIsLargeFontMode((previous) => {
+      const next = !previous;
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.LARGE_FONT_MODE, String(next));
+      } catch {
+        // localStorage 접근 불가(프라이빗 모드 등)여도 화면 전환 자체는 계속 동작해야 한다.
+      }
+      return next;
+    });
+  };
+
   return (
-    <div
-      className="flex flex-col h-full min-h-0 flex-1 overflow-y-auto"
-      style={{ background: "linear-gradient(180deg,#eaf2ff 0%,#f2f4f6 min(320px,60vh))" }}
-    >
-      <div className="h-[60px] flex items-center justify-between gap-2 px-[clamp(16px,5vw,24px)]">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex gap-1.5">
-            <img src="/icons/app-icon-64.png" alt="" className="w-5 h-5 rounded-[6px]" />
-            <p className="text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
-              WORK SAFE
-            </p>
+    <>
+      {isLargeFontMode ? (
+        <HomePageLargeFont
+          formData={formData}
+          todayStatus={todayStatus}
+          onOpenAffiliation={onOpenAffiliation}
+          onStartActivityLog={onStartActivityLog}
+          onOpenSettings={onOpenSettings}
+          onSosButtonClick={handleSosButtonClick}
+          onExitLargeFontButtonClick={handleLargeFontToggleButtonClick}
+        />
+      ) : (
+        <div
+          className="flex flex-col h-full min-h-0 flex-1 overflow-y-auto"
+          style={{ background: "linear-gradient(180deg,#eaf2ff 0%,#f2f4f6 min(320px,60vh))" }}
+        >
+          <div className="h-[60px] flex items-center justify-between gap-2 px-[clamp(16px,5vw,24px)]">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex gap-1.5">
+                <img src="/icons/app-icon-64.png" alt="" className="w-5 h-5 rounded-[6px]" />
+                <p className="text-[clamp(12px,3vw,13px)] font-extrabold tracking-[1.2px] text-text-tertiary">
+                  WORK SAFE
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                <button
+                  onClick={handleLargeFontToggleButtonClick}
+                  className="cursor-pointer"
+                  aria-label="큰글씨 보기"
+                >
+                  <ALargeSmall size={18} color="#333d4b" strokeWidth={2.2} />
+                </button>
+                <button onClick={onOpenSettings} className="cursor-pointer" aria-label="설정">
+                  <Settings size={16} color="#333d4b" strokeWidth={2.2} />
+                </button>
+              </div>
+            </div>
           </div>
 
-          <button onClick={onOpenSettings} className="cursor-pointer" aria-label="설정">
-            <Settings size={16} color="#333d4b" strokeWidth={2.2} />
-          </button>
-        </div>
-      </div>
+          <div className="flex-1 flex flex-col px-[clamp(16px,5vw,24px)] py-[clamp(12px,4vw,20px)]">
+            <div className="mb-[clamp(20px,6vw,28px)]">
+              <div className="text-left text-[clamp(19px,5.5vw,22px)] font-extrabold text-text-strong">
+                {formData.userName ? `${formData.userName}님, 안녕하세요` : "참여자님, 안녕하세요"}
+              </div>
+              <div className="text-left text-[clamp(13px,3.6vw,14px)] text-text-muted font-semibold mt-1">
+                오늘의 활동일지를 기록해볼까요?
+              </div>
+            </div>
 
-      <div className="flex-1 flex flex-col px-[clamp(16px,5vw,24px)] py-[clamp(12px,4vw,20px)]">
-        <div className="mb-[clamp(20px,6vw,28px)]">
-          <div className="text-left text-[clamp(19px,5.5vw,22px)] font-extrabold text-text-strong">
-            {formData.userName ? `${formData.userName}님, 안녕하세요` : "참여자님, 안녕하세요"}
+            <TodayWorkCard formData={formData} todayStatus={todayStatus} />
+
+            <div className="flex gap-[clamp(10px,3.5vw,14px)]">
+              <HomeActionCard
+                onClick={onOpenAffiliation}
+                iconSrc="/icons/icon-basic-info.png"
+                title="기본정보 등록"
+                description={
+                  <>
+                    사업단 배정 전,
+                    <br />
+                    가장 먼저 등록하기
+                  </>
+                }
+              />
+              <HomeActionCard
+                onClick={onStartActivityLog}
+                iconSrc="/icons/icon-start-log.png"
+                title="활동일지 시작"
+                description={
+                  <>
+                    오늘의 출근부터,
+                    <br />
+                    차례로 기록하기
+                  </>
+                }
+              />
+            </div>
+
+            <SosButton onClick={handleSosButtonClick} />
+
+            <div className="flex-1 min-h-[24px]" />
           </div>
-          <div className="text-left text-[clamp(13px,3.6vw,14px)] text-text-muted font-semibold mt-1">
-            오늘의 활동일지를 기록해볼까요?
-          </div>
         </div>
-
-        <TodayWorkCard formData={formData} todayStatus={todayStatus} />
-
-        <div className="flex gap-[clamp(10px,3.5vw,14px)]">
-          <HomeActionCard
-            onClick={onOpenAffiliation}
-            iconSrc="/icons/icon-basic-info.png"
-            title="기본정보 등록"
-            description={
-              <>
-                사업단 배정 전,
-                <br />
-                가장 먼저 등록하기
-              </>
-            }
-          />
-          <HomeActionCard
-            onClick={onStartActivityLog}
-            iconSrc="/icons/icon-start-log.png"
-            title="활동일지 시작"
-            description={
-              <>
-                오늘의 출근부터,
-                <br />
-                차례로 기록하기
-              </>
-            }
-          />
-        </div>
-
-        <SosButton onClick={handleSosButtonClick} />
-
-        <div className="flex-1 min-h-[24px]" />
-      </div>
+      )}
 
       {isSosConfirmModalOpen && (
         <SosConfirmModal onSend={handleSosSend} onCancel={handleSosCancel} />
@@ -162,7 +196,7 @@ const HomePage = ({
       {isSosUnavailableModalOpen && (
         <SosUnavailableModal onConfirm={() => setIsSosUnavailableModalOpen(false)} />
       )}
-    </div>
+    </>
   );
 };
 
@@ -181,7 +215,9 @@ const cardClass =
   "bg-white rounded-[18px] px-[clamp(16px,5vw,20px)] py-[clamp(15px,4.5vw,18px)] mb-[clamp(18px,5.5vw,24px)] shadow-[0_2px_8px_rgba(20,30,50,.05)]";
 
 const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
-  if (!formData.userName) {
+  const status = computeTodayWorkCardStatus(formData, todayStatus);
+
+  if (status.kind === "noUserName") {
     return (
       <div className={cardClass}>
         <div className="text-[12.5px] font-bold text-text-muted mb-1">오늘의 근무</div>
@@ -194,7 +230,7 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
     );
   }
 
-  if (!formData.participantId) {
+  if (status.kind === "noParticipantId") {
     return (
       <div className={cardClass}>
         <div className="text-[12.5px] font-bold text-text-muted mb-1">오늘의 근무</div>
@@ -207,56 +243,18 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
     );
   }
 
-  const attendanceInDone = formData.startTime.hour !== "";
-  const attendanceOutDone = formData.endTime.hour !== "";
-  const isWorking = attendanceInDone && !attendanceOutDone;
-  // participantId는 있지만 서버 응답 전(로딩 중)엔 근무일로 가정해 기존 화면과 동일하게 보여준다.
-  const isWorkDay = todayStatus?.isWorkDay ?? true;
-
-  // 출근 전(둘 다 아직 안 함)과 퇴근 완료(둘 다 끝남)를 구분해야 하는데, isWorking은
-  // "근무중"만 가려낼 뿐이라 이 둘을 구분 못 한다 — attendanceOutDone을 따로 확인한다.
-  let statusLabel = "출근 전";
-  if (!isWorkDay) {
-    statusLabel = "휴무";
-  } else if (isWorking) {
-    statusLabel = "근무중";
-  } else if (attendanceOutDone) {
-    statusLabel = "퇴근 완료";
-  }
-
-  // 오늘 일지 진행 상황 — ActivityDashboardPage와 같은 순서(출근→업무일지→안전일지→퇴근→서명).
-  // 역량 활용은 업무·안전 일지가 없어서 건너뛴다. 다음 단계 이름과 "n/총" 둘 다 보여준다.
-  const isCompetencyProgram = formData.programType === "역량 활용";
-  const workDone = !!formData.actContent && !!formData.actPlace;
-  const safetyDone = formData.accidentChecked;
-  // 서명은 매일 새로 받아야 해서(Main.tsx) 오늘 저장된 게 없으면 항상 비어있다.
-  const signatureDone = !!formData.userSignature;
-
-  let nextLogStep = "완료";
-  if (!attendanceInDone) {
-    nextLogStep = "출근 대기";
-  } else if (!isCompetencyProgram && !workDone) {
-    nextLogStep = "업무일지 대기";
-  } else if (!isCompetencyProgram && !safetyDone) {
-    nextLogStep = "안전일지 대기";
-  } else if (!attendanceOutDone) {
-    nextLogStep = "퇴근 대기";
-  } else if (!signatureDone) {
-    nextLogStep = "서명 대기";
-  }
-
-  const totalLogSteps = isCompetencyProgram ? 3 : 5;
-  const completedLogSteps =
-    (attendanceInDone ? 1 : 0) +
-    (isCompetencyProgram ? 0 : (workDone ? 1 : 0) + (safetyDone ? 1 : 0)) +
-    (attendanceOutDone ? 1 : 0) +
-    (signatureDone ? 1 : 0);
-  const isLogComplete = nextLogStep === "완료";
-
-  let shiftLabel = "-";
-  if (todayStatus?.shiftStart && todayStatus?.shiftEnd) {
-    shiftLabel = `${todayStatus.shiftStart}~${todayStatus.shiftEnd}`;
-  }
+  const {
+    dateLabel,
+    statusLabel,
+    isWorkDay,
+    isWorking,
+    programName,
+    shiftLabel,
+    nextLogStep,
+    completedLogSteps,
+    totalLogSteps,
+    isLogComplete,
+  } = status;
 
   return (
     <div className={cardClass}>
@@ -265,19 +263,19 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
           <div className="flex flex-col gap-1">
             <span className="text-[12.5px] font-bold text-text-muted">오늘의 근무</span>
             <span className="text-[clamp(15px,4vw,16px)] font-extrabold text-text-strong">
-              {todayLabel()}
+              {dateLabel}
             </span>
           </div>
           <StatusPill label={statusLabel} active={isWorkDay && isWorking} />
         </div>
 
-        {formData.programName && (
+        {programName && (
           <div className="flex items-center gap-2">
             <div className="w-[clamp(22px,6vw,24px)] h-[clamp(22px,6vw,24px)] rounded-[8px] bg-brand-tint flex items-center justify-center flex-none">
               <Building2 className="w-[55%] h-[55%] text-brand" strokeWidth={2.2} />
             </div>
             <span className="text-[clamp(14px,3.8vw,14.5px)] font-bold text-text-strong">
-              {formData.programName}
+              {programName}
             </span>
           </div>
         )}
