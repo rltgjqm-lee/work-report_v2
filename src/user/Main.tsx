@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { App } from "@capacitor/app";
+
 import ConfirmModal from "../components/molecule/ConfirmModal";
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
@@ -42,6 +44,20 @@ const VIEW_TYPE = {
 } as const;
 
 type View = (typeof VIEW_TYPE)[keyof typeof VIEW_TYPE];
+
+// 💡 화면별 "뒤로가기" 목적지 — 각 페이지의 onBack/onHome prop과 동일한 목적지를
+// 안드로이드 하드웨어 뒤로가기 버튼에서도 그대로 재사용한다(아래 뒤로가기 버튼
+// 리스너 effect). MAIN은 더 갈 곳이 없어 목록에서 뺐다 — 그때는 앱을 백그라운드로 보낸다.
+const VIEW_BACK_TARGET: Partial<Record<View, View>> = {
+  [VIEW_TYPE.AFFILIATION]: VIEW_TYPE.MAIN,
+  [VIEW_TYPE.REGISTRATION_CONFIRM]: VIEW_TYPE.AFFILIATION,
+  [VIEW_TYPE.DASHBOARD]: VIEW_TYPE.MAIN,
+  [VIEW_TYPE.REPORT]: VIEW_TYPE.DASHBOARD,
+  [VIEW_TYPE.ACCIDENT]: VIEW_TYPE.DASHBOARD,
+  [VIEW_TYPE.SUMMARY]: VIEW_TYPE.DASHBOARD,
+  [VIEW_TYPE.SIGNATURE]: VIEW_TYPE.SUMMARY,
+  [VIEW_TYPE.SETTINGS]: VIEW_TYPE.MAIN,
+};
 
 // 💡 폼 데이터를 IndexedDB의 ActivityLogItem 한 건으로 변환.
 // preserve로 기존 레코드의 serverId만 이어받는다(있으면 다음 동기화 때 수정 API를 씀).
@@ -108,6 +124,31 @@ const Main = () => {
   const [db, setDb] = useState<IDBDatabase | null>(null);
   // 💡 앱을 켜면 누구나(첫 이용자 포함) 메인 페이지부터 본다.
   const [view, setView] = useState<View>(VIEW_TYPE.MAIN);
+
+  // 💡 안드로이드 하드웨어 뒤로가기 버튼 — 리스너를 등록 안 하면(또는 기본 동작 그대로
+  // 두면) 화면 내부 상태와 무관하게 앱이 바로 백그라운드로 넘어간다. VIEW_BACK_TARGET에
+  // 목적지가 있으면 그 화면으로 이동하고(각 페이지의 onBack 버튼과 동일한 목적지),
+  // 더 갈 곳이 없는 홈 화면에서만 원래 동작대로 앱을 백그라운드로 보낸다.
+  // effect를 view가 바뀔 때마다 다시 등록하지 않도록 ref로 최신 view를 읽는다.
+  const viewRef = useRef(view);
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  useEffect(() => {
+    const listenerPromise = App.addListener("backButton", () => {
+      const target = VIEW_BACK_TARGET[viewRef.current];
+      if (target) {
+        setView(target);
+      } else {
+        App.minimizeApp();
+      }
+    });
+
+    return () => {
+      listenerPromise.then((listener) => listener.remove());
+    };
+  }, []);
 
   // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
