@@ -51,6 +51,7 @@ type ModuleItemProps = {
   title: string;
   status: ReactNode;
   done: boolean;
+  ready: boolean;
   highlighted?: boolean;
   isPending?: boolean;
   onClick: () => void;
@@ -63,6 +64,7 @@ const ModuleItem = ({
   title,
   status,
   done,
+  ready,
   highlighted,
   isPending,
   onClick,
@@ -85,10 +87,14 @@ const ModuleItem = ({
     <button
       onClick={onClick}
       disabled={isPending}
-      className={`flex-none h-[42px] px-5 rounded-xl border-none text-[15px] font-extrabold ${
+      className={`flex-none h-[42px] px-5 rounded-xl text-[15px] font-extrabold cursor-pointer ${
         isPending
-          ? "bg-surface-page text-text-muted cursor-default"
-          : `cursor-pointer ${done ? "bg-surface-page text-text-tertiary" : "bg-brand text-white"}`
+          ? "border-none bg-surface-page text-text-muted cursor-default"
+          : done
+            ? "border-none bg-surface-page text-text-tertiary"
+            : ready
+              ? "border-none bg-brand text-white"
+              : "border border-border-default bg-white text-text-disabled"
       }`}
     >
       {isPending ? "확인 중" : done ? "확인" : "등록"}
@@ -312,6 +318,10 @@ const ActivityDashboardPage = ({
       setClockInRequiredOpen(true);
       return;
     }
+    if (!workDone) {
+      onAlert(["업무 일지 등록을 먼저 완료해주세요"]);
+      return;
+    }
     onOpenSafety();
   };
 
@@ -388,6 +398,14 @@ const ActivityDashboardPage = ({
 
   let moduleIndex = 1;
 
+  // 💡 각 모듈 버튼을 눌렀을 때 실제로 동작(등록 화면 이동/기록)하는지, 아니면 앞 단계
+  // 안내 모달만 뜨는지를 미리 계산해 "지금 할 일" 하나만 강조하고 나머지는 톤다운한다 —
+  // handleOpenWorkButtonClick 등 클릭 핸들러의 가드 조건과 항상 같은 값이어야 한다.
+  const canDoWork = attendanceInDone;
+  const canDoSafety = attendanceInDone && workDone;
+  const canClockOut = attendanceInDone && (isCompetencyProgram || (workDone && safetyDone));
+  const canSign = canClockOut && attendanceOutDone;
+
   // 💡 업무·안전 모듈은 역량활용에는 표시되지 않는다 — 이 목록을 보통글씨/큰글씨 화면이
   // 같이 써서 "어떤 모듈이 몇 번째로 보이는지"가 두 화면에서 어긋나지 않게 한다.
   const modules: ModuleItemProps[] = [
@@ -400,6 +418,7 @@ const ActivityDashboardPage = ({
         ? `${formatTimeField(formData.startTime)} 출근했어요`
         : "출근 전이에요",
       done: attendanceInDone,
+      ready: true,
       isPending: clockInMutation.isPending,
       onClick: handleAttendanceInButtonClick,
     },
@@ -420,6 +439,7 @@ const ActivityDashboardPage = ({
               "업무 일지 기록 전이에요"
             ),
             done: workDone,
+            ready: canDoWork,
             onClick: handleOpenWorkButtonClick,
           },
         ]
@@ -437,6 +457,7 @@ const ActivityDashboardPage = ({
                 ? "사고가 있었어요"
                 : "이상 없었어요",
             done: safetyDone,
+            ready: canDoSafety,
             onClick: handleOpenSafetyButtonClick,
           },
         ]
@@ -450,6 +471,7 @@ const ActivityDashboardPage = ({
         ? `${formatTimeField(formData.endTime)} 퇴근했어요`
         : "퇴근 전이에요",
       done: attendanceOutDone,
+      ready: canClockOut,
       isPending: clockOutMutation.isPending,
       onClick: handleAttendanceOutButtonClick,
     },
@@ -460,6 +482,7 @@ const ActivityDashboardPage = ({
       title: "전체 확인·서명",
       status: signatureDone ? "서명 완료" : "최종 확인이 필요해요",
       done: signatureDone,
+      ready: canSign,
       highlighted: true,
       onClick: handleOpenSummaryButtonClick,
     },

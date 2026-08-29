@@ -15,7 +15,7 @@ type ModuleItemLargeProps = {
   title: string;
   status: ReactNode;
   done: boolean;
-  highlighted?: boolean;
+  ready: boolean;
   isPending?: boolean;
   onClick: () => void;
 };
@@ -41,38 +41,44 @@ const ModuleItemLarge = ({
   title,
   status,
   done,
-  highlighted,
+  ready,
   isPending,
   onClick,
-}: ModuleItemLargeProps) => (
-  <div
-    className={`bg-white rounded-2xl px-6 py-5 flex items-center justify-between gap-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
-      highlighted ? "border-[1.5px] border-brand-tint" : ""
-    }`}
-  >
-    <div className="flex items-center gap-4 min-w-0 flex-1">
-      <img src={icon} alt="" className="w-[52px] h-[52px] flex-none" />
-      <div className="min-w-0">
-        <div className="text-[17px] font-extrabold text-brand mb-1.5">
-          {index}. {category}
-        </div>
-        <div className="text-[22px] font-extrabold text-text-strong">{title}</div>
-        <div className="text-[18px] text-text-muted font-semibold mt-1">{status}</div>
-      </div>
-    </div>
-    <button
-      onClick={onClick}
-      disabled={isPending}
-      className={`flex-none h-[54px] px-6 rounded-xl border-none text-[19px] font-extrabold ${
-        isPending
-          ? "bg-surface-page text-text-muted cursor-default"
-          : `cursor-pointer ${done ? "bg-surface-page text-text-tertiary" : "bg-brand text-white"}`
+}: ModuleItemLargeProps) => {
+  const isActive = !done && ready;
+
+  return (
+    <div
+      className={`bg-white rounded-2xl px-6 py-5 flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
+        isActive ? "border-[3px] border-brand" : ""
       }`}
     >
-      {isPending ? "확인 중" : done ? "확인" : "등록"}
-    </button>
-  </div>
-);
+      <div className="flex items-center gap-4 min-w-0">
+        <img src={icon} alt="" className="w-[52px] h-[52px] flex-none" />
+        <div className="min-w-0">
+          <div className="text-[17px] font-extrabold text-brand mb-1.5">
+            {index}. {category}
+          </div>
+          <div className="text-[22px] font-extrabold text-text-strong">{title}</div>
+          <div className="text-[18px] text-text-muted font-semibold mt-1">{status}</div>
+        </div>
+      </div>
+      {(done || ready) && (
+        <button
+          onClick={onClick}
+          disabled={isPending}
+          className={`w-full h-[58px] rounded-xl border-none text-[20px] font-extrabold ${
+            isPending
+              ? "bg-surface-page text-text-muted cursor-default"
+              : `cursor-pointer ${done ? "bg-surface-page text-text-tertiary" : "bg-brand text-white"}`
+          }`}
+        >
+          {isPending ? "확인 중" : done ? "확인" : "등록"}
+        </button>
+      )}
+    </div>
+  );
+};
 
 // 근무 기록 대시보드 큰글씨 버전 — 보통글씨 버전(ActivityDashboardPage.tsx + AppBar)과
 // 배경·카드·버튼 색/모서리/그림자는 완전히 동일하고 글자·아이콘·여백 크기만 키운
@@ -139,7 +145,9 @@ const ActivityDashboardPageLargeFont = ({
             </span>
           </div>
           <div className="text-[19px] text-text-tertiary font-semibold mt-2">
-            {formData.programName} · {formData.demandName}
+            {formData.programName}
+            <br />
+            {formData.demandName}
           </div>
         </div>
 
