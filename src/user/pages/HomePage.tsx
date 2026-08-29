@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 
-import { ALargeSmall, Building2, Settings } from "lucide-react";
+import { Building2, Settings } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
 
@@ -111,10 +111,10 @@ const HomePage = ({
               <div className="flex items-center gap-3.5">
                 <button
                   onClick={onToggleLargeFontMode}
-                  className="cursor-pointer"
-                  aria-label="큰글씨 보기"
+                  className="h-7 px-2.5 rounded-[12px] border border-border-default bg-white text-[11px] font-bold text-text-tertiary cursor-pointer"
+                  aria-label="큰글씨로 보기"
                 >
-                  <ALargeSmall size={18} color="#333d4b" strokeWidth={2.2} />
+                  큰글씨로
                 </button>
                 <button onClick={onOpenSettings} className="cursor-pointer" aria-label="설정">
                   <Settings size={16} color="#333d4b" strokeWidth={2.2} />
