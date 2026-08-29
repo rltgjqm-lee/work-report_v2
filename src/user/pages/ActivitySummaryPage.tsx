@@ -7,11 +7,13 @@ import { bodyClass, pageClass } from "../../components/atoms/classes";
 import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import Card from "../components/atoms/Card";
 import AppBar from "../components/molecule/AppBar";
+import ActivitySummaryPageLargeFont from "./ActivitySummaryPageLargeFont";
 
 interface ActivitySummaryPageProps {
   formData: ActivityLogFormData;
   onBack: () => void;
   onNext: () => void;
+  isLargeFontMode: boolean;
 }
 
 const SummaryRow = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
@@ -29,9 +31,18 @@ const SummaryRow = ({ icon, label, value }: { icon: string; label: string; value
  * — 오늘의 모듈별 기록을 요약해 보여주고 서명 페이지로 안내한다.
  * - 공익활동은 업무/안전 항목도 같이 보여주고, 역량활용은 출근/퇴근만 보여준다.
  */
-const ActivitySummaryPage = ({ formData, onBack, onNext }: ActivitySummaryPageProps) => {
+const ActivitySummaryPage = ({
+  formData,
+  onBack,
+  onNext,
+  isLargeFontMode,
+}: ActivitySummaryPageProps) => {
   const isCompetencyProgram = formData.programType === "역량 활용";
   const todayLabel = getLocalToday().replaceAll("-", ".");
+
+  if (isLargeFontMode) {
+    return <ActivitySummaryPageLargeFont formData={formData} onBack={onBack} onNext={onNext} />;
+  }
 
   return (
     <div className={pageClass}>

@@ -576,6 +576,7 @@ const Main = () => {
             formData={formData}
             onBack={() => setView(VIEW_TYPE.DASHBOARD)}
             onNext={() => setView(VIEW_TYPE.SIGNATURE)}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 
