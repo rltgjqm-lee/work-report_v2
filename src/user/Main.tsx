@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { App } from "@capacitor/app";
-
 import ConfirmModal from "../components/molecule/ConfirmModal";
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
 import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
@@ -125,29 +123,51 @@ const Main = () => {
   // 💡 앱을 켜면 누구나(첫 이용자 포함) 메인 페이지부터 본다.
   const [view, setView] = useState<View>(VIEW_TYPE.MAIN);
 
-  // 💡 안드로이드 하드웨어 뒤로가기 버튼 — 리스너를 등록 안 하면(또는 기본 동작 그대로
-  // 두면) 화면 내부 상태와 무관하게 앱이 바로 백그라운드로 넘어간다. VIEW_BACK_TARGET에
-  // 목적지가 있으면 그 화면으로 이동하고(각 페이지의 onBack 버튼과 동일한 목적지),
-  // 더 갈 곳이 없는 홈 화면에서만 원래 동작대로 앱을 백그라운드로 보낸다.
+  // 💡 안드로이드 하드웨어 뒤로가기 버튼 — Capacitor의 기본 동작은 WebView 히스토리에
+  // 쌓인 엔트리가 있으면 그걸 따라가고(popstate 발생), 없으면 바로 앱을 백그라운드로
+  // 보낸다. 이 앱은 라우팅 없이 view state만으로 화면을 바꿔서 히스토리 엔트리가 전혀
+  // 안 쌓이다 보니 어느 화면에서 눌러도 즉시 백그라운드로 넘어갔다. 네이티브 플러그인
+  // (@capacitor/app의 backButton 이벤트) 없이, 화면이 MAIN을 벗어날 때만 더미
+  // 히스토리 엔트리를 하나 쌓아 popstate가 발생하게 만들고, MAIN으로 돌아올 때 그
+  // 엔트리를 회수한다 — 순수 JS라 OTA로도 반영된다.
   // effect를 view가 바뀔 때마다 다시 등록하지 않도록 ref로 최신 view를 읽는다.
   const viewRef = useRef(view);
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
 
+  const previousViewRef = useRef<View>(view);
+  const isHandlingPopStateRef = useRef(false);
+
   useEffect(() => {
-    const listenerPromise = App.addListener("backButton", () => {
+    const wasMain = previousViewRef.current === VIEW_TYPE.MAIN;
+    const isMain = view === VIEW_TYPE.MAIN;
+
+    if (!isHandlingPopStateRef.current) {
+      if (wasMain && !isMain) {
+        // MAIN을 벗어남 — 더미 엔트리를 쌓아 다음 뒤로가기가 popstate를 발생시키게 한다.
+        window.history.pushState({ appView: true }, "");
+      } else if (!wasMain && isMain) {
+        // MAIN으로 돌아옴(뒤로가기가 아닌 다른 경로) — 쌓아둔 더미 엔트리를 회수한다.
+        // 이때 발생하는 popstate는 view가 이미 MAIN이라 아래 핸들러에서 그냥 무시된다.
+        window.history.back();
+      }
+    }
+    isHandlingPopStateRef.current = false;
+    previousViewRef.current = view;
+  }, [view]);
+
+  useEffect(() => {
+    const handlePopState = () => {
       const target = VIEW_BACK_TARGET[viewRef.current];
       if (target) {
+        isHandlingPopStateRef.current = true;
         setView(target);
-      } else {
-        App.minimizeApp();
       }
-    });
-
-    return () => {
-      listenerPromise.then((listener) => listener.remove());
     };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   // 모달 상태
