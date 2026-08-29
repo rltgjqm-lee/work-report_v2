@@ -485,7 +485,6 @@ const Main = () => {
               setView(formData.userName ? VIEW_TYPE.REGISTRATION_CONFIRM : VIEW_TYPE.AFFILIATION);
             }}
             onOpenSettings={() => setView(VIEW_TYPE.SETTINGS)}
-            isLargeFontMode={isLargeFontMode}
             onToggleLargeFontMode={handleLargeFontModeToggle}
           />
         )}

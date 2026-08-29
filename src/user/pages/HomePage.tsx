@@ -9,7 +9,6 @@ import SosConfirmModal from "../components/molecule/SosConfirmModal";
 import SosIdentificationRequiredModal from "../components/molecule/SosIdentificationRequiredModal";
 import SosUnavailableModal from "../components/molecule/SosUnavailableModal";
 import { computeTodayWorkCardStatus, type TodayStatus } from "../utils/todayWorkStatus";
-import HomePageLargeFont from "./HomePageLargeFont";
 
 interface HomePageProps {
   formData: ActivityLogFormData;
@@ -17,7 +16,6 @@ interface HomePageProps {
   onOpenAffiliation: () => void;
   onStartActivityLog: () => void;
   onOpenSettings: () => void;
-  isLargeFontMode: boolean;
   onToggleLargeFontMode: () => void;
 }
 
@@ -42,7 +40,6 @@ const HomePage = ({
   onOpenAffiliation,
   onStartActivityLog,
   onOpenSettings,
-  isLargeFontMode,
   onToggleLargeFontMode,
 }: HomePageProps) => {
   const [isSosConfirmModalOpen, setIsSosConfirmModalOpen] = useState(false);
@@ -84,17 +81,6 @@ const HomePage = ({
 
   return (
     <>
-      {isLargeFontMode ? (
-        <HomePageLargeFont
-          formData={formData}
-          todayStatus={todayStatus}
-          onOpenAffiliation={onOpenAffiliation}
-          onStartActivityLog={onStartActivityLog}
-          onOpenSettings={onOpenSettings}
-          onSosButtonClick={handleSosButtonClick}
-          onExitLargeFontButtonClick={onToggleLargeFontMode}
-        />
-      ) : (
         <div
           className="flex flex-col h-full min-h-0 flex-1 overflow-y-auto"
           style={{ background: "linear-gradient(180deg,#eaf2ff 0%,#f2f4f6 min(320px,60vh))" }}
@@ -167,7 +153,6 @@ const HomePage = ({
             <div className="flex-1 min-h-[24px]" />
           </div>
         </div>
-      )}
 
       {isSosConfirmModalOpen && (
         <SosConfirmModal onSend={handleSosSend} onCancel={handleSosCancel} />
