@@ -138,6 +138,29 @@ const Main = () => {
     locationConsentAt: string | null;
   } | null>(null);
 
+  // 💡 홈 화면에서 켜는 큰글씨 모드 — 설정 화면 등 다른 화면도 같은 값을 봐야 해서
+  // (홈에서 켜면 설정으로 이동해도 자동으로 큰글씨여야 함) 화면별로 각자 들고 있지 않고
+  // 여기(Main)에서 소유해 내려준다.
+  const [isLargeFontMode, setIsLargeFontMode] = useState(() => {
+    try {
+      return localStorage.getItem(LOCAL_STORAGE_KEYS.LARGE_FONT_MODE) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleLargeFontModeToggle = () => {
+    setIsLargeFontMode((previous) => {
+      const next = !previous;
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.LARGE_FONT_MODE, String(next));
+      } catch {
+        // localStorage 접근 불가(프라이빗 모드 등)여도 화면 전환 자체는 계속 동작해야 한다.
+      }
+      return next;
+    });
+  };
+
   // functions
   // 💡 "확인" 누를 때까지 기다렸다가 다음 동작(예: 저장 후 홈 이동)을 이어가야 하는
   // 곳(handleStepDataSave)이 있어서, 모달을 네이티브 alert()처럼 await 가능하게
@@ -462,6 +485,8 @@ const Main = () => {
               setView(formData.userName ? VIEW_TYPE.REGISTRATION_CONFIRM : VIEW_TYPE.AFFILIATION);
             }}
             onOpenSettings={() => setView(VIEW_TYPE.SETTINGS)}
+            isLargeFontMode={isLargeFontMode}
+            onToggleLargeFontMode={handleLargeFontModeToggle}
           />
         )}
 
@@ -513,6 +538,7 @@ const Main = () => {
             todayStatus={todayStatus}
             participantId={formData.participantId}
             onBack={() => setView(VIEW_TYPE.MAIN)}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 

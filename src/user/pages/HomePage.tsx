@@ -2,7 +2,6 @@ import { useState, type ReactNode } from "react";
 
 import { ALargeSmall, Building2, Settings } from "lucide-react";
 
-import { LOCAL_STORAGE_KEYS } from "../../constants/storage";
 import type { ActivityLogFormData } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
@@ -18,6 +17,8 @@ interface HomePageProps {
   onOpenAffiliation: () => void;
   onStartActivityLog: () => void;
   onOpenSettings: () => void;
+  isLargeFontMode: boolean;
+  onToggleLargeFontMode: () => void;
 }
 
 interface HomeActionCardProps {
@@ -32,14 +33,6 @@ interface TodayWorkCardProps {
   todayStatus: TodayStatus | null;
 }
 
-const readLargeFontModePreference = () => {
-  try {
-    return localStorage.getItem(LOCAL_STORAGE_KEYS.LARGE_FONT_MODE) === "true";
-  } catch {
-    return false;
-  }
-};
-
 /**
  * 앱 메인 페이지
  */
@@ -49,11 +42,12 @@ const HomePage = ({
   onOpenAffiliation,
   onStartActivityLog,
   onOpenSettings,
+  isLargeFontMode,
+  onToggleLargeFontMode,
 }: HomePageProps) => {
   const [isSosConfirmModalOpen, setIsSosConfirmModalOpen] = useState(false);
   const [isSosIdentificationModalOpen, setIsSosIdentificationModalOpen] = useState(false);
   const [isSosUnavailableModalOpen, setIsSosUnavailableModalOpen] = useState(false);
-  const [isLargeFontMode, setIsLargeFontMode] = useState(readLargeFontModePreference);
 
   // participantId는 있지만 서버 응답 전(로딩 중)엔 근무일로 가정한다(TodayWorkCard와 동일 기준).
   const isWorkDay = todayStatus?.isWorkDay ?? true;
@@ -88,18 +82,6 @@ const HomePage = ({
     setIsSosConfirmModalOpen(false);
   };
 
-  const handleLargeFontToggleButtonClick = () => {
-    setIsLargeFontMode((previous) => {
-      const next = !previous;
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.LARGE_FONT_MODE, String(next));
-      } catch {
-        // localStorage 접근 불가(프라이빗 모드 등)여도 화면 전환 자체는 계속 동작해야 한다.
-      }
-      return next;
-    });
-  };
-
   return (
     <>
       {isLargeFontMode ? (
@@ -110,7 +92,7 @@ const HomePage = ({
           onStartActivityLog={onStartActivityLog}
           onOpenSettings={onOpenSettings}
           onSosButtonClick={handleSosButtonClick}
-          onExitLargeFontButtonClick={handleLargeFontToggleButtonClick}
+          onExitLargeFontButtonClick={onToggleLargeFontMode}
         />
       ) : (
         <div
@@ -128,7 +110,7 @@ const HomePage = ({
 
               <div className="flex items-center gap-3.5">
                 <button
-                  onClick={handleLargeFontToggleButtonClick}
+                  onClick={onToggleLargeFontMode}
                   className="cursor-pointer"
                   aria-label="큰글씨 보기"
                 >
