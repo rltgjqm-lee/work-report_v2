@@ -157,7 +157,7 @@ const PrimaryActionCardLarge = ({
       </span>
     </div>
     {ctaLabel ? (
-      <span className="self-end mt-4 px-6 py-3 rounded-full bg-white text-brand text-[16px] font-extrabold">
+      <span className="self-end mt-4 px-4 py-2 rounded-full bg-white text-brand text-[14px] font-extrabold">
         {ctaLabel}
       </span>
     ) : (
@@ -267,8 +267,9 @@ const HomePageLargeFont = ({
           <>
             <PrimaryActionCardLarge
               onClick={onStartActivityLog}
-              title="활동일지 시작"
+              title="활동일지"
               subtitle="오늘의 출근부터, 차례대로 기록해요"
+              ctaLabel="기록"
             />
             <SecondaryLinkRowLarge
               icon={
