@@ -16,14 +16,6 @@ interface HomePageLargeFontProps {
   onSosButtonClick: () => void;
 }
 
-interface HomeActionCardLargeProps {
-  onClick: () => void;
-  iconSrc: string;
-  title: string;
-  description: ReactNode;
-  primary?: boolean;
-}
-
 const StatusPillLarge = ({ label, active }: { label: string; active: boolean }) => (
   <div
     className={`flex items-center gap-1.5 text-[14px] font-bold px-3.5 py-1.5 rounded-full flex-none ${
@@ -48,16 +40,7 @@ const TodayWorkCardLarge = ({
   const status = computeTodayWorkCardStatus(formData, todayStatus);
 
   if (status.kind === "noUserName") {
-    return (
-      <div className={cardLargeClass}>
-        <div className="text-[16px] font-bold text-text-muted mb-1.5">오늘의 근무</div>
-        <div className="text-[18px] text-text-tertiary font-semibold leading-[1.6]">
-          기본정보를 등록하면
-          <br />
-          오늘의 근무 상태를 보여드려요
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (status.kind === "noParticipantId") {
@@ -148,87 +131,82 @@ const TodayWorkCardLarge = ({
   );
 };
 
-const HomeActionCardLarge = ({
+const PrimaryActionCardLarge = ({
   onClick,
-  iconSrc,
   title,
-  description,
-  primary,
-}: HomeActionCardLargeProps) => {
-  if (primary) {
-    return (
-      <button
-        onClick={onClick}
-        className="w-full min-w-0 bg-white rounded-[20px] px-[20px] py-[16px] flex items-center gap-5 text-left cursor-pointer shadow-[0_8px_20px_rgba(20,30,60,.06)]"
-      >
-        <img
-          src={iconSrc}
-          className="w-[clamp(55px,13vw,90px)] h-[clamp(55px,13vw,90px)] object-contain flex-none"
-          alt=""
-        />
-        <div className="min-w-0">
-          <span className="block text-[clamp(22px,6vw,25px)] font-extrabold text-text-strong leading-[1.25] break-keep">
-            {title}
-          </span>
-          <span className="block text-[clamp(16px,4.3vw,18px)] text-text-muted font-medium leading-[1.5] mt-2 break-keep">
-            {description}
-          </span>
-        </div>
-      </button>
-    );
-  }
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex-1 min-w-0 bg-white rounded-[20px] px-[clamp(18px,5.9vw,23px)] py-[clamp(23px,7.2vw,29px)] flex flex-col items-start text-left cursor-pointer shadow-[0_8px_20px_rgba(20,30,60,.06)]"
-    >
-      <img
-        src={iconSrc}
-        className="w-[clamp(55px,13vw,100px)] h-[clamp(55px,13vw,100px)] object-contain mb-[clamp(16px,5.2vw,23px)]"
-        alt=""
-      />
-      <span className="text-[clamp(21px,5.7vw,23px)] font-extrabold text-text-strong leading-[1.25] break-keep">
+  subtitle,
+  ctaLabel,
+}: {
+  onClick: () => void;
+  title: string;
+  subtitle: string;
+  ctaLabel?: string;
+}) => (
+  <button
+    onClick={onClick}
+    className={`w-full min-w-0 bg-brand rounded-[16px] px-[20px] py-[16px] text-left cursor-pointer shadow-[0_8px_20px_rgba(49,130,246,.25)] ${
+      ctaLabel ? "flex flex-col items-start" : "flex items-center justify-between gap-3"
+    }`}
+  >
+    <div className="flex flex-col items-start min-w-0">
+      <span className="text-[clamp(23px,6.2vw,26px)] font-extrabold text-white leading-[1.25] break-keep">
         {title}
       </span>
-      <span className="text-[clamp(16px,4.3vw,18px)] text-text-muted font-medium leading-[1.5] mt-3 break-keep">
-        {description}
+      <span className="mt-1.5 text-[15px] text-white/80 font-semibold leading-[1.5] break-keep">
+        {subtitle}
       </span>
-    </button>
-  );
-};
+    </div>
+    {ctaLabel ? (
+      <span className="self-end mt-4 px-6 py-3 rounded-full bg-white text-brand text-[16px] font-extrabold">
+        {ctaLabel}
+      </span>
+    ) : (
+      <ChevronRight size={20} color="#ffffff" strokeWidth={2.2} className="flex-none" />
+    )}
+  </button>
+);
 
 const SecondaryLinkRowLarge = ({
   icon,
   label,
+  description,
   onClick,
+  tone = "default",
+  chevron = true,
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
   label: string;
+  description?: string;
   onClick: () => void;
+  tone?: "default" | "danger";
+  chevron?: boolean;
 }) => (
   <button
     onClick={onClick}
-    className="w-full bg-white rounded-[16px] px-[20px] py-[16px] flex items-center gap-[16px] cursor-pointer shadow-[0_2px_8px_rgba(20,30,50,.05)]"
+    className="w-full rounded-[16px] px-[20px] py-[16px] flex items-center gap-[16px] cursor-pointer bg-white shadow-[0_2px_8px_rgba(20,30,50,.05)]"
   >
     {icon}
-    <span className="flex-1 text-[18px] font-extrabold text-text-strong text-left">{label}</span>
-    <ChevronRight size={20} color="#9ca3af" strokeWidth={2.2} />
-  </button>
-);
-
-const SosButtonLarge = ({ onClick }: { onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className="w-full rounded-[12px] px-[20px] py-[16px] flex flex-col items-center justify-center bg-white cursor-pointer shadow-[0_2px_8px_rgba(20,30,50,.05)]"
-  >
-    <div className="flex items-center gap-2.5">
-      <span className="text-[26px] leading-none">🚨</span>
-      <span className="text-[21px] font-extrabold tracking-[0.02em] text-text-tertiary">
-        SOS 긴급 도움 요청
+    <div className="flex-1 min-w-0 text-left">
+      <span
+        className={`block text-[18px] font-extrabold ${
+          tone === "danger" ? "text-danger-text-strong" : "text-text-strong"
+        }`}
+      >
+        {label}
       </span>
+      {description && (
+        <span className="block text-[14px] text-[#45474A] font-normal mt-1 break-keep">
+          {description}
+        </span>
+      )}
     </div>
-    <span className="text-[15px] font-semibold text-text-muted">위급 시에 버튼을 눌러주세요</span>
+    {chevron && (
+      <ChevronRight
+        size={20}
+        color={tone === "danger" ? "#b91c1c" : "#9ca3af"}
+        strokeWidth={2.2}
+      />
+    )}
   </button>
 );
 
@@ -272,12 +250,12 @@ const HomePageLargeFont = ({
       </div>
     </div>
 
-    <div className="flex-1 flex flex-col px-[16px] pt-0 pb-[20px]">
+    <div className="flex-1 flex flex-col px-[16px] pt-[8px] pb-[20px]">
       <div className="mb-[clamp(26px,7.8vw,36px)] pl-[4px]">
         <div className="text-left text-[clamp(25px,7vw,29px)] font-extrabold text-text-strong">
           {formData.userName ? `${formData.userName}님, 안녕하세요` : "참여자님, 안녕하세요"}
         </div>
-        <div className="text-left text-[clamp(17px,4.7vw,18px)] text-text-muted font-semibold mt-1.5">
+        <div className="text-left text-[clamp(17px,4.7vw,18px)] text-text-strong font-semibold mt-1.5">
           오늘의 활동일지를 기록해볼까요?
         </div>
       </div>
@@ -287,25 +265,17 @@ const HomePageLargeFont = ({
 
         {formData.userName ? (
           <>
-            <HomeActionCardLarge
+            <PrimaryActionCardLarge
               onClick={onStartActivityLog}
-              iconSrc="/icons/icon-start-log.png"
               title="활동일지 시작"
-              description={
-                <>
-                  오늘의 출근부터,
-                  <br />
-                  차례로 기록하기
-                </>
-              }
-              primary
+              subtitle="오늘의 출근부터, 차례대로 기록해요"
             />
             <SecondaryLinkRowLarge
               icon={
                 <img
                   src="/icons/icon-basic-info.png"
                   alt=""
-                  className="w-10 h-10 object-contain flex-none"
+                  className="w-[46px] h-[46px] object-contain flex-none"
                 />
               }
               label="기본정보 수정"
@@ -314,34 +284,40 @@ const HomePageLargeFont = ({
           </>
         ) : (
           <>
-            <HomeActionCardLarge
+            <PrimaryActionCardLarge
               onClick={onOpenAffiliation}
-              iconSrc="/icons/icon-basic-info.png"
               title="기본정보 등록"
-              description={
-                <>
-                  사업단 배정 전,
-                  <br />
-                  가장 먼저 등록하기
-                </>
-              }
-              primary
+              subtitle="처음 한 번만, 내 정보를 등록해요"
+              ctaLabel="시작"
             />
             <SecondaryLinkRowLarge
               icon={
                 <img
                   src="/icons/icon-start-log.png"
                   alt=""
-                  className="w-10 h-10 object-contain flex-none"
+                  className="w-[46px] h-[46px] object-contain flex-none"
                 />
               }
               label="활동일지 시작"
+              description="오늘의 출근부터, 차례대로 기록해요"
               onClick={onStartActivityLog}
+              chevron={false}
             />
           </>
         )}
 
-        <SosButtonLarge onClick={onSosButtonClick} />
+        <SecondaryLinkRowLarge
+          icon={
+            <span className="w-[46px] h-[46px] rounded-[13px] bg-danger-tint flex items-center justify-center text-[26px] leading-none flex-none">
+              🚨
+            </span>
+          }
+          label="SOS 긴급 도움 요청"
+          description="위급 시에 버튼을 눌러주세요"
+          onClick={onSosButtonClick}
+          tone="danger"
+          chevron={false}
+        />
       </div>
 
       <div className="flex-1 min-h-[24px]" />

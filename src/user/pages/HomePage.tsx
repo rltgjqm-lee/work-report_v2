@@ -159,9 +159,8 @@ const HomePage = ({
                 title="기본정보 등록"
                 description={
                   <>
-                    사업단 배정 전,
-                    <br />
-                    가장 먼저 등록하기
+                    처음 한 번만,
+                    <br />내 정보를 등록해요
                   </>
                 }
               />
@@ -216,16 +215,7 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
   const status = computeTodayWorkCardStatus(formData, todayStatus);
 
   if (status.kind === "noUserName") {
-    return (
-      <div className={cardClass}>
-        <div className="text-[12.5px] font-bold text-text-muted mb-1">오늘의 근무</div>
-        <div className="text-[14px] text-text-tertiary font-semibold leading-[1.6]">
-          기본정보를 등록하면
-          <br />
-          오늘의 근무 상태를 보여드려요
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (status.kind === "noParticipantId") {
