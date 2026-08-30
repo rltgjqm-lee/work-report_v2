@@ -310,7 +310,7 @@ const HomePageLargeFont = ({
 
         <SecondaryLinkRowLarge
           icon={
-            <span className="w-[46px] h-[46px] rounded-[13px] bg-danger-tint flex items-center justify-center text-[26px] leading-none flex-none">
+            <span className="w-[46px] h-[46px] rounded-[13px] bg-danger-tint flex items-center justify-center text-[22px] leading-none flex-none">
               🚨
             </span>
           }
