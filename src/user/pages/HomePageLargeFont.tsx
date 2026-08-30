@@ -73,8 +73,8 @@ const TodayWorkCardLarge = ({
     <div className={cardLargeClass}>
       <div className="flex flex-col gap-[12px] text-left">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[16px] font-bold text-text-muted">오늘의 근무</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-[16px] font-medium text-text-subtitle">오늘의 근무</span>
             <span className="text-[clamp(20px,5.5vw,21px)] font-extrabold text-text-strong">
               {dateLabel}
             </span>
@@ -102,7 +102,7 @@ const TodayWorkCardLarge = ({
         ) : (
           <div className="rounded-[14px] bg-[#f7f9fb] overflow-hidden">
             <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
-              <span className="text-[15px] font-semibold text-text-muted">근무 시간</span>
+              <span className="text-[15px] font-semibold text-text-subtitle">근무 시간</span>
               <span className="text-[clamp(17px,4.7vw,19px)] font-bold text-text-strong">
                 {shiftLabel}
               </span>
@@ -111,7 +111,7 @@ const TodayWorkCardLarge = ({
             <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
               <span
                 className={`text-[15px] font-semibold ${
-                  isLogComplete ? "text-green" : "text-text-muted"
+                  isLogComplete ? "text-green" : "text-text-subtitle"
                 }`}
               >
                 오늘 일지 {completedLogSteps}/{totalLogSteps}
@@ -195,7 +195,7 @@ const SecondaryLinkRowLarge = ({
         {label}
       </span>
       {description && (
-        <span className="block text-[14px] text-[#45474A] font-normal mt-1 break-keep">
+        <span className="block text-[14px] text-text-subtitle font-normal mt-1 break-keep">
           {description}
         </span>
       )}
@@ -255,7 +255,7 @@ const HomePageLargeFont = ({
         <div className="text-left text-[clamp(25px,7vw,29px)] font-extrabold text-text-strong">
           {formData.userName ? `${formData.userName}님, 안녕하세요` : "참여자님, 안녕하세요"}
         </div>
-        <div className="text-left text-[clamp(17px,4.7vw,18px)] text-text-strong font-semibold mt-1.5">
+        <div className="text-left text-[clamp(17px,4.7vw,18px)] text-text-subtitle font-medium mt-1">
           오늘의 활동일지를 기록해볼까요?
         </div>
       </div>
@@ -279,7 +279,9 @@ const HomePageLargeFont = ({
                 />
               }
               label="기본정보 수정"
+              description="등록한 내 정보를 확인하고 수정해요"
               onClick={onOpenAffiliation}
+              chevron={false}
             />
           </>
         ) : (
