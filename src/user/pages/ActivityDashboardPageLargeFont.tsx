@@ -37,7 +37,6 @@ interface ActivityDashboardPageLargeFontProps {
 const ModuleItemLarge = ({
   index,
   icon,
-  category,
   title,
   status,
   done,
@@ -56,10 +55,9 @@ const ModuleItemLarge = ({
       <div className="flex items-center gap-4 min-w-0">
         <img src={icon} alt="" className="w-[52px] h-[52px] flex-none" />
         <div className="min-w-0">
-          <div className="text-[17px] font-extrabold text-brand mb-1.5">
-            {index}. {category}
+          <div className="text-[22px] font-extrabold text-text-strong">
+            {index}. {title}
           </div>
-          <div className="text-[22px] font-extrabold text-text-strong">{title}</div>
           <div className="text-[18px] text-text-muted font-semibold mt-1">{status}</div>
         </div>
       </div>
