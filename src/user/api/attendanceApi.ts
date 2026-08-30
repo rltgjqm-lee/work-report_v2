@@ -24,28 +24,6 @@ const request = async <T>(path: string, body: object): Promise<T> => {
   return res.json();
 };
 
-// 참여자 앱에서 "테스트용 날짜/시간" 패널을 실서버에서도 통합관리자에게만 보여주기
-// 위한 체크 — 관리자 세션 쿠키가 없거나 만료됐으면 조용히 null을 돌려준다.
-const getCurrentAdminRole = async (): Promise<string | null> => {
-  try {
-    const res = await fetch(`${BASE_URL}/api/me`, { credentials: "include" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { role?: string };
-    return data.role ?? null;
-  } catch {
-    return null;
-  }
-};
-
-const adminRoleKeys = {
-  all: ["admin-role"] as const,
-};
-
-export const adminRoleQueryOptions = queryOptions({
-  queryKey: adminRoleKeys.all,
-  queryFn: getCurrentAdminRole,
-});
-
 export type TodayAttendance = {
   clockIn: string | null;
   clockOut: string | null;

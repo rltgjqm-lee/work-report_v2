@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
 import { programTypeShortLabel } from "../../types/form";
@@ -8,7 +8,6 @@ import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
 import { bodyClass, pageClass } from "../../components/atoms/classes";
 
 import {
-  adminRoleQueryOptions,
   ClockInError,
   clockInMutationOptions,
   ClockOutError,
@@ -126,11 +125,8 @@ const ActivityDashboardPage = ({
   const isCompetencyProgram = formData.programType === "역량 활용";
 
   // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 테스트하기 위한 override(Main이
-  // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에선 항상
-  // 보이고, 실서버에서는 통합관리자(SUPER_ADMIN)만 패널을 보여준다. 서버도 localhost
-  // 요청이거나 통합관리자 세션일 때만 실제로 반영한다.
-  const { data: adminRole } = useQuery(adminRoleQueryOptions);
-  const isSuperAdmin = adminRole === "SUPER_ADMIN";
+  // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에서만 보인다.
+  // 서버도 localhost 요청일 때만 실제로 반영한다.
 
   // 💡 출근 등록은 별도 페이지 없이 즉시 서버에 기록하고 컨펌 모달로 결과만 보여준다.
   // setFormData 직후 곧바로 onSave()를 부르면 onSave가 아직 갱신 전 formData를 클로저로
@@ -495,7 +491,7 @@ const ActivityDashboardPage = ({
           formData={formData}
           todayLabel={todayLabel}
           notificationsBlocked={notificationsBlocked}
-          isDebugPanelVisible={import.meta.env.DEV || isSuperAdmin}
+          isDebugPanelVisible={import.meta.env.DEV}
           debugDate={debugDate}
           setDebugDate={setDebugDate}
           debugTime={debugTime}
@@ -578,7 +574,7 @@ const ActivityDashboardPage = ({
           </div>
         )}
 
-        {(import.meta.env.DEV || isSuperAdmin) && (
+        {import.meta.env.DEV && (
           <div className="bg-badge-bg rounded-2xl px-[18px] py-3.5 flex items-center gap-3 border border-badge-border">
             <span className="text-[13px] font-extrabold text-caution-text flex-none">
               🧪 테스트용 날짜/시간
