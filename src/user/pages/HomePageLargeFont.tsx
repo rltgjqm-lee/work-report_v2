@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Building2, ChevronRight, Settings } from "lucide-react";
+import { Building2, ChevronRight } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
 
@@ -88,7 +88,7 @@ const TodayWorkCardLarge = ({
 
   return (
     <div className={cardLargeClass}>
-      <div className="flex flex-col gap-[clamp(15px,4.5vw,18px)] text-left">
+      <div className="flex flex-col gap-[12px] text-left">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-1.5">
             <span className="text-[16px] font-bold text-text-muted">오늘의 근무</span>
@@ -117,18 +117,15 @@ const TodayWorkCardLarge = ({
             오늘은 근무일이 아니에요
           </div>
         ) : (
-          <div className="flex flex-col gap-[clamp(10px,3.9vw,13px)]">
-            <div className="bg-[#f7f9fb] rounded-[14px] px-[clamp(16px,5.2vw,21px)] py-[clamp(11px,3.3vw,13px)] flex items-center justify-between gap-3">
+          <div className="rounded-[14px] bg-[#f7f9fb] overflow-hidden">
+            <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
               <span className="text-[15px] font-semibold text-text-muted">근무 시간</span>
               <span className="text-[clamp(17px,4.7vw,19px)] font-bold text-text-strong">
                 {shiftLabel}
               </span>
             </div>
-            <div
-              className={`rounded-[14px] px-[clamp(16px,5.2vw,21px)] py-[clamp(11px,3.3vw,13px)] flex items-center justify-between gap-3 ${
-                isLogComplete ? "bg-green-tint" : "bg-[#f7f9fb]"
-              }`}
-            >
+            <div className="border-t border-white" />
+            <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
               <span
                 className={`text-[15px] font-semibold ${
                   isLogComplete ? "text-green" : "text-text-muted"
@@ -250,28 +247,32 @@ const HomePageLargeFont = ({
   onSosButtonClick,
 }: HomePageLargeFontProps) => (
   <div className="flex flex-col bg-surface-page h-full min-h-0 flex-1 overflow-y-auto">
-    <div className="flex-none sticky top-0 z-10 flex items-center justify-between gap-2 px-[16px] py-[10px] bg-white border-b border-surface-page">
+    <div className="flex-none sticky top-0 z-10 flex items-center justify-between gap-2 px-[16px] py-[10px] bg-surface-page">
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">
-          <img src="/icons/app-icon-64.png" alt="" className="w-6 h-6 rounded-[7px]" />
-          <p className="text-[14px] font-extrabold tracking-[1.2px] text-text-tertiary">
-            WORK SAFE
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-center h-[44px] p-1 gap-1 rounded-[12px] bg-surface-page border border-border-default">
           <button
             onClick={onToggleLargeFontMode}
-            className="h-[44px] px-3.5 rounded-[12px] border border-border-default bg-white text-[13px] font-bold text-text-tertiary cursor-pointer"
-            aria-label="보통글씨로 보기"
+            className="h-full px-3.5 rounded-[9px] text-[13px] font-bold text-text-muted cursor-pointer"
+            aria-label="보통 글씨로 보기"
           >
-            보통글씨로
+            기본
           </button>
+          <span className="h-full px-3.5 rounded-[9px] bg-white shadow-[0_1px_2px_rgba(20,30,50,0.08)] text-[13px] font-bold text-text-strong flex items-center">
+            큰 글씨
+          </span>
         </div>
+
+        <button
+          onClick={onOpenSettings}
+          className="h-[44px] px-2 flex items-center justify-center text-[15px] font-bold text-text-strong cursor-pointer"
+          aria-label="설정"
+        >
+          설정
+        </button>
       </div>
     </div>
 
-    <div className="flex-1 flex flex-col px-[16px] py-[20px]">
+    <div className="flex-1 flex flex-col px-[16px] pt-0 pb-[20px]">
       <div className="mb-[clamp(26px,7.8vw,36px)] pl-[4px]">
         <div className="text-left text-[clamp(25px,7vw,29px)] font-extrabold text-text-strong">
           {formData.userName ? `${formData.userName}님, 안녕하세요` : "참여자님, 안녕하세요"}
@@ -281,7 +282,7 @@ const HomePageLargeFont = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-[16px]">
+      <div className="flex flex-col gap-[12px]">
         <TodayWorkCardLarge formData={formData} todayStatus={todayStatus} />
 
         {formData.userName ? (
@@ -310,15 +311,6 @@ const HomePageLargeFont = ({
               label="기본정보 수정"
               onClick={onOpenAffiliation}
             />
-            <SecondaryLinkRowLarge
-              icon={
-                <div className="w-10 h-10 rounded-[10px] bg-surface-page flex items-center justify-center flex-none">
-                  <Settings size={22} color="#4e5968" strokeWidth={2.2} />
-                </div>
-              }
-              label="설정"
-              onClick={onOpenSettings}
-            />
           </>
         ) : (
           <>
@@ -345,15 +337,6 @@ const HomePageLargeFont = ({
               }
               label="활동일지 시작"
               onClick={onStartActivityLog}
-            />
-            <SecondaryLinkRowLarge
-              icon={
-                <div className="w-10 h-10 rounded-[10px] bg-surface-page flex items-center justify-center flex-none">
-                  <Settings size={22} color="#4e5968" strokeWidth={2.2} />
-                </div>
-              }
-              label="설정"
-              onClick={onOpenSettings}
             />
           </>
         )}
