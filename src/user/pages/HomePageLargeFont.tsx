@@ -250,11 +250,11 @@ const HomePageLargeFont = ({
   onSosButtonClick,
 }: HomePageLargeFontProps) => (
   <div className="flex flex-col bg-surface-page h-full min-h-0 flex-1 overflow-y-auto">
-    <div className="h-[76px] flex-none sticky top-0 z-10 flex items-center justify-between gap-2 px-[20px] bg-white border-b border-surface-page">
+    <div className="flex-none sticky top-0 z-10 flex items-center justify-between gap-2 px-[16px] py-[10px] bg-white border-b border-surface-page">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2">
-          <img src="/icons/app-icon-64.png" alt="" className="w-7 h-7 rounded-[8px]" />
-          <p className="text-[clamp(16px,4vw,17px)] font-extrabold tracking-[1.2px] text-text-tertiary">
+          <img src="/icons/app-icon-64.png" alt="" className="w-6 h-6 rounded-[7px]" />
+          <p className="text-[14px] font-extrabold tracking-[1.2px] text-text-tertiary">
             WORK SAFE
           </p>
         </div>
@@ -262,7 +262,7 @@ const HomePageLargeFont = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleLargeFontMode}
-            className="h-9 px-3.5 rounded-[12px] border border-border-default bg-white text-[14px] font-bold text-text-tertiary cursor-pointer"
+            className="h-[44px] px-3.5 rounded-[12px] border border-border-default bg-white text-[13px] font-bold text-text-tertiary cursor-pointer"
             aria-label="보통글씨로 보기"
           >
             보통글씨로
