@@ -49,7 +49,7 @@ const ModuleItemLarge = ({
 
   return (
     <div
-      className={`bg-white rounded-2xl px-6 py-5 flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
+      className={`bg-white rounded-2xl px-[20px] py-[16px] flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
         isActive ? "border-[3px] border-brand" : ""
       }`}
     >
@@ -107,31 +107,31 @@ const ActivityDashboardPageLargeFont = ({
 
   return (
     <div className="flex flex-col bg-surface-page h-full min-h-0 flex-1 overflow-y-auto">
-      <div className="flex-none sticky top-0 z-10 flex items-center gap-2.5 px-[22px] py-3 bg-white border-b border-surface-page">
+      <div className="flex-none sticky top-0 z-10 flex items-center gap-2 px-[16px] py-[10px] bg-white border-b border-surface-page">
         <button
           onClick={onHome}
-          className="w-14 h-14 rounded-xl bg-surface-page border-none flex items-center justify-center flex-none cursor-pointer"
+          className="w-[44px] h-[44px] rounded-xl bg-surface-page border-none flex items-center justify-center flex-none cursor-pointer"
           aria-label="홈으로"
         >
-          <Home size={26} color="#333d4b" strokeWidth={2.2} />
+          <Home size={22} color="#333d4b" strokeWidth={2.2} />
         </button>
-        <span className="flex-1 text-center text-[24px] font-extrabold text-text-strong">
+        <span className="flex-1 text-center text-[20px] font-extrabold text-text-strong">
           근무 기록
         </span>
         {formData.participantId ? (
           <button
             onClick={() => setIsSosModalOpen(true)}
-            className="w-14 h-14 rounded-xl bg-danger-tint border-none flex items-center justify-center flex-none cursor-pointer"
+            className="w-[44px] h-[44px] rounded-xl bg-danger-tint border-none flex items-center justify-center flex-none cursor-pointer"
             aria-label="SOS 긴급 도움 요청"
           >
-            <span className="text-[24px] leading-none">🚨</span>
+            <span className="text-[20px] leading-none">🚨</span>
           </button>
         ) : (
-          <span className="w-14 flex-none" />
+          <span className="w-[44px] flex-none" />
         )}
       </div>
 
-      <div className="px-5 pt-5 pb-6 flex-1 flex flex-col gap-5">
+      <div className="px-[16px] py-[20px] flex-1 flex flex-col gap-5">
         <div className="bg-white rounded-[20px] px-7 py-6 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
           <div className="text-[17px] text-text-muted font-bold mb-5">
             {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요

@@ -9,6 +9,7 @@ import SosConfirmModal from "../components/molecule/SosConfirmModal";
 import SosIdentificationRequiredModal from "../components/molecule/SosIdentificationRequiredModal";
 import SosUnavailableModal from "../components/molecule/SosUnavailableModal";
 import { computeTodayWorkCardStatus, type TodayStatus } from "../utils/todayWorkStatus";
+import HomePageLargeFont from "./HomePageLargeFont";
 
 interface HomePageProps {
   formData: ActivityLogFormData;
@@ -17,6 +18,7 @@ interface HomePageProps {
   onStartActivityLog: () => void;
   onOpenSettings: () => void;
   onToggleLargeFontMode: () => void;
+  isLargeFontMode: boolean;
 }
 
 interface HomeActionCardProps {
@@ -41,6 +43,7 @@ const HomePage = ({
   onStartActivityLog,
   onOpenSettings,
   onToggleLargeFontMode,
+  isLargeFontMode,
 }: HomePageProps) => {
   const [isSosConfirmModalOpen, setIsSosConfirmModalOpen] = useState(false);
   const [isSosIdentificationModalOpen, setIsSosIdentificationModalOpen] = useState(false);
@@ -78,6 +81,34 @@ const HomePage = ({
   const handleSosCancel = () => {
     setIsSosConfirmModalOpen(false);
   };
+
+  if (isLargeFontMode) {
+    return (
+      <>
+        <HomePageLargeFont
+          formData={formData}
+          todayStatus={todayStatus}
+          onOpenAffiliation={onOpenAffiliation}
+          onStartActivityLog={onStartActivityLog}
+          onOpenSettings={onOpenSettings}
+          onToggleLargeFontMode={onToggleLargeFontMode}
+          onSosButtonClick={handleSosButtonClick}
+        />
+
+        {isSosConfirmModalOpen && (
+          <SosConfirmModal onSend={handleSosSend} onCancel={handleSosCancel} />
+        )}
+        {isSosIdentificationModalOpen && (
+          <SosIdentificationRequiredModal
+            onConfirm={() => setIsSosIdentificationModalOpen(false)}
+          />
+        )}
+        {isSosUnavailableModalOpen && (
+          <SosUnavailableModal onConfirm={() => setIsSosUnavailableModalOpen(false)} />
+        )}
+      </>
+    );
+  }
 
   return (
     <>
@@ -235,6 +266,8 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
           </div>
           <StatusPill label={statusLabel} active={isWorkDay && isWorking} />
         </div>
+
+        {programName && <div className="border-t border-surface-page" />}
 
         {programName && (
           <div className="flex items-center gap-2">

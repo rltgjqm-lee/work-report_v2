@@ -547,6 +547,7 @@ const Main = () => {
             }}
             onOpenSettings={() => setView(VIEW_TYPE.SETTINGS)}
             onToggleLargeFontMode={handleLargeFontModeToggle}
+            isLargeFontMode={isLargeFontMode}
           />
         )}
 

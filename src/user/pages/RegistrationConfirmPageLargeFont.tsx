@@ -39,21 +39,21 @@ const RegistrationConfirmPageLargeFont = ({
   onNext,
 }: RegistrationConfirmPageLargeFontProps) => (
   <div className="flex flex-col bg-surface-page h-full min-h-0 flex-1 overflow-y-auto">
-    <div className="flex-none sticky top-0 z-10 flex items-center gap-2.5 px-[22px] py-3 bg-white border-b border-surface-page">
+    <div className="flex-none sticky top-0 z-10 flex items-center gap-2 px-[16px] py-[10px] bg-white border-b border-surface-page">
       <button
         onClick={onBack}
-        className="w-14 h-14 rounded-xl bg-surface-page border-none flex items-center justify-center flex-none cursor-pointer"
+        className="w-[44px] h-[44px] rounded-xl bg-surface-page border-none flex items-center justify-center flex-none cursor-pointer"
         aria-label="이전으로"
       >
-        <ChevronLeft size={28} color="#333d4b" strokeWidth={2.2} />
+        <ChevronLeft size={22} color="#333d4b" strokeWidth={2.2} />
       </button>
-      <span className="flex-1 text-center text-[24px] font-extrabold text-text-strong">
+      <span className="flex-1 text-center text-[20px] font-extrabold text-text-strong">
         등록 확인
       </span>
-      <span className="w-14 flex-none" />
+      <span className="w-[44px] flex-none" />
     </div>
 
-    <div className="px-5 pt-5 pb-6 flex-1 flex flex-col gap-5">
+    <div className="px-[16px] py-[20px] flex-1 flex flex-col gap-5">
       {exception !== "loading" && exception !== null && (
         <div className="flex flex-col items-center text-center bg-white border-[1.5px] border-border-faint rounded-[18px] px-6 py-6 shadow-[0_2px_8px_rgba(20,30,50,.05)] cursor-default">
           <div

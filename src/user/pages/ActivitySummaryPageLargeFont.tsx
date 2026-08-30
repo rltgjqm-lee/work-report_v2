@@ -53,42 +53,42 @@ const ActivitySummaryPageLargeFont = ({
 
   return (
     <div className="flex flex-col bg-surface-page h-full min-h-0 flex-1 overflow-y-auto">
-      <div className="flex-none sticky top-0 z-10 flex items-center gap-2.5 px-[22px] py-3 bg-white border-b border-surface-page">
+      <div className="flex-none sticky top-0 z-10 flex items-center gap-2 px-[16px] py-[10px] bg-white border-b border-surface-page">
         <button
           onClick={onBack}
-          className="w-14 h-14 rounded-xl bg-surface-page border-none flex items-center justify-center flex-none cursor-pointer"
+          className="w-[44px] h-[44px] rounded-xl bg-surface-page border-none flex items-center justify-center flex-none cursor-pointer"
           aria-label="이전으로"
         >
-          <ChevronLeft size={28} color="#333d4b" strokeWidth={2.2} />
+          <ChevronLeft size={22} color="#333d4b" strokeWidth={2.2} />
         </button>
-        <span className="flex-1 text-center text-[24px] font-extrabold text-text-strong">
+        <span className="flex-1 text-center text-[20px] font-extrabold text-text-strong">
           활동 요약
         </span>
         {formData.participantId ? (
           <button
             onClick={() => setIsSosModalOpen(true)}
-            className="w-14 h-14 rounded-xl bg-danger-tint border-none flex items-center justify-center flex-none cursor-pointer"
+            className="w-[44px] h-[44px] rounded-xl bg-danger-tint border-none flex items-center justify-center flex-none cursor-pointer"
             aria-label="SOS 긴급 도움 요청"
           >
-            <span className="text-[24px] leading-none">🚨</span>
+            <span className="text-[20px] leading-none">🚨</span>
           </button>
         ) : (
-          <span className="w-14 flex-none" />
+          <span className="w-[44px] flex-none" />
         )}
       </div>
 
-      <div className="px-5 pt-5 pb-6 flex-1 flex flex-col gap-5">
-        <div className="bg-white rounded-[18px] px-7 py-6 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
+      <div className="px-[16px] py-[20px] flex-1 flex flex-col gap-5">
+        <div className="bg-white rounded-[18px] px-[20px] py-[16px] shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
           <div className="text-[17px] text-text-muted font-bold mb-5">
             {todayLabel} · {formData.userName}님, 안녕하세요
           </div>
-          <div className="text-[24px] font-extrabold text-text-strong">오늘 활동을 마쳤어요</div>
+          <div className="text-[20px] font-extrabold text-text-strong">오늘 활동을 마쳤어요</div>
           <div className="text-[19px] text-text-tertiary font-semibold mt-2">
             아래 내용을 확인하고 서명해주세요.
           </div>
         </div>
 
-        <div className="bg-white rounded-[20px] p-7 shadow-[0_1px_2px_rgba(20,30,50,0.04)] flex flex-col gap-2">
+        <div className="bg-white rounded-[20px] px-[20px] py-[16px] shadow-[0_1px_2px_rgba(20,30,50,0.04)] flex flex-col gap-2">
           <SummaryRowLarge
             icon="/icons/icon-checkin-clock.png"
             label="출근 시각"
