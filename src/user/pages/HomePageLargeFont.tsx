@@ -18,7 +18,7 @@ interface HomePageLargeFontProps {
 
 const StatusPillLarge = ({ label, active }: { label: string; active: boolean }) => (
   <div
-    className={`flex items-center gap-1.5 text-[14px] font-bold px-3.5 py-1.5 rounded-full flex-none ${
+    className={`flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full flex-none ${
       active ? "bg-brand-tint text-brand" : "bg-surface-page text-[#6b7684]"
     }`}
   >
@@ -46,8 +46,8 @@ const TodayWorkCardLarge = ({
   if (status.kind === "noParticipantId") {
     return (
       <div className={cardLargeClass}>
-        <div className="text-[16px] font-bold text-text-muted mb-1.5">오늘의 근무</div>
-        <div className="text-[18px] text-text-tertiary font-semibold leading-[1.6]">
+        <div className="text-[14px] font-bold text-text-muted mb-1.5">오늘의 근무</div>
+        <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6]">
           참여자 확인이 필요해요
           <br />
           '활동일지 시작'에서 확인해주세요
@@ -73,9 +73,9 @@ const TodayWorkCardLarge = ({
     <div className={cardLargeClass}>
       <div className="flex flex-col gap-[12px] text-left">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-[16px] font-medium text-text-subtitle">오늘의 근무</span>
-            <span className="text-[clamp(20px,5.5vw,21px)] font-extrabold text-text-strong">
+          <div className="flex flex-col gap-0">
+            <span className="text-[14px] font-medium text-text-subtitle">오늘의 근무</span>
+            <span className="text-[clamp(18px,5vw,19px)] font-extrabold text-text-strong">
               {dateLabel}
             </span>
           </div>
@@ -89,35 +89,35 @@ const TodayWorkCardLarge = ({
             <div className="w-[clamp(28px,7.8vw,31px)] h-[clamp(28px,7.8vw,31px)] rounded-[10px] bg-brand-tint flex items-center justify-center flex-none">
               <Building2 className="w-[55%] h-[55%] text-brand" strokeWidth={2.2} />
             </div>
-            <span className="text-[clamp(18px,5vw,19px)] font-bold text-text-strong min-w-0">
+            <span className="text-[clamp(16px,4.5vw,17px)] font-bold text-text-strong min-w-0">
               {programName}
             </span>
           </div>
         )}
 
         {!isWorkDay ? (
-          <div className="bg-[#f7f9fb] rounded-[14px] px-[clamp(18px,5.9vw,21px)] py-[clamp(18px,5.9vw,21px)] text-[18px] font-bold text-text-muted text-center">
+          <div className="bg-[#f7f9fb] rounded-[14px] px-[clamp(18px,5.9vw,21px)] py-[clamp(18px,5.9vw,21px)] text-[16px] font-bold text-text-muted text-center">
             오늘은 근무일이 아니에요
           </div>
         ) : (
           <div className="rounded-[14px] bg-[#f7f9fb] overflow-hidden">
             <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
-              <span className="text-[15px] font-semibold text-text-subtitle">근무 시간</span>
-              <span className="text-[clamp(17px,4.7vw,19px)] font-bold text-text-strong">
+              <span className="text-[14px] font-semibold text-text-subtitle">근무 시간</span>
+              <span className="text-[clamp(15px,4.2vw,17px)] font-bold text-text-strong">
                 {shiftLabel}
               </span>
             </div>
             <div className="border-t border-white" />
             <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
               <span
-                className={`text-[15px] font-semibold ${
+                className={`text-[14px] font-semibold ${
                   isLogComplete ? "text-green" : "text-text-subtitle"
                 }`}
               >
                 오늘 일지 {completedLogSteps}/{totalLogSteps}
               </span>
               <span
-                className={`text-[clamp(17px,4.7vw,19px)] font-bold ${
+                className={`text-[clamp(15px,4.2vw,17px)] font-bold ${
                   isLogComplete ? "text-green" : "text-text-strong"
                 }`}
               >
@@ -321,8 +321,6 @@ const HomePageLargeFont = ({
           chevron={false}
         />
       </div>
-
-      <div className="flex-1 min-h-[24px]" />
     </div>
   </div>
 );
