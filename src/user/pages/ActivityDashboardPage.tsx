@@ -23,8 +23,9 @@ import ClockOutRequiredModal from "../components/molecule/ClockOutRequiredModal"
 import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal";
 import LocationConsentModal from "../components/molecule/LocationConsentModal";
 import LocationPermissionDeniedModal from "../components/molecule/LocationPermissionDeniedModal";
+import LocationServicesOffModal from "../components/molecule/LocationServicesOffModal";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
-import { checkGeolocationPermissionDenied } from "../utils/geolocation";
+import { checkGeolocationFailureReason } from "../utils/geolocation";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
 import ActivityDashboardPageLargeFont from "./ActivityDashboardPageLargeFont";
 
@@ -161,9 +162,13 @@ const ActivityDashboardPage = ({
   // 💡 근무일이 아닐 때도 일반 alert 대신 전용 아이콘 모달로 안내한다.
   const [notWorkDayOpen, setNotWorkDayOpen] = useState(false);
 
-  // 💡 위치 권한이 꺼져있으면 일반 alert 대신 OS 설정으로 바로 이동할 수 있는 전용
-  // 모달을 띄운다 — 재동의 모달을 다시 띄워봤자 OS 권한은 안 바뀌어서 의미가 없다.
+  // 💡 위치 권한이 꺼져있거나 기기 위치 서비스 자체가 꺼져있으면 일반 alert 대신 OS
+  // 설정으로 바로 이동할 수 있는 전용 모달을 띄운다 — 재동의 모달(LocationConsentModal)을
+  // 다시 띄워서 자동으로 재시도하면 똑같은 이유로 계속 실패해 사용자 눈엔 "출근이
+  // 계속 자동으로 눌리는" 루프처럼 보인다. 두 경우 다 재시도 전에 사용자가 OS 설정에서
+  // 뭔가를 직접 바꿔야 하므로, 여기서 멈추고 명확히 안내한다.
   const [locationPermissionDeniedOpen, setLocationPermissionDeniedOpen] = useState(false);
+  const [locationServicesOffOpen, setLocationServicesOffOpen] = useState(false);
 
   // 💡 출근/퇴근을 먼저 해야 하는 안내도 일반 alert 대신 전용 아이콘 모달로 보여준다.
   const [clockInRequiredOpen, setClockInRequiredOpen] = useState(false);
@@ -294,18 +299,24 @@ const ActivityDashboardPage = ({
             return;
           }
           if (body?.error === "LOCATION_REQUIRED") {
-            // 위치 권한 자체가 꺼져있으면 이 안내 모달을 다시 띄워봤자 절대 해결되지
-            // 않는다(OS 권한 팝업이 아니라 우리 앱 안내문일 뿐이라 재동의로는 권한이
-            // 안 바뀐다) — 그 경우엔 OS 설정으로 가야 한다고 명확히 안내한다.
-            // 실내 등 일시적으로 못 잡은 경우에만 재시도 모달을 다시 띄운다.
-            checkGeolocationPermissionDenied().then((permissionDenied) => {
-              if (permissionDenied) {
+            // 앱 위치 권한이 꺼져있거나 기기 위치 서비스 자체가 꺼져있으면, 재동의
+            // 모달(LocationConsentModal)을 다시 띄워봤자 절대 해결되지 않는다 — 그
+            // onConfirm이 곧바로 submitClockIn을 다시 호출해서 매번 같은 이유로
+            // 실패하는 걸 반복하고, 사용자 눈엔 "출근이 계속 자동으로 눌리는" 루프처럼
+            // 보인다. 이 두 경우는 OS 설정에서 뭔가를 직접 바꿔야만 재시도가 의미 있으니
+            // 여기서 멈추고 정확히 뭘 해야 하는지 안내한다. 실내 등으로 일시적으로 못
+            // 잡은 경우("other")만, 재동의가 아니라 그냥 다시 출근 버튼을 눌러보라는
+            // 안내만 하고 자동으로 아무것도 다시 호출하지 않는다.
+            checkGeolocationFailureReason().then((reason) => {
+              if (reason === "permission-denied") {
                 setLocationPermissionDeniedOpen(true);
                 return;
               }
-              onAlert(["위치 확인이 필요합니다.", "위치 접근을 허용한 뒤 다시 시도해주세요."]).then(
-                () => setLocationConsentOpen(true),
-              );
+              if (reason === "location-services-off") {
+                setLocationServicesOffOpen(true);
+                return;
+              }
+              onAlert(["위치를 확인하지 못했어요.", "잠시 후 출근 버튼을 다시 눌러주세요."]);
             });
             return;
           }
@@ -521,6 +532,10 @@ const ActivityDashboardPage = ({
           <LocationPermissionDeniedModal onClose={() => setLocationPermissionDeniedOpen(false)} />
         )}
 
+        {locationServicesOffOpen && (
+          <LocationServicesOffModal onClose={() => setLocationServicesOffOpen(false)} />
+        )}
+
         {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
 
         {clockInRequiredOpen && (
@@ -629,6 +644,10 @@ const ActivityDashboardPage = ({
 
       {locationPermissionDeniedOpen && (
         <LocationPermissionDeniedModal onClose={() => setLocationPermissionDeniedOpen(false)} />
+      )}
+
+      {locationServicesOffOpen && (
+        <LocationServicesOffModal onClose={() => setLocationServicesOffOpen(false)} />
       )}
 
       {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}

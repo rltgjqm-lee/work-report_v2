@@ -45,20 +45,32 @@ export const readCurrentCoordinates = (): Promise<Coordinates | null> => {
   });
 };
 
+export type GeolocationFailureReason = "permission-denied" | "location-services-off" | "other";
+
 /**
  * LOCATION_REQUIRED로 출퇴근이 막혔을 때만 호출해서 실패 이유를 구분합니다.
  *
- * "권한 자체가 꺼져있다"(다시 시도해도 절대 안 됨)와 "실내라 순간적으로 못 잡았다"
- * (다시 시도하면 될 수 있음)를 구분해야, 전자일 때 무의미한 재시도 루프 대신 OS
- * 설정으로 안내할 수 있습니다.
+ * 셋 다 다시 시도해도 똑같이 실패하거나(앱 권한 거부, 기기 위치 서비스 꺼짐) 재시도가
+ * 의미 있을 수 있는(실내 등 일시적 실패) 경우로 나뉘어서, 앞의 두 경우는 무의미한
+ * 재시도 루프 대신 정확히 뭘 해야 하는지(OS 설정 어디를 열어야 하는지)를 구분해서
+ * 안내해야 합니다. GeolocationPositionError.code: 1=권한 거부, 2=위치를 못 구함(기기
+ * 위치 서비스가 꺼져있을 때 브라우저가 즉시 이 코드를 준다), 3=타임아웃.
  */
-export const checkGeolocationPermissionDenied = (): Promise<boolean> => {
-  if (!navigator.geolocation) return Promise.resolve(false);
+export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReason> => {
+  if (!navigator.geolocation) return Promise.resolve("other");
 
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
-      () => resolve(false),
-      (error) => resolve(error.code === error.PERMISSION_DENIED),
+      () => resolve("other"),
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          resolve("permission-denied");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          resolve("location-services-off");
+        } else {
+          resolve("other");
+        }
+      },
       { timeout: 3000, maximumAge: 60_000 },
     );
   });
