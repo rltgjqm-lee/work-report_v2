@@ -570,6 +570,9 @@ const Main = () => {
             // 💡 본인확인 실패 시 바로 수정할 수 있어야 하므로, 홈이 아니라 기본정보
             // 입력 화면으로 돌아간다 — 홈으로 보내면 "기본정보 등록"을 한 번 더 눌러야 했다.
             onBack={() => setView(VIEW_TYPE.AFFILIATION)}
+            // 💡 확인할 내용에 문제가 없을 땐 수정할 게 없으니, "이전"이 입력 화면을 다시
+            // 거치지 않고 바로 홈으로 가게 한다.
+            onHome={() => setView(VIEW_TYPE.MAIN)}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
             isLargeFontMode={isLargeFontMode}
           />

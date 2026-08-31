@@ -41,12 +41,14 @@ const RegistrationConfirmPage = ({
   formData,
   onChange,
   onBack,
+  onHome,
   onNext,
   isLargeFontMode,
 }: {
   formData: ActivityLogFormData;
   onChange: <T extends keyof ActivityLogFormData>(key: T, value: ActivityLogFormData[T]) => void;
   onBack: () => void;
+  onHome: () => void;
   onNext: () => void;
   isLargeFontMode: boolean;
 }) => {
@@ -144,13 +146,18 @@ const RegistrationConfirmPage = ({
     exception = null;
   }
 
+  // 💡 확인할 내용에 문제가 없으면(exception === null) 고칠 게 없으니 "이전"이 입력
+  // 화면을 다시 거치지 않고 바로 홈으로 간다 — 문제가 있거나 아직 확인 중일 때만
+  // 고칠 수 있는 입력 화면으로 보낸다.
+  const handleBackButtonClick = exception === null ? onHome : onBack;
+
   if (isLargeFontMode) {
     return (
       <RegistrationConfirmPageLargeFont
         formData={formData}
         orgAddress={orgAddress}
         exception={exception}
-        onBack={onBack}
+        onBack={handleBackButtonClick}
         onNext={onNext}
       />
     );
@@ -158,7 +165,7 @@ const RegistrationConfirmPage = ({
 
   return (
     <div className={pageClass}>
-      <AppBar title="등록 확인" onBack={onBack} />
+      <AppBar title="등록 확인" onBack={handleBackButtonClick} />
       <div className={bodyClass}>
         {exception !== "loading" && exception !== null && (
           <ExceptionCard
@@ -214,7 +221,7 @@ const RegistrationConfirmPage = ({
 
       <BottomBar>
         <BottomBarRow>
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={handleBackButtonClick}>
             이전
           </Button>
           {exception === null && (
