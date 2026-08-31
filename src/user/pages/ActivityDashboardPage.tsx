@@ -22,7 +22,9 @@ import ClockOutCompleteModal from "../components/molecule/ClockOutCompleteModal"
 import ClockOutRequiredModal from "../components/molecule/ClockOutRequiredModal";
 import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal";
 import LocationConsentModal from "../components/molecule/LocationConsentModal";
+import LocationPermissionDeniedModal from "../components/molecule/LocationPermissionDeniedModal";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
+import { checkGeolocationPermissionDenied } from "../utils/geolocation";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
 import ActivityDashboardPageLargeFont from "./ActivityDashboardPageLargeFont";
 
@@ -159,6 +161,10 @@ const ActivityDashboardPage = ({
   // 💡 근무일이 아닐 때도 일반 alert 대신 전용 아이콘 모달로 안내한다.
   const [notWorkDayOpen, setNotWorkDayOpen] = useState(false);
 
+  // 💡 위치 권한이 꺼져있으면 일반 alert 대신 OS 설정으로 바로 이동할 수 있는 전용
+  // 모달을 띄운다 — 재동의 모달을 다시 띄워봤자 OS 권한은 안 바뀌어서 의미가 없다.
+  const [locationPermissionDeniedOpen, setLocationPermissionDeniedOpen] = useState(false);
+
   // 💡 출근/퇴근을 먼저 해야 하는 안내도 일반 alert 대신 전용 아이콘 모달로 보여준다.
   const [clockInRequiredOpen, setClockInRequiredOpen] = useState(false);
   const [clockOutRequiredOpen, setClockOutRequiredOpen] = useState(false);
@@ -288,11 +294,19 @@ const ActivityDashboardPage = ({
             return;
           }
           if (body?.error === "LOCATION_REQUIRED") {
-            // 위치 동의 모달을 다시 띄워서 재시도할 수 있게 한다 — 확인을 누르면
-            // handleLocationConsentConfirm이 다시 submitClockIn을 호출한다.
-            onAlert(["위치 확인이 필요합니다.", "위치 접근을 허용한 뒤 다시 시도해주세요."]).then(
-              () => setLocationConsentOpen(true),
-            );
+            // 위치 권한 자체가 꺼져있으면 이 안내 모달을 다시 띄워봤자 절대 해결되지
+            // 않는다(OS 권한 팝업이 아니라 우리 앱 안내문일 뿐이라 재동의로는 권한이
+            // 안 바뀐다) — 그 경우엔 OS 설정으로 가야 한다고 명확히 안내한다.
+            // 실내 등 일시적으로 못 잡은 경우에만 재시도 모달을 다시 띄운다.
+            checkGeolocationPermissionDenied().then((permissionDenied) => {
+              if (permissionDenied) {
+                setLocationPermissionDeniedOpen(true);
+                return;
+              }
+              onAlert(["위치 확인이 필요합니다.", "위치 접근을 허용한 뒤 다시 시도해주세요."]).then(
+                () => setLocationConsentOpen(true),
+              );
+            });
             return;
           }
           onAlert([error instanceof Error ? error.message : "출근 등록에 실패했습니다"]);
@@ -503,6 +517,10 @@ const ActivityDashboardPage = ({
 
         {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
 
+        {locationPermissionDeniedOpen && (
+          <LocationPermissionDeniedModal onClose={() => setLocationPermissionDeniedOpen(false)} />
+        )}
+
         {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
 
         {clockInRequiredOpen && (
@@ -608,6 +626,10 @@ const ActivityDashboardPage = ({
       </div>
 
       {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
+
+      {locationPermissionDeniedOpen && (
+        <LocationPermissionDeniedModal onClose={() => setLocationPermissionDeniedOpen(false)} />
+      )}
 
       {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
 

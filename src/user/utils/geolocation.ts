@@ -10,17 +10,16 @@ export type Coordinates = {
 };
 
 // 고정밀 측위는 실내에서 오래 걸리거나 아예 못 잡는다. 출근 버튼을 누른 참여자를
-// 무한정 기다리게 할 수 없으니 여기서 끊고 위치 없이 진행한다 — 위치는 기록용일 뿐
-// 출퇴근을 막지 않으므로, 야외에서 보통 몇 초 안에 잡히는 것 이상으로 길게 기다릴
-// 이유가 없다(10초는 체감상 "출근 버튼이 멈춘 것처럼" 느껴질 만큼 길다).
+// 무한정 기다리게 할 수 없으니 여기서 끊는다(10초는 체감상 "출근 버튼이 멈춘 것처럼"
+// 느껴질 만큼 길다).
 const TIMEOUT_MS = 5000;
 
 /**
  * 출퇴근 등록 직전에 현재 위치를 한 번 읽습니다.
  *
  * 권한 거부·측위 실패·타임아웃·미지원 등 어떤 이유로든 못 읽으면 null을 돌려줍니다.
- * 위치는 기록용이고 이걸로 출퇴근을 막지 않기 때문에, 호출부는 null을 그대로 서버에
- * 넘기고 출퇴근을 계속 진행하면 됩니다.
+ * 서버는 좌표가 없으면 LOCATION_REQUIRED로 출퇴근 자체를 막으므로(근무지 확인·안전
+ * 관리의 전제), 호출부는 null이 왔을 때 그 실패를 사용자에게 안내해야 합니다.
  */
 export const readCurrentCoordinates = (): Promise<Coordinates | null> => {
   if (!navigator.geolocation) return Promise.resolve(null);
@@ -42,6 +41,25 @@ export const readCurrentCoordinates = (): Promise<Coordinates | null> => {
         // 항상 새로 측위한다.
         maximumAge: 0,
       },
+    );
+  });
+};
+
+/**
+ * LOCATION_REQUIRED로 출퇴근이 막혔을 때만 호출해서 실패 이유를 구분합니다.
+ *
+ * "권한 자체가 꺼져있다"(다시 시도해도 절대 안 됨)와 "실내라 순간적으로 못 잡았다"
+ * (다시 시도하면 될 수 있음)를 구분해야, 전자일 때 무의미한 재시도 루프 대신 OS
+ * 설정으로 안내할 수 있습니다.
+ */
+export const checkGeolocationPermissionDenied = (): Promise<boolean> => {
+  if (!navigator.geolocation) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      () => resolve(false),
+      (error) => resolve(error.code === error.PERMISSION_DENIED),
+      { timeout: 3000, maximumAge: 60_000 },
     );
   });
 };
