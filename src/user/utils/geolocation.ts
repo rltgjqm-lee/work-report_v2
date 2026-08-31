@@ -129,3 +129,45 @@ export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReaso
     setTimeout(() => settle("other"), 3000);
   });
 };
+
+// 💡 android/app에 직접 작성한 로컬 네이티브 플러그인 — 별도 npm 패키지가 아니라 이
+// 프로젝트 안에만 있어서 타입도 여기서 직접 선언한다. 기기 위치 서비스(GPS 토글)
+// 켜짐 여부를 실제 위치를 기다리지 않고 즉시 확인하고, 안드로이드에서는 설정 화면으로
+// 안 보내고 앱 안에서 시스템 다이얼로그로 바로 켤 수도 있다(iOS는 애플 정책상 앱이
+// 대신 켤 수 없어 이 기능이 없다 — 항상 설정 화면으로 보내야 한다).
+interface LocationServicesPlugin {
+  isEnabled(): Promise<{ enabled: boolean }>;
+  requestEnable(): Promise<{ enabled: boolean }>;
+}
+
+const LocationServicesNative = registerPlugin<LocationServicesPlugin>("LocationServices");
+
+/**
+ * 기기 위치 서비스가 켜져있는지 즉시(부작용 없이) 확인합니다. 안드로이드에서만 의미가
+ * 있고, iOS/웹에서는 확인할 방법이 없어 항상 true를 돌려줍니다(그 경우 호출부는
+ * readCurrentCoordinates로 실제 시도해보고 실패하면 checkGeolocationFailureReason으로
+ * 판단하는 기존 경로를 그대로 타면 됩니다).
+ */
+export const isLocationServicesEnabled = async (): Promise<boolean> => {
+  if (Capacitor.getPlatform() !== "android") return true;
+  try {
+    const { enabled } = await LocationServicesNative.isEnabled();
+    return enabled;
+  } catch {
+    return true;
+  }
+};
+
+/**
+ * 안드로이드에서 설정 화면으로 보내지 않고 시스템 다이얼로그로 위치를 바로 켭니다.
+ * 사용자가 켜면 true, 취소하거나(iOS 등) 지원하지 않는 플랫폼이면 false를 돌려줍니다.
+ */
+export const requestEnableLocationServices = async (): Promise<boolean> => {
+  if (Capacitor.getPlatform() !== "android") return false;
+  try {
+    const { enabled } = await LocationServicesNative.requestEnable();
+    return enabled;
+  } catch {
+    return false;
+  }
+};

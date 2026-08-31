@@ -25,7 +25,7 @@ import LocationConsentModal from "../components/molecule/LocationConsentModal";
 import LocationPermissionDeniedModal from "../components/molecule/LocationPermissionDeniedModal";
 import LocationServicesOffModal from "../components/molecule/LocationServicesOffModal";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
-import { checkGeolocationFailureReason } from "../utils/geolocation";
+import { checkGeolocationFailureReason, isLocationServicesEnabled } from "../utils/geolocation";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
 import ActivityDashboardPageLargeFont from "./ActivityDashboardPageLargeFont";
 
@@ -233,6 +233,18 @@ const ActivityDashboardPage = ({
   const safetyDone = formData.accidentChecked;
   const signatureDone = !!formData.userSignature;
 
+  // 💡 실제 위치를 읽기 전에(최대 5초 걸리는 readCurrentCoordinates) 안드로이드에서는
+  // 기기 위치 서비스가 켜져있는지부터 즉시(부작용 없이) 확인한다 — 꺼져있으면 그 5초를
+  // 기다릴 필요 없이 바로 안내할 수 있다. iOS/웹은 확인할 방법이 없어 항상 true라
+  // 기존처럼 일단 시도해보고 실패하면 이유를 진단하는 경로를 그대로 탄다.
+  const attemptClockIn = async () => {
+    if (!(await isLocationServicesEnabled())) {
+      setLocationServicesOffOpen(true);
+      return;
+    }
+    submitClockIn();
+  };
+
   // 💡 모듈은 순서대로 진행해야 한다.
   // — 출근 전엔 업무/안전/퇴근/전체확인 불가능 하고, 공익활동은 업무·안전을 마쳐야 퇴근·전체확인으로 넘어갈 수 있다.
   const handleAttendanceInButtonClick = () => {
@@ -242,7 +254,7 @@ const ActivityDashboardPage = ({
       return;
     }
     if (todayStatus?.locationConsentAt) {
-      submitClockIn();
+      attemptClockIn();
       return;
     }
 
@@ -254,7 +266,7 @@ const ActivityDashboardPage = ({
     locationConsentMutation.mutate(formData.participantId, {
       onSuccess: () => {
         setLocationConsentOpen(false);
-        submitClockIn();
+        attemptClockIn();
       },
       onError: (error) => {
         onAlert([error instanceof Error ? error.message : "동의 저장에 실패했습니다"]);
@@ -533,7 +545,10 @@ const ActivityDashboardPage = ({
         )}
 
         {locationServicesOffOpen && (
-          <LocationServicesOffModal onClose={() => setLocationServicesOffOpen(false)} />
+          <LocationServicesOffModal
+            onClose={() => setLocationServicesOffOpen(false)}
+            onEnabled={submitClockIn}
+          />
         )}
 
         {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
@@ -647,7 +662,10 @@ const ActivityDashboardPage = ({
       )}
 
       {locationServicesOffOpen && (
-        <LocationServicesOffModal onClose={() => setLocationServicesOffOpen(false)} />
+        <LocationServicesOffModal
+          onClose={() => setLocationServicesOffOpen(false)}
+          onEnabled={submitClockIn}
+        />
       )}
 
       {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
