@@ -48,17 +48,17 @@ const ModuleItemLarge = ({
 
   return (
     <div
-      className={`bg-white rounded-2xl px-[20px] py-[16px] flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
+      className={`bg-white rounded-2xl px-[20px] py-[18px] flex flex-col gap-4 shadow-[0_1px_2px_rgba(20,30,50,0.04)] ${
         isActive ? "border-[3px] border-brand" : ""
       }`}
     >
       <div className="flex items-center gap-4 min-w-0">
-        <img src={icon} alt="" className="w-[52px] h-[52px] flex-none" />
+        <img src={icon} alt="" className="w-[48px] h-[48px] flex-none" />
         <div className="min-w-0">
-          <div className="text-[22px] font-extrabold text-text-strong">
+          <div className="text-[22px] font-bold text-text-strong">
             {index}. {title}
           </div>
-          <div className="text-[18px] text-text-muted font-semibold mt-1">{status}</div>
+          <div className="text-[17px] text-text-muted font-medium mt-0.5">{status}</div>
         </div>
       </div>
       {(done || ready) && (
@@ -130,22 +130,28 @@ const ActivityDashboardPageLargeFont = ({
       </div>
 
       <div className="px-[16px] py-[20px] flex-1 flex flex-col gap-5">
-        <div className="bg-white rounded-[20px] px-7 py-6 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
-          <div className="text-[17px] text-text-muted font-bold mb-5">
-            {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
+        <div className="bg-white rounded-[20px] px-6 py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
+          <div className="text-[15px] text-text-subtitle font-medium mb-1">
+            {todayLabel} · {formData.userName || "참여자"}님
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[clamp(19px,5.5vw,24px)] font-extrabold text-text-strong min-w-0">
+            <span className="text-[clamp(19px,5.5vw,24px)] font-bold text-text-strong min-w-0">
               {formData.orgName}
             </span>
-            <span className="inline-flex flex-none text-[16px] font-extrabold px-3.5 py-1.5 rounded-xl bg-brand-tint text-brand">
+            <span className="inline-flex flex-none text-[14px] font-extrabold px-3 py-1 rounded-xl bg-brand-tint text-brand">
               {programTypeShortLabel(formData.programType)}
             </span>
           </div>
-          <div className="text-[19px] text-text-tertiary font-semibold mt-2">
-            {formData.programName}
-            <br />
-            {formData.demandName}
+          <div className="mt-3">
+            <div className="py-[10px] flex items-center justify-between gap-3">
+              <span className="text-[14px] font-semibold text-text-subtitle">사업단</span>
+              <span className="text-[16px] font-bold text-text-strong">{formData.programName}</span>
+            </div>
+            <div className="border-t border-surface-page" />
+            <div className="py-[10px] flex items-center justify-between gap-3">
+              <span className="text-[14px] font-semibold text-text-subtitle">수요처</span>
+              <span className="text-[16px] font-bold text-text-strong">{formData.demandName}</span>
+            </div>
           </div>
         </div>
 

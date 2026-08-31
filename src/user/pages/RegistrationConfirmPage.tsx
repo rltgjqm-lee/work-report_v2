@@ -27,7 +27,7 @@ export type ExceptionInfo = {
 
 const ConfirmRow = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-3.5 py-4 border-b border-surface-page last:border-b-0">
-    <span className="text-[13.5px] text-text-muted font-semibold flex-none">{label}</span>
+    <span className="text-[13.5px] text-text-subtitle font-semibold flex-none">{label}</span>
     <span className="text-[15px] font-extrabold text-text-strong text-right">{value}</span>
   </div>
 );
@@ -204,7 +204,7 @@ const RegistrationConfirmPage = ({
               <ConfirmRow label="참여자" value={`${formData.userName} (${formData.gender})`} />
             </div>
 
-            <p className="text-center text-[13px] text-text-muted font-semibold">
+            <p className="text-center text-[13px] text-text-subtitle font-semibold">
               내용이 맞으면 <b className="text-text-strong font-extrabold">다음</b>을, 틀리면{" "}
               <b className="text-text-strong font-extrabold">이전</b>을 눌러주세요.
             </p>

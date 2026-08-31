@@ -22,7 +22,7 @@ const ICON_CLASS = {
 
 const ConfirmRowLarge = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-4 py-5 border-b border-surface-page last:border-b-0">
-    <span className="text-[18px] text-text-muted font-semibold flex-none">{label}</span>
+    <span className="text-[18px] text-text-subtitle font-semibold flex-none">{label}</span>
     <span className="min-w-0 text-[20px] font-extrabold text-text-strong text-right">{value}</span>
   </div>
 );
@@ -84,7 +84,7 @@ const RegistrationConfirmPageLargeFont = ({
             <div className="text-[clamp(18px,5.2vw,21px)] font-extrabold text-text-strong break-keep">
               등록 확인
             </div>
-            <div className="text-[clamp(14px,4vw,17px)] text-text-muted font-semibold mt-1 break-keep">
+            <div className="text-[clamp(14px,4vw,17px)] text-text-subtitle font-semibold mt-1 break-keep">
               아래 내용이 맞는지 확인해주세요
             </div>
           </div>
@@ -128,7 +128,7 @@ const RegistrationConfirmPageLargeFont = ({
             <ConfirmRowLarge label="참여자" value={`${formData.userName} (${formData.gender})`} />
           </div>
 
-          <p className="text-center text-[17px] text-text-muted font-semibold">
+          <p className="text-center text-[17px] text-text-subtitle font-semibold">
             내용이 맞으면 <b className="text-text-strong font-extrabold">다음</b>을,
             <br />
             틀리면 <b className="text-text-strong font-extrabold">이전</b>을 눌러주세요.

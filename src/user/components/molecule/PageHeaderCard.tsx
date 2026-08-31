@@ -9,7 +9,7 @@ const PageHeaderCard = ({ icon, title, subtitle }: PageHeaderCardProps) => (
     <img src={icon} alt="" className="w-11 h-11 flex-none" />
     <div>
       <div className="text-[16px] font-extrabold text-text-strong">{title}</div>
-      <div className="text-[13px] text-text-muted font-semibold mt-0.5">{subtitle}</div>
+      <div className="text-[13px] text-text-subtitle font-semibold mt-0.5">{subtitle}</div>
     </div>
   </div>
 );

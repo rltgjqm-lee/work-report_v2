@@ -80,7 +80,7 @@ const ModuleItem = ({
           {index}. {category}
         </div>
         <div className="text-[17px] font-extrabold text-text-strong">{title}</div>
-        <div className="text-[13.5px] text-text-muted font-semibold mt-0.5">{status}</div>
+        <div className="text-[13.5px] text-text-muted font-medium mt-0.5">{status}</div>
       </div>
     </div>
     <button
@@ -551,16 +551,16 @@ const ActivityDashboardPage = ({
       <AppBar title="근무 기록" onHome={onHome} participantId={formData.participantId} />
       <div className={bodyClass}>
         <div className="bg-white rounded-[18px] px-[22px] py-5 shadow-[0_2px_8px_rgba(20,30,50,0.05)]">
-          <div className="text-[13px] text-text-muted font-bold mb-3.5">
-            {todayLabel} · {formData.userName || "참여자"}님, 안녕하세요
+          <div className="text-[13px] text-text-subtitle font-medium mb-3">
+            {todayLabel} · {formData.userName || "참여자"}님
           </div>
           <div className="flex items-center justify-between gap-2.5">
             <span className="text-[19px] font-extrabold text-text-strong">{formData.orgName}</span>
-            <span className="inline-flex text-[12px] font-extrabold px-[10px] py-1 rounded-xl bg-brand-tint text-brand">
+            <span className="inline-flex text-[12px] font-extrabold px-3 py-1 rounded-xl bg-brand-tint text-brand">
               {programTypeShortLabel(formData.programType)}
             </span>
           </div>
-          <div className="text-[15px] text-text-tertiary font-semibold mt-1.5">
+          <div className="text-[15px] text-text-tertiary font-semibold mt-1">
             {formData.programName} · {formData.demandName}
           </div>
         </div>
