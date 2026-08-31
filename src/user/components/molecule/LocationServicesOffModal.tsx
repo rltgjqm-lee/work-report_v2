@@ -11,14 +11,14 @@ interface LocationServicesOffModalProps {
   onEnabled: () => void;
 }
 
-// 💡 안드로이드는 설정 화면으로 보내지 않고 앱 안에서 "위치를 켤까요?" 시스템
-// 다이얼로그로 한 번에 켤 수 있다(requestEnableLocationServices). iOS는 애플 정책상
-// 앱이 위치를 대신 켤 수 없어 항상 설정 화면으로 보내야 한다 — 그래서 플랫폼별로
-// 버튼 동작과 문구가 다르다.
-const isAndroid = Capacitor.getPlatform() === "android";
-
 const LocationServicesOffModal = ({ onClose, onEnabled }: LocationServicesOffModalProps) => {
   const [isRequesting, setIsRequesting] = useState(false);
+  // 💡 안드로이드는 설정 화면으로 보내지 않고 앱 안에서 "위치를 켤까요?" 시스템
+  // 다이얼로그로 한 번에 켤 수 있다(requestEnableLocationServices). iOS는 애플 정책상
+  // 앱이 위치를 대신 켤 수 없어 항상 설정 화면으로 보내야 한다 — 그래서 플랫폼별로
+  // 버튼 동작과 문구가 다르다. 모듈 최상단에서 한 번만 계산하면 네이티브 브리지가
+  // 아주 살짝이라도 늦게 준비될 때 값이 잘못 굳을 수 있어, 렌더할 때마다 다시 확인한다.
+  const isAndroid = Capacitor.getPlatform() === "android";
 
   const handleOpenLocationSettingsButtonClick = () => {
     onClose();
