@@ -6,12 +6,15 @@ interface LocationServicesOffModalProps {
 }
 
 const handleOpenLocationSettingsButtonClick = () => {
-  // 웹 미리보기에는 구현이 없어 항상 실패한다 — 실제 기기(안드로이드/iOS) 빌드에서만
-  // 의미가 있으므로 여기서는 조용히 무시한다.
+  // 💡 임시 진단용 — 실기기에서 버튼을 눌러도 설정 화면으로 안 넘어간다는 제보가 있어서,
+  // 조용히 무시하던 걸 잠깐 풀고 실제로 뭐가 리턴/에러되는지 화면에 그대로 보여준다.
+  // 원인 파악되면 다시 조용히 처리하도록 되돌린다.
   NativeSettings.open({
     optionAndroid: AndroidSettings.Location,
     optionIOS: IOSSettings.LocationServices,
-  }).catch(() => {});
+  })
+    .then((result) => alert(`설정 열기 결과: ${JSON.stringify(result)}`))
+    .catch((error) => alert(`설정 열기 실패: ${error instanceof Error ? error.message : String(error)}`));
 };
 
 const LocationServicesOffModal = ({ onClose }: LocationServicesOffModalProps) =>
