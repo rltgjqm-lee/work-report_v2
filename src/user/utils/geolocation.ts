@@ -101,9 +101,12 @@ export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReaso
   return new Promise((resolve) => {
     let settled = false;
     let watcherId: string | null = null;
-    const settle = (reason: GeolocationFailureReason) => {
+    // 💡 임시 진단용 — reason 판별이 실기기에서 왜 어긋나는지 원인 파악되면 alert는 지운다.
+    const settle = (reason: GeolocationFailureReason, source: string, raw?: unknown) => {
       if (settled) return;
       settled = true;
+      const rawMessage = raw instanceof Error ? raw.message : raw === undefined ? "" : String(raw);
+      alert(`위치 진단[${source}] → ${reason}${rawMessage ? ` (raw: ${rawMessage})` : ""}`);
       resolve(reason);
       if (watcherId !== null) BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
     };
@@ -113,7 +116,7 @@ export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReaso
       // 새 GPS 측위를 기다리지 않는(stale: true) 순수 진단용 호출이다.
       { requestPermissions: false, stale: true },
       (_position, error) => {
-        settle(error ? reasonFromError(error) : "other");
+        settle(error ? reasonFromError(error) : "other", "callback", error);
       },
     )
       .then((id) => {
@@ -123,9 +126,9 @@ export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReaso
           watcherId = id;
         }
       })
-      .catch((error) => settle(reasonFromError(error)));
+      .catch((error) => settle(reasonFromError(error), "promise-catch", error));
 
     // 콜백이 끝내 안 오는 경우(플러그인 미탑재 등)를 대비한 안전장치.
-    setTimeout(() => settle("other"), 3000);
+    setTimeout(() => settle("other", "timeout"), 3000);
   });
 };
