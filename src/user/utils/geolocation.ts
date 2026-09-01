@@ -171,3 +171,6 @@ export const requestEnableLocationServices = async (): Promise<boolean> => {
     return false;
   }
 };
+
+export const formatDistanceM = (distanceM: number): string =>
+  distanceM >= 1000 ? `${(distanceM / 1000).toFixed(1)}km` : `${distanceM}m`;

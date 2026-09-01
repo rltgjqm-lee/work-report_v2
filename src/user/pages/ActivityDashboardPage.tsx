@@ -27,6 +27,8 @@ import LocationPermissionDeniedModalLargeFont from "../components/molecule/Locat
 import LocationServicesOffModal from "../components/molecule/LocationServicesOffModal";
 import LocationServicesOffModalLargeFont from "../components/molecule/LocationServicesOffModalLargeFont";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
+import OutOfAreaModal from "../components/molecule/OutOfAreaModal";
+import OutOfAreaModalLargeFont from "../components/molecule/OutOfAreaModalLargeFont";
 import { checkGeolocationFailureReason, isLocationServicesEnabled } from "../utils/geolocation";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
 import ActivityDashboardPageLargeFont from "./ActivityDashboardPageLargeFont";
@@ -163,6 +165,11 @@ const ActivityDashboardPage = ({
 
   // 💡 근무일이 아닐 때도 일반 alert 대신 전용 아이콘 모달로 안내한다.
   const [notWorkDayOpen, setNotWorkDayOpen] = useState(false);
+
+  // 💡 관제구역 밖에서 출근을 시도했을 때도 일반 alert 대신 전용 아이콘 모달로 안내한다.
+  // distanceM은 서버가 못 구하면 null일 수 있어 "모달이 열려있는지" 자체를 별도로
+  // 표현해야 하므로, distanceM만으로 open 여부를 판단하지 않고 객체로 감싼다.
+  const [outOfArea, setOutOfArea] = useState<{ distanceM: number | null } | null>(null);
 
   // 💡 위치 권한이 꺼져있거나 기기 위치 서비스 자체가 꺼져있으면 일반 alert 대신 OS
   // 설정으로 바로 이동할 수 있는 전용 모달을 띄운다 — 재동의 모달(LocationConsentModal)을
@@ -306,10 +313,7 @@ const ActivityDashboardPage = ({
           }
           if (body?.error === "OUTSIDE_AREA") {
             const { distanceM } = body as Extract<typeof body, { error: "OUTSIDE_AREA" }>;
-            onAlert([
-              "근무지 관제구역 밖에서는 출근할 수 없습니다.",
-              ...(distanceM !== null ? [`구역까지 약 ${distanceM}m 남았습니다.`] : []),
-            ]);
+            setOutOfArea({ distanceM });
             return;
           }
           if (body?.error === "LOCATION_REQUIRED") {
@@ -562,6 +566,13 @@ const ActivityDashboardPage = ({
 
         {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
 
+        {outOfArea && (
+          <OutOfAreaModalLargeFont
+            distanceM={outOfArea.distanceM}
+            onConfirm={() => setOutOfArea(null)}
+          />
+        )}
+
         {clockInRequiredOpen && (
           <ClockInRequiredModal onConfirm={() => setClockInRequiredOpen(false)} />
         )}
@@ -683,6 +694,10 @@ const ActivityDashboardPage = ({
       )}
 
       {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
+
+      {outOfArea && (
+        <OutOfAreaModal distanceM={outOfArea.distanceM} onConfirm={() => setOutOfArea(null)} />
+      )}
 
       {clockInRequiredOpen && (
         <ClockInRequiredModal onConfirm={() => setClockInRequiredOpen(false)} />
