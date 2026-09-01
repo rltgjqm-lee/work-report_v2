@@ -8,10 +8,14 @@ const meta = {
   component: LocationConsentModal,
   tags: ["autodocs"],
   parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
-  args: { onConfirm: fn() },
+  args: { onConfirm: fn(), isLargeFontMode: false },
 } satisfies Meta<typeof LocationConsentModal>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const LargeFont: Story = {
+  args: { isLargeFontMode: true },
+};

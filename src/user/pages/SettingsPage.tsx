@@ -95,7 +95,10 @@ const SettingsPage = ({
       )}
 
       {isLocationGuideOpen && (
-        <LocationConsentModal onConfirm={() => setIsLocationGuideOpen(false)} />
+        <LocationConsentModal
+          onConfirm={() => setIsLocationGuideOpen(false)}
+          isLargeFontMode={isLargeFontMode}
+        />
       )}
     </>
   );

@@ -540,7 +540,12 @@ const ActivityDashboardPage = ({
           onHome={onHome}
         />
 
-        {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
+        {locationConsentOpen && (
+          <LocationConsentModal
+            onConfirm={handleLocationConsentConfirm}
+            isLargeFontMode={isLargeFontMode}
+          />
+        )}
 
         {locationPermissionDeniedOpen && (
           <LocationPermissionDeniedModalLargeFont
@@ -659,7 +664,12 @@ const ActivityDashboardPage = ({
         ))}
       </div>
 
-      {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
+      {locationConsentOpen && (
+        <LocationConsentModal
+          onConfirm={handleLocationConsentConfirm}
+          isLargeFontMode={isLargeFontMode}
+        />
+      )}
 
       {locationPermissionDeniedOpen && (
         <LocationPermissionDeniedModal onClose={() => setLocationPermissionDeniedOpen(false)} />

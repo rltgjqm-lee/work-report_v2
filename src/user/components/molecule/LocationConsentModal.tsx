@@ -1,34 +1,57 @@
-import { createPortal } from "react-dom";
+import BottomSheet from "../atoms/BottomSheet";
 
 interface LocationConsentModalProps {
   onConfirm: () => void;
+  isLargeFontMode: boolean;
 }
 
-const LocationConsentModal = ({ onConfirm }: LocationConsentModalProps) =>
-  createPortal(
-    <div className="fixed inset-0 w-full h-full bg-[rgba(20,30,50,0.45)] z-[9999] flex justify-center items-center p-6">
-      <div className="bg-white rounded-[20px] px-6 py-7 max-w-[320px] w-full shadow-[0_12px_32px_rgba(20,30,50,0.2)] text-center">
-        <img src="/icons/icon-map.png" alt="" className="w-14 h-14 mx-auto mb-3.5" />
-        <div className="text-[17px] font-extrabold text-text-strong leading-[1.5]">
-          근무 중 위치가 확인돼요
-        </div>
-        <div className="text-[14.5px] text-text-tertiary font-semibold leading-[1.6] mt-2.5">
-          출근하면 근무지 확인과 근무 중 안전 관리를
-          <br />
-          위해 위치를 주기적으로 확인해요
-          <br />
-          퇴근을 등록하면 위치 확인이 즉시 중단돼요
-        </div>
-
-        <button
-          onClick={onConfirm}
-          className="w-full h-[52px] rounded-[14px] bg-brand text-white text-[16px] font-extrabold border-none mt-5 cursor-pointer"
-        >
-          확인
-        </button>
+const LocationConsentModal = ({ onConfirm, isLargeFontMode }: LocationConsentModalProps) => (
+  // 위치 수집 동의는 배경을 탭한다고 묵시적으로 동의 처리되면 안 되므로, 원래
+  // center-card 버전처럼 "확인" 버튼을 눌러야만 닫히게 한다(BottomSheet의 배경 탭
+  // 닫힘은 비활성화).
+  <BottomSheet onClose={() => {}}>
+    <div className="text-center">
+      <img src="/icons/icon-map.png" alt="" className="w-14 h-14 mx-auto mb-3.5" />
+      <div
+        className={`font-extrabold text-text-strong leading-[1.5] ${isLargeFontMode ? "text-[24px]" : "text-[18px]"}`}
+      >
+        근무 중 위치가 확인돼요
       </div>
-    </div>,
-    document.body,
-  );
+      <div
+        className={`text-text-tertiary font-semibold leading-[1.6] ${isLargeFontMode ? "text-[16px] mt-3" : "text-[14.5px] mt-2.5"}`}
+      >
+        {isLargeFontMode ? (
+          <>
+            출근 후 올바른 근무지에서
+            <br />
+            <span className="font-extrabold">안전</span>하게 일하고 계신지 확인하기 위해
+            <br />
+            위치를 주기적으로 체크하고 있어요
+          </>
+        ) : (
+          <>
+            출근 후 올바른 근무지에서 <span className="font-extrabold">안전</span>하게 일하고
+            계신지
+            <br />
+            확인하기 위해 위치를 주기적으로 체크하고 있어요
+          </>
+        )}
+        <br />
+        퇴근 후 위치 확인이 즉시 중단돼요
+      </div>
+
+      <button
+        onClick={onConfirm}
+        className={`w-full font-extrabold bg-brand text-white border-none cursor-pointer ${
+          isLargeFontMode
+            ? "h-[56px] rounded-[16px] text-[18px] mt-6"
+            : "h-[52px] rounded-[14px] text-[16px] mt-5"
+        }`}
+      >
+        확인
+      </button>
+    </div>
+  </BottomSheet>
+);
 
 export default LocationConsentModal;
