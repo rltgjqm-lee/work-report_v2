@@ -12,10 +12,12 @@ def capacitor_pods
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCommunityBackgroundGeolocation', :path => '../../node_modules/@capacitor-community/background-geolocation'
+  pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
   pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   pod 'CapgoCapacitorUpdater', :path => '../../node_modules/@capgo/capacitor-updater'
+  pod 'CapacitorNativeSettings', :path => '../../node_modules/capacitor-native-settings'
 end
 
 target 'App' do
