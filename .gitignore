@@ -43,3 +43,6 @@ Thumbs.db
 worker/.wrangler
 .wrangler
 worker/.dev.vars
+
+*storybook.log
+storybook-static
