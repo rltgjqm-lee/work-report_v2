@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/ClockInCompleteModal",
   component: ClockInCompleteModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { startTime: "오전 09:02", onConfirm: fn() },
 } satisfies Meta<typeof ClockInCompleteModal>;
 

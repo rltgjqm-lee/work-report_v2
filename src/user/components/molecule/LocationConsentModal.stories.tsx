@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/LocationConsentModal",
   component: LocationConsentModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { onConfirm: fn() },
 } satisfies Meta<typeof LocationConsentModal>;
 

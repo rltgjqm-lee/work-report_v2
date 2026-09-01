@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/ActivitySaveConfirmModal",
   component: ActivitySaveConfirmModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { actContent: "재가노인 안부확인", actPlace: "행복복지관", onConfirm: fn() },
 } satisfies Meta<typeof ActivitySaveConfirmModal>;
 

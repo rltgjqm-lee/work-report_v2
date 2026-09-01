@@ -7,7 +7,7 @@ const meta = {
   title: "Shared/Molecule/ConfirmModal",
   component: ConfirmModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { isOpen: true, onConfirm: fn(), onClose: fn() },
 } satisfies Meta<typeof ConfirmModal>;
 

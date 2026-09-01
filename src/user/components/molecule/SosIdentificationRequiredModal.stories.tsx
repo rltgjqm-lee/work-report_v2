@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/SosIdentificationRequiredModal",
   component: SosIdentificationRequiredModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { onConfirm: fn() },
 } satisfies Meta<typeof SosIdentificationRequiredModal>;
 

@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/LocationPermissionDeniedModal",
   component: LocationPermissionDeniedModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { onClose: fn() },
 } satisfies Meta<typeof LocationPermissionDeniedModal>;
 

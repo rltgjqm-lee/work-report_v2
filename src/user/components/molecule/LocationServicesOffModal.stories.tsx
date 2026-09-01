@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/LocationServicesOffModal",
   component: LocationServicesOffModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { onClose: fn(), onEnabled: fn() },
 } satisfies Meta<typeof LocationServicesOffModal>;
 

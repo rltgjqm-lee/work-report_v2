@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/IncompleteDayModal",
   component: IncompleteDayModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { date: "2026-08-31", onConfirm: fn() },
 } satisfies Meta<typeof IncompleteDayModal>;
 

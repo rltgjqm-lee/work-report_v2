@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/ClockOutCompleteModal",
   component: ClockOutCompleteModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   args: { endTime: "오후 06:01", onConfirm: fn() },
 } satisfies Meta<typeof ClockOutCompleteModal>;
 

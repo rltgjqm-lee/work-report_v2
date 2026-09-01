@@ -7,7 +7,7 @@ const meta = {
   title: "User/Molecule/Modal/SosConfirmModal",
   component: SosConfirmModal,
   tags: ["autodocs"],
-  parameters: { layout: "fullscreen" },
+  parameters: { layout: "fullscreen", docs: { story: { inline: false, iframeHeight: 700 } } },
   // 카운트다운이 0에 닿으면 onSend가 자동 호출된다 — 스토리에서도 10초 뒤 실제로 호출된다.
   args: { onSend: fn(), onCancel: fn() },
 } satisfies Meta<typeof SosConfirmModal>;
