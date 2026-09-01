@@ -3,6 +3,10 @@
 @theme {
   --font-sans: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
 
+  /* 참여자 앱 바텀시트(BottomSheet)의 등장 애니메이션 */
+  --animate-sheet-backdrop-in: sheet-backdrop-in 0.2s ease-out;
+  --animate-sheet-slide-up: sheet-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+
   /* 참여자용 메인 앱 / 관리자 콘솔에서 공유 */
   --color-text-strong: #1f2937;
   --color-surface-page: #f2f4f6;
@@ -96,6 +100,24 @@
   --color-admin-upload-success-text-muted: #5c7a53;
   --color-admin-upload-success-border: #d3e6cc;
   --color-admin-upload-success-bg: #f0f6ee;
+}
+
+@keyframes sheet-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @layer base {

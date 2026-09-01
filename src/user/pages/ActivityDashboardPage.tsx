@@ -23,7 +23,9 @@ import ClockOutRequiredModal from "../components/molecule/ClockOutRequiredModal"
 import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal";
 import LocationConsentModal from "../components/molecule/LocationConsentModal";
 import LocationPermissionDeniedModal from "../components/molecule/LocationPermissionDeniedModal";
+import LocationPermissionDeniedModalLargeFont from "../components/molecule/LocationPermissionDeniedModalLargeFont";
 import LocationServicesOffModal from "../components/molecule/LocationServicesOffModal";
+import LocationServicesOffModalLargeFont from "../components/molecule/LocationServicesOffModalLargeFont";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
 import { checkGeolocationFailureReason, isLocationServicesEnabled } from "../utils/geolocation";
 import { checkNativePushPermission, registerNativePush } from "../utils/nativePushRegistration";
@@ -541,11 +543,13 @@ const ActivityDashboardPage = ({
         {locationConsentOpen && <LocationConsentModal onConfirm={handleLocationConsentConfirm} />}
 
         {locationPermissionDeniedOpen && (
-          <LocationPermissionDeniedModal onClose={() => setLocationPermissionDeniedOpen(false)} />
+          <LocationPermissionDeniedModalLargeFont
+            onClose={() => setLocationPermissionDeniedOpen(false)}
+          />
         )}
 
         {locationServicesOffOpen && (
-          <LocationServicesOffModal
+          <LocationServicesOffModalLargeFont
             onClose={() => setLocationServicesOffOpen(false)}
             onEnabled={submitClockIn}
           />

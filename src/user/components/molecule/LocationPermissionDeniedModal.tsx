@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom";
+
 import { AndroidSettings, IOSSettings, NativeSettings } from "capacitor-native-settings";
 
 interface LocationPermissionDeniedModalProps {
