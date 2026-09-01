@@ -29,6 +29,7 @@ import LocationServicesOffModalLargeFont from "../components/molecule/LocationSe
 import LocationUnavailableModal from "../components/molecule/LocationUnavailableModal";
 import LocationUnavailableModalLargeFont from "../components/molecule/LocationUnavailableModalLargeFont";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
+import NotWorkDayModalLargeFont from "../components/molecule/NotWorkDayModalLargeFont";
 import OutOfAreaModal from "../components/molecule/OutOfAreaModal";
 import OutOfAreaModalLargeFont from "../components/molecule/OutOfAreaModalLargeFont";
 import { checkGeolocationFailureReason, isLocationServicesEnabled } from "../utils/geolocation";
@@ -573,7 +574,7 @@ const ActivityDashboardPage = ({
           <LocationUnavailableModalLargeFont onConfirm={() => setLocationUnavailableOpen(false)} />
         )}
 
-        {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
+        {notWorkDayOpen && <NotWorkDayModalLargeFont onConfirm={() => setNotWorkDayOpen(false)} />}
 
         {outOfArea && (
           <OutOfAreaModalLargeFont

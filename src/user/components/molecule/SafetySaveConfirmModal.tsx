@@ -7,6 +7,13 @@ interface SafetySaveConfirmModalProps {
   onConfirm: () => void;
 }
 
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-center justify-between gap-3 py-2.5 border-b border-border-faint last:border-b-0">
+    <span className="text-[13px] text-text-subtitle font-semibold flex-none">{label}</span>
+    <span className="text-[14.5px] font-extrabold text-text-strong text-right">{value}</span>
+  </div>
+);
+
 const SafetySaveConfirmModal = ({
   hasAccident,
   accidentDetail,
@@ -19,17 +26,19 @@ const SafetySaveConfirmModal = ({
         <img src="/icons/icon-safety.png" alt="" className="w-14 h-14 mx-auto mb-3.5" />
         <div className="text-[17px] font-extrabold text-text-strong leading-[1.5]">
           {hasAccident ? (
-            <>
-              사고내용은 <b>{accidentDetail}</b>이고
-              <br />
-              사고 후에는 <b>{accidentAction}</b>하셨어요
-            </>
+            "안전일지를 저장했어요"
           ) : (
             <>
               오늘도 <b>안전</b>하게 마감했어요
             </>
           )}
         </div>
+        {hasAccident && (
+          <div className="bg-[#f7f9fb] rounded-[14px] px-4 mt-2.5">
+            <InfoRow label="사고내용" value={accidentDetail} />
+            <InfoRow label="조치" value={accidentAction} />
+          </div>
+        )}
 
         <button
           onClick={onConfirm}

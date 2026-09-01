@@ -6,8 +6,11 @@ import type { ActivityLogFormData } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
 import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";
 import SosIdentificationRequiredModal from "../components/molecule/SosIdentificationRequiredModal";
+import SosIdentificationRequiredModalLargeFont from "../components/molecule/SosIdentificationRequiredModalLargeFont";
 import SosUnavailableModal from "../components/molecule/SosUnavailableModal";
+import SosUnavailableModalLargeFont from "../components/molecule/SosUnavailableModalLargeFont";
 import { computeTodayWorkCardStatus, type TodayStatus } from "../utils/todayWorkStatus";
 import HomePageLargeFont from "./HomePageLargeFont";
 
@@ -82,6 +85,15 @@ const HomePage = ({
     setIsSosConfirmModalOpen(false);
   };
 
+  const handleSosIdentificationModalConfirm = () => {
+    setIsSosIdentificationModalOpen(false);
+    if (formData.userName) {
+      onStartActivityLog();
+    } else {
+      onOpenAffiliation();
+    }
+  };
+
   if (isLargeFontMode) {
     return (
       <>
@@ -96,15 +108,16 @@ const HomePage = ({
         />
 
         {isSosConfirmModalOpen && (
-          <SosConfirmModal onSend={handleSosSend} onCancel={handleSosCancel} />
+          <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={handleSosCancel} />
         )}
         {isSosIdentificationModalOpen && (
-          <SosIdentificationRequiredModal
-            onConfirm={() => setIsSosIdentificationModalOpen(false)}
+          <SosIdentificationRequiredModalLargeFont
+            onConfirm={handleSosIdentificationModalConfirm}
+            isBasicInfoRegistered={!!formData.userName}
           />
         )}
         {isSosUnavailableModalOpen && (
-          <SosUnavailableModal onConfirm={() => setIsSosUnavailableModalOpen(false)} />
+          <SosUnavailableModalLargeFont onConfirm={() => setIsSosUnavailableModalOpen(false)} />
         )}
       </>
     );
@@ -188,7 +201,10 @@ const HomePage = ({
         <SosConfirmModal onSend={handleSosSend} onCancel={handleSosCancel} />
       )}
       {isSosIdentificationModalOpen && (
-        <SosIdentificationRequiredModal onConfirm={() => setIsSosIdentificationModalOpen(false)} />
+        <SosIdentificationRequiredModal
+          onConfirm={handleSosIdentificationModalConfirm}
+          isBasicInfoRegistered={!!formData.userName}
+        />
       )}
       {isSosUnavailableModalOpen && (
         <SosUnavailableModal onConfirm={() => setIsSosUnavailableModalOpen(false)} />

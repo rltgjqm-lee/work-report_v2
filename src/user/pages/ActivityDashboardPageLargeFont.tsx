@@ -6,7 +6,7 @@ import type { ActivityLogFormData } from "../../types/form";
 import { programTypeShortLabel } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
-import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";
 
 type ModuleItemLargeProps = {
   index: number;
@@ -198,7 +198,7 @@ const ActivityDashboardPageLargeFont = ({
       </div>
 
       {isSosModalOpen && (
-        <SosConfirmModal onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
+        <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
       )}
     </div>
   );

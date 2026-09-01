@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { isoToKstMinuteString } from "../../utils/timeFormat";
 
 import { sendSos } from "../api/sosApi";
-import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";
 
 interface SettingsPageLargeFontProps {
   onBack: () => void;
@@ -100,7 +100,7 @@ const SettingsPageLargeFont = ({
       </div>
 
       {isSosModalOpen && (
-        <SosConfirmModal onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
+        <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
       )}
     </div>
   );

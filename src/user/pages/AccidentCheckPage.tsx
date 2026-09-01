@@ -18,6 +18,7 @@ import Card from "../components/atoms/Card";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
 import SafetySaveConfirmModal from "../components/molecule/SafetySaveConfirmModal";
+import SafetySaveConfirmModalLargeFont from "../components/molecule/SafetySaveConfirmModalLargeFont";
 import AccidentCheckPageLargeFont from "./AccidentCheckPageLargeFont";
 
 interface Page5Props {
@@ -82,7 +83,7 @@ const AccidentCheckPage = ({
         />
 
         {confirmOpen && (
-          <SafetySaveConfirmModal
+          <SafetySaveConfirmModalLargeFont
             hasAccident={formData.hasAccident}
             accidentDetail={formData.accidentDetail}
             accidentAction={formData.accidentAction}

@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import type { ActivityLogFormData } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
-import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";
 
 interface ActivityReportPageLargeFontProps {
   formData: ActivityLogFormData;
@@ -129,7 +129,7 @@ const ActivityReportPageLargeFont = ({
     </div>
 
     {isSosModalOpen && (
-      <SosConfirmModal onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
+      <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
     )}
   </div>
   );

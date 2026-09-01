@@ -6,7 +6,7 @@ import type { ActivityLogFormData } from "../../types/form";
 
 import { sendSos } from "../api/sosApi";
 import SignatureCanvas from "../components/atoms/SignatureCanvas";
-import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";
 
 interface SignaturePageLargeFontProps {
   formData: ActivityLogFormData;
@@ -116,7 +116,7 @@ const SignaturePageLargeFont = ({
       </div>
 
       {isSosModalOpen && (
-        <SosConfirmModal onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
+        <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
       )}
     </div>
   );

@@ -6,7 +6,7 @@ import type { ActivityLogFormData } from "../../types/form";
 import { formatTimeField, getLocalToday } from "../../utils/timeFormat";
 
 import { sendSos } from "../api/sosApi";
-import SosConfirmModal from "../components/molecule/SosConfirmModal";
+import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";
 
 interface ActivitySummaryPageLargeFontProps {
   formData: ActivityLogFormData;
@@ -151,7 +151,7 @@ const ActivitySummaryPageLargeFont = ({
       </div>
 
       {isSosModalOpen && (
-        <SosConfirmModal onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
+        <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
       )}
     </div>
   );
