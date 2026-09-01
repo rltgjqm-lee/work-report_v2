@@ -13,7 +13,7 @@ const OutOfAreaModalLargeFont = ({ distanceM, onConfirm }: OutOfAreaModalLargeFo
       <div className="text-[24px] font-extrabold text-text-strong leading-[1.5]">
         근무지 밖이에요
       </div>
-      <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-3">
+      <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-2">
         {distanceM !== null && (
           <>
             근무지까지 약 {formatDistanceM(distanceM)} 남았어요

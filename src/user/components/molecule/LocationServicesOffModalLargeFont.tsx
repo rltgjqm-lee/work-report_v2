@@ -49,7 +49,7 @@ const LocationServicesOffModalLargeFont = ({
         <div className="text-[24px] font-extrabold text-text-strong leading-[1.5]">
           휴대폰 위치 기능이 꺼져있어요
         </div>
-        <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-3">
+        <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-2">
           {isAndroid ? (
             <>
               아래 버튼을 누르면

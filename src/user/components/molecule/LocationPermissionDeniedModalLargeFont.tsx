@@ -24,7 +24,7 @@ const LocationPermissionDeniedModalLargeFont = ({
       <div className="text-[24px] font-extrabold text-text-strong leading-[1.5]">
         위치 권한이 꺼져있어요
       </div>
-      <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-3">
+      <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-2">
         설정 열기 버튼을 클릭한 후
         <br />
         위치 권한을 허용해주세요

@@ -15,6 +15,7 @@ import {
 import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import Card from "../components/atoms/Card";
 import ActivitySaveConfirmModal from "../components/molecule/ActivitySaveConfirmModal";
+import ActivitySaveConfirmModalLargeFont from "../components/molecule/ActivitySaveConfirmModalLargeFont";
 import AppBar from "../components/molecule/AppBar";
 import PageHeaderCard from "../components/molecule/PageHeaderCard";
 import ActivityReportPageLargeFont from "./ActivityReportPageLargeFont";
@@ -83,7 +84,7 @@ const ActivityReportPage = ({
         />
 
         {confirmOpen && (
-          <ActivitySaveConfirmModal
+          <ActivitySaveConfirmModalLargeFont
             actContent={formData.actContent}
             actPlace={formData.actPlace}
             onConfirm={handleSaveConfirmButtonClick}

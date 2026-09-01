@@ -18,7 +18,7 @@ const LocationConsentModal = ({ onConfirm, isLargeFontMode }: LocationConsentMod
         근무 중 위치가 확인돼요
       </div>
       <div
-        className={`text-text-tertiary font-semibold leading-[1.6] ${isLargeFontMode ? "text-[16px] mt-3" : "text-[14.5px] mt-2.5"}`}
+        className={`text-text-tertiary font-semibold leading-[1.6] ${isLargeFontMode ? "text-[16px] mt-2" : "text-[14.5px] mt-2.5"}`}
       >
         {isLargeFontMode ? (
           <>

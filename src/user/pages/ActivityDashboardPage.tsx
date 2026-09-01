@@ -16,11 +16,17 @@ import {
 } from "../api/attendanceApi";
 import AppBar from "../components/molecule/AppBar";
 import AttendanceTimeGuideModal from "../components/molecule/AttendanceTimeGuideModal";
+import AttendanceTimeGuideModalLargeFont from "../components/molecule/AttendanceTimeGuideModalLargeFont";
 import ClockInCompleteModal from "../components/molecule/ClockInCompleteModal";
+import ClockInCompleteModalLargeFont from "../components/molecule/ClockInCompleteModalLargeFont";
 import ClockInRequiredModal from "../components/molecule/ClockInRequiredModal";
+import ClockInRequiredModalLargeFont from "../components/molecule/ClockInRequiredModalLargeFont";
 import ClockOutCompleteModal from "../components/molecule/ClockOutCompleteModal";
+import ClockOutCompleteModalLargeFont from "../components/molecule/ClockOutCompleteModalLargeFont";
 import ClockOutRequiredModal from "../components/molecule/ClockOutRequiredModal";
+import ClockOutRequiredModalLargeFont from "../components/molecule/ClockOutRequiredModalLargeFont";
 import ClockOutTooEarlyModal from "../components/molecule/ClockOutTooEarlyModal";
+import ClockOutTooEarlyModalLargeFont from "../components/molecule/ClockOutTooEarlyModalLargeFont";
 import LocationConsentModal from "../components/molecule/LocationConsentModal";
 import LocationPermissionDeniedModal from "../components/molecule/LocationPermissionDeniedModal";
 import LocationPermissionDeniedModalLargeFont from "../components/molecule/LocationPermissionDeniedModalLargeFont";
@@ -584,15 +590,15 @@ const ActivityDashboardPage = ({
         )}
 
         {clockInRequiredOpen && (
-          <ClockInRequiredModal onConfirm={() => setClockInRequiredOpen(false)} />
+          <ClockInRequiredModalLargeFont onConfirm={() => setClockInRequiredOpen(false)} />
         )}
 
         {clockOutRequiredOpen && (
-          <ClockOutRequiredModal onConfirm={() => setClockOutRequiredOpen(false)} />
+          <ClockOutRequiredModalLargeFont onConfirm={() => setClockOutRequiredOpen(false)} />
         )}
 
         {timeGuide && (
-          <AttendanceTimeGuideModal
+          <AttendanceTimeGuideModalLargeFont
             now={timeGuide.now}
             shiftStart={timeGuide.shiftStart}
             shiftEnd={timeGuide.shiftEnd}
@@ -601,21 +607,21 @@ const ActivityDashboardPage = ({
         )}
 
         {clockOutTooEarlyShiftEnd && (
-          <ClockOutTooEarlyModal
+          <ClockOutTooEarlyModalLargeFont
             shiftEnd={clockOutTooEarlyShiftEnd}
             onConfirm={() => setClockOutTooEarlyShiftEnd(null)}
           />
         )}
 
         {clockOutCompleteTime && (
-          <ClockOutCompleteModal
+          <ClockOutCompleteModalLargeFont
             endTime={clockOutCompleteTime}
             onConfirm={() => setClockOutCompleteTime(null)}
           />
         )}
 
         {clockInCompleteTime && (
-          <ClockInCompleteModal
+          <ClockInCompleteModalLargeFont
             startTime={clockInCompleteTime}
             onConfirm={() => setClockInCompleteTime(null)}
           />

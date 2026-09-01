@@ -17,7 +17,7 @@ const SosIdentificationRequiredModalLargeFont = ({
       <div className="text-[24px] font-extrabold text-text-strong leading-[1.5]">
         본인 확인 후 사용할 수 있어요
       </div>
-      <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-3">
+      <div className="text-[16px] text-text-tertiary font-semibold leading-[1.6] mt-2">
         {isBasicInfoRegistered ? (
           <>
             <span className="font-extrabold">활동일지 시작</span>에서 본인확인을 진행해주세요
