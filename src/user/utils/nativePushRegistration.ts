@@ -19,6 +19,20 @@ export const checkNativePushPermission = async (): Promise<
   }
 };
 
+// 💡 앱을 켜자마자(참여자가 아직 확정되기 전) 알림 권한 다이얼로그부터 띄운다 — 참여자와
+// 묶어 서버에 토큰을 등록하는 registerNativePush와 달리, 여기선 OS 권한만 먼저 받아둔다.
+// 이미 허용/거부가 결정된 상태면 다이얼로그 없이 조용히 끝난다. 참여자가 정해진 뒤
+// registerNativePush가 다시 호출되면 그때는 새 다이얼로그 없이 바로 토큰을 등록한다.
+export const requestNativePushPermission = async (): Promise<void> => {
+  if (!Capacitor.isNativePlatform()) return;
+
+  try {
+    await PushNotifications.requestPermissions();
+  } catch (error) {
+    console.error("네이티브 알림 권한 요청 실패:", error);
+  }
+};
+
 // 대시보드는 Main.tsx의 view 전환마다(업무/안전 등록 화면 오갈 때마다) 매번 새로 마운트되고,
 // 그때마다 registerNativePush가 다시 호출된다 — 이 세션에서 이미 성공적으로 등록한
 // 참여자는 다시 서버에 upsert를 보내지 않게 걸러낸다. 모듈 스코프 변수라 앱을 완전히

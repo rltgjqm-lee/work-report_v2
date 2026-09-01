@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 
 import ConfirmModal from "../components/molecule/ConfirmModal";
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
@@ -25,11 +26,13 @@ import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignaturePage from "./pages/SignaturePage";
 import { syncPendingActivityLogs } from "./utils/activityLogSync";
+import { readCurrentCoordinates } from "./utils/geolocation";
 import {
   IDLE_LOCATION_REPORT_STATE,
   startLocationReporting,
   type LocationReportState,
 } from "./utils/locationReporting";
+import { requestNativePushPermission } from "./utils/nativePushRegistration";
 
 const VIEW_TYPE = {
   MAIN: "main",
@@ -151,6 +154,16 @@ const Main = () => {
     return () => {
       listenerPromise.then((listener) => listener.remove());
     };
+  }, []);
+
+  // 💡 앱을 켜자마자(참여자 확정 전이라도) 알림/위치 권한 다이얼로그를 먼저 띄운다 —
+  // 그래야 이후 실제로 필요한 시점(출근 버튼, 등록확인)에 새삼 권한 팝업이 끼어들어
+  // 흐름을 막지 않는다. 이미 허용/거부가 결정된 상태면 다이얼로그 없이 조용히 끝난다.
+  // 네이티브 앱에서만 의미가 있어 웹 미리보기에서는 건너뛴다.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    requestNativePushPermission();
+    readCurrentCoordinates();
   }, []);
 
   // 모달 상태
