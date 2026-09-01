@@ -125,8 +125,9 @@ export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReaso
       })
       .catch((error) => settle(reasonFromError(error)));
 
-    // 콜백이 끝내 안 오는 경우(플러그인 미탑재 등)를 대비한 안전장치.
-    setTimeout(() => settle("other"), 3000);
+    // 콜백이 끝내 안 오는 경우(플러그인 미탑재 등)를 대비한 안전장치. stale:true라
+    // 정상 케이스는 이 시간을 다 기다리지 않고 훨씬 먼저 settle되므로 짧게 잡아도 된다.
+    setTimeout(() => settle("other"), 1500);
   });
 };
 

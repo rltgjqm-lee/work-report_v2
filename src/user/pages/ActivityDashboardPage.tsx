@@ -26,6 +26,8 @@ import LocationPermissionDeniedModal from "../components/molecule/LocationPermis
 import LocationPermissionDeniedModalLargeFont from "../components/molecule/LocationPermissionDeniedModalLargeFont";
 import LocationServicesOffModal from "../components/molecule/LocationServicesOffModal";
 import LocationServicesOffModalLargeFont from "../components/molecule/LocationServicesOffModalLargeFont";
+import LocationUnavailableModal from "../components/molecule/LocationUnavailableModal";
+import LocationUnavailableModalLargeFont from "../components/molecule/LocationUnavailableModalLargeFont";
 import NotWorkDayModal from "../components/molecule/NotWorkDayModal";
 import OutOfAreaModal from "../components/molecule/OutOfAreaModal";
 import OutOfAreaModalLargeFont from "../components/molecule/OutOfAreaModalLargeFont";
@@ -178,6 +180,9 @@ const ActivityDashboardPage = ({
   // 뭔가를 직접 바꿔야 하므로, 여기서 멈추고 명확히 안내한다.
   const [locationPermissionDeniedOpen, setLocationPermissionDeniedOpen] = useState(false);
   const [locationServicesOffOpen, setLocationServicesOffOpen] = useState(false);
+  // 💡 실내 등으로 일시적으로 위치를 못 잡은 경우("other")는 재동의가 아니라 그냥 다시
+  // 출근 버튼을 눌러보라는 안내만 하고 자동으로 아무것도 다시 호출하지 않는다.
+  const [locationUnavailableOpen, setLocationUnavailableOpen] = useState(false);
 
   // 💡 출근/퇴근을 먼저 해야 하는 안내도 일반 alert 대신 전용 아이콘 모달로 보여준다.
   const [clockInRequiredOpen, setClockInRequiredOpen] = useState(false);
@@ -334,7 +339,7 @@ const ActivityDashboardPage = ({
                 setLocationServicesOffOpen(true);
                 return;
               }
-              onAlert(["위치를 확인하지 못했어요.", "잠시 후 출근 버튼을 다시 눌러주세요."]);
+              setLocationUnavailableOpen(true);
             });
             return;
           }
@@ -564,6 +569,10 @@ const ActivityDashboardPage = ({
           />
         )}
 
+        {locationUnavailableOpen && (
+          <LocationUnavailableModalLargeFont onConfirm={() => setLocationUnavailableOpen(false)} />
+        )}
+
         {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
 
         {outOfArea && (
@@ -691,6 +700,10 @@ const ActivityDashboardPage = ({
           onClose={() => setLocationServicesOffOpen(false)}
           onEnabled={submitClockIn}
         />
+      )}
+
+      {locationUnavailableOpen && (
+        <LocationUnavailableModal onConfirm={() => setLocationUnavailableOpen(false)} />
       )}
 
       {notWorkDayOpen && <NotWorkDayModal onConfirm={() => setNotWorkDayOpen(false)} />}
