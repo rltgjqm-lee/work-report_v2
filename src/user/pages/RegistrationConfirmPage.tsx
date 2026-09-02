@@ -80,7 +80,10 @@ const RegistrationConfirmPage = ({
       const regionLabel = [organization?.regionSido, organization?.regionSigungu]
         .filter(Boolean)
         .join(" ");
-      const programLabel = [program.programType, program.name].filter(Boolean).join(" ");
+      // 사업 유형 뱃지와 같은 규칙("공익 활동"/"역량 활용" 전체 대신 앞 두 글자만) —
+      // types/form.ts의 programTypeShortLabel 참고.
+      const programTypeTag = program.programType?.split(" ")[0];
+      const programLabel = programTypeTag ? `${program.name}(${programTypeTag})` : program.name;
 
       exception = {
         variant: "warn",
@@ -92,29 +95,30 @@ const RegistrationConfirmPage = ({
             <br />
             <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에
             <br />
-            등록이 안되어있어요
+            등록이 안 되어 있어요
           </>
         ) : (
           <>
             <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에
             <br />
-            등록이 안되어있어요
+            등록이 안 되어 있어요
           </>
         ),
-        note: "해당 기관, 사업 담당자에게 문의하여 주세요",
+        note: "해당 기관이나 담당자에게\n문의해 주세요",
       };
     } else {
       exception = {
         variant: "warn",
         title: "본인 확인에 실패했어요",
-        note: "이름을 다시 확인해 주세요\n해당 기관, 사업 담당자에게 문의하여 주세요",
+        body: "이름을 다시 확인해 주세요",
+        note: "해당 기관이나 담당자에게\n문의해 주세요",
       };
     }
   } else if (identified.status === "DROPPED") {
     exception = {
       variant: "warn",
       title: "참여가 종료되었어요",
-      note: "해당 기관, 사업 담당자에게 문의하여 주세요",
+      note: "해당 기관이나 담당자에게\n문의해 주세요",
     };
   } else if (identified.status === "ON_LEAVE") {
     exception = {

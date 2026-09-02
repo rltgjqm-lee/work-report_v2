@@ -24,12 +24,12 @@ export const NotRegisteredWithOrg: Story = {
       <>
         서울 강남구 <strong className="text-brand font-extrabold">행복복지관</strong>의
         <br />
-        <strong className="text-brand font-extrabold">노인일자리 지원사업</strong> 사업에
+        <strong className="text-brand font-extrabold">노인일자리 지원사업(공익)</strong> 사업에
         <br />
-        등록이 안되어있어요
+        등록이 안 되어 있어요
       </>
     ),
-    note: "해당 기관, 사업 담당자에게 문의하여 주세요",
+    note: "해당 기관이나 담당자에게\n문의해 주세요",
   },
 };
 
@@ -37,7 +37,8 @@ export const NotRegisteredNameMismatch: Story = {
   args: {
     variant: "warn",
     title: "본인 확인에 실패했어요",
-    note: "이름을 다시 확인해 주세요\n해당 기관, 사업 담당자에게 문의하여 주세요",
+    body: "이름을 다시 확인해 주세요",
+    note: "해당 기관이나 담당자에게\n문의해 주세요",
   },
 };
 
@@ -45,7 +46,7 @@ export const Dropped: Story = {
   args: {
     variant: "warn",
     title: "참여가 종료되었어요",
-    note: "해당 기관, 사업 담당자에게 문의하여 주세요",
+    note: "해당 기관이나 담당자에게\n문의해 주세요",
   },
 };
 
@@ -76,6 +77,41 @@ export const ProgramNotStarted: Story = {
 export const NotRegisteredWithOrgLargeFont: Story = {
   args: {
     ...NotRegisteredWithOrg.args,
+    isLargeFontMode: true,
+  },
+};
+
+export const NotRegisteredNameMismatchLargeFont: Story = {
+  args: {
+    ...NotRegisteredNameMismatch.args,
+    isLargeFontMode: true,
+  },
+};
+
+export const DroppedLargeFont: Story = {
+  args: {
+    ...Dropped.args,
+    isLargeFontMode: true,
+  },
+};
+
+export const OnLeaveLargeFont: Story = {
+  args: {
+    ...OnLeave.args,
+    isLargeFontMode: true,
+  },
+};
+
+export const ProgramEndedLargeFont: Story = {
+  args: {
+    ...ProgramEnded.args,
+    isLargeFontMode: true,
+  },
+};
+
+export const ProgramNotStartedLargeFont: Story = {
+  args: {
+    ...ProgramNotStarted.args,
     isLargeFontMode: true,
   },
 };

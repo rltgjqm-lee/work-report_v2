@@ -46,7 +46,7 @@ const ExceptionCard = ({
     </span>
     {body && (
       <span
-        className={`leading-[1.6] font-semibold text-text-subtle whitespace-pre-line ${
+        className={`leading-[1.6] font-semibold text-text-tertiary whitespace-pre-line ${
           isLargeFontMode ? "mt-5 text-[18px]" : "mt-3.5 text-[13.5px]"
         }`}
       >
@@ -54,7 +54,7 @@ const ExceptionCard = ({
       </span>
     )}
     <span
-      className={`font-semibold text-text-muted whitespace-pre-line ${
+      className={`font-semibold text-text-tertiary whitespace-pre-line ${
         isLargeFontMode
           ? `text-[17px] ${body ? "mt-4" : "mt-5"}`
           : `text-[12.5px] ${body ? "mt-3" : "mt-3.5"}`
