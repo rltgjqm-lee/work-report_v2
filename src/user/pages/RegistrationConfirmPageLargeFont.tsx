@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 
 import type { ActivityLogFormData } from "../../types/form";
 import { programTypeShortLabel } from "../../types/form";
+import ExceptionCard from "../components/atoms/ExceptionCard";
 
 import type { ExceptionInfo } from "./RegistrationConfirmPage";
 
@@ -14,11 +15,6 @@ interface RegistrationConfirmPageLargeFontProps {
   onBack: () => void;
   onNext: () => void;
 }
-
-const ICON_CLASS = {
-  warn: "bg-danger-tint-strong text-danger-strong",
-  caution: "bg-warn-tint text-warn-text",
-};
 
 const ConfirmRowLarge = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-4 py-5 border-b border-surface-page last:border-b-0">
@@ -55,26 +51,13 @@ const RegistrationConfirmPageLargeFont = ({
 
     <div className="px-[16px] py-[20px] flex-1 flex flex-col gap-5">
       {exception !== "loading" && exception !== null && (
-        <div className="flex flex-col items-center text-center bg-white border-[1.5px] border-border-faint rounded-[18px] px-6 py-6 shadow-[0_2px_8px_rgba(20,30,50,.05)] cursor-default">
-          <div
-            className={`w-[72px] h-[72px] rounded-2xl text-[34px] font-extrabold flex items-center justify-center ${ICON_CLASS[exception.variant]}`}
-          >
-            !
-          </div>
-          <span className="mt-5 text-[21px] font-extrabold text-text-strong">
-            {exception.title}
-          </span>
-          {exception.body && (
-            <span className="mt-5 text-[18px] leading-[1.6] font-semibold text-text-subtle whitespace-pre-line">
-              {exception.body}
-            </span>
-          )}
-          <span
-            className={`text-[17px] font-semibold text-text-muted whitespace-pre-line ${exception.body ? "mt-4" : "mt-5"}`}
-          >
-            {exception.note}
-          </span>
-        </div>
+        <ExceptionCard
+          variant={exception.variant}
+          title={exception.title}
+          body={exception.body}
+          note={exception.note}
+          isLargeFontMode
+        />
       )}
 
       {(exception === "loading" || exception === null) && (
@@ -137,7 +120,7 @@ const RegistrationConfirmPageLargeFont = ({
       )}
     </div>
 
-    <div className="flex-none bg-white px-7 pt-5 pb-6 flex flex-col gap-3.5 border-t border-surface-page">
+    <div className="flex-none bg-white px-[16px] pt-5 pb-6 flex flex-col gap-3.5 border-t border-surface-page">
       <div className="flex gap-3.5">
         <button
           onClick={onBack}

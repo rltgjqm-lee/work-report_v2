@@ -84,7 +84,7 @@ const RegistrationConfirmPage = ({
 
       exception = {
         variant: "warn",
-        title: "본인 확인에 실패했어요.",
+        title: "본인 확인에 실패했어요",
         body: organization ? (
           <>
             {regionLabel} <strong className="text-brand font-extrabold">{organization.name}</strong>
@@ -92,37 +92,37 @@ const RegistrationConfirmPage = ({
             <br />
             <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에
             <br />
-            등록이 안되어 있습니다.
+            등록이 안되어있어요
           </>
         ) : (
           <>
             <strong className="text-brand font-extrabold">{programLabel}</strong> 사업에
             <br />
-            등록이 안되어 있습니다.
+            등록이 안되어있어요
           </>
         ),
-        note: "해당 기관, 사업 담당자에게 문의하여 주세요.",
+        note: "해당 기관, 사업 담당자에게 문의하여 주세요",
       };
     } else {
       exception = {
         variant: "warn",
-        title: "본인 확인에 실패했어요.",
-        note: "이름을 다시 확인해 주세요.\n해당 기관, 사업 담당자에게 문의하여 주세요.",
+        title: "본인 확인에 실패했어요",
+        note: "이름을 다시 확인해 주세요\n해당 기관, 사업 담당자에게 문의하여 주세요",
       };
     }
   } else if (identified.status === "DROPPED") {
     exception = {
       variant: "warn",
-      title: "참여가 종료되었어요.",
-      note: "해당 기관, 사업 담당자에게 문의하여 주세요.",
+      title: "참여가 종료되었어요",
+      note: "해당 기관, 사업 담당자에게 문의하여 주세요",
     };
   } else if (identified.status === "ON_LEAVE") {
     exception = {
       variant: "caution",
-      title: "현재 휴무 중이에요.",
+      title: "현재 휴무 중이에요",
       note: identified.leaveEnd
-        ? `${identified.leaveEnd}까지 휴무 예정이에요. 복귀 후 다시 이용해 주세요.`
-        : "복귀 후 다시 이용해 주세요.",
+        ? `${identified.leaveEnd}까지 휴무 예정이에요\n복귀 후 다시 이용해 주세요`
+        : "복귀 후 다시 이용해 주세요",
     };
   } else if (identified.program) {
     const today = getLocalToday();
@@ -130,14 +130,14 @@ const RegistrationConfirmPage = ({
     if (identified.program.endDate < today) {
       exception = {
         variant: "caution",
-        title: "사업이 종료되었어요.",
-        note: "다른 사업에 참여하시려면 '이전'을 눌러 다시 선택해 주세요.",
+        title: "사업이 종료되었어요",
+        note: "다른 사업에 참여하시려면 '이전'을 눌러 다시 선택해 주세요",
       };
     } else if (identified.program.startDate > today) {
       exception = {
         variant: "caution",
-        title: "아직 사업이 시작되지 않았어요.",
-        note: `${identified.program.startDate}부터 이용하실 수 있어요.`,
+        title: "아직 사업이 시작되지 않았어요",
+        note: `${identified.program.startDate}부터 이용하실 수 있어요`,
       };
     } else {
       exception = null;
