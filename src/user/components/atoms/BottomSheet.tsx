@@ -19,11 +19,10 @@ const BottomSheet = ({ onClose, children }: BottomSheetProps) =>
       onClick={onClose}
     >
       <div
-        className="w-full max-h-[85vh] overflow-y-auto bg-white rounded-t-[24px] px-6 pt-3 shadow-[0_-12px_32px_rgba(20,30,50,0.2)] animate-sheet-slide-up"
+        className="w-full max-h-[85vh] overflow-y-auto bg-white rounded-t-[24px] px-6 pt-[34px] shadow-[0_-12px_32px_rgba(20,30,50,0.2)] animate-sheet-slide-up"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 22px)" }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="w-10 h-1.5 rounded-full bg-border-default mx-auto mb-4" />
         {children}
       </div>
     </div>,
