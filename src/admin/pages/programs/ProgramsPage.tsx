@@ -92,7 +92,7 @@ const ProgramsPage = () => {
     return list;
   }, [programs, programTypeFilter, programFilter, search]);
 
-  const { page, totalPages, pageItems, setPage } = usePagination(filtered, 6);
+  const { page, totalPages, pageItems, setPage } = usePagination(filtered, 10);
 
   const handleAddButtonClick = () => {
     setEditingProgram(null);

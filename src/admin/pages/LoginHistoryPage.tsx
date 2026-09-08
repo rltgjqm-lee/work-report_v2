@@ -2,6 +2,24 @@ import { useQuery } from "@tanstack/react-query";
 
 import { loginHistoryQueryOptions } from "../api/admin/loginHistory";
 
+// 서버는 SQLite CURRENT_TIMESTAMP(UTC, "YYYY-MM-DD HH:MM:SS" 형식)를 그대로 내려준다 —
+// 화면에 뿌리기 전에 한국 시간(KST, UTC+9)으로 바꿔서 보여준다.
+const formatKstDateTime = (utcTimestamp: string): string => {
+  const date = new Date(`${utcTimestamp.replace(" ", "T")}Z`);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")} ${part("hour")}:${part("minute")}:${part("second")}`;
+};
+
 /**
  * 관리자 페이지 > 로그인 이력 페이지입니다. SUPER_ADMIN만 접근 가능합니다.
  *
@@ -44,7 +62,7 @@ const LoginHistoryPage = () => {
               {entries.map((entry) => (
                 <tr key={entry.id} className="hover:bg-admin-row-hover">
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {entry.createdAt}
+                    {formatKstDateTime(entry.createdAt)}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
                     {entry.email}
