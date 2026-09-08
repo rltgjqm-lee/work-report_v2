@@ -54,22 +54,33 @@ const HomePage = ({
 
   // participantId는 있지만 서버 응답 전(로딩 중)엔 근무일로 가정한다(TodayWorkCard와 동일 기준).
   const isWorkDay = todayStatus?.isWorkDay ?? true;
+  const attendanceInDone = formData.startTime.hour !== "";
   const attendanceOutDone = formData.endTime.hour !== "";
-  // 근무 중(근무일 + 아직 퇴근 전)일 때만 SOS를 쓸 수 있다 — 휴무일이거나 이미
-  // 퇴근했으면 더 이상 근무 중이 아니므로 막는다.
-  const isSosAvailable = isWorkDay && !attendanceOutDone;
+  // 휴무일이거나 이미 퇴근했으면 본인확인 여부와 무관하게 SOS를 못 쓴다 — 이 범위
+  // 안에서만 "본인확인이 먼저 필요한지"를 따진다.
+  const isWithinShiftWindow = isWorkDay && !attendanceOutDone;
+  // 근무 중(근무일 + 출근 완료 + 아직 퇴근 전)일 때만 SOS를 쓸 수 있다 — 휴무일이거나
+  // 출근 전이거나 이미 퇴근했으면 더 이상 근무 중이 아니므로 막는다.
+  const isSosAvailable = isWithinShiftWindow && attendanceInDone;
 
   // 본인확인 전(participantId 없음)엔 누구의 SOS인지 알 수 없으니 확인 카운트다운 대신
   // 안내 모달로 보낸다. 확인이 끝난 뒤엔 한 번만 눌러도 바로 SOS 확인 모달이 뜬다 —
   // 오탐 방지는 탭 횟수가 아니라 그 모달의 10초 취소 카운트다운이 맡는다. 버튼 자체는
   // 항상 활성화된 것처럼 보이고, 근무 중이 아닐 때 눌리면 안내 모달로 이유를 알려준다.
+  // 본인확인 체크(participantId)는 근무일·퇴근전 범위 안에서만 의미가 있으므로
+  // isSosAvailable(출근 여부까지 포함)보다 먼저, isWithinShiftWindow 다음에 확인한다 —
+  // 안 그러면 출근 전인 미확인 사용자가 "본인확인 필요" 대신 "이용 불가" 안내만 보게 된다.
   const handleSosButtonClick = () => {
-    if (!isSosAvailable) {
+    if (!isWithinShiftWindow) {
       setIsSosUnavailableModalOpen(true);
       return;
     }
     if (!formData.participantId) {
       setIsSosIdentificationModalOpen(true);
+      return;
+    }
+    if (!isSosAvailable) {
+      setIsSosUnavailableModalOpen(true);
       return;
     }
     setIsSosConfirmModalOpen(true);
