@@ -116,7 +116,14 @@ const DemandSiteLocationsPanel = ({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    const map = L.map(mapContainerRef.current).setView(DEFAULT_CENTER, 15);
+    // 다각형은 더블클릭으로 그리기를 완료하는데, 기본값인 지도 더블클릭 확대(zoom)와
+    // 같은 더블클릭 제스처가 겹쳐서 leaflet-draw가 완료 이벤트(draw:created)를 두 번
+    // 발생시키는 경우가 있다(원형은 드래그로 그려서 이 문제가 없음) — 더블클릭 확대를
+    // 꺼서 이 충돌을 없앤다.
+    const map = L.map(mapContainerRef.current, { doubleClickZoom: false }).setView(
+      DEFAULT_CENTER,
+      15,
+    );
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
@@ -271,7 +278,9 @@ const DemandSiteLocationsPanel = ({
   };
 
   const handleSavePendingShapeButtonClick = () => {
-    if (!pendingShape || !pendingName) return;
+    // 저장 버튼을 연달아 누르거나(더블클릭 등) Input에서 Enter를 누른 직후 버튼도 눌리면
+    // 같은 도형이 두 번 저장될 수 있어, 이미 저장 요청이 진행 중이면 무시한다.
+    if (!pendingShape || !pendingName || createDemandSiteLocationMutation.isPending) return;
 
     const data =
       pendingShape.layerType === LAYER_TYPE.CIRCLE
@@ -455,7 +464,12 @@ const DemandSiteLocationsPanel = ({
               <Button variant="ghost" onClick={handleCancelPendingShapeButtonClick}>
                 취소
               </Button>
-              <Button onClick={handleSavePendingShapeButtonClick}>저장</Button>
+              <Button
+                onClick={handleSavePendingShapeButtonClick}
+                disabled={createDemandSiteLocationMutation.isPending}
+              >
+                {createDemandSiteLocationMutation.isPending ? "저장 중..." : "저장"}
+              </Button>
             </div>
           </div>
         </div>
