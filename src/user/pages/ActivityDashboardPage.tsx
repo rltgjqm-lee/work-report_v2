@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { ActivityLogFormData } from "../../types/form";
 import { programTypeShortLabel } from "../../types/form";
@@ -14,6 +14,7 @@ import {
   clockOutMutationOptions,
   recordLocationConsentMutationOptions,
 } from "../api/attendanceApi";
+import { isSuperAdminQueryOptions } from "../api/superAdminSessionApi";
 import AppBar from "../components/molecule/AppBar";
 import AttendanceTimeGuideModal from "../components/molecule/AttendanceTimeGuideModal";
 import AttendanceTimeGuideModalLargeFont from "../components/molecule/AttendanceTimeGuideModalLargeFont";
@@ -141,8 +142,12 @@ const ActivityDashboardPage = ({
   const isCompetencyProgram = formData.programType === "역량 활용";
 
   // 💡 출퇴근 날짜·시간 검증(±30분/종료 10분 전 등)을 테스트하기 위한 override(Main이
-  // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에서만 보인다.
-  // 서버도 localhost 요청일 때만 실제로 반영한다.
+  // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에서 보이고,
+  // 배포 서버에서는 이 브라우저가 관리자 콘솔에 SUPER_ADMIN으로 로그인돼 있을 때만
+  // 보인다(TEMP, superAdminSessionApi.ts 참고 — 시연 끝나면 같이 걷어낼 것). 서버도
+  // 그 두 경우에만 override를 실제로 반영한다(worker/src/lib/debugTime.ts).
+  const { data: isSuperAdmin } = useQuery(isSuperAdminQueryOptions);
+  const isDebugPanelVisible = import.meta.env.DEV || !!isSuperAdmin;
 
   // 💡 출근 등록은 별도 페이지 없이 즉시 서버에 기록하고 컨펌 모달로 결과만 보여준다.
   // setFormData 직후 곧바로 onSave()를 부르면 onSave가 아직 갱신 전 formData를 클로저로
@@ -546,7 +551,7 @@ const ActivityDashboardPage = ({
           formData={formData}
           todayLabel={todayLabel}
           notificationsBlocked={notificationsBlocked}
-          isDebugPanelVisible={import.meta.env.DEV}
+          isDebugPanelVisible={isDebugPanelVisible}
           debugDate={debugDate}
           setDebugDate={setDebugDate}
           debugTime={debugTime}
@@ -658,7 +663,7 @@ const ActivityDashboardPage = ({
           </div>
         )}
 
-        {import.meta.env.DEV && (
+        {isDebugPanelVisible && (
           <div className="bg-badge-bg rounded-2xl px-[18px] py-3.5 flex items-center gap-3 border border-badge-border">
             <span className="text-[13px] font-extrabold text-caution-text flex-none">
               🧪 테스트용 날짜/시간
