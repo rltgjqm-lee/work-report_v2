@@ -19,10 +19,12 @@ interface HomePageLargeFontProps {
 const StatusPillLarge = ({ label, active }: { label: string; active: boolean }) => (
   <div
     className={`flex items-center gap-1.5 text-[13px] font-bold px-3.5 py-1.5 rounded-full flex-none ${
-      active ? "bg-brand-tint text-brand" : "bg-surface-page text-[#6b7684]"
+      active ? "bg-brand-tint text-brand" : "bg-surface-page text-text-subtitle"
     }`}
   >
-    <span className={`w-[7px] h-[7px] rounded-full ${active ? "bg-brand" : "bg-[#c7ccd4]"}`} />
+    <span
+      className={`w-[7px] h-[7px] rounded-full ${active ? "bg-brand" : "bg-indicator-inactive"}`}
+    />
     <p className="flex items-center text-center h-4 leading-[16px] mb-[1px]">{label}</p>
   </div>
 );
@@ -96,11 +98,11 @@ const TodayWorkCardLarge = ({
         )}
 
         {!isWorkDay ? (
-          <div className="bg-[#f7f9fb] rounded-[14px] px-[clamp(18px,5.9vw,21px)] py-[clamp(18px,5.9vw,21px)] text-[16px] font-bold text-text-muted text-center">
+          <div className="bg-surface-muted rounded-[14px] px-[clamp(18px,5.9vw,21px)] py-[clamp(18px,5.9vw,21px)] text-[16px] font-bold text-text-muted text-center">
             오늘은 근무일이 아니에요
           </div>
         ) : (
-          <div className="rounded-[14px] bg-[#f7f9fb] overflow-hidden">
+          <div className="rounded-[14px] bg-surface-muted overflow-hidden">
             <div className="px-[clamp(16px,5.2vw,21px)] py-[10px] flex items-center justify-between gap-3">
               <span className="text-[14px] font-semibold text-text-subtitle">근무 시간</span>
               <span className="text-[clamp(15px,4.2vw,17px)] font-bold text-text-strong">

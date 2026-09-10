@@ -24,14 +24,21 @@
   /* 메인 앱 전용 */
   --color-brand: #3182f6;
   --color-brand-tint: #eef6ff;
+  /* brand-tint 카드 안에서 쓰는 보조 텍스트용 옅은 파랑 */
+  --color-brand-muted: #6b9fe8;
   --color-green: #22b573;
   --color-green-tint: #e6f9ee;
   --color-text-muted: #9ca3af;
   --color-text-subtitle: #6b7684;
   --color-text-disabled: #b0b8c1;
+  /* StatusPill 비활성 상태의 점(dot) */
+  --color-indicator-inactive: #c7ccd4;
   --color-border-default: #e5e8eb;
   --color-border-subtle: #d1d5db;
   --color-border-dashed: #cbd5e1;
+  /* 모달 정보 블록 배경으로 쓰이던 f7f9fb(8곳)도 여기 합침 — 2.2 RGB 단위 차이.
+     AttendanceTimeGuideModal 은 surface-muted, ActivitySaveConfirmModal 은 f7f9fb 로
+     같은 모양의 블록을 서로 다른 회색으로 칠하고 있었다. */
   --color-surface-muted: #f9fafb;
   --color-danger: #e94b4b;
   --color-danger-tint: #fef2f2;
@@ -46,6 +53,8 @@
 
   /* 관리자 콘솔 전용 */
   --color-admin-brand: #1e3a5f;
+  /* ContactPage 아이콘 박스 배경 */
+  --color-admin-surface-icon: #eef2f7;
   --color-admin-brand-dark: #132a45;
   --color-admin-border: #d7dbe1;
   --color-admin-border-subtle: #e2e5eb;

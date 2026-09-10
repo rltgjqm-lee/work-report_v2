@@ -27,7 +27,7 @@ const ConfirmModal = ({ messages, isOpen, onClose, onConfirm }: ConfirmModalProp
           </div>
         )}
 
-        <div className="flex flex-col gap-2 text-left bg-[#f7f9fb] rounded-[14px] px-4 py-3.5">
+        <div className="flex flex-col gap-2 text-left bg-surface-muted rounded-[14px] px-4 py-3.5">
           {messages?.map((message, index) => (
             <span
               key={index}

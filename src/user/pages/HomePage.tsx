@@ -227,10 +227,12 @@ const HomePage = ({
 const StatusPill = ({ label, active }: { label: string; active: boolean }) => (
   <div
     className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full flex-none ${
-      active ? "bg-brand-tint text-brand" : "bg-surface-page text-[#6b7684]"
+      active ? "bg-brand-tint text-brand" : "bg-surface-page text-text-subtitle"
     }`}
   >
-    <span className={`w-[5px] h-[5px] rounded-full ${active ? "bg-brand" : "bg-[#c7ccd4]"}`} />
+    <span
+      className={`w-[5px] h-[5px] rounded-full ${active ? "bg-brand" : "bg-indicator-inactive"}`}
+    />
     <p className="flex items-center text-center h-3.5 leading-[14px] mb-[1px]">{label}</p>
   </div>
 );
@@ -298,7 +300,7 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
         )}
 
         {!isWorkDay ? (
-          <div className="bg-[#f7f9fb] rounded-[14px] px-[clamp(14px,4.5vw,16px)] py-[clamp(14px,4.5vw,16px)] text-[14px] font-bold text-text-muted text-center">
+          <div className="bg-surface-muted rounded-[14px] px-[clamp(14px,4.5vw,16px)] py-[clamp(14px,4.5vw,16px)] text-[14px] font-bold text-text-muted text-center">
             오늘은 근무일이 아니에요
           </div>
         ) : (
@@ -307,11 +309,11 @@ const TodayWorkCard = ({ formData, todayStatus }: TodayWorkCardProps) => {
               <span className="text-[clamp(15px,4vw,16px)] font-extrabold text-brand">
                 {shiftLabel}
               </span>
-              <span className="text-[12px] font-semibold text-[#6b9fe8]">근무 시간</span>
+              <span className="text-[12px] font-semibold text-brand-muted">근무 시간</span>
             </div>
             <div
               className={`flex-1 rounded-[14px] px-[clamp(12px,4vw,16px)] py-[clamp(12px,3.5vw,14px)] flex flex-col gap-1 ${
-                isLogComplete ? "bg-green-tint" : "bg-[#f7f9fb]"
+                isLogComplete ? "bg-green-tint" : "bg-surface-muted"
               }`}
             >
               <span

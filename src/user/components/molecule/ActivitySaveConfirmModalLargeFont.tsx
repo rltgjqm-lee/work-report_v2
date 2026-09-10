@@ -24,7 +24,7 @@ const ActivitySaveConfirmModalLargeFont = ({
       <div className="text-[24px] font-extrabold text-text-strong leading-[1.5]">
         활동일지를 저장했어요
       </div>
-      <div className="bg-[#f7f9fb] rounded-[14px] px-4 mt-2">
+      <div className="bg-surface-muted rounded-[14px] px-4 mt-2">
         <InfoRow label="활동내용" value={actContent} />
         <InfoRow label="활동장소" value={actPlace} />
       </div>

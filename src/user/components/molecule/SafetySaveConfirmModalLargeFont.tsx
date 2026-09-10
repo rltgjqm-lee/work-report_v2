@@ -33,7 +33,7 @@ const SafetySaveConfirmModalLargeFont = ({
         )}
       </div>
       {hasAccident && (
-        <div className="bg-[#f7f9fb] rounded-[14px] px-4 mt-2">
+        <div className="bg-surface-muted rounded-[14px] px-4 mt-2">
           <InfoRow label="사고내용" value={accidentDetail} />
           <InfoRow label="조치" value={accidentAction} />
         </div>

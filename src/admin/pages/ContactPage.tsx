@@ -28,7 +28,7 @@ const ContactPage = () => {
       </div>
 
       <div className="bg-white border border-admin-border-subtle rounded-[2px] max-w-[520px] p-8">
-        <div className="w-[52px] h-[52px] rounded-xl bg-[#eef2f7] text-admin-brand flex items-center justify-center mb-[18px]">
+        <div className="w-[52px] h-[52px] rounded-xl bg-admin-surface-icon text-admin-brand flex items-center justify-center mb-[18px]">
           <Mail size={24} />
         </div>
         <div className="text-[17px] font-bold text-text-strong mb-2">문의 및 개선사항 접수</div>
