@@ -2,10 +2,9 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <!-- 이 빌드는 참여자 화면 전용(hybridMain.tsx가 MobileApp만 렌더링)이라 핀치줌을
+         막지 않는다 — 노인 참여자에게는 화면 확대가 중요한 접근성 수단이다. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Work Safe</title>
 
     <link rel="icon" href="/icons/app-icon-1024.png" type="image/png" />

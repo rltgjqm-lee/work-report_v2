@@ -32,6 +32,26 @@ const base64FromArrayBuffer = (buffer: ArrayBuffer): string => {
   return btoa(binary);
 };
 
+// activity_logs.user_signature/demand_signature는 두 가지 형식이 섞여 있다 — 예전엔
+// base64 data URL을 그대로 저장했고(레거시, 마이그레이션 안 함), 지금은 R2 객체 키를
+// 저장한다(public.ts의 uploadSignatureToR2 참고). "data:"로 시작하면 레거시로 보고
+// 그대로 돌려주고, 아니면 R2 키로 보고 읽어서 같은 모양(data URL)으로 재구성한다 —
+// 클라이언트(downloadActivityLogExcel.ts)는 어느 쪽인지 몰라도 되게 한다.
+const resolveSignatureDataUrl = async (
+  bucket: Env["Bindings"]["SIGNATURES_BUCKET"],
+  value: string | null,
+): Promise<string | null> => {
+  if (!value) return null;
+  if (value.startsWith("data:")) return value;
+
+  const object = await bucket.get(value);
+  if (!object) return null;
+
+  const buffer = await object.arrayBuffer();
+  const contentType = object.httpMetadata?.contentType || "image/png";
+  return `data:${contentType};base64,${base64FromArrayBuffer(buffer)}`;
+};
+
 const loadAccessibleProgram = async (db: ReturnType<typeof drizzle>, programId: number) => {
   const rows = await db.select().from(programs).where(eq(programs.id, programId));
   return rows[0] ?? null;
@@ -87,11 +107,30 @@ app.get("/:id/export/activity-log", async (c) => {
       .values(),
   ];
 
+  // 서명은 레거시 base64 data URL이거나 R2 객체 키다 — 어느 쪽이든 data URL로
+  // 맞춰서(resolveSignatureDataUrl) 클라이언트로 내려준다.
+  const resolvedRows = await Promise.all(
+    dedupedRows.map(async (row) => ({
+      ...row,
+      log: {
+        ...row.log,
+        userSignature: await resolveSignatureDataUrl(
+          c.env.SIGNATURES_BUCKET,
+          row.log.userSignature,
+        ),
+        demandSignature: await resolveSignatureDataUrl(
+          c.env.SIGNATURES_BUCKET,
+          row.log.demandSignature,
+        ),
+      },
+    })),
+  );
+
   const participantsByName = new Map<
     string,
-    { demandName: string | null; logs: (typeof rows)[number]["log"][] }
+    { demandName: string | null; logs: (typeof resolvedRows)[number]["log"][] }
   >();
-  for (const row of dedupedRows) {
+  for (const row of resolvedRows) {
     if (!participantsByName.has(row.participantName)) {
       participantsByName.set(row.participantName, {
         demandName: row.demandName ?? row.demandSiteName ?? null,

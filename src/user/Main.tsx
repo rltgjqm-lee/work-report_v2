@@ -157,6 +157,23 @@ const Main = () => {
     };
   }, []);
 
+  // 💡 핀치줌은 참여자 화면에서만 허용한다 — 하이브리드 빌드(hybrid.html)는 이 컴포넌트만
+  // 렌더링하는 참여자 전용 앱이라 정적 meta도 이미 확대 허용으로 바꿔뒀지만, 관리자
+  // 콘솔/랜딩 페이지와 index.html을 같이 쓰는 웹 미리보기(/preview) 경로는 기본값이
+  // 확대 금지라 여기서 마운트될 때만 풀어준다. 언마운트 시 원래 값으로 되돌려서, 같은
+  // 탭에서 /admin으로 이동해도(SPA 라우팅이라 새로고침 없이 전환됨) 확대 허용이 안 새게 한다.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return;
+
+    const originalContent = meta.getAttribute("content");
+    meta.setAttribute("content", "width=device-width, initial-scale=1.0");
+
+    return () => {
+      if (originalContent !== null) meta.setAttribute("content", originalContent);
+    };
+  }, []);
+
   // 💡 앱을 켜자마자(참여자 확정 전이라도) 알림/위치 권한 다이얼로그를 먼저 띄운다 —
   // 그래야 이후 실제로 필요한 시점(출근 버튼, 등록확인)에 새삼 권한 팝업이 끼어들어
   // 흐름을 막지 않는다. 이미 허용/거부가 결정된 상태면 다이얼로그 없이 조용히 끝난다.

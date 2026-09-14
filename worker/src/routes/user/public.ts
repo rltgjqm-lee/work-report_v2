@@ -987,6 +987,58 @@ type ActivityLogBody = {
   demandSignature?: string;
 };
 
+// 서명 이미지(참여자 앱이 canvas.toDataURL로 만든 data URL)를 R2에 저장하고 객체 키를
+// 돌려준다 — activity_logs.user_signature/demand_signature 컬럼엔 이제 이 키를 저장한다
+// (역량활동의 attendance_logs.signature_key와 같은 방식). participantId+actDate로 키를
+// 만들어서(그 조합이 유니크 제약이라) 같은 날 다시 저장(수정 흐름)해도 같은 객체를
+// 덮어쓴다. 기존에 base64 data URL 그대로 저장된 과거 행은 마이그레이션하지 않고 그대로
+// 두며, 읽는 쪽(excel.ts)에서 "data:"로 시작하면 레거시로 보고 그대로 쓴다.
+const uploadSignatureToR2 = async (
+  bucket: Env["Bindings"]["SIGNATURES_BUCKET"],
+  programId: number,
+  participantId: number,
+  actDate: string,
+  slot: "user" | "demand",
+  dataUrl: string | undefined,
+): Promise<string | undefined> => {
+  if (!dataUrl?.trim()) return undefined;
+
+  const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) return dataUrl; // 예상 못한 형식이면 건드리지 않고 그대로 저장(방어적)
+
+  const [, contentType, base64] = match;
+  const extension = contentType.split("/")[1] || "png";
+  const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+  const key = `signatures/${programId}/${actDate.slice(0, 7)}/${participantId}/${actDate}-${slot}.${extension}`;
+
+  await bucket.put(key, bytes, { httpMetadata: { contentType } });
+  return key;
+};
+
+// GET /activity-logs(기기 변경 시 복구용) 응답도 서명을 다시 그릴 수 있는 data URL이어야
+// 한다 — R2 키를 그대로 내려주면 SignatureCanvas가 "data:image"로 시작하지 않는 값은
+// 무시하고 빈 캔버스를 보여준다. excel.ts의 resolveSignatureDataUrl과 같은 판단(레거시
+// data URL은 그대로, 아니면 R2 키로 보고 읽어서 재구성)이라 이 파일에도 똑같이 둔다.
+const resolveSignatureDataUrl = async (
+  bucket: Env["Bindings"]["SIGNATURES_BUCKET"],
+  value: string | null,
+): Promise<string | null> => {
+  if (!value) return null;
+  if (value.startsWith("data:")) return value;
+
+  const object = await bucket.get(value);
+  if (!object) return null;
+
+  const buffer = await object.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const contentType = object.httpMetadata?.contentType || "image/png";
+  return `data:${contentType};base64,${btoa(binary)}`;
+};
+
 // 업무일지(내용/장소)·안전일지(사고유무 확인)·참여자 서명은 필수값이다. 역량활용은 참여자
 // 앱에서 업무/안전 모듈 자체를 보여주지 않으므로 그 두 항목은 요구하지 않는다(서명은 항상 필수).
 const validateActivityLogRequiredSections = (
@@ -1018,7 +1070,7 @@ app.post("/activity-logs", async (c) => {
   }
 
   const participantRows = await db
-    .select({ programType: programs.programType })
+    .select({ programType: programs.programType, programId: programs.id })
     .from(participants)
     .innerJoin(programs, eq(participants.programId, programs.id))
     .where(eq(participants.id, body.participantId));
@@ -1030,6 +1082,25 @@ app.post("/activity-logs", async (c) => {
   if (validationError) {
     return c.json({ error: validationError }, 400);
   }
+
+  const [userSignatureKey, demandSignatureKey] = await Promise.all([
+    uploadSignatureToR2(
+      c.env.SIGNATURES_BUCKET,
+      participantRows[0].programId,
+      body.participantId,
+      body.actDate,
+      "user",
+      body.userSignature,
+    ),
+    uploadSignatureToR2(
+      c.env.SIGNATURES_BUCKET,
+      participantRows[0].programId,
+      body.participantId,
+      body.actDate,
+      "demand",
+      body.demandSignature,
+    ),
+  ]);
 
   // 오프라인 큐가 서버 저장 성공 후 로컬에 serverId를 기록하기 전에 앱이 죽으면
   // 같은 참여자+날짜를 다시 신규 등록으로 재전송할 수 있다 — 그때 새 행 대신 기존
@@ -1047,8 +1118,8 @@ app.post("/activity-logs", async (c) => {
       accidentChecked: body.accidentChecked ?? false,
       accidentDetail: body.accidentDetail,
       accidentAction: body.accidentAction,
-      userSignature: body.userSignature,
-      demandSignature: body.demandSignature,
+      userSignature: userSignatureKey,
+      demandSignature: demandSignatureKey,
     })
     .onConflictDoUpdate({
       target: [activityLogs.participantId, activityLogs.actDate],
@@ -1061,8 +1132,8 @@ app.post("/activity-logs", async (c) => {
         accidentChecked: body.accidentChecked ?? false,
         accidentDetail: body.accidentDetail,
         accidentAction: body.accidentAction,
-        userSignature: body.userSignature,
-        demandSignature: body.demandSignature,
+        userSignature: userSignatureKey,
+        demandSignature: demandSignatureKey,
       },
     })
     .returning();
@@ -1082,7 +1153,7 @@ app.put("/activity-logs/:id", async (c) => {
   }
 
   const participantRows = await db
-    .select({ programType: programs.programType })
+    .select({ programType: programs.programType, programId: programs.id })
     .from(participants)
     .innerJoin(programs, eq(participants.programId, programs.id))
     .where(eq(participants.id, body.participantId));
@@ -1094,6 +1165,25 @@ app.put("/activity-logs/:id", async (c) => {
   if (validationError) {
     return c.json({ error: validationError }, 400);
   }
+
+  const [userSignatureKey, demandSignatureKey] = await Promise.all([
+    uploadSignatureToR2(
+      c.env.SIGNATURES_BUCKET,
+      participantRows[0].programId,
+      body.participantId,
+      body.actDate,
+      "user",
+      body.userSignature,
+    ),
+    uploadSignatureToR2(
+      c.env.SIGNATURES_BUCKET,
+      participantRows[0].programId,
+      body.participantId,
+      body.actDate,
+      "demand",
+      body.demandSignature,
+    ),
+  ]);
 
   const result = await db
     .update(activityLogs)
@@ -1107,8 +1197,8 @@ app.put("/activity-logs/:id", async (c) => {
       accidentChecked: body.accidentChecked ?? false,
       accidentDetail: body.accidentDetail,
       accidentAction: body.accidentAction,
-      userSignature: body.userSignature,
-      demandSignature: body.demandSignature,
+      userSignature: userSignatureKey,
+      demandSignature: demandSignatureKey,
     })
     .where(and(eq(activityLogs.id, id), eq(activityLogs.participantId, body.participantId)))
     .returning();
@@ -1137,7 +1227,15 @@ app.get("/activity-logs", async (c) => {
       ),
     );
 
-  return c.json(rows);
+  const resolvedRows = await Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      userSignature: await resolveSignatureDataUrl(c.env.SIGNATURES_BUCKET, row.userSignature),
+      demandSignature: await resolveSignatureDataUrl(c.env.SIGNATURES_BUCKET, row.demandSignature),
+    })),
+  );
+
+  return c.json(resolvedRows);
 });
 
 // 화면 SOS 버튼(3초 카운트다운 뒤 자동 전송) — 참여자 본인 확인 이후 화면에서만 호출된다.
