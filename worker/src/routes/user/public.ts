@@ -20,6 +20,7 @@ import {
   participantGroupOverrides,
   participantMonthlySchedule,
   participants,
+  programActivityOptions,
   programs,
   pushDeviceTokens,
   pushSubscriptions,
@@ -88,6 +89,24 @@ app.get("/programs/:id/demand-sites", async (c) => {
     .select({ id: demandSites.id, name: demandSites.name })
     .from(demandSites)
     .where(and(eq(demandSites.programId, programId), eq(demandSites.isActive, true)));
+
+  return c.json(rows);
+});
+
+// 업무 일지 등록 화면의 활동내용/활동장소 드롭다운 선택지 — 관리자가 사업단별로
+// 미리 등록해둔 항목만 내려준다(옵션에 없으면 참여자가 직접 입력하는 "기타"로 처리).
+app.get("/programs/:id/activity-options", async (c) => {
+  const db = drizzle(c.env.DB);
+  const programId = Number(c.req.param("id"));
+
+  const rows = await db
+    .select({
+      id: programActivityOptions.id,
+      category: programActivityOptions.category,
+      label: programActivityOptions.label,
+    })
+    .from(programActivityOptions)
+    .where(eq(programActivityOptions.programId, programId));
 
   return c.json(rows);
 });

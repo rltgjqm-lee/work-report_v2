@@ -505,6 +505,13 @@
       "when": 1787895999379,
       "tag": "0071_thick_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "6",
+      "when": 1789345504971,
+      "tag": "0072_supreme_ultragirl",
+      "breakpoints": true
     }
   ]
 }

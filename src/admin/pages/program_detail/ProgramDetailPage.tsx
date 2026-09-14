@@ -12,6 +12,7 @@ import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
 
 import ParticipantAddModal from "./ParticipantAddModal";
 
+const ProgramActivityOptionsSection = lazy(() => import("./ProgramActivityOptionsSection"));
 const ProgramDemandSitesSection = lazy(() => import("./ProgramDemandSitesSection"));
 const ProgramExcelExportSection = lazy(() => import("./ProgramExcelExportSection"));
 const ProgramGroupsSection = lazy(() => import("./ProgramGroupsSection"));
@@ -22,6 +23,7 @@ const PROGRAM_DETAIL_TAB = {
   DEMAND_SITES: "demandSites",
   PARTICIPANTS: "participants",
   EXCEL: "excel",
+  ACTIVITY_OPTIONS: "activityOptions",
 } as const;
 
 type Tab = (typeof PROGRAM_DETAIL_TAB)[keyof typeof PROGRAM_DETAIL_TAB];
@@ -31,6 +33,7 @@ const PROGRAM_DETAIL_TABS: [Tab, string][] = [
   [PROGRAM_DETAIL_TAB.GROUPS, "조 관리"],
   [PROGRAM_DETAIL_TAB.PARTICIPANTS, "참여자 명단"],
   [PROGRAM_DETAIL_TAB.EXCEL, "양식 출력"],
+  [PROGRAM_DETAIL_TAB.ACTIVITY_OPTIONS, "업무일지 항목 관리"],
 ];
 
 /**
@@ -237,6 +240,10 @@ const ProgramDetailPage = () => {
             activityLogTitle={program.activityLogTitle}
             capacityAttendanceBannerText={program.capacityAttendanceBannerText}
           />
+        )}
+
+        {tab === PROGRAM_DETAIL_TAB.ACTIVITY_OPTIONS && (
+          <ProgramActivityOptionsSection programId={programId} />
         )}
       </Suspense>
 

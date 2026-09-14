@@ -214,6 +214,32 @@ export const demandSiteLocations = sqliteTable("demand_site_locations", {
     .default(sql`(current_timestamp)`),
 });
 
+// 사업단별 업무 일지 드롭다운 선택지 — 참여자는 activity_logs.content/place를 자유
+// 텍스트 대신 여기서 고른다. activity_logs.content/place는 여전히 평문 문자열로
+// 저장되고(FK 없음) 이 테이블을 참조하지 않으므로, 옵션을 나중에 지워도 과거에
+// 저장된 일지는 그대로 남는다.
+export const programActivityOptions = sqliteTable(
+  "program_activity_options",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    programId: integer("program_id")
+      .notNull()
+      .references(() => programs.id),
+    category: text("category").$type<"CONTENT" | "PLACE">().notNull(),
+    label: text("label").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("program_activity_options_program_category_label_unique").on(
+      table.programId,
+      table.category,
+      table.label,
+    ),
+  ],
+);
+
 // 수요처에 배치된 조 매핑 — 근무시간은 조 자체의 값(groups.shiftStart/shiftEnd)을
 // 그대로 따른다. 예전엔 이 표에 수요처별로 다른 시간을 따로 저장했지만, 실제 출퇴근
 // 판정(worker/src/routes/public.ts)은 항상 groups.shiftStart/shiftEnd만 봐서 두 값이
