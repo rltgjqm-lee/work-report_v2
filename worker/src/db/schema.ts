@@ -113,6 +113,30 @@ export const groupMonthlySchedule = sqliteTable(
   ],
 );
 
+// 조의 날짜별 근무시간 — "이번주는 오전, 다음주는 오후"처럼 같은 조가 날짜마다 다른
+// 시간에 근무하는 경우를 위해, 그날 하루의 근무시간만 조 기본값(groups.shiftStart/shiftEnd)
+// 대신 쓴다. 교대 주기 같은 규칙은 저장하지 않는다 — 불규칙한 편성도 그대로 표현되고,
+// 확정된 날짜별 행이라 나중에 시간표를 바꿔도 과거 근무 기록의 판정이 소급으로 흔들리지
+// 않는다(급여 정산 기준이 뒤바뀌지 않음).
+// 근무일 여부는 이 테이블이 아니라 groupMonthlySchedule.workDates가 정한다 — 여기 행이
+// 있어도 그날이 근무일이 아니면 근무일이 아니다. 조회는 resolveGroupShift(lib/scheduling.ts).
+export const groupShiftOverrides = sqliteTable(
+  "group_shift_overrides",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id),
+    date: text("date").notNull(), // "YYYY-MM-DD"
+    shiftStart: text("shift_start").notNull(),
+    shiftEnd: text("shift_end").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [uniqueIndex("group_shift_overrides_group_date_unique").on(table.groupId, table.date)],
+);
+
 // 참여자 개인 예외 — 이 달에 레코드가 있으면 조 스케줄 대신 이걸 쓴다 (무급휴가 등 개인 사정).
 // maxMonthlyMinutes가 null이면 조 스케줄의 상한을 그대로 따른다.
 export const participantMonthlySchedule = sqliteTable(

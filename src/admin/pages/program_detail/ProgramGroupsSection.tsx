@@ -14,6 +14,7 @@ import GroupMonthlyScheduleModal from "./GroupMonthlyScheduleModal";
 interface ProgramGroupsSectionProps {
   programId: number;
   groups: Group[];
+  programStartDate: string;
   programEndDate: string;
   programStartTime: string;
   programEndTime: string;
@@ -26,6 +27,7 @@ interface ProgramGroupsSectionProps {
 const ProgramGroupsSection = ({
   programId,
   groups,
+  programStartDate,
   programEndDate,
   programStartTime,
   programEndTime,
@@ -76,7 +78,7 @@ const ProgramGroupsSection = ({
                 <div>{group.participantCount}명</div>
                 <div className="text-text-subtle">팀장 {group.leaderName ?? "미지정"}</div>
                 <div className="text-[13.5px] font-bold text-text-strong mt-1.5 mb-1">
-                  {group.shiftStart}~{group.shiftEnd}
+                  기본 {group.shiftStart}~{group.shiftEnd}
                 </div>
               </>
             }
@@ -95,6 +97,7 @@ const ProgramGroupsSection = ({
         <GroupAddModal
           onClose={() => setGroupModalOpen(false)}
           programId={programId}
+          programStartDate={programStartDate}
           programEndDate={programEndDate}
           programStartTime={programStartTime}
           programEndTime={programEndTime}
@@ -104,6 +107,7 @@ const ProgramGroupsSection = ({
       {scheduleTarget && (
         <GroupMonthlyScheduleModal
           group={scheduleTarget}
+          programStartDate={programStartDate}
           programEndDate={programEndDate}
           programStartTime={programStartTime}
           programEndTime={programEndTime}

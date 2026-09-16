@@ -11,10 +11,3 @@ export type Group = {
   leaderName: string | null;
   createdAt: string;
 };
-
-export type GroupMonthlySchedule = {
-  groupId: number;
-  yearMonth: string;
-  workDates: string[];
-  maxMonthlyMinutes: number;
-};

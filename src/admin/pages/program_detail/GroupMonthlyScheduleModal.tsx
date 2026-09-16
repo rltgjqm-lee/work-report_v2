@@ -4,27 +4,29 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { updateGroupMutationOptions } from "../../api/admin/groups";
 import {
-  groupMonthlyScheduleQueryOptions,
-  updateGroupMonthlyScheduleMutationOptions,
+  groupScheduleQueryOptions,
+  updateGroupScheduleMutationOptions,
 } from "../../api/admin/monthlySchedule";
 import { useToast } from "../../context/useToast";
 import type { Group } from "../../types/groups";
-import { generateWorkPattern } from "../../utils/generateWorkPattern";
+import {
+  clampYearMonth,
+  findInvalidShiftDate,
+  findOverCapMonths,
+  toMonthlySchedules,
+  type ShiftByDate,
+} from "../../utils/groupShift";
 
 import Button from "../../components/Button";
 import FormField from "../../components/FormField";
+import GroupScheduleFields from "../../components/GroupScheduleFields";
 import Input from "../../components/Input";
 import SlideModal from "../../components/modal/SlideModal";
-import MonthlyScheduleCalendar from "../../components/MonthlyScheduleCalendar";
-
-const toMinutes = (hhmm: string): number => {
-  const [hour, minute] = hhmm.split(":").map(Number);
-  return hour * 60 + minute;
-};
 
 interface GroupMonthlyScheduleModalProps {
   onClose: () => void;
   group: Group;
+  programStartDate: string;
   programEndDate: string;
   programStartTime: string;
   programEndTime: string;
@@ -33,10 +35,14 @@ interface GroupMonthlyScheduleModalProps {
 /**
  * 관리자 페이지 > 사업단 상세 페이지에서 조 기본 정보와 월간 근무일을 함께 수정하는 모달입니다.
  * 조 전체에 적용되는 기본값이며, 참여자 개인 예외는 별도 모달에서 설정합니다.
+ *
+ * 편성은 조 추가 시점에 사업단 기간 전체가 깔리므로, 여기서는 그중 고칠 부분만
+ * 손보면 됩니다. 사업단 종료일이 나중에 늘어나 새로 생긴 달을 채우는 것도 여기서 합니다.
  */
 const GroupMonthlyScheduleModal = ({
   onClose,
   group,
+  programStartDate,
   programEndDate,
   programStartTime,
   programEndTime,
@@ -47,92 +53,79 @@ const GroupMonthlyScheduleModal = ({
     shiftStart: group.shiftStart,
     shiftEnd: group.shiftEnd,
   });
-  const [yearMonth, setYearMonth] = useState(getLocalYearMonth);
+  const [yearMonth, setYearMonth] = useState(() =>
+    clampYearMonth(getLocalYearMonth(), programStartDate, programEndDate),
+  );
   const [workDates, setWorkDates] = useState<string[]>([]);
+  const [shiftByDate, setShiftByDate] = useState<ShiftByDate>({});
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
-  const [patternWorkDays, setPatternWorkDays] = useState("1");
-  const [patternRestDays, setPatternRestDays] = useState("2");
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const {
-    data: schedule,
-    isFetching,
-    isError,
-  } = useQuery(groupMonthlyScheduleQueryOptions(group.id, yearMonth));
+  // 달을 넘길 때마다 다시 조회하지 않도록 기간 전체 편성을 한 번에 들고 온다 —
+  // 저장도 기간 전체를 통째로 보내므로 화면 상태와 저장 단위가 같아진다.
+  const { data: schedule, isFetching, isError } = useQuery(groupScheduleQueryOptions(group.id));
 
   useEffect(() => {
     if (schedule) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 조회된 초기값을 편집 가능한 로컬 상태로 동기화
-      setWorkDates(schedule.workDates);
-      setMaxMonthlyHours(String(schedule.maxMonthlyMinutes / 60));
+      setWorkDates(schedule.months.flatMap((month) => month.workDates));
+      setShiftByDate(
+        Object.fromEntries(
+          schedule.months.flatMap((month) =>
+            month.shiftOverrides.map((shiftOverride) => [
+              shiftOverride.date,
+              { shiftStart: shiftOverride.shiftStart, shiftEnd: shiftOverride.shiftEnd },
+            ]),
+          ),
+        ),
+      );
+      // 상한은 달마다 저장되지만 화면에서는 하나로 다룬다 — 이미 저장된 값이 있으면
+      // 그중 첫 달 값을 초기값으로 쓰고, 저장 시 모든 달에 같은 값이 적용된다.
+      const savedMaxMinutes = schedule.months[0]?.maxMonthlyMinutes;
+      setMaxMonthlyHours(savedMaxMinutes ? String(savedMaxMinutes / 60) : "30");
     } else if (isError) {
       setWorkDates([]);
+      setShiftByDate({});
       setMaxMonthlyHours("30");
     }
   }, [schedule, isError]);
 
   const updateGroupMutation = useMutation(updateGroupMutationOptions(queryClient));
-  const updateGroupMonthlyScheduleMutation = useMutation(
-    updateGroupMonthlyScheduleMutationOptions(queryClient),
-  );
-
-  // 근무 시작/종료시간은 이제 이 모달에서 바로 고칠 수 있어서, group prop이 아니라
-  // 지금 입력 중인 값(form) 기준으로 하루 근무분을 계산해야 상한 검증이 어긋나지 않는다.
-  const shiftMinutesPerDay = Math.max(0, toMinutes(form.shiftEnd) - toMinutes(form.shiftStart));
-  const maxMonthlyMinutes = Math.round(Number(maxMonthlyHours) * 60) || 0;
-  const projectedMinutes = workDates.length * shiftMinutesPerDay;
-  const isOverCap = maxMonthlyMinutes > 0 && projectedMinutes > maxMonthlyMinutes;
-
-  const handleToggleDate = (date: string) => {
-    const isAdding = !workDates.includes(date);
-    if (isAdding && shiftMinutesPerDay > 0 && maxMonthlyMinutes > 0) {
-      const nextMinutes = (workDates.length + 1) * shiftMinutesPerDay;
-      if (nextMinutes > maxMonthlyMinutes) {
-        const maxDays = Math.floor(maxMonthlyMinutes / shiftMinutesPerDay);
-        alert(
-          `월 근무시간 상한(${maxMonthlyHours}시간)을 초과합니다. 하루 ${(
-            shiftMinutesPerDay / 60
-          ).toFixed(1)}시간 기준으로 최대 ${maxDays}일까지 선택할 수 있어요.`,
-        );
-        return;
-      }
-    }
-
-    setWorkDates((current) =>
-      current.includes(date)
-        ? current.filter((workDate) => workDate !== date)
-        : [...current, date].sort(),
-    );
-  };
-
-  const handleGeneratePatternButtonClick = () => {
-    const workDays = Number(patternWorkDays);
-    const restDays = Number(patternRestDays);
-    if (!workDays || workDays < 1 || restDays < 0) {
-      alert("근무일/휴무일을 올바르게 입력해주세요.");
-
-      return;
-    }
-    // 💡 자동 생성은 그 달 전체를 기준으로 만들어지니, 사업단 종료일 이후 날짜는
-    // 걸러낸다 — 종료일 이후 근무일이 그대로 잡히면 이미 끝난 사업에 근무일이 남는다.
-    const generated = generateWorkPattern(yearMonth, workDays, restDays);
-    setWorkDates(generated.filter((date) => date <= programEndDate));
-  };
+  const updateGroupScheduleMutation = useMutation(updateGroupScheduleMutationOptions(queryClient));
 
   const handleSaveButtonClick = () => {
     if (!form.name || !form.shiftStart || !form.shiftEnd) {
-      alert("조 이름과 근무시간을 입력해주세요.");
+      alert("조 이름과 근무시간을 입력해야 합니다.");
       return;
     }
     if (form.shiftStart < programStartTime || form.shiftEnd > programEndTime) {
       alert(
-        `근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해주세요.`,
+        `근무시간은 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서 설정해야 합니다.`,
       );
       return;
     }
-    if (isOverCap) {
-      alert("선택된 근무일이 월 근무시간 상한을 초과합니다. 근무일을 줄이거나 상한을 늘려주세요.");
+
+    const maxMonthlyMinutes = Math.round(Number(maxMonthlyHours) * 60);
+    const overCapMonths = findOverCapMonths(workDates, shiftByDate, form, maxMonthlyMinutes);
+    if (overCapMonths.length > 0) {
+      alert(
+        `${overCapMonths.join(", ")}의 근무일이 월 근무시간 상한을 초과합니다. 그 달의 근무일을 줄이거나 상한을 늘려야 합니다.`,
+      );
+      return;
+    }
+
+    const invalidDate = findInvalidShiftDate(
+      workDates,
+      shiftByDate,
+      form,
+      programStartTime,
+      programEndTime,
+    );
+    if (invalidDate) {
+      alert(
+        `${invalidDate}의 근무시간이 올바르지 않습니다. 사업단 운영시간(${programStartTime}~${programEndTime}) 안에서, 종료가 시작보다 늦어야 합니다.`,
+      );
       return;
     }
 
@@ -146,23 +139,28 @@ const GroupMonthlyScheduleModal = ({
             return;
           }
 
-          updateGroupMonthlyScheduleMutation.mutate(
+          updateGroupScheduleMutation.mutate(
             {
               groupId: group.id,
-              yearMonth,
-              workDates,
-              maxMonthlyMinutes: Math.round(Number(maxMonthlyHours) * 60),
+              months: toMonthlySchedules(
+                programStartDate,
+                programEndDate,
+                workDates,
+                shiftByDate,
+                form,
+                maxMonthlyMinutes,
+              ),
             },
             {
               onSuccess: () => {
-                showToast("조 정보와 월간 근무일을 수정했습니다.");
+                showToast("조 정보와 근무일을 수정했습니다.");
                 onClose();
               },
               onError: (error) =>
                 alert(
                   error instanceof Error
-                    ? `조 정보는 수정됐지만 월간 근무일 저장에 실패했습니다: ${error.message}`
-                    : "조 정보는 수정됐지만 월간 근무일 저장에 실패했습니다.",
+                    ? `조 정보는 수정됐지만 근무일 저장에 실패했습니다: ${error.message}`
+                    : "조 정보는 수정됐지만 근무일 저장에 실패했습니다.",
                 ),
             },
           );
@@ -201,7 +199,7 @@ const GroupMonthlyScheduleModal = ({
       </FormField>
       <div className="flex gap-3">
         <div className="flex-1">
-          <FormField label="근무 시작시간">
+          <FormField label="기본 근무 시작시간">
             <Input
               type="time"
               step={600}
@@ -213,7 +211,7 @@ const GroupMonthlyScheduleModal = ({
           </FormField>
         </div>
         <div className="flex-1">
-          <FormField label="근무 종료시간">
+          <FormField label="기본 근무 종료시간">
             <Input
               type="time"
               step={600}
@@ -226,79 +224,27 @@ const GroupMonthlyScheduleModal = ({
         </div>
       </div>
       <div className="text-[12px] text-admin-text-placeholder -mt-2">
-        사업단 운영시간({programStartTime}~{programEndTime}) 안에서 설정해주세요
+        사업단 운영시간({programStartTime}~{programEndTime}) 안에서 설정해야 합니다. 날짜마다 다르게
+        근무한다면 아래 &lsquo;날짜별 근무시간&rsquo;에서 그 날만 바꿉니다.
       </div>
 
-      <div className="border-t border-border-faint pt-4 flex flex-col gap-4">
-        <div className="text-[13px] font-bold text-text-strong">
-          월간 근무일 (선택 — 지금 안 바꿔도 나중에 다시 이 모달로 수정할 수 있어요)
-        </div>
-
-        <FormField label="월">
-          <Input
-            type="month"
-            value={yearMonth}
-            onChange={(event) => setYearMonth(event.target.value)}
-          />
-        </FormField>
-
-        <FormField label="월 근무시간 상한(시간)">
-          <Input
-            type="number"
-            min={0}
-            value={maxMonthlyHours}
-            onChange={(event) => setMaxMonthlyHours(event.target.value)}
-          />
-        </FormField>
-
-        <FormField label="패턴 자동생성 (예: 1근무 2휴무)">
-          <div className="flex items-center gap-2 flex-nowrap">
-            <Input
-              compact
-              type="number"
-              min={1}
-              value={patternWorkDays}
-              onChange={(event) => setPatternWorkDays(event.target.value)}
-            />
-            <span className="text-[13px] text-text-subtle whitespace-nowrap">일 근무 /</span>
-            <Input
-              compact
-              type="number"
-              min={0}
-              value={patternRestDays}
-              onChange={(event) => setPatternRestDays(event.target.value)}
-            />
-            <span className="text-[13px] text-text-subtle whitespace-nowrap">일 휴무</span>
-            <Button variant="ghost" onClick={handleGeneratePatternButtonClick}>
-              자동 생성
-            </Button>
-          </div>
-        </FormField>
-
-        <FormField label="근무일 (클릭해서 선택/해제)">
-          {isFetching ? (
-            <div className="text-[13px] text-admin-text-placeholder py-4 text-center">
-              불러오는 중...
-            </div>
-          ) : (
-            <MonthlyScheduleCalendar
-              yearMonth={yearMonth}
-              selectedDates={workDates}
-              onToggleDate={handleToggleDate}
-              maxDate={programEndDate}
-            />
-          )}
-        </FormField>
-
-        <div
-          className={`text-[12px] ${isOverCap ? "text-danger font-semibold" : "text-admin-text-placeholder"}`}
-        >
-          선택된 근무일: {workDates.length}일 · 예상 근무시간: {(projectedMinutes / 60).toFixed(1)}
-          시간 / 상한 {maxMonthlyHours}시간
-          {isOverCap && " (상한 초과)"}
-          {" · "}사업단 종료일({programEndDate}) 이후는 선택할 수 없어요
-        </div>
-      </div>
+      <GroupScheduleFields
+        yearMonth={yearMonth}
+        onYearMonthChange={setYearMonth}
+        workDates={workDates}
+        onWorkDatesChange={setWorkDates}
+        shiftByDate={shiftByDate}
+        onShiftByDateChange={setShiftByDate}
+        maxMonthlyHours={maxMonthlyHours}
+        onMaxMonthlyHoursChange={setMaxMonthlyHours}
+        defaultShift={form}
+        programStartDate={programStartDate}
+        programEndDate={programEndDate}
+        programStartTime={programStartTime}
+        programEndTime={programEndTime}
+        isLoading={isFetching}
+        note="사업단 기간 전체의 편성입니다. 달력 위 좌우 버튼으로 달을 옮겨가며 고칠 수 있습니다."
+      />
     </SlideModal>
   );
 };

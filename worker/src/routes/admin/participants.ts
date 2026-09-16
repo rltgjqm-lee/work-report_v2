@@ -10,6 +10,7 @@ import {
   demandSites,
   escapeLogs,
   groups,
+  groupShiftOverrides,
   organizations,
   participantAnnualLeave,
   participantGroupOverrides,
@@ -141,8 +142,14 @@ app.get("/:id/attendance", async (c) => {
     .select({
       log: attendanceLogs,
       groupName: groups.name,
-      shiftStart: groups.shiftStart,
-      shiftEnd: groups.shiftEnd,
+      // 지각/조퇴 판정 기준이 되는 시간표라 조 기본값이 아니라 그날의 근무시간이어야 한다
+      // — 날짜별 근무시간(group_shift_overrides)이 걸린 날은 그 값을 쓴다. 목록을 SQL
+      // 한 방으로 뽑느라 resolveGroupShift(lib/scheduling.ts)를 못 써서 COALESCE로 같은
+      // 우선순위를 재현한다.
+      shiftStart: sql<
+        string | null
+      >`COALESCE(${groupShiftOverrides.shiftStart}, ${groups.shiftStart})`,
+      shiftEnd: sql<string | null>`COALESCE(${groupShiftOverrides.shiftEnd}, ${groups.shiftEnd})`,
       activityLogId: activityLogs.id,
       hasAccident: activityLogs.hasAccident,
       accidentChecked: activityLogs.accidentChecked,
@@ -152,6 +159,13 @@ app.get("/:id/attendance", async (c) => {
     })
     .from(attendanceLogs)
     .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
+    .leftJoin(
+      groupShiftOverrides,
+      and(
+        eq(groupShiftOverrides.groupId, attendanceLogs.groupId),
+        eq(groupShiftOverrides.date, attendanceLogs.workDate),
+      ),
+    )
     // 같은 참여자+날짜의 활동일지(업무/안전/서명)를 붙여 미완료 여부를 같이 내려준다.
     .leftJoin(
       activityLogs,

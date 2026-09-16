@@ -1,7 +1,13 @@
-import { and, eq, isNull, lt, lte, or } from "drizzle-orm";
+import { and, eq, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
-import { attendanceLogs, groups, participantEscapeMeta, participants } from "../db/schema";
+import {
+  attendanceLogs,
+  groups,
+  groupShiftOverrides,
+  participantEscapeMeta,
+  participants,
+} from "../db/schema";
 import { checkPositionAgainstDemandSite } from "../lib/geofence";
 import { getKstNow } from "../lib/kst";
 import type { Env } from "../types";
@@ -41,13 +47,20 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
   // 매분 그 인원 전체를 읽게 된다 — 실제로 이번 분에 마감 대상인 것만 SQL에서 걸러낸다.
   // 오늘 이전 날짜(cron이 KST 18:00 이후 안 도는 사이 놓친 것)는 시각과 무관하게 무조건
   // 대상이고, 오늘 날짜는 조 근무종료 + 여유(GRACE_MINUTES)가 지난 조만 대상이다.
+
+  // 그날 근무종료시각 — 날짜별 근무시간(group_shift_overrides)이 등록된 날은 그 값이,
+  // 없으면 조 기본값이 기준이다. 목록을 SQL 한 방으로 뽑아야 해서 resolveGroupShift를
+  // 못 쓰는 대신 여기서 같은 우선순위를 COALESCE로 재현한다 — 둘이 갈라지면 참여자
+  // 앱은 13시 퇴근인데 자동퇴근은 12시에 걸어버리는 식으로 어긋난다.
+  const effectiveShiftEnd = sql<string>`COALESCE(${groupShiftOverrides.shiftEnd}, ${groups.shiftEnd})`;
+
   const openLogs = await db
     .select({
       id: attendanceLogs.id,
       workDate: attendanceLogs.workDate,
       clockIn: attendanceLogs.clockIn,
       note: attendanceLogs.note,
-      shiftEnd: groups.shiftEnd,
+      shiftEnd: effectiveShiftEnd,
       demandSiteId: participants.demandSiteId,
       lastLat: participantEscapeMeta.lastLat,
       lastLng: participantEscapeMeta.lastLng,
@@ -57,6 +70,13 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
     .innerJoin(groups, eq(attendanceLogs.groupId, groups.id))
     .innerJoin(participants, eq(attendanceLogs.participantId, participants.id))
     .leftJoin(
+      groupShiftOverrides,
+      and(
+        eq(groupShiftOverrides.groupId, attendanceLogs.groupId),
+        eq(groupShiftOverrides.date, attendanceLogs.workDate),
+      ),
+    )
+    .leftJoin(
       participantEscapeMeta,
       eq(attendanceLogs.participantId, participantEscapeMeta.participantId),
     )
@@ -64,7 +84,7 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
       and(
         isNull(attendanceLogs.clockOut),
         lte(attendanceLogs.workDate, date),
-        or(lt(attendanceLogs.workDate, date), lte(groups.shiftEnd, cutoffShiftEnd)),
+        or(lt(attendanceLogs.workDate, date), lte(effectiveShiftEnd, cutoffShiftEnd)),
       ),
     );
 

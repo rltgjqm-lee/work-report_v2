@@ -5,6 +5,14 @@ export const inputClass =
 // 우선순위를 매겨서 뒤에 w-[Npx]를 붙여도 못 이김) — 그래서 폭 고정 인풋은 이걸 쓴다.
 export const compactInputClass =
   "flex-none w-[64px] border border-admin-border px-2 py-2.5 text-[13px] rounded-[2px] font-sans box-border";
+// 한 줄에서 남는 폭을 나눠 갖는 인풋 — 날짜/시간처럼 내용 길이가 정해져 있으면서
+// compactInputClass(64px)로는 잘리는 것들에 쓴다. 폭을 px로 박지 않아서 모달 폭이
+// 바뀌어도 같이 늘고 준다.
+// - min-w-0: 폼 컨트롤은 min-width가 auto(=내용 너비)라 이게 없으면 안 줄어든다.
+// - basis-28: 줄어들 하한이 아니라 "이 폭은 있어야 한다"는 기준 — 컨테이너의
+//   flex-wrap과 맞물려, 좁아지면 무한정 쪼그라드는 대신 다음 줄로 넘어간다.
+export const flexInputClass =
+  "flex-1 basis-28 min-w-0 border border-admin-border px-2 py-2.5 text-[13px] rounded-[2px] font-sans box-border";
 // 네이티브 select 화살표는 브라우저가 그리는 영역이라 padding-right를 줘도 위치가
 // 안 움직인다(특히 Safari) — appearance-none으로 네이티브 화살표를 없애고
 // FilterSelect에서 lucide ChevronDown 아이콘을 직접 얹어서 위치를 제어한다.

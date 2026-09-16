@@ -14,7 +14,6 @@ import {
   demandSiteSchedules,
   escapeLogs,
   groupMonthlySchedule,
-  groups,
   organizations,
   participantEscapeMeta,
   participantGroupOverrides,
@@ -37,6 +36,7 @@ import {
   isInsideArea,
 } from "../../lib/geofence";
 import { getKstNow } from "../../lib/kst";
+import { resolveGroupShift, type GroupShift } from "../../lib/scheduling";
 import { sendWebPush } from "../../lib/webPush";
 
 const app = new Hono<Env>();
@@ -323,10 +323,12 @@ app.get("/attendance/today", async (c) => {
   let workDates = participantScheduleRows[0]
     ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
     : null;
-  let group: typeof groups.$inferSelect | undefined;
+  // 조 기본 근무시간이 아니라 "오늘"의 근무시간이다 — 날짜별 근무시간이 등록된 조라면
+  // 참여자 앱 화면에 뜨는 시간표도 그날 값이어야 clock-in 검증과 어긋나지 않는다.
+  let shift: GroupShift | null = null;
 
   if (effectiveGroupId) {
-    const [groupScheduleRows, groupRows] = await Promise.all([
+    const [groupScheduleRows, resolvedShift] = await Promise.all([
       workDates
         ? Promise.resolve([])
         : db
@@ -338,14 +340,14 @@ app.get("/attendance/today", async (c) => {
                 eq(groupMonthlySchedule.yearMonth, yearMonth),
               ),
             ),
-      db.select().from(groups).where(eq(groups.id, effectiveGroupId)),
+      resolveGroupShift(db, effectiveGroupId, date),
     ]);
     if (!workDates) {
       workDates = groupScheduleRows[0]
         ? (JSON.parse(groupScheduleRows[0].workDates) as string[])
         : null;
     }
-    group = groupRows[0];
+    shift = resolvedShift;
   }
 
   // 참여자/조 스케줄이 아예 없으면(스케줄 미편성 사업단) 근무일 여부를 판단할 근거가 없으니
@@ -356,8 +358,8 @@ app.get("/attendance/today", async (c) => {
     clockIn: attendanceRow?.clockIn ?? null,
     clockOut: attendanceRow?.clockOut ?? null,
     isWorkDay,
-    shiftStart: group?.shiftStart ?? null,
-    shiftEnd: group?.shiftEnd ?? null,
+    shiftStart: shift?.shiftStart ?? null,
+    shiftEnd: shift?.shiftEnd ?? null,
     locationConsentAt: participant.locationConsentAt ?? null,
   });
 });
@@ -475,11 +477,11 @@ app.post("/attendance/clock-in", async (c) => {
     ? (JSON.parse(participantScheduleRows[0].workDates) as string[])
     : null;
 
-  // effectiveGroupId가 있어야 하는 조회 3개(조 스케줄 대체, 조 근무시간, 수요처 배정 여부)도
-  // 서로 독립적이라 한 번에 실행한다.
-  let group: typeof groups.$inferSelect | undefined;
+  // effectiveGroupId가 있어야 하는 조회 3개(조 스케줄 대체, 그날의 조 근무시간, 수요처
+  // 배정 여부)도 서로 독립적이라 한 번에 실행한다.
+  let shift: GroupShift | null = null;
   if (effectiveGroupId) {
-    const [groupScheduleRows, groupRows, demandSiteScheduleRows] = await Promise.all([
+    const [groupScheduleRows, resolvedShift, demandSiteScheduleRows] = await Promise.all([
       workDates
         ? Promise.resolve([])
         : db
@@ -491,7 +493,7 @@ app.post("/attendance/clock-in", async (c) => {
                 eq(groupMonthlySchedule.yearMonth, yearMonth),
               ),
             ),
-      db.select().from(groups).where(eq(groups.id, effectiveGroupId)),
+      resolveGroupShift(db, effectiveGroupId, date),
       participant.demandSiteId
         ? db
             .select()
@@ -509,7 +511,7 @@ app.post("/attendance/clock-in", async (c) => {
         ? (JSON.parse(groupScheduleRows[0].workDates) as string[])
         : null;
     }
-    group = groupRows[0];
+    shift = resolvedShift;
 
     // 참여자의 수요처에 지금 조가 배정돼 있지 않으면 출근을 막는다 — 조 자체는
     // 배정돼 있어도(participants.groupId) 그 조가 이 수요처에서 근무하는 조가
@@ -528,22 +530,22 @@ app.post("/attendance/clock-in", async (c) => {
   // 허용한다. 조 미배정/근무시간 미설정 상태에서는 검증을 건너뛴다 (아직 조 편성을 안 한
   // 사업단도 있어서).
   let effectiveClockIn = iso;
-  if (group) {
+  if (shift) {
     const nowMinutes = toMinutes(time);
-    const shiftStartMinutes = toMinutes(group.shiftStart);
+    const shiftStartMinutes = toMinutes(shift.shiftStart);
     const earliest = shiftStartMinutes - 15;
-    const latest = toMinutes(group.shiftEnd) + 30;
+    const latest = toMinutes(shift.shiftEnd) + 30;
 
     if (nowMinutes < earliest) {
       // 문구는 프론트에서 조립한다(안내 모달에 시간표를 같이 보여줘야 해서) — 여기서는
       // 판단에 필요한 코드/데이터만 내려준다.
       return c.json(
-        { error: "TOO_EARLY", now: time, shiftStart: group.shiftStart, shiftEnd: group.shiftEnd },
+        { error: "TOO_EARLY", now: time, shiftStart: shift.shiftStart, shiftEnd: shift.shiftEnd },
         400,
       );
     }
     if (nowMinutes > latest) {
-      return c.json({ error: `이미 근무 종료 시간(${group.shiftEnd})이 지났습니다.` }, 400);
+      return c.json({ error: `이미 근무 종료 시간(${shift.shiftEnd})이 지났습니다.` }, 400);
     }
 
     // 근무 시작 15분 전부터 15분 후까지 눌렀으면 실제 시각이 아니라 정시로 기록한다 —
@@ -551,7 +553,7 @@ app.post("/attendance/clock-in", async (c) => {
     // 관리자 화면의 지각 확인 기준(LATE_CLOCK_IN_TOLERANCE_MINUTES=15)과도 맞춘다.
     // earliest 체크를 이미 통과했으므로 아래쪽 경계는 별도로 볼 필요가 없다.
     if (nowMinutes <= shiftStartMinutes + 15) {
-      effectiveClockIn = `${date}T${group.shiftStart}:00.000Z`;
+      effectiveClockIn = `${date}T${shift.shiftStart}:00.000Z`;
     }
   }
 
@@ -625,18 +627,18 @@ app.post("/attendance/clock-out", async (c) => {
     return c.json({ error: "출근 기록이 없습니다." }, 404);
   }
 
-  const group = log.groupId
-    ? (await db.select().from(groups).where(eq(groups.id, log.groupId)))[0]
-    : undefined;
+  // 출근 기록에 박힌 조(그날 실제로 근무한 조)의 "그날" 근무시간으로 판정한다 — 조
+  // 기본값을 쓰면 날짜별 근무시간이 걸린 날에 퇴근이 엉뚱한 시각으로 막히거나 인정된다.
+  const shift = log.groupId ? await resolveGroupShift(db, log.groupId, log.workDate) : null;
 
   // 배정된 조에 근무시간이 설정돼 있으면 종료시간 10분 전부터만 퇴근을 허용한다.
   // 그 전에는 아예 퇴근 등록을 막는다.
   // 문구는 프론트에서 조립한다(시간 부분을 강조해야 해서) — 여기서는 코드/데이터만 내려준다.
   const nowMinutes = toMinutes(time);
-  if (group) {
-    const earliest = toMinutes(group.shiftEnd) - 10;
+  if (shift) {
+    const earliest = toMinutes(shift.shiftEnd) - 10;
     if (nowMinutes < earliest) {
-      return c.json({ error: "TOO_EARLY_OUT", shiftEnd: group.shiftEnd }, 400);
+      return c.json({ error: "TOO_EARLY_OUT", shiftEnd: shift.shiftEnd }, 400);
     }
   }
 
@@ -644,8 +646,8 @@ app.post("/attendance/clock-out", async (c) => {
   // 이 구간은 실제로 누른 시각이 아니라 조 근무종료시각으로 인정한다(자동퇴근과 동일 기준).
   // 종료시각을 지나서 누르면(야근 등) 실제 시각을 그대로 쓴다.
   const effectiveClockOut =
-    group && nowMinutes < toMinutes(group.shiftEnd)
-      ? `${log.workDate}T${group.shiftEnd}:00.000Z`
+    shift && nowMinutes < toMinutes(shift.shiftEnd)
+      ? `${log.workDate}T${shift.shiftEnd}:00.000Z`
       : iso;
 
   const totalMinutes = Math.floor(
