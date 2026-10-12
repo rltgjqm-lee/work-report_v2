@@ -33,6 +33,12 @@ import { toLeaveDays } from "./participants";
 
 const app = new Hono<Env>();
 
+// D1은 쿼리 하나당 바인딩 파라미터를 100개까지만 허용한다.
+const D1_MAX_BOUND_PARAMS = 100;
+
+// 엑셀 일괄 등록 한 번에 받을 수 있는 최대 인원 (bulk 라우트 주석 참고)
+const MAX_BULK_PARTICIPANTS = 180;
+
 type ProgramBody = {
   organizationId?: number;
   name?: string;
@@ -791,6 +797,16 @@ app.post("/:id/participants/bulk", async (c) => {
   if (rows.length === 0) {
     return c.json({ error: "등록할 참여자가 없습니다." }, 400);
   }
+  // 아래 INSERT를 나눠 batch로 보내는데, Workers 무료 플랜은 요청 하나당 D1 쿼리를 50개까지만
+  // 허용한다 — 행이 너무 많으면 쿼리 한도에 걸려 500이 나므로 미리 막는다.
+  if (rows.length > MAX_BULK_PARTICIPANTS) {
+    return c.json(
+      {
+        error: `한 번에 최대 ${MAX_BULK_PARTICIPANTS}명까지 등록할 수 있습니다. 현재 ${rows.length}명 — 파일을 나눠서 올려주세요.`,
+      },
+      400,
+    );
+  }
 
   const existingParticipants = await db
     .select({ name: participants.name, gender: participants.gender })
@@ -852,21 +868,34 @@ app.post("/:id/participants/bulk", async (c) => {
     return c.json({ error: `입력값을 확인해주세요 — ${summary}`, details: errors }, 400);
   }
 
-  const result = await db
-    .insert(participants)
-    .values(
-      rows.map((row) => ({
-        programId,
-        name: row.name!,
-        gender: row.gender,
-        demandSiteId: row.demandSiteId,
-        groupId: row.groupId,
-        birthYear: row.birthYear,
-      })),
-    )
-    .returning();
+  // D1은 쿼리 하나당 바인딩 파라미터를 100개까지만 허용하는데, drizzle은 다중 행 INSERT에서
+  // 기본값 컬럼까지 행마다 전부 바인딩한다 — 엑셀로 몇십 명을 한 INSERT에 넣으면
+  // "too many SQL variables"로 500이 난다. 컬럼 수 기준으로 행을 잘라 여러 INSERT로 나누고,
+  // 일부만 등록되는 일이 없게 batch(단일 트랜잭션)로 묶는다.
+  const rowsPerInsert = Math.max(
+    1,
+    Math.floor(D1_MAX_BOUND_PARAMS / Object.keys(getTableColumns(participants)).length),
+  );
+  const values = rows.map((row) => ({
+    programId,
+    name: row.name!,
+    gender: row.gender,
+    demandSiteId: row.demandSiteId,
+    groupId: row.groupId,
+    birthYear: row.birthYear,
+  }));
+  const inserts = [];
+  for (let i = 0; i < values.length; i += rowsPerInsert) {
+    inserts.push(
+      db
+        .insert(participants)
+        .values(values.slice(i, i + rowsPerInsert))
+        .returning(),
+    );
+  }
+  const results = await db.batch(inserts as unknown as Parameters<typeof db.batch>[0]);
 
-  return c.json(result, 201);
+  return c.json((results as unknown as (typeof participants.$inferSelect)[][]).flat(), 201);
 });
 
 app.delete("/:id/participants/:participantId", async (c) => {
