@@ -314,7 +314,8 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
       <div className="grid grid-cols-6 mb-5">
         <div className="px-5 py-4 border border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">총 건수</div>
-          <div className="text-sm font-bold">{displayStats.total}건</div>
+          {/* 출근 기록 + 출근 기록 없는 근무 예정(출근 전/미출근) — 목록에 보이는 행 수와 맞춘다 */}
+          <div className="text-sm font-bold">{displayStats.total + filteredAbsences.length}건</div>
         </div>
         <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">정상</div>
