@@ -16,9 +16,22 @@ export type AttendanceRow = {
   escapeMemo: string | null;
 };
 
+// 근무 예정일인데 출근 기록이 아예 없는 (참여자, 날짜) — 서버가 오늘(KST)까지만,
+// 휴무/등록 당일/탈락자를 빼고 계산해서 내려준다. 오늘 날짜는 조 근무 시작 전이면
+// UPCOMING(출근 전), 지났으면 ABSENT(미출근)다.
+export type AttendanceAbsence = {
+  participantId: number;
+  participantName: string;
+  groupId: number | null;
+  groupName: string | null;
+  workDate: string;
+  status: "UPCOMING" | "ABSENT";
+};
+
 export type MonthlyAttendance = {
   logs: AttendanceRow[];
   stats: AttendanceStats;
+  absences: AttendanceAbsence[];
 };
 
 export const attendanceKeys = {
@@ -72,6 +85,37 @@ const correctAttendance = (logId: number, data: CorrectAttendanceVariables["data
 export const correctAttendanceMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ logId, data }: CorrectAttendanceVariables) => correctAttendance(logId, data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: attendanceKeys.monthly(variables.programId, variables.month),
+      });
+    },
+  });
+
+export interface CreateAttendanceVariables {
+  // 서버로 보내는 값이 아니라, 성공 후 어느 월별 근무 목록을 무효화할지 찾기 위한 값이다.
+  programId: number;
+  month: string;
+  data: {
+    participantId: number;
+    workDate: string; // "YYYY-MM-DD"
+    clockIn: string; // "HH:MM"
+    clockOut?: string; // "HH:MM"
+    status: "NORMAL" | "LATE" | "EARLY_LEAVE";
+    reason: string;
+  };
+}
+
+const createAttendance = (data: CreateAttendanceVariables["data"]) =>
+  request<AttendanceLog>("/api/attendance", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+// 휴대폰 미소지 등으로 출퇴근을 못 찍은 참여자의 근무 기록을 관리자가 대신 만든다.
+export const createAttendanceMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ data }: CreateAttendanceVariables) => createAttendance(data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: attendanceKeys.monthly(variables.programId, variables.month),

@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, inArray, isNull, like, ne, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, inArray, isNull, like, lte, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -11,6 +11,7 @@ import {
   demandSites,
   demandSiteSchedules,
   escapeLogs,
+  groupMonthlySchedule,
   groups,
   groupShiftOverrides,
   organizations,
@@ -26,7 +27,13 @@ import {
   pushSubscriptions,
   sosEvents,
 } from "../../db/schema";
-import { canAccessProgram, canManageProgram, getAuth, hasMinRole, parseIdArray } from "../../lib/authz";
+import {
+  canAccessProgram,
+  canManageProgram,
+  getAuth,
+  hasMinRole,
+  parseIdArray,
+} from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
 import { toLeaveDays } from "./participants";
@@ -196,8 +203,7 @@ app.get("/manager-candidates", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const queryOrgId = c.req.query("organizationId");
-  const organizationId =
-    auth.role === ROLES.SUPER_ADMIN ? Number(queryOrgId) : auth.organizationId;
+  const organizationId = auth.role === ROLES.SUPER_ADMIN ? Number(queryOrgId) : auth.organizationId;
   if (!organizationId) return c.json({ error: "기관을 지정해주세요." }, 400);
 
   const rows = await db
@@ -217,9 +223,7 @@ app.get("/manager-candidates", async (c) => {
       ),
     );
 
-  return c.json(
-    rows.map((row) => ({ ...row, programIds: parseIdArray(row.programIds) })),
-  );
+  return c.json(rows.map((row) => ({ ...row, programIds: parseIdArray(row.programIds) })));
 });
 
 // 보조 담당자(수요처 담당자 "+1") 후보 목록 — 계정 관리 화면(GET /api/admins)은
@@ -231,8 +235,7 @@ app.get("/secondary-contact-candidates", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
   const queryOrgId = c.req.query("organizationId");
-  const organizationId =
-    auth.role === ROLES.SUPER_ADMIN ? Number(queryOrgId) : auth.organizationId;
+  const organizationId = auth.role === ROLES.SUPER_ADMIN ? Number(queryOrgId) : auth.organizationId;
   if (!organizationId) return c.json({ error: "기관을 지정해주세요." }, 400);
 
   const rows = await db
@@ -1192,6 +1195,157 @@ app.post("/:id/participants/bulk-annual-leave", async (c) => {
   return c.json(results);
 });
 
+// 근무 예정일인데 출근 기록이 아예 없는 (참여자, 날짜) — 출근 기록만 보여주면 출근 안 한
+// 사람은 목록에 안 떠서 관리자가 누가 없는지 따로 찾아야 했다. "근무 예정일" 판정은
+// 출근부 엑셀(excel.ts의 ABSENT)과 같은 규칙(참여자 개인 예외 → 조 기본 편성)을 쓴다.
+// 오늘(KST)까지만 보고, 탈락자·휴무 기간과 등록일 당일까지는 뺀다 — 등록 당일은 앱을
+// 설치·계약하는 날이라 근무일로 편성돼 있어도 출근 기록이 없는 게 정상이다. 비활성화(INVALID)된
+// 기록도 "기록이 있다"로 보고 미출근에 넣지 않는다 — 그건 이미 관리자가 손댄 날이다.
+// 오늘 날짜는 그날 조 근무 시작 시각 전이면 "출근 전(UPCOMING)", 지났으면 "미출근
+// (ABSENT)"으로 구분한다. DB에 저장하는 상태가 아니라 조회 시점 시각으로 매번 계산하므로
+// 시작 시각이 지나면 다음 조회부터 저절로 ABSENT로 바뀐다(크론 불필요).
+const findMonthlyAbsences = async (
+  db: ReturnType<typeof drizzle>,
+  {
+    programId,
+    month,
+    demandSiteId,
+    loggedKeys,
+  }: { programId: number; month: string; demandSiteId: number | null; loggedKeys: Set<string> },
+) => {
+  const { date: today, time: nowTime } = getKstNow();
+  if (month > today.slice(0, 7)) return [];
+
+  const participantConditions = [
+    eq(participants.programId, programId),
+    ne(participants.status, "DROPPED"),
+  ];
+  if (demandSiteId) participantConditions.push(eq(participants.demandSiteId, demandSiteId));
+
+  const monthStart = `${month}-01`;
+  const monthEnd = `${month}-31`;
+
+  const [
+    participantRows,
+    participantScheduleRows,
+    groupScheduleRows,
+    leaveRows,
+    todayShiftOverrideRows,
+  ] = await Promise.all([
+    db
+      .select({
+        id: participants.id,
+        name: participants.name,
+        groupId: participants.groupId,
+        groupName: groups.name,
+        groupShiftStart: groups.shiftStart,
+        createdAt: participants.createdAt,
+      })
+      .from(participants)
+      .leftJoin(groups, eq(participants.groupId, groups.id))
+      .where(and(...participantConditions)),
+    db
+      .select({
+        participantId: participantMonthlySchedule.participantId,
+        workDates: participantMonthlySchedule.workDates,
+      })
+      .from(participantMonthlySchedule)
+      .innerJoin(participants, eq(participantMonthlySchedule.participantId, participants.id))
+      .where(
+        and(eq(participants.programId, programId), eq(participantMonthlySchedule.yearMonth, month)),
+      ),
+    db
+      .select({
+        groupId: groupMonthlySchedule.groupId,
+        workDates: groupMonthlySchedule.workDates,
+      })
+      .from(groupMonthlySchedule)
+      .innerJoin(groups, eq(groupMonthlySchedule.groupId, groups.id))
+      .where(and(eq(groups.programId, programId), eq(groupMonthlySchedule.yearMonth, month))),
+    db
+      .select({
+        participantId: participantLeaves.participantId,
+        leaveStart: participantLeaves.leaveStart,
+        leaveEnd: participantLeaves.leaveEnd,
+      })
+      .from(participantLeaves)
+      .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
+      .where(
+        and(
+          eq(participants.programId, programId),
+          lte(participantLeaves.leaveStart, monthEnd),
+          gte(participantLeaves.leaveEnd, monthStart),
+        ),
+      ),
+    // 오늘 날짜별 근무시간이 따로 잡힌 조 — 출근 전/미출근 경계를 그날 시작 시각으로 잡는다
+    db
+      .select({
+        groupId: groupShiftOverrides.groupId,
+        shiftStart: groupShiftOverrides.shiftStart,
+      })
+      .from(groupShiftOverrides)
+      .innerJoin(groups, eq(groupShiftOverrides.groupId, groups.id))
+      .where(and(eq(groups.programId, programId), eq(groupShiftOverrides.date, today))),
+  ]);
+
+  const workDatesByParticipantId = new Map(
+    participantScheduleRows.map((scheduleRow) => [
+      scheduleRow.participantId,
+      JSON.parse(scheduleRow.workDates) as string[],
+    ]),
+  );
+  const workDatesByGroupId = new Map(
+    groupScheduleRows.map((scheduleRow) => [
+      scheduleRow.groupId,
+      JSON.parse(scheduleRow.workDates) as string[],
+    ]),
+  );
+
+  const todayShiftStartByGroupId = new Map(
+    todayShiftOverrideRows.map((overrideRow) => [overrideRow.groupId, overrideRow.shiftStart]),
+  );
+
+  const isOnLeave = (participantId: number, date: string) =>
+    leaveRows.some(
+      (leaveRow) =>
+        leaveRow.participantId === participantId &&
+        leaveRow.leaveStart <= date &&
+        leaveRow.leaveEnd >= date,
+    );
+
+  return participantRows.flatMap((participant) => {
+    const workDates =
+      workDatesByParticipantId.get(participant.id) ??
+      (participant.groupId ? workDatesByGroupId.get(participant.groupId) : undefined) ??
+      [];
+    const registeredDate = participant.createdAt.slice(0, 10);
+    const todayShiftStart =
+      (participant.groupId ? todayShiftStartByGroupId.get(participant.groupId) : undefined) ??
+      participant.groupShiftStart;
+
+    return workDates
+      .filter(
+        (workDate) =>
+          workDate.startsWith(month) &&
+          workDate <= today &&
+          workDate > registeredDate &&
+          !loggedKeys.has(`${participant.id}_${workDate}`) &&
+          !isOnLeave(participant.id, workDate),
+      )
+      .map((workDate) => ({
+        participantId: participant.id,
+        participantName: participant.name,
+        groupId: participant.groupId,
+        groupName: participant.groupName,
+        workDate,
+        status:
+          workDate === today && todayShiftStart && nowTime < todayShiftStart
+            ? ("UPCOMING" as const)
+            : ("ABSENT" as const),
+      }));
+  });
+};
+
 app.get("/:id/attendance", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -1322,7 +1476,14 @@ app.get("/:id/attendance", async (c) => {
     };
   });
 
-  return c.json({ logs, stats });
+  const absences = await findMonthlyAbsences(db, {
+    programId,
+    month,
+    demandSiteId: demandSiteIdParam ? Number(demandSiteIdParam) : null,
+    loggedKeys: new Set(dedupedRows.map((row) => `${row.log.participantId}_${row.log.workDate}`)),
+  });
+
+  return c.json({ logs, stats, absences });
 });
 
 // 연도 전체 휴가 행을 한 번만 조회해서 원본 목록과 월별 집계를 같이 내려준다 — 월별

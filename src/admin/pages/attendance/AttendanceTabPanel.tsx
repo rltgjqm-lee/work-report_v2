@@ -5,8 +5,10 @@ import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   activateAttendanceMutationOptions,
   correctAttendanceMutationOptions,
+  createAttendanceMutationOptions,
   deactivateAttendanceMutationOptions,
   monthlyAttendanceQueryOptions,
+  type AttendanceAbsence,
   type AttendanceRow,
 } from "../../api/admin/attendance";
 import { groupsQueryOptions } from "../../api/admin/groups";
@@ -110,6 +112,8 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
 
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
+  // 미출근 행에서 "출퇴근 등록"을 누른 대상 — 수정과 같은 입력 모달을 같이 쓴다.
+  const [registrationTarget, setRegistrationTarget] = useState<AttendanceAbsence | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<AttendanceRow | null>(null);
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
@@ -123,8 +127,10 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   );
   const logs = monthlyAttendance?.logs ?? [];
   const stats = monthlyAttendance?.stats ?? emptyStats;
+  const absences = monthlyAttendance?.absences ?? [];
 
   const correctAttendanceMutation = useMutation(correctAttendanceMutationOptions(queryClient));
+  const createAttendanceMutation = useMutation(createAttendanceMutationOptions(queryClient));
   const deactivateAttendanceMutation = useMutation(
     deactivateAttendanceMutationOptions(queryClient),
   );
@@ -141,6 +147,13 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
     )
     .filter((row) => groupFilter === "all" || row.log.groupId === Number(groupFilter))
     .filter((row) => row.participantName.includes(search));
+  const filteredAbsences = absences
+    .filter(
+      (absence) =>
+        dayFilter === "all" || absence.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
+    )
+    .filter((absence) => groupFilter === "all" || absence.groupId === Number(groupFilter))
+    .filter((absence) => absence.participantName.includes(search));
 
   // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 그 외 필터로 더
   // 좁혔을 때만 직접 다시 센다.
@@ -203,6 +216,51 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
     );
   };
 
+  const handleRegisterButtonClick = (absence: AttendanceAbsence) => {
+    setRegistrationTarget(absence);
+    setCorrectionForm({ clockIn: "", clockOut: "", status: "NORMAL", reason: "" });
+  };
+
+  const handleSaveRegistrationButtonClick = () => {
+    if (!registrationTarget) return;
+    if (!correctionForm.clockIn) {
+      alert("출근시간을 입력해주세요.");
+
+      return;
+    }
+    if (!correctionForm.reason) {
+      alert("등록 사유를 입력해주세요.");
+
+      return;
+    }
+    createAttendanceMutation.mutate(
+      {
+        programId,
+        month,
+        data: {
+          participantId: registrationTarget.participantId,
+          workDate: registrationTarget.workDate,
+          clockIn: correctionForm.clockIn,
+          clockOut: correctionForm.clockOut || undefined,
+          status: correctionForm.status,
+          reason: correctionForm.reason,
+        },
+      },
+      {
+        onSuccess: () => {
+          showToast(`${registrationTarget.participantName} 님의 근무 기록을 등록했습니다.`);
+          setRegistrationTarget(null);
+        },
+        onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
+      },
+    );
+  };
+
+  const handleAttendanceFormModalClose = () => {
+    setCorrectionTarget(null);
+    setRegistrationTarget(null);
+  };
+
   const handleDeactivateButtonClick = (row: AttendanceRow) => {
     setDeactivateTarget(row);
   };
@@ -223,7 +281,9 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   };
 
   const handleActivateButtonClick = (row: AttendanceRow) => {
-    if (!confirm(`'${row.participantName}' 님의 ${row.log.workDate} 근무 기록을 활성화하시겠습니까?`))
+    if (
+      !confirm(`'${row.participantName}' 님의 ${row.log.workDate} 근무 기록을 활성화하시겠습니까?`)
+    )
       return;
 
     activateAttendanceMutation.mutate(
@@ -251,7 +311,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
 
   return (
     <div>
-      <div className="grid grid-cols-5 mb-5">
+      <div className="grid grid-cols-6 mb-5">
         <div className="px-5 py-4 border border-admin-border-subtle">
           <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">총 건수</div>
           <div className="text-sm font-bold">{displayStats.total}건</div>
@@ -273,6 +333,12 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
             총 근무시간
           </div>
           <div className="text-sm font-bold">{displayStats.totalHours}시간</div>
+        </div>
+        <div className="px-5 py-4 border border-l-0 border-admin-border-subtle">
+          <div className="text-[11px] text-text-subtle font-semibold uppercase mb-1.5">미출근</div>
+          <div className="text-sm font-bold">
+            {filteredAbsences.filter((absence) => absence.status === "ABSENT").length}건
+          </div>
         </div>
       </div>
 
@@ -336,6 +402,49 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
               </tr>
             </thead>
             <tbody>
+              {filteredAbsences.map((absence) => (
+                <tr
+                  key={`absence-${absence.participantId}-${absence.workDate}`}
+                  className="hover:bg-admin-row-hover"
+                >
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                    {absence.workDate}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {absence.participantName}
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                    {absence.groupName ?? "-"}
+                  </td>
+                  <td
+                    colSpan={5}
+                    className="px-5 py-[13px] text-[13px] text-admin-text-placeholder border-b border-border-faint"
+                  >
+                    출근 기록 없음
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                    {absence.status === "UPCOMING" ? (
+                      <StatusChip variant="pending">출근 전</StatusChip>
+                    ) : (
+                      <StatusChip variant="bad">미출근</StatusChip>
+                    )}
+                  </td>
+                  <td
+                    colSpan={3}
+                    className="px-5 py-[13px] text-[13px] border-b border-border-faint"
+                  >
+                    -
+                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                    <button
+                      className={rowActionBtnClass}
+                      onClick={() => handleRegisterButtonClick(absence)}
+                    >
+                      출퇴근 등록
+                    </button>
+                  </td>
+                </tr>
+              ))}
               {filteredLogs.map((row) => (
                 <tr
                   key={row.log.id}
@@ -461,7 +570,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                   </td>
                 </tr>
               ))}
-              {filteredLogs.length === 0 && (
+              {filteredLogs.length === 0 && filteredAbsences.length === 0 && (
                 <tr>
                   <td
                     colSpan={13}
@@ -478,17 +587,19 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
         </div>
       </div>
 
-      {correctionTarget && (
+      {(correctionTarget || registrationTarget) && (
         <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
           <div className="bg-white rounded-[8px] shadow-xl w-[380px] p-5">
             <div className="text-[14px] font-bold mb-4">
-              {correctionTarget.participantName} — {correctionTarget.log.workDate} 근무 수정
+              {correctionTarget
+                ? `${correctionTarget.participantName} — ${correctionTarget.log.workDate} 근무 수정`
+                : `${registrationTarget?.participantName} — ${registrationTarget?.workDate} 출퇴근 등록`}
             </div>
 
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
-                  출근시간
+                  출근시간{registrationTarget && " (필수)"}
                 </label>
                 <Input
                   type="time"
@@ -537,7 +648,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
               </div>
               <div>
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
-                  수정 사유 (필수)
+                  {registrationTarget ? "등록 사유 (필수)" : "수정 사유 (필수)"}
                 </label>
                 <Input
                   value={correctionForm.reason}
@@ -552,10 +663,18 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
-              <Button variant="ghost" onClick={() => setCorrectionTarget(null)}>
+              <Button variant="ghost" onClick={handleAttendanceFormModalClose}>
                 취소
               </Button>
-              <Button onClick={handleSaveCorrectionButtonClick}>저장</Button>
+              <Button
+                onClick={
+                  registrationTarget
+                    ? handleSaveRegistrationButtonClick
+                    : handleSaveCorrectionButtonClick
+                }
+              >
+                저장
+              </Button>
             </div>
           </div>
         </div>
