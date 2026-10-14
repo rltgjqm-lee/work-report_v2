@@ -36,6 +36,7 @@ import {
 } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
+import { syncLeaveStatus } from "../../lib/leaveStatus";
 import { toLeaveDays } from "./participants";
 
 const app = new Hono<Env>();
@@ -1053,14 +1054,16 @@ app.post("/:id/participants/bulk-leave", async (c) => {
     );
 
   const skipped: { participantId: number; name: string; reason: string }[] = [];
-  const updated: (typeof participants.$inferSelect)[] = [];
+  const registeredParticipantIds = new Set<number>();
 
+  // 지금 휴무 중인 참여자에게도 다른 기간 휴무는 미리 넣을 수 있어야 한다 — 휴무 중 상태는
+  // 휴무 기간 기준으로 다시 맞춰지므로(syncLeaveStatus) 탈락자만 건너뛴다.
   for (const participant of targetRows) {
-    if (participant.status !== "ACTIVE") {
+    if (participant.status === "DROPPED") {
       skipped.push({
         participantId: participant.id,
         name: participant.name,
-        reason: "활동중 상태가 아님",
+        reason: "탈락 상태",
       });
       continue;
     }
@@ -1086,12 +1089,7 @@ app.post("/:id/participants/bulk-leave", async (c) => {
       }
     }
 
-    const result = await db
-      .update(participants)
-      .set({ status: "ON_LEAVE", leaveStart: body.leaveStart, leaveEnd: body.leaveEnd })
-      .where(eq(participants.id, participant.id))
-      .returning();
-    updated.push(result[0]);
+    registeredParticipantIds.add(participant.id);
 
     await db.insert(participantLeaves).values({
       participantId: participant.id,
@@ -1119,6 +1117,12 @@ app.post("/:id/participants/bulk-leave", async (c) => {
         );
     }
   }
+
+  // 휴무 중 상태는 등록 시점이 아니라 휴무 기간 기준이다 — 시작일이 미래면 ACTIVE 그대로다.
+  await syncLeaveStatus(db, getKstNow().date, { programId });
+  const updated = (
+    await db.select().from(participants).where(eq(participants.programId, programId))
+  ).filter((participant) => registeredParticipantIds.has(participant.id));
 
   return c.json({ updated, skipped });
 });

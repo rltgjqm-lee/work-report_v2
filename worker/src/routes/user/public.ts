@@ -36,6 +36,7 @@ import {
   isInsideArea,
 } from "../../lib/geofence";
 import { getKstNow } from "../../lib/kst";
+import { syncLeaveStatus } from "../../lib/leaveStatus";
 import { resolveGroupShift, type GroupShift } from "../../lib/scheduling";
 import { sendWebPush } from "../../lib/webPush";
 
@@ -172,6 +173,9 @@ app.post("/attendance/identify", async (c) => {
   if (!body.programId || !body.name) {
     return c.json({ error: "MISSING_FIELDS" }, 400);
   }
+
+  // 등록확인 화면이 휴무 중 여부를 바로 판단하므로, 응답 전에 오늘 기준으로 맞춰둔다.
+  await syncLeaveStatus(db, getKstNow().date, { programId: body.programId });
 
   const [programRows, participantRows] = await Promise.all([
     db.select().from(programs).where(eq(programs.id, body.programId)),
@@ -456,15 +460,14 @@ app.post("/attendance/clock-in", async (c) => {
     );
   }
 
-  // 휴무 종료일이 지났는데 스케줄러(returnFromLeave)가 아직 안 돌았으면 여기서도 복귀시킨다.
-  if (participant.status === "ON_LEAVE" && participant.leaveEnd && participant.leaveEnd < date) {
-    const updated = await db
-      .update(participants)
-      .set({ status: "ACTIVE", leaveStart: null, leaveEnd: null })
-      .where(eq(participants.id, participant.id))
-      .returning();
-    participant = updated[0];
-  }
+  // 휴무 시작/종료가 바뀌는 날 스케줄러(오전 9시부터 동작)보다 먼저 출근하는 참여자도
+  // 있으므로, 오늘 날짜 기준으로 휴무 중 상태를 여기서 한 번 맞춘 뒤 판정한다.
+  await syncLeaveStatus(db, date, { participantId: participant.id });
+  const syncedRows = await db
+    .select()
+    .from(participants)
+    .where(eq(participants.id, participant.id));
+  participant = syncedRows[0];
 
   if (participant.status === "ON_LEAVE") {
     return c.json({ error: "휴가 중인 참여자는 출근할 수 없습니다." }, 400);

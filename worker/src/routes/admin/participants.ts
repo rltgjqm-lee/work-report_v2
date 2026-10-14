@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -22,6 +22,7 @@ import {
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
+import { syncLeaveStatus } from "../../lib/leaveStatus";
 
 export const toLeaveDays = (leaveStart: string, leaveEnd: string): number => {
   const start = new Date(`${leaveStart}T00:00:00Z`).getTime();
@@ -560,16 +561,6 @@ app.post("/:id/leave", async (c) => {
     }
   }
 
-  const result = await db
-    .update(participants)
-    .set({
-      status: "ON_LEAVE",
-      leaveStart: body.leaveStart,
-      leaveEnd: body.leaveEnd,
-    })
-    .where(eq(participants.id, id))
-    .returning();
-
   await db.insert(participantLeaves).values({
     participantId: id,
     leaveStart: body.leaveStart,
@@ -593,6 +584,10 @@ app.post("/:id/leave", async (c) => {
       );
   }
 
+  // 휴무 중 상태는 등록 시점이 아니라 휴무 기간 기준이다 — 시작일이 미래면 ACTIVE 그대로다.
+  await syncLeaveStatus(db, getKstNow().date, { participantId: id });
+  const result = await db.select().from(participants).where(eq(participants.id, id));
+
   return c.json(result[0]);
 });
 
@@ -607,15 +602,58 @@ app.post("/:id/leave/end", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  const result = await db
-    .update(participants)
-    .set({
-      status: "ACTIVE",
-      leaveStart: null,
-      leaveEnd: null,
-    })
-    .where(eq(participants.id, id))
-    .returning();
+  // 휴무 중 상태는 휴무 이력 기간으로 다시 맞춰지므로(syncLeaveStatus), 상태만 ACTIVE로
+  // 바꾸면 다음 동기화 때 도로 ON_LEAVE가 된다 — 오늘이 걸린 휴무를 어제까지로 줄이고,
+  // 오늘 시작한 휴무면 아예 지운다. 줄어든 일수만큼 유급휴무의 연차 차감도 되돌린다.
+  const { date: today } = getKstNow();
+  const yesterdayDate = new Date(`${today}T00:00:00Z`);
+  yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
+  const yesterday = yesterdayDate.toISOString().slice(0, 10);
+
+  const coveringLeaves = await db
+    .select()
+    .from(participantLeaves)
+    .where(
+      and(
+        eq(participantLeaves.participantId, id),
+        lte(participantLeaves.leaveStart, today),
+        gte(participantLeaves.leaveEnd, today),
+      ),
+    );
+
+  for (const leave of coveringLeaves) {
+    const remainingLeaveDays =
+      leave.leaveStart <= yesterday ? toLeaveDays(leave.leaveStart, yesterday) : 0;
+    if (remainingLeaveDays === 0) {
+      await db.delete(participantLeaves).where(eq(participantLeaves.id, leave.id));
+    } else {
+      await db
+        .update(participantLeaves)
+        .set({ leaveEnd: yesterday, leaveDays: remainingLeaveDays })
+        .where(eq(participantLeaves.id, leave.id));
+    }
+
+    const refundDays = leave.leaveDays - remainingLeaveDays;
+    if (leave.leaveType === "PAID" && refundDays > 0) {
+      // 등록할 때와 같은 기준(등록 시점 연도)으로 차감했던 연차를 돌려준다
+      await db
+        .update(participantAnnualLeave)
+        .set({
+          usedDays: sql`${participantAnnualLeave.usedDays} - ${refundDays}`,
+          remainingDays: sql`${participantAnnualLeave.remainingDays} + ${refundDays}`,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(
+          and(
+            eq(participantAnnualLeave.participantId, id),
+            eq(participantAnnualLeave.year, leave.createdAt.slice(0, 4)),
+          ),
+        );
+    }
+  }
+
+  await syncLeaveStatus(db, today, { participantId: id });
+  const result = await db.select().from(participants).where(eq(participants.id, id));
 
   return c.json(result[0]);
 });

@@ -164,6 +164,13 @@ const ProgramParticipantsSection = ({
   };
 
   const handleEndLeaveButtonClick = (participantId: number, name: string) => {
+    if (
+      !confirm(
+        `'${name}' 님의 휴무를 오늘부로 종료하시겠습니까?\n오늘부터 남은 휴무일은 취소되고, 유급휴무면 그만큼 연차가 복구됩니다.`,
+      )
+    )
+      return;
+
     endParticipantLeaveMutation.mutate(
       { participantId, programId },
       {

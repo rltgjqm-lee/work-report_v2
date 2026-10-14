@@ -24,7 +24,7 @@ import publicRoutes from "./routes/user/public";
 import { autoClockOut } from "./scheduled/autoClockOut";
 import { checkDisasterAlerts } from "./scheduled/checkDisasterAlerts";
 import { checkSignalLoss } from "./scheduled/checkSignalLoss";
-import { returnFromLeave } from "./scheduled/returnFromLeave";
+import { refreshLeaveStatuses } from "./scheduled/refreshLeaveStatuses";
 import type { Env } from "./types";
 
 const app = new Hono<Env>();
@@ -76,7 +76,7 @@ export default {
   scheduled: async (_event: ScheduledEvent, env: Env["Bindings"], ctx: ExecutionContext) => {
     ctx.waitUntil(checkDisasterAlerts(env));
     ctx.waitUntil(checkSignalLoss(env));
-    ctx.waitUntil(returnFromLeave(env));
+    ctx.waitUntil(refreshLeaveStatuses(env));
     ctx.waitUntil(autoClockOut(env));
   },
 };
