@@ -10,7 +10,8 @@ interface CapacityAttendanceDay {
   startTime?: string | null;
   endTime?: string | null;
   totalMinutes?: number | null;
-  signatureBase64?: string | null;
+  // 활동일지에 받은 참여자 서명(data URL)
+  signatureDataUrl?: string | null;
 }
 
 export interface CapacityAttendanceParticipant {
@@ -153,10 +154,10 @@ const addCapacityAttendanceSheet = (
     if (day.marker === "PRESENT") {
       sheet.getCell(`${c(1)}${rowIdx}`).value = day.startTime ?? "";
       sheet.getCell(`${c(2)}${rowIdx}`).value = day.endTime ?? "";
-      if (day.signatureBase64) {
+      if (day.signatureDataUrl) {
         try {
           const imageId = workbook.addImage({
-            base64: `data:image/png;base64,${day.signatureBase64}`,
+            base64: day.signatureDataUrl,
             extension: "png",
           });
           sheet.addImage(imageId, {

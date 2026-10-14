@@ -300,17 +300,35 @@ app.get("/:id/export/attendance", async (c) => {
     logRows.map((log) => [`${log.participantId}_${log.workDate}`, log]),
   );
 
-  // 서명 이미지는 R2에서 읽어 base64로 미리 변환해둔다 (클라이언트에서 exceljs로 삽입).
-  const signatureBase64ByKey = new Map<string, string>();
+  // 참여자 서명은 활동일지 제출 때 받은 activity_logs.user_signature를 쓴다 — 참여자
+  // 앱은 출근부용 서명(attendance_logs.signature_key)을 따로 받지 않는다.
+  // activity_logs는 참여자+날짜가 유니크라 날짜별로 한 건만 나온다. 참여자 id 목록을
+  // inArray로 넘기면 D1 바인딩 개수 제한(100)에 걸리므로 participants와 조인해 거른다.
+  const activitySignatureRows = await db
+    .select({
+      participantId: activityLogs.participantId,
+      actDate: activityLogs.actDate,
+      userSignature: activityLogs.userSignature,
+    })
+    .from(activityLogs)
+    .innerJoin(participants, eq(activityLogs.participantId, participants.id))
+    .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)));
+
+  // 서명 이미지는 서버에서 data URL로 미리 맞춰둔다 (클라이언트에서 exceljs로 삽입).
+  const signatureDataUrlByParticipantDate = new Map<string, string>();
   await Promise.all(
-    logRows
-      .filter((log) => log.signatureKey)
-      .map(async (log) => {
-        const object = await c.env.SIGNATURES_BUCKET.get(log.signatureKey!);
-        if (!object) return;
-        const buffer = await object.arrayBuffer();
-        signatureBase64ByKey.set(log.signatureKey!, base64FromArrayBuffer(buffer));
-      }),
+    activitySignatureRows.map(async (activitySignatureRow) => {
+      const dataUrl = await resolveSignatureDataUrl(
+        c.env.SIGNATURES_BUCKET,
+        activitySignatureRow.userSignature,
+      );
+      if (dataUrl) {
+        signatureDataUrlByParticipantDate.set(
+          `${activitySignatureRow.participantId}_${activitySignatureRow.actDate}`,
+          dataUrl,
+        );
+      }
+    }),
   );
 
   const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
@@ -344,9 +362,8 @@ app.get("/:id/export/attendance", async (c) => {
             startTime: log.clockIn.slice(11, 16),
             endTime: log.clockOut ? log.clockOut.slice(11, 16) : null,
             totalMinutes: log.totalMinutes,
-            signatureBase64: log.signatureKey
-              ? (signatureBase64ByKey.get(log.signatureKey) ?? null)
-              : null,
+            signatureDataUrl:
+              signatureDataUrlByParticipantDate.get(`${participant.id}_${date}`) ?? null,
           };
         }
         if (scheduledDates.includes(date)) {
