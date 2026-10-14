@@ -114,7 +114,6 @@ const addWorkScheduleSheet = (
   const totalWeeks = Math.ceil(totalCells / 7);
 
   const employedFrom = participant.createdAt.slice(0, 10);
-  const contractMarkDate = employedFrom.slice(0, 7) === header.month ? employedFrom : null;
 
   let currentRow = 3;
   for (let week = 0; week < totalWeeks; week++) {
@@ -137,7 +136,7 @@ const addWorkScheduleSheet = (
 
       const date = `${header.month}-${String(dayNumber).padStart(2, "0")}`;
       const dateCell = sheet.getCell(`${workColLetter}${dateRow}`);
-      dateCell.value = date === contractMarkDate ? `${dayNumber} 근로계약` : dayNumber;
+      dateCell.value = dayNumber;
       dateCell.font = { bold: true };
 
       if (date < employedFrom) continue; // 입사 전이라 근무/휴무 표시 없음
