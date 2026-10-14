@@ -40,6 +40,22 @@ const STATUS_VARIANT: Record<string, StatusChipVariant> = {
   INVALID: "bad",
 };
 
+// 근무 목록 기본 정렬: 근무일 최근 먼저 → 조 → 참여자명. 조 이름은 숫자를 인식해
+// "2조 → 10조" 순으로 비교하고(글자 순이면 10조가 앞에 온다), 조가 없는 행은 맨 뒤로 보낸다.
+// 서버는 정렬 없이 내려주고, 출근 기록과 미출근 행을 같은 기준으로 맞추려고 여기서 정렬한다.
+const compareByDateGroupName = (
+  first: { workDate: string; groupName: string | null; participantName: string },
+  second: { workDate: string; groupName: string | null; participantName: string },
+) => {
+  if (first.workDate !== second.workDate) return first.workDate < second.workDate ? 1 : -1;
+  if (first.groupName !== second.groupName) {
+    if (first.groupName === null) return 1;
+    if (second.groupName === null) return -1;
+    return first.groupName.localeCompare(second.groupName, "ko", { numeric: true });
+  }
+  return first.participantName.localeCompare(second.participantName, "ko");
+};
+
 // 지각 기준은 기관마다 달라서 status를 자동으로 바꾸지 않고(관리자가 근태 강제수정에서
 // 수동 판단), 조 시작시간보다 15분 넘게 늦게 찍힌 출근만 눈에 띄게 표시해 관리자가
 // 놓치지 않게 돕는다.
@@ -146,14 +162,21 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
       (row) => dayFilter === "all" || row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
     )
     .filter((row) => groupFilter === "all" || row.log.groupId === Number(groupFilter))
-    .filter((row) => row.participantName.includes(search));
+    .filter((row) => row.participantName.includes(search))
+    .sort((first, second) =>
+      compareByDateGroupName(
+        { ...first, workDate: first.log.workDate },
+        { ...second, workDate: second.log.workDate },
+      ),
+    );
   const filteredAbsences = absences
     .filter(
       (absence) =>
         dayFilter === "all" || absence.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
     )
     .filter((absence) => groupFilter === "all" || absence.groupId === Number(groupFilter))
-    .filter((absence) => absence.participantName.includes(search));
+    .filter((absence) => absence.participantName.includes(search))
+    .sort(compareByDateGroupName);
 
   // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 그 외 필터로 더
   // 좁혔을 때만 직접 다시 센다.
