@@ -92,37 +92,6 @@ export const correctAttendanceMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
-export interface CreateAttendanceVariables {
-  // 서버로 보내는 값이 아니라, 성공 후 어느 월별 근무 목록을 무효화할지 찾기 위한 값이다.
-  programId: number;
-  month: string;
-  data: {
-    participantId: number;
-    workDate: string; // "YYYY-MM-DD"
-    clockIn: string; // "HH:MM"
-    clockOut?: string; // "HH:MM"
-    status: "NORMAL" | "LATE" | "EARLY_LEAVE";
-    reason: string;
-  };
-}
-
-const createAttendance = (data: CreateAttendanceVariables["data"]) =>
-  request<AttendanceLog>("/api/attendance", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-
-// 휴대폰 미소지 등으로 출퇴근을 못 찍은 참여자의 근무 기록을 관리자가 대신 만든다.
-export const createAttendanceMutationOptions = (queryClient: QueryClient) =>
-  mutationOptions({
-    mutationFn: ({ data }: CreateAttendanceVariables) => createAttendance(data),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: attendanceKeys.monthly(variables.programId, variables.month),
-      });
-    },
-  });
-
 export interface DeactivateAttendanceVariables {
   logId: number;
   programId: number;

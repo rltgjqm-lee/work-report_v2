@@ -5,10 +5,8 @@ import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   activateAttendanceMutationOptions,
   correctAttendanceMutationOptions,
-  createAttendanceMutationOptions,
   deactivateAttendanceMutationOptions,
   monthlyAttendanceQueryOptions,
-  type AttendanceAbsence,
   type AttendanceRow,
 } from "../../api/admin/attendance";
 import { groupsQueryOptions } from "../../api/admin/groups";
@@ -128,8 +126,6 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const { data: groups = [] } = useQuery(groupsQueryOptions(programId));
 
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
-  // 미출근 행에서 "출퇴근 등록"을 누른 대상 — 수정과 같은 입력 모달을 같이 쓴다.
-  const [registrationTarget, setRegistrationTarget] = useState<AttendanceAbsence | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<AttendanceRow | null>(null);
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
@@ -146,7 +142,6 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   const absences = monthlyAttendance?.absences ?? [];
 
   const correctAttendanceMutation = useMutation(correctAttendanceMutationOptions(queryClient));
-  const createAttendanceMutation = useMutation(createAttendanceMutationOptions(queryClient));
   const deactivateAttendanceMutation = useMutation(
     deactivateAttendanceMutationOptions(queryClient),
   );
@@ -237,51 +232,6 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
         onError: (error) => alert(error instanceof Error ? error.message : "수정에 실패했습니다."),
       },
     );
-  };
-
-  const handleRegisterButtonClick = (absence: AttendanceAbsence) => {
-    setRegistrationTarget(absence);
-    setCorrectionForm({ clockIn: "", clockOut: "", status: "NORMAL", reason: "" });
-  };
-
-  const handleSaveRegistrationButtonClick = () => {
-    if (!registrationTarget) return;
-    if (!correctionForm.clockIn) {
-      alert("출근시간을 입력해주세요.");
-
-      return;
-    }
-    if (!correctionForm.reason) {
-      alert("등록 사유를 입력해주세요.");
-
-      return;
-    }
-    createAttendanceMutation.mutate(
-      {
-        programId,
-        month,
-        data: {
-          participantId: registrationTarget.participantId,
-          workDate: registrationTarget.workDate,
-          clockIn: correctionForm.clockIn,
-          clockOut: correctionForm.clockOut || undefined,
-          status: correctionForm.status,
-          reason: correctionForm.reason,
-        },
-      },
-      {
-        onSuccess: () => {
-          showToast(`${registrationTarget.participantName} 님의 근무 기록을 등록했습니다.`);
-          setRegistrationTarget(null);
-        },
-        onError: (error) => alert(error instanceof Error ? error.message : "등록에 실패했습니다."),
-      },
-    );
-  };
-
-  const handleAttendanceFormModalClose = () => {
-    setCorrectionTarget(null);
-    setRegistrationTarget(null);
   };
 
   const handleDeactivateButtonClick = (row: AttendanceRow) => {
@@ -459,14 +409,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                   >
                     -
                   </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    <button
-                      className={rowActionBtnClass}
-                      onClick={() => handleRegisterButtonClick(absence)}
-                    >
-                      출퇴근 등록
-                    </button>
-                  </td>
+                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint" />
                 </tr>
               ))}
               {filteredLogs.map((row) => (
@@ -611,19 +554,17 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
         </div>
       </div>
 
-      {(correctionTarget || registrationTarget) && (
+      {correctionTarget && (
         <div className="fixed inset-0 bg-[rgba(15,23,32,0.45)] z-[2000] flex items-center justify-center">
           <div className="bg-white rounded-[8px] shadow-xl w-[380px] p-5">
             <div className="text-[14px] font-bold mb-4">
-              {correctionTarget
-                ? `${correctionTarget.participantName} — ${correctionTarget.log.workDate} 근무 수정`
-                : `${registrationTarget?.participantName} — ${registrationTarget?.workDate} 출퇴근 등록`}
+              {correctionTarget.participantName} — {correctionTarget.log.workDate} 근무 수정
             </div>
 
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
-                  출근시간{registrationTarget && " (필수)"}
+                  출근시간
                 </label>
                 <Input
                   type="time"
@@ -672,7 +613,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
               </div>
               <div>
                 <label className="block text-[12px] font-semibold text-admin-text-secondary mb-1">
-                  {registrationTarget ? "등록 사유 (필수)" : "수정 사유 (필수)"}
+                  수정 사유 (필수)
                 </label>
                 <Input
                   value={correctionForm.reason}
@@ -687,18 +628,10 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
-              <Button variant="ghost" onClick={handleAttendanceFormModalClose}>
+              <Button variant="ghost" onClick={() => setCorrectionTarget(null)}>
                 취소
               </Button>
-              <Button
-                onClick={
-                  registrationTarget
-                    ? handleSaveRegistrationButtonClick
-                    : handleSaveCorrectionButtonClick
-                }
-              >
-                저장
-              </Button>
+              <Button onClick={handleSaveCorrectionButtonClick}>저장</Button>
             </div>
           </div>
         </div>
