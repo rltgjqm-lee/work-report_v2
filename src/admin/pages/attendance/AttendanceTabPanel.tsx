@@ -7,10 +7,12 @@ import {
   correctAttendanceMutationOptions,
   deactivateAttendanceMutationOptions,
   monthlyAttendanceQueryOptions,
+  type AttendanceAbsence,
   type AttendanceRow,
 } from "../../api/admin/attendance";
 import { groupsQueryOptions } from "../../api/admin/groups";
 import { useToast } from "../../context/useToast";
+import { usePagination } from "../../hooks/usePagination";
 import type { AttendanceStats } from "../../types/attendance";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
@@ -20,6 +22,7 @@ import FilterSelect from "../../components/FilterSelect";
 import Input from "../../components/Input";
 import PromptModal from "../../components/modal/PromptModal";
 import MonthPicker from "../../components/MonthPicker";
+import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
@@ -82,6 +85,12 @@ const CLOCK_OUT_REVIEW_LABEL: Record<"OUTSIDE_AREA" | "LOCATION_UNKNOWN", string
   OUTSIDE_AREA: "구역 이탈 의심",
   LOCATION_UNKNOWN: "위치 확인 불가",
 };
+
+const ROWS_PER_PAGE = 10;
+
+// 미출근 행과 출근 기록 행을 한 목록으로 이어 붙여 같이 페이지를 나눈다.
+type AttendanceListItem =
+  { kind: "absence"; absence: AttendanceAbsence } | { kind: "log"; row: AttendanceRow };
 
 interface CorrectionForm {
   clockIn: string;
@@ -172,6 +181,21 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
     .filter((absence) => groupFilter === "all" || absence.groupId === Number(groupFilter))
     .filter((absence) => absence.participantName.includes(search))
     .sort(compareByDateGroupName);
+
+  // 미출근 행을 먼저(관리자가 바로 챙겨야 할 행), 그 뒤에 출근 기록을 이어 붙인다.
+  const listItems: AttendanceListItem[] = [
+    ...filteredAbsences.map((absence) => ({ kind: "absence" as const, absence })),
+    ...filteredLogs.map((row) => ({ kind: "log" as const, row })),
+  ];
+  const { page, totalPages, pageItems, setPage } = usePagination(listItems, ROWS_PER_PAGE);
+
+  // 필터를 바꾸면 결과가 달라지니 첫 페이지로 돌아간다.
+  const filterKey = `${month}|${dayFilter}|${groupFilter}|${search}|${demandSiteId}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(1);
+  }
 
   // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 그 외 필터로 더
   // 좁혔을 때만 직접 다시 센다.
@@ -376,168 +400,174 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
               </tr>
             </thead>
             <tbody>
-              {filteredAbsences.map((absence) => (
-                <tr
-                  key={`absence-${absence.participantId}-${absence.workDate}`}
-                  className="hover:bg-admin-row-hover"
-                >
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {absence.workDate}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {absence.participantName}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {absence.groupName ?? "-"}
-                  </td>
-                  <td
-                    colSpan={5}
-                    className="px-5 py-[13px] text-[13px] text-admin-text-placeholder border-b border-border-faint"
-                  >
-                    출근 기록 없음
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {absence.status === "UPCOMING" ? (
-                      <StatusChip variant="pending">출근 전</StatusChip>
-                    ) : (
-                      <StatusChip variant="bad">미출근</StatusChip>
-                    )}
-                  </td>
-                  <td
-                    colSpan={3}
-                    className="px-5 py-[13px] text-[13px] border-b border-border-faint"
-                  >
-                    -
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint" />
-                </tr>
-              ))}
-              {filteredLogs.map((row) => (
-                <tr
-                  key={row.log.id}
-                  className={
-                    row.log.status === "INVALID"
-                      ? "opacity-50 hover:bg-admin-row-hover"
-                      : "hover:bg-admin-row-hover"
-                  }
-                >
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {row.log.workDate}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.participantName}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.groupName ?? "-"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                      <span>{row.log.clockIn?.slice(11, 16) ?? "-"}</span>
-                      {needsClockInReview(row) &&
-                        (row.log.correctedAt ? (
-                          <StatusChip variant="ok">확인 완료</StatusChip>
+              {pageItems.map((item) => {
+                if (item.kind === "absence") {
+                  const { absence } = item;
+                  return (
+                    <tr
+                      key={`absence-${absence.participantId}-${absence.workDate}`}
+                      className="hover:bg-admin-row-hover"
+                    >
+                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                        {absence.workDate}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                        {absence.participantName}
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                        {absence.groupName ?? "-"}
+                      </td>
+                      <td
+                        colSpan={5}
+                        className="px-5 py-[13px] text-[13px] text-admin-text-placeholder border-b border-border-faint"
+                      >
+                        출근 기록 없음
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                        {absence.status === "UPCOMING" ? (
+                          <StatusChip variant="pending">출근 전</StatusChip>
                         ) : (
-                          <StatusChip variant="warn">확인 필요</StatusChip>
-                        ))}
-                    </div>
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                      <span>{row.log.clockOut?.slice(11, 16) ?? "-"}</span>
-                      {!row.log.clockOut && row.log.clockOutReviewReason && (
-                        <StatusChip variant="warn">
-                          {CLOCK_OUT_REVIEW_LABEL[row.log.clockOutReviewReason]}
+                          <StatusChip variant="bad">미출근</StatusChip>
+                        )}
+                      </td>
+                      <td
+                        colSpan={3}
+                        className="px-5 py-[13px] text-[13px] border-b border-border-faint"
+                      >
+                        -
+                      </td>
+                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint" />
+                    </tr>
+                  );
+                }
+                const { row } = item;
+                return (
+                  <tr
+                    key={row.log.id}
+                    className={
+                      row.log.status === "INVALID"
+                        ? "opacity-50 hover:bg-admin-row-hover"
+                        : "hover:bg-admin-row-hover"
+                    }
+                  >
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                      {row.log.workDate}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {row.participantName}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {row.groupName ?? "-"}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                        <span>{row.log.clockIn?.slice(11, 16) ?? "-"}</span>
+                        {needsClockInReview(row) &&
+                          (row.log.correctedAt ? (
+                            <StatusChip variant="ok">확인 완료</StatusChip>
+                          ) : (
+                            <StatusChip variant="warn">확인 필요</StatusChip>
+                          ))}
+                      </div>
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                        <span>{row.log.clockOut?.slice(11, 16) ?? "-"}</span>
+                        {!row.log.clockOut && row.log.clockOutReviewReason && (
+                          <StatusChip variant="warn">
+                            {CLOCK_OUT_REVIEW_LABEL[row.log.clockOutReviewReason]}
+                          </StatusChip>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      <AttendanceLocationCell log={row.log} />
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {row.escapeStatus ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          {row.escapeStatus === "OPEN" ? (
+                            <StatusChip variant="bad">이탈중</StatusChip>
+                          ) : (
+                            <StatusChip variant="ok">처리완료</StatusChip>
+                          )}
+                          {row.escapeMemo && (
+                            <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
+                              {row.escapeMemo}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {row.log.totalMinutes ?? "-"}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                      {isUnreviewedLateArrival(row) ? (
+                        <StatusChip variant="warn">확인필요</StatusChip>
+                      ) : (
+                        <StatusChip variant={STATUS_VARIANT[row.log.status]}>
+                          {STATUS_LABEL[row.log.status]}
                         </StatusChip>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    <AttendanceLocationCell log={row.log} />
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.escapeStatus ? (
-                      <div className="flex flex-col gap-1 items-start">
-                        {row.escapeStatus === "OPEN" ? (
-                          <StatusChip variant="bad">이탈중</StatusChip>
-                        ) : (
-                          <StatusChip variant="ok">처리완료</StatusChip>
-                        )}
-                        {row.escapeMemo && (
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {row.activity.hasAccident ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          <StatusChip variant="bad">사고</StatusChip>
                           <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
-                            {row.escapeMemo}
+                            {[row.activity.accidentDetail, row.activity.accidentAction]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </span>
-                        )}
-                      </div>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.log.totalMinutes ?? "-"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {isUnreviewedLateArrival(row) ? (
-                      <StatusChip variant="warn">확인필요</StatusChip>
-                    ) : (
-                      <StatusChip variant={STATUS_VARIANT[row.log.status]}>
-                        {STATUS_LABEL[row.log.status]}
-                      </StatusChip>
-                    )}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.activity.hasAccident ? (
-                      <div className="flex flex-col gap-1 items-start">
-                        <StatusChip variant="bad">사고</StatusChip>
-                        <span className="text-[12px] text-text-subtle whitespace-pre-wrap break-words">
-                          {[row.activity.accidentDetail, row.activity.accidentAction]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </span>
-                      </div>
-                    ) : row.activity.accidentChecked ? (
-                      <StatusChip variant="ok">무사고</StatusChip>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.activity.signed ? (
-                      <StatusChip variant="ok">완료</StatusChip>
-                    ) : (
-                      <StatusChip variant="warn">미완료</StatusChip>
-                    )}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
-                    {row.log.note ?? "-"}
-                  </td>
-                  <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
-                    {row.log.status !== "INVALID" ? (
-                      <>
+                        </div>
+                      ) : row.activity.accidentChecked ? (
+                        <StatusChip variant="ok">무사고</StatusChip>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                      {row.activity.signed ? (
+                        <StatusChip variant="ok">완료</StatusChip>
+                      ) : (
+                        <StatusChip variant="warn">미완료</StatusChip>
+                      )}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
+                      {row.log.note ?? "-"}
+                    </td>
+                    <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                      {row.log.status !== "INVALID" ? (
+                        <>
+                          <button
+                            className={rowActionBtnClass}
+                            onClick={() => handleCorrectButtonClick(row)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            className={rowActionBtnClass}
+                            onClick={() => handleDeactivateButtonClick(row)}
+                          >
+                            비활성화
+                          </button>
+                        </>
+                      ) : (
                         <button
                           className={rowActionBtnClass}
-                          onClick={() => handleCorrectButtonClick(row)}
+                          onClick={() => handleActivateButtonClick(row)}
                         >
-                          수정
+                          활성화
                         </button>
-                        <button
-                          className={rowActionBtnClass}
-                          onClick={() => handleDeactivateButtonClick(row)}
-                        >
-                          비활성화
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className={rowActionBtnClass}
-                        onClick={() => handleActivateButtonClick(row)}
-                      >
-                        활성화
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {filteredLogs.length === 0 && filteredAbsences.length === 0 && (
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {listItems.length === 0 && (
                 <tr>
                   <td
                     colSpan={13}
@@ -552,6 +582,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
             </tbody>
           </table>
         </div>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
 
       {correctionTarget && (
