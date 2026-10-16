@@ -8,6 +8,7 @@ import {
   participantMonthlyScheduleQueryOptions,
   updateParticipantMonthlyScheduleMutationOptions,
 } from "../../api/admin/monthlySchedule";
+import { participantMonthLeavesQueryOptions } from "../../api/admin/participants";
 import { useToast } from "../../context/useToast";
 import type { Group } from "../../types/groups";
 import type { Participant } from "../../types/participants";
@@ -56,8 +57,16 @@ const ParticipantMonthlyScheduleModal = ({
     enabled: !!participant.groupId,
   });
 
+  // 휴무는 편집하지 않고 보여주기만 한다 — 근무일 위에 유급/무급 꼬리표로 겹쳐서,
+  // 조 일괄 휴무나 개인 휴무 때문에 실제로는 안 나오는 날을 여기서도 알 수 있게.
+  const { data: leaveTypeByDate, isFetching: isLeavesFetching } = useQuery(
+    participantMonthLeavesQueryOptions(participant.id, yearMonth),
+  );
+
   const loading =
-    isParticipantScheduleFetching || (!!participant.groupId && isGroupScheduleFetching);
+    isParticipantScheduleFetching ||
+    isLeavesFetching ||
+    (!!participant.groupId && isGroupScheduleFetching);
 
   const groupDefaultDates = groupSchedule?.workDates ?? [];
   const groupMaxMonthlyMinutes = groupSchedule?.maxMonthlyMinutes ?? 1800;
@@ -200,7 +209,8 @@ const ParticipantMonthlyScheduleModal = ({
     >
       <div className="text-[12px] text-text-subtle bg-admin-surface-header border border-admin-border-subtle rounded-[2px] px-3 py-2.5">
         여기서 바꾸는 건 근무 요일뿐입니다. 근무 시간은 소속 조를 그대로 따릅니다
-        {group ? ` (${group.shiftStart}~${group.shiftEnd})` : ""}.
+        {group ? ` (${group.shiftStart}~${group.shiftEnd})` : ""}. 달력의 유급/무급 표시는 등록된
+        휴무(조 일괄 휴무 포함)이며, 휴무는 조 수정이나 휴무 등록에서 바꿉니다.
       </div>
 
       <FormField label="월">
@@ -253,6 +263,7 @@ const ParticipantMonthlyScheduleModal = ({
               yearMonth={yearMonth}
               selectedDates={workDates}
               onToggleDate={handleToggleDate}
+              leaveTypeByDate={leaveTypeByDate ?? {}}
             />
           </FormField>
           <div
@@ -279,6 +290,7 @@ const ParticipantMonthlyScheduleModal = ({
               yearMonth={yearMonth}
               selectedDates={groupDefaultDates}
               onToggleDate={() => {}}
+              leaveTypeByDate={leaveTypeByDate ?? {}}
             />
           </FormField>
           <Button variant="ghost" onClick={handleStartOverrideButtonClick}>

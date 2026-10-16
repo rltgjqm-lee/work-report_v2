@@ -1,7 +1,14 @@
 import { Fragment } from "react";
 
+import type { LeaveType } from "../types/participants";
+
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const DAYS_PER_WEEK = 7;
+
+const LEAVE_TAG: Record<LeaveType, { label: string; className: string }> = {
+  PAID: { label: "유급", className: "bg-admin-status-ok-bg text-admin-status-ok-text" },
+  UNPAID: { label: "무급", className: "bg-admin-status-warn-bg text-admin-status-warn-text" },
+};
 
 interface MonthlyScheduleCalendarProps {
   yearMonth: string; // "YYYY-MM"
@@ -17,10 +24,15 @@ interface MonthlyScheduleCalendarProps {
   // 칠지는 부모가 정한다 — 달력은 주를 묶는 일만 안다.
   isWeekChecked?: (weekDates: string[]) => boolean;
   onToggleWeek?: (weekDates: string[]) => void;
+  // 날짜별 휴무 — 근무일 표시(채운 칸)와 별개로 칸 아래에 유급/무급 꼬리표를 붙인다.
+  // 유급 휴무는 근무일에 연차를 쓰는 것이라 근무일과 겹쳐서 보여야 한다. 넘기면 꼬리표
+  // 자리를 위해 칸이 조금 높아진다.
+  leaveTypeByDate?: Record<string, LeaveType>;
 }
 
 /**
- * 월간 근무일 캘린더 — 날짜를 클릭해 근무일/휴무일을 토글한다.
+ * 월간 근무일 캘린더 — 날짜를 클릭해 근무일/휴무일을 토글한다. 휴무(유급/무급)를 넘기면
+ * 근무일 위에 꼬리표로 겹쳐 그린다.
  * 조 기본 스케줄과 참여자 개인 예외 스케줄 설정 모달에서 공통으로 쓴다.
  */
 const MonthlyScheduleCalendar = ({
@@ -32,6 +44,7 @@ const MonthlyScheduleCalendar = ({
   customShiftDates,
   isWeekChecked,
   onToggleWeek,
+  leaveTypeByDate,
 }: MonthlyScheduleCalendarProps) => {
   const [year, month] = yearMonth.split("-").map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -39,6 +52,7 @@ const MonthlyScheduleCalendar = ({
   const selectedDateSet = new Set(selectedDates);
   const customShiftDateSet = new Set(customShiftDates);
   const hasWeekSelection = !!isWeekChecked && !!onToggleWeek;
+  const showsLeaves = !!leaveTypeByDate;
 
   const dateStringOf = (day: number) => `${yearMonth}-${String(day).padStart(2, "0")}`;
   const isOutsideProgram = (dateString: string) =>
@@ -59,6 +73,7 @@ const MonthlyScheduleCalendar = ({
     const isSelected = selectedDateSet.has(dateString);
     const isDisabled = isOutsideProgram(dateString);
     const hasCustomShift = isSelected && customShiftDateSet.has(dateString);
+    const leaveType = leaveTypeByDate?.[dateString];
 
     return (
       <button
@@ -66,7 +81,9 @@ const MonthlyScheduleCalendar = ({
         type="button"
         disabled={isDisabled}
         onClick={() => onToggleDate(dateString)}
-        className={`relative h-8 rounded-[6px] text-[12px] border transition-colors ${
+        className={`relative rounded-[6px] text-[12px] border transition-colors ${
+          showsLeaves ? "h-11 flex flex-col items-center justify-start pt-1 gap-0.5" : "h-8"
+        } ${
           isDisabled
             ? "bg-surface-page text-admin-text-disabled border-border-faint cursor-not-allowed"
             : isSelected
@@ -75,8 +92,19 @@ const MonthlyScheduleCalendar = ({
         }`}
       >
         {day}
+        {leaveType && (
+          <span
+            className={`px-1 rounded-[2px] text-[9.5px] font-bold leading-[14px] ${LEAVE_TAG[leaveType].className}`}
+          >
+            {LEAVE_TAG[leaveType].label}
+          </span>
+        )}
         {hasCustomShift && (
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-white" />
+          <span
+            className={`absolute h-1 w-1 rounded-full bg-white ${
+              showsLeaves ? "top-1 right-1" : "bottom-1 left-1/2 -translate-x-1/2"
+            }`}
+          />
         )}
       </button>
     );

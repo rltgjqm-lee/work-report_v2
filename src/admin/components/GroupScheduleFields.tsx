@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { useToast } from "../context/useToast";
 
+import type { LeaveType } from "../types/participants";
 import { generateWorkPatternInRange } from "../utils/generateWorkPattern";
 import {
   minutesByMonth,
@@ -13,12 +14,28 @@ import {
   type Shift,
   type ShiftByDate,
 } from "../utils/groupShift";
+import SubTabBar from "./bar/SubTabBar";
 import Button from "./Button";
 import FormField from "./FormField";
 import Input from "./Input";
 import MonthlyScheduleCalendar from "./MonthlyScheduleCalendar";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+// 달력 클릭이 무엇을 켜고 끌지 — 근무일과 휴무는 독립이라 같은 날짜에 둘 다 있을 수 있다.
+type CalendarMode = "WORK" | LeaveType;
+
+const CALENDAR_MODE_TABS: [CalendarMode, string][] = [
+  ["WORK", "근무일"],
+  ["UNPAID", "무급 휴무"],
+  ["PAID", "유급 휴무"],
+];
+
+const CALENDAR_MODE_LABEL: Record<CalendarMode, string> = {
+  WORK: "근무일",
+  UNPAID: "무급 휴무",
+  PAID: "유급 휴무",
+};
 
 const monthNavButtonClass = (isEnabled: boolean): string =>
   `flex items-center justify-center h-7 w-7 rounded-[2px] border ${
@@ -51,6 +68,10 @@ interface GroupScheduleFieldsProps {
   programEndTime: string;
   isLoading?: boolean;
   note?: string;
+  // 조 일괄 휴무 — 넘기면 달력 위에 근무일/무급/유급 필터가 생긴다. 조를 아직 만들기 전인
+  // 조 추가 모달은 휴무를 걸 조원이 없어서 넘기지 않는다.
+  leaveTypeByDate?: Record<string, LeaveType>;
+  onLeaveTypeByDateChange?: (leaveTypeByDate: Record<string, LeaveType>) => void;
 }
 
 /**
@@ -78,6 +99,8 @@ const GroupScheduleFields = ({
   programEndTime,
   isLoading,
   note,
+  leaveTypeByDate,
+  onLeaveTypeByDateChange,
 }: GroupScheduleFieldsProps) => {
   const [patternWorkDays, setPatternWorkDays] = useState("1");
   const [patternRestDays, setPatternRestDays] = useState("2");
@@ -85,7 +108,15 @@ const GroupScheduleFields = ({
   const [bulkSelectedDates, setBulkSelectedDates] = useState<string[]>([]);
   const [bulkShiftStart, setBulkShiftStart] = useState("");
   const [bulkShiftEnd, setBulkShiftEnd] = useState("");
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>("WORK");
   const { showToast } = useToast();
+  const showsLeaves = !!leaveTypeByDate && !!onLeaveTypeByDateChange;
+  const leaveDates = Object.keys(leaveTypeByDate ?? {});
+  const countLeaves = (leaveType: LeaveType, month?: string) =>
+    leaveDates.filter(
+      (leaveDate) =>
+        leaveTypeByDate?.[leaveDate] === leaveType && (!month || leaveDate.startsWith(month)),
+    ).length;
 
   const shiftOf = (date: string) => shiftOfDate(date, shiftByDate, defaultShift);
   const maxMonthlyMinutes = Math.round(Number(maxMonthlyHours) * 60) || 0;
@@ -165,6 +196,33 @@ const GroupScheduleFields = ({
     }
 
     onWorkDatesChange([...workDates, date].sort());
+  };
+
+  // 휴무는 근무일이 아니어도 찍을 수 있다(근무일 여부와 독립). 같은 날 유급과 무급이
+  // 동시에 있을 수는 없어서, 다른 유형이 이미 있으면 지금 고른 유형으로 바꾼다.
+  const handleLeaveDateToggle = (date: string, leaveType: LeaveType) => {
+    if (!leaveTypeByDate || !onLeaveTypeByDateChange) return;
+
+    if (leaveTypeByDate[date] === leaveType) {
+      onLeaveTypeByDateChange(
+        Object.fromEntries(
+          Object.entries(leaveTypeByDate).filter(([leaveDate]) => leaveDate !== date),
+        ),
+      );
+
+      return;
+    }
+
+    onLeaveTypeByDateChange({ ...leaveTypeByDate, [date]: leaveType });
+  };
+
+  const handleCalendarDateToggle = (date: string) => {
+    if (calendarMode === "WORK") {
+      handleWorkDateToggle(date);
+
+      return;
+    }
+    handleLeaveDateToggle(date, calendarMode);
   };
 
   const handleGeneratePatternButtonClick = () => {
@@ -262,6 +320,16 @@ const GroupScheduleFields = ({
                 <th className="text-right text-[11px] font-bold tracking-wide text-text-subtle bg-admin-surface-header px-3 py-2 border-b border-admin-border-subtle">
                   근무시간
                 </th>
+                {showsLeaves && (
+                  <>
+                    <th className="text-right text-[11px] font-bold tracking-wide text-text-subtle bg-admin-surface-header px-3 py-2 border-b border-admin-border-subtle">
+                      무급
+                    </th>
+                    <th className="text-right text-[11px] font-bold tracking-wide text-text-subtle bg-admin-surface-header px-3 py-2 border-b border-admin-border-subtle">
+                      유급
+                    </th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -298,6 +366,21 @@ const GroupScheduleFields = ({
                       {monthDays === 0 ? "—" : `${monthHours.toFixed(1)}시간`}
                       {isMonthOverCap && " ⚠"}
                     </td>
+                    {showsLeaves &&
+                      (["UNPAID", "PAID"] as const).map((leaveType) => {
+                        const monthLeaveDays = countLeaves(leaveType, programMonth);
+
+                        return (
+                          <td
+                            key={leaveType}
+                            className={`px-3 py-2 text-[13px] text-right border-b border-border-faint tabular-nums ${
+                              monthLeaveDays === 0 ? "text-admin-text-placeholder" : ""
+                            }`}
+                          >
+                            {monthLeaveDays === 0 ? "—" : `${monthLeaveDays}일`}
+                          </td>
+                        );
+                      })}
                   </tr>
                 );
               })}
@@ -315,6 +398,15 @@ const GroupScheduleFields = ({
                 <td className="px-3 py-2 text-[13px] font-bold text-right bg-admin-surface-header border-t border-admin-border-subtle tabular-nums">
                   {(totalMinutes / 60).toFixed(1)}시간
                 </td>
+                {showsLeaves &&
+                  (["UNPAID", "PAID"] as const).map((leaveType) => (
+                    <td
+                      key={leaveType}
+                      className="px-3 py-2 text-[13px] font-bold text-right bg-admin-surface-header border-t border-admin-border-subtle tabular-nums"
+                    >
+                      {countLeaves(leaveType)}일
+                    </td>
+                  ))}
               </tr>
             </tfoot>
           </table>
@@ -353,7 +445,22 @@ const GroupScheduleFields = ({
           </div>
         </FormField>
 
-        <FormField label="근무일 (클릭해서 선택/해제)">
+        <FormField label={`${CALENDAR_MODE_LABEL[calendarMode]} (클릭해서 선택/해제)`}>
+          {showsLeaves && (
+            <>
+              <SubTabBar
+                tabs={CALENDAR_MODE_TABS}
+                active={calendarMode}
+                onChange={setCalendarMode}
+              />
+              <div className="text-[12px] text-admin-text-placeholder -mt-2 mb-3">
+                {calendarMode === "WORK"
+                  ? "근무일을 켜고 끕니다. 휴무는 근무일과 따로 표시됩니다."
+                  : "조원 전체에게 일괄 적용됩니다. 근무일이 아닌 날이나 지난 날짜도 선택할 수 있고, 근무일은 그대로 유지됩니다."}
+                {calendarMode === "PAID" && " 휴무 날짜의 연도 연차에서 차감됩니다."}
+              </div>
+            </>
+          )}
           <div className="flex items-center justify-between gap-2 mb-2">
             <button
               type="button"
@@ -386,13 +493,34 @@ const GroupScheduleFields = ({
             <MonthlyScheduleCalendar
               yearMonth={yearMonth}
               selectedDates={workDates}
-              onToggleDate={handleWorkDateToggle}
+              onToggleDate={handleCalendarDateToggle}
               minDate={programStartDate}
               maxDate={programEndDate}
               customShiftDates={customShiftDates}
               isWeekChecked={isWeekChecked}
               onToggleWeek={handleWeekToggle}
+              leaveTypeByDate={showsLeaves ? leaveTypeByDate : undefined}
             />
+          )}
+          {showsLeaves && (
+            <div className="flex items-center gap-3 flex-wrap mt-2 text-[11.5px] text-text-subtle">
+              <span className="flex items-center gap-1">
+                <span className="h-3 w-3 rounded-[3px] bg-brand" />
+                근무일
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="px-1 rounded-[2px] text-[9.5px] font-bold leading-[14px] bg-admin-status-warn-bg text-admin-status-warn-text">
+                  무급
+                </span>
+                무급 휴무
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="px-1 rounded-[2px] text-[9.5px] font-bold leading-[14px] bg-admin-status-ok-bg text-admin-status-ok-text">
+                  유급
+                </span>
+                유급 휴무
+              </span>
+            </div>
           )}
         </FormField>
       </div>

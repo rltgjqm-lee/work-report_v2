@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalYearMonth } from "../../../utils/timeFormat";
+import {
+  groupLeavesQueryOptions,
+  previewGroupLeaves,
+  updateGroupLeavesMutationOptions,
+  type AnnualLeaveShortage,
+  type GroupLeave,
+} from "../../api/admin/groupLeaves";
 import { updateGroupMutationOptions } from "../../api/admin/groups";
 import {
   groupScheduleQueryOptions,
@@ -9,6 +16,7 @@ import {
 } from "../../api/admin/monthlySchedule";
 import { useToast } from "../../context/useToast";
 import type { Group } from "../../types/groups";
+import type { LeaveType } from "../../types/participants";
 import {
   clampYearMonth,
   findInvalidShiftDate,
@@ -22,6 +30,41 @@ import FormField from "../../components/FormField";
 import GroupScheduleFields from "../../components/GroupScheduleFields";
 import Input from "../../components/Input";
 import SlideModal from "../../components/modal/SlideModal";
+
+const toLeaveList = (leaveTypeByDate: Record<string, LeaveType>): GroupLeave[] =>
+  Object.entries(leaveTypeByDate)
+    .map(([date, leaveType]) => ({ date, leaveType }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+const isSameLeaves = (left: GroupLeave[], right: GroupLeave[]) =>
+  left.length === right.length &&
+  left.every(
+    (leave, index) =>
+      leave.date === right[index].date && leave.leaveType === right[index].leaveType,
+  );
+
+// 한 사람이 여러 해에 걸쳐 모자랄 수 있어서 사람 단위로 묶어 한 줄에 보여준다.
+const formatShortages = (shortages: AnnualLeaveShortage[]) => {
+  const shortagesByParticipant = new Map<number, AnnualLeaveShortage[]>();
+  for (const shortage of shortages) {
+    shortagesByParticipant.set(shortage.participantId, [
+      ...(shortagesByParticipant.get(shortage.participantId) ?? []),
+      shortage,
+    ]);
+  }
+
+  return [...shortagesByParticipant.values()]
+    .map(
+      (participantShortages) =>
+        `- ${participantShortages[0].name}: ${participantShortages
+          .map(
+            (shortage) =>
+              `${shortage.year}년 잔여 ${shortage.remainingDays}일 / 필요 ${shortage.requiredDays}일`,
+          )
+          .join(", ")}`,
+    )
+    .join("\n");
+};
 
 interface GroupMonthlyScheduleModalProps {
   onClose: () => void;
@@ -38,6 +81,9 @@ interface GroupMonthlyScheduleModalProps {
  *
  * 편성은 조 추가 시점에 사업단 기간 전체가 깔리므로, 여기서는 그중 고칠 부분만
  * 손보면 됩니다. 사업단 종료일이 나중에 늘어나 새로 생긴 달을 채우는 것도 여기서 합니다.
+ *
+ * 조 일괄 휴무(유급/무급)도 같은 달력에서 찍습니다. 저장하면 조원 전체에게 개인 휴무로
+ * 들어가고, 유급 휴무에 쓸 연차가 모자란 조원은 저장 전에 명단을 보여주고 빼고 진행할지 묻습니다.
  */
 const GroupMonthlyScheduleModal = ({
   onClose,
@@ -59,12 +105,27 @@ const GroupMonthlyScheduleModal = ({
   const [workDates, setWorkDates] = useState<string[]>([]);
   const [shiftByDate, setShiftByDate] = useState<ShiftByDate>({});
   const [maxMonthlyHours, setMaxMonthlyHours] = useState("30");
+  const [leaveTypeByDate, setLeaveTypeByDate] = useState<Record<string, LeaveType>>({});
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
   // 달을 넘길 때마다 다시 조회하지 않도록 기간 전체 편성을 한 번에 들고 온다 —
   // 저장도 기간 전체를 통째로 보내므로 화면 상태와 저장 단위가 같아진다.
   const { data: schedule, isFetching, isError } = useQuery(groupScheduleQueryOptions(group.id));
+  const { data: savedGroupLeaves, isFetching: isGroupLeavesFetching } = useQuery(
+    groupLeavesQueryOptions(group.id),
+  );
+
+  useEffect(() => {
+    if (savedGroupLeaves) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 조회된 초기값을 편집 가능한 로컬 상태로 동기화
+      setLeaveTypeByDate(
+        Object.fromEntries(
+          savedGroupLeaves.leaves.map((groupLeave) => [groupLeave.date, groupLeave.leaveType]),
+        ),
+      );
+    }
+  }, [savedGroupLeaves]);
 
   useEffect(() => {
     if (schedule) {
@@ -93,8 +154,9 @@ const GroupMonthlyScheduleModal = ({
 
   const updateGroupMutation = useMutation(updateGroupMutationOptions(queryClient));
   const updateGroupScheduleMutation = useMutation(updateGroupScheduleMutationOptions(queryClient));
+  const updateGroupLeavesMutation = useMutation(updateGroupLeavesMutationOptions(queryClient));
 
-  const handleSaveButtonClick = () => {
+  const handleSaveButtonClick = async () => {
     if (!form.name || !form.shiftStart || !form.shiftEnd) {
       alert("조 이름과 근무시간을 입력해야 합니다.");
       return;
@@ -129,46 +191,93 @@ const GroupMonthlyScheduleModal = ({
       return;
     }
 
-    updateGroupMutation.mutate(
-      { id: group.id, programId: group.programId, data: form },
-      {
-        onSuccess: () => {
-          if (workDates.length === 0) {
-            showToast("조 정보를 수정했습니다.");
-            onClose();
-            return;
-          }
+    const leaves = toLeaveList(leaveTypeByDate);
+    // 서버는 날짜순으로 내려주고 toLeaveList도 날짜순이라 그대로 비교하면 된다.
+    const hasLeaveChanges = !isSameLeaves(leaves, savedGroupLeaves?.leaves ?? []);
 
-          updateGroupScheduleMutation.mutate(
-            {
-              groupId: group.id,
-              months: toMonthlySchedules(
-                programStartDate,
-                programEndDate,
-                workDates,
-                shiftByDate,
-                form,
-                maxMonthlyMinutes,
-              ),
-            },
-            {
-              onSuccess: () => {
-                showToast("조 정보와 근무일을 수정했습니다.");
-                onClose();
-              },
-              onError: (error) =>
-                alert(
-                  error instanceof Error
-                    ? `조 정보는 수정됐지만 근무일 저장에 실패했습니다: ${error.message}`
-                    : "조 정보는 수정됐지만 근무일 저장에 실패했습니다.",
-                ),
-            },
+    // 연차 부족 확인은 아무것도 저장하기 전에 한다 — 취소했는데 조 정보·근무일만 반쯤
+    // 저장된 상태가 남지 않게.
+    if (hasLeaveChanges) {
+      try {
+        const { shortages } = await previewGroupLeaves(group.id, leaves);
+        if (
+          shortages.length > 0 &&
+          !confirm(
+            `유급 휴무에 쓸 연차가 부족한 조원이 있습니다.\n\n${formatShortages(shortages)}\n\n이 조원들은 유급 휴무에서 빼고 진행할까요? (무급 휴무는 그대로 적용됩니다.)`,
+          )
+        ) {
+          return;
+        }
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "휴무 확인에 실패했습니다.");
+        return;
+      }
+    }
+
+    try {
+      await updateGroupMutation.mutateAsync({
+        id: group.id,
+        programId: group.programId,
+        data: form,
+      });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "조 정보 수정에 실패했습니다.");
+      return;
+    }
+
+    if (workDates.length > 0) {
+      try {
+        await updateGroupScheduleMutation.mutateAsync({
+          groupId: group.id,
+          months: toMonthlySchedules(
+            programStartDate,
+            programEndDate,
+            workDates,
+            shiftByDate,
+            form,
+            maxMonthlyMinutes,
+          ),
+        });
+      } catch (error) {
+        alert(
+          error instanceof Error
+            ? `조 정보는 수정됐지만 근무일 저장에 실패했습니다: ${error.message}`
+            : "조 정보는 수정됐지만 근무일 저장에 실패했습니다.",
+        );
+        return;
+      }
+    }
+
+    if (hasLeaveChanges) {
+      try {
+        const { skipped } = await updateGroupLeavesMutation.mutateAsync({
+          groupId: group.id,
+          programId: group.programId,
+          leaves,
+        });
+        if (skipped.length > 0) {
+          alert(
+            `저장했습니다. 연차가 부족한 아래 조원은 유급 휴무에서 빠졌습니다.\n\n${formatShortages(skipped)}`,
           );
-        },
-        onError: (error) =>
-          alert(error instanceof Error ? error.message : "조 정보 수정에 실패했습니다."),
-      },
+          onClose();
+          return;
+        }
+      } catch (error) {
+        alert(
+          error instanceof Error
+            ? `조 정보와 근무일은 저장됐지만 휴무 저장에 실패했습니다: ${error.message}`
+            : "조 정보와 근무일은 저장됐지만 휴무 저장에 실패했습니다.",
+        );
+        return;
+      }
+    }
+
+    showToast(
+      ["조 정보", workDates.length > 0 && "근무일", hasLeaveChanges && "휴무"]
+        .filter(Boolean)
+        .join("·") + "를 수정했습니다.",
     );
+    onClose();
   };
 
   return (
@@ -242,7 +351,9 @@ const GroupMonthlyScheduleModal = ({
         programEndDate={programEndDate}
         programStartTime={programStartTime}
         programEndTime={programEndTime}
-        isLoading={isFetching}
+        isLoading={isFetching || isGroupLeavesFetching}
+        leaveTypeByDate={leaveTypeByDate}
+        onLeaveTypeByDateChange={setLeaveTypeByDate}
         note="사업단 기간 전체의 편성입니다. 달력 위 좌우 버튼으로 달을 옮겨가며 고칠 수 있습니다."
       />
     </SlideModal>

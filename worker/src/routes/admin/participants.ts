@@ -541,7 +541,9 @@ app.post("/:id/leave", async (c) => {
 
   const leaveType = body.leaveType ?? "PAID";
   const leaveDays = toLeaveDays(body.leaveStart, body.leaveEnd);
-  const year = getKstNow().date.slice(0, 4);
+  // 등록한 날이 아니라 휴무 날짜의 연도 연차에서 뺀다 — 지난해 날짜를 소급 등록하거나
+  // 연말에 다음 해 휴무를 미리 넣을 때 엉뚱한 해의 연차가 빠지지 않게.
+  const year = body.leaveStart.slice(0, 4);
 
   if (leaveType === "PAID") {
     const annualRows = await db
@@ -635,7 +637,7 @@ app.post("/:id/leave/end", async (c) => {
 
     const refundDays = leave.leaveDays - remainingLeaveDays;
     if (leave.leaveType === "PAID" && refundDays > 0) {
-      // 등록할 때와 같은 기준(등록 시점 연도)으로 차감했던 연차를 돌려준다
+      // 등록할 때와 같은 기준(휴무 시작일의 연도)으로 차감했던 연차를 돌려준다
       await db
         .update(participantAnnualLeave)
         .set({
@@ -646,7 +648,7 @@ app.post("/:id/leave/end", async (c) => {
         .where(
           and(
             eq(participantAnnualLeave.participantId, id),
-            eq(participantAnnualLeave.year, leave.createdAt.slice(0, 4)),
+            eq(participantAnnualLeave.year, leave.leaveStart.slice(0, 4)),
           ),
         );
     }

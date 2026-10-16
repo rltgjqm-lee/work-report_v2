@@ -137,6 +137,29 @@ export const groupShiftOverrides = sqliteTable(
   (table) => [uniqueIndex("group_shift_overrides_group_date_unique").on(table.groupId, table.date)],
 );
 
+// 조 일괄 휴무 — 조 수정 달력에서 날짜별로 유급/무급을 찍는 원본이다. 저장하면 조원마다
+// 그 날짜 하루짜리 participant_leaves가 생기고(groupLeaveId로 연결), 근무 탭·휴가 탭·
+// 출근 차단은 그 개인 기록을 그대로 읽는다. 근무일과는 독립이다 — 유급 휴무는 원래
+// 근무일에 연차를 쓰는 것이라 근무일을 지우지 않고 겹쳐 둔다.
+export const groupLeaves = sqliteTable(
+  "group_leaves",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id),
+    date: text("date").notNull(), // "YYYY-MM-DD"
+    leaveType: text("leave_type").$type<"PAID" | "UNPAID">().notNull(),
+    createdBy: integer("created_by")
+      .notNull()
+      .references((): AnySQLiteColumn => admins.id),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [uniqueIndex("group_leaves_group_date_unique").on(table.groupId, table.date)],
+);
+
 // 참여자 개인 예외 — 이 달에 레코드가 있으면 조 스케줄 대신 이걸 쓴다 (무급휴가 등 개인 사정).
 // maxMonthlyMinutes가 null이면 조 스케줄의 상한을 그대로 따른다.
 export const participantMonthlySchedule = sqliteTable(
@@ -368,6 +391,9 @@ export const participantLeaves = sqliteTable(
     // 서버가 leaveStart~leaveEnd로 자동 계산해 저장 (일 수)
     leaveDays: integer("leave_days").notNull().default(0),
     reason: text("reason"),
+    // 조 일괄 휴무에서 생긴 기록이면 그 원본 — 조 달력에서 해제할 때 이 기록만 골라 지운다.
+    // 개인에게 직접 등록한 휴무는 null.
+    groupLeaveId: integer("group_leave_id").references(() => groupLeaves.id),
     createdBy: integer("created_by")
       .notNull()
       .references(() => admins.id),

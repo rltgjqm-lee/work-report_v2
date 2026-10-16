@@ -519,6 +519,13 @@
       "when": 1789461667942,
       "tag": "0073_confused_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1792114710236,
+      "tag": "0074_shiny_alex_power",
+      "breakpoints": true
     }
   ]
 }

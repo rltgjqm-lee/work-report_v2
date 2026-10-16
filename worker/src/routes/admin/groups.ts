@@ -1,17 +1,22 @@
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, like, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 
 import type { Env } from "../../types";
 
 import {
+  groupLeaves,
   groupMonthlySchedule,
   groups,
   groupShiftOverrides,
+  participantAnnualLeave,
+  participantLeaves,
   participants,
   programs,
 } from "../../db/schema";
 import { canAccessProgram, getAuth } from "../../lib/authz";
+import { getKstNow } from "../../lib/kst";
+import { syncLeaveStatus } from "../../lib/leaveStatus";
 
 const app = new Hono<Env>();
 
@@ -343,6 +348,333 @@ app.put("/:id/schedule", async (c) => {
   }
 
   return c.json({ groupId: id, months: body.months });
+});
+
+type LeaveType = "PAID" | "UNPAID";
+
+interface GroupLeaveInput {
+  date: string;
+  leaveType: LeaveType;
+}
+
+interface AnnualLeaveShortage {
+  participantId: number;
+  name: string;
+  year: string;
+  remainingDays: number;
+  requiredDays: number;
+}
+
+// D1은 쿼리 하나에 바인딩 100개까지라 inArray·다건 insert를 이 크기로 쪼갠다.
+const BINDING_CHUNK_SIZE = 90;
+const INSERT_ROW_CHUNK_SIZE = 10;
+
+const chunked = <T>(items: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, (index + 1) * size),
+  );
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const validateGroupLeaves = (
+  leaves: GroupLeaveInput[],
+  programStartDate: string,
+  programEndDate: string,
+): string | null => {
+  const seenDates = new Set<string>();
+  for (const leave of leaves) {
+    if (!DATE_PATTERN.test(leave.date)) return `${leave.date}는 올바른 날짜가 아닙니다.`;
+    if (leave.leaveType !== "PAID" && leave.leaveType !== "UNPAID") {
+      return `${leave.date}의 휴무 유형이 올바르지 않습니다.`;
+    }
+    // 과거 날짜는 막지 않는다 — 지난 휴무를 소급해서 찍는 경우가 있다. 사업단 기간만 본다.
+    if (leave.date < programStartDate || leave.date > programEndDate) {
+      return `${leave.date}는 사업단 기간(${programStartDate} ~ ${programEndDate}) 밖입니다.`;
+    }
+    if (seenDates.has(leave.date)) return `${leave.date}이 중복으로 들어왔습니다.`;
+    seenDates.add(leave.date);
+  }
+
+  return null;
+};
+
+const yearOf = (date: string) => date.slice(0, 4);
+
+const countByParticipantYear = (rows: { participantId: number; date: string }[]) => {
+  const counts = new Map<string, { participantId: number; year: string; days: number }>();
+  for (const row of rows) {
+    const key = `${row.participantId}_${yearOf(row.date)}`;
+    const current = counts.get(key);
+    if (current) current.days += 1;
+    else counts.set(key, { participantId: row.participantId, year: yearOf(row.date), days: 1 });
+  }
+
+  return [...counts.values()];
+};
+
+/**
+ * 지금 저장된 조 휴무와 요청을 비교해 지울 것·새로 넣을 것을 나누고, 새로 넣을 유급
+ * 휴무만큼 연차가 모자란 조원을 찾는다. 미리보기(팝업용)와 실제 저장이 같은 계산을 써야
+ * 팝업에서 본 명단과 실제로 빠지는 사람이 어긋나지 않는다.
+ *
+ * 유형이 바뀐 날짜(유급→무급 등)는 지우고 다시 넣는 것으로 다룬다. 지우는 쪽 유급은
+ * 연차가 먼저 돌아오므로, 부족 여부는 "잔여 + 돌려받을 일수"로 본다.
+ */
+const planGroupLeaves = async (
+  db: ReturnType<typeof drizzle>,
+  groupId: number,
+  requested: GroupLeaveInput[],
+) => {
+  const [existingRows, memberRows, annualRows] = await Promise.all([
+    db.select().from(groupLeaves).where(eq(groupLeaves.groupId, groupId)),
+    db
+      .select({ id: participants.id, name: participants.name })
+      .from(participants)
+      .where(and(eq(participants.groupId, groupId), ne(participants.status, "DROPPED"))),
+    db
+      .select({
+        participantId: participantAnnualLeave.participantId,
+        year: participantAnnualLeave.year,
+        remainingDays: participantAnnualLeave.remainingDays,
+      })
+      .from(participantAnnualLeave)
+      .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
+      .where(eq(participants.groupId, groupId)),
+  ]);
+
+  const requestedTypeByDate = new Map(requested.map((leave) => [leave.date, leave.leaveType]));
+  const existingTypeByDate = new Map(existingRows.map((leave) => [leave.date, leave.leaveType]));
+
+  const removed = existingRows.filter(
+    (existing) => requestedTypeByDate.get(existing.date) !== existing.leaveType,
+  );
+  const added = requested.filter((leave) => existingTypeByDate.get(leave.date) !== leave.leaveType);
+
+  const removedRecords = (
+    await Promise.all(
+      chunked(
+        removed.map((leave) => leave.id),
+        BINDING_CHUNK_SIZE,
+      ).map((removedIds) =>
+        db
+          .select({
+            participantId: participantLeaves.participantId,
+            date: participantLeaves.leaveStart,
+            leaveType: participantLeaves.leaveType,
+          })
+          .from(participantLeaves)
+          .where(inArray(participantLeaves.groupLeaveId, removedIds)),
+      ),
+    )
+  ).flat();
+
+  const addedPaidDates = added
+    .filter((leave) => leave.leaveType === "PAID")
+    .map((leave) => leave.date);
+  const addedPaidYears = [...new Set(addedPaidDates.map(yearOf))];
+
+  const shortages: AnnualLeaveShortage[] = memberRows.flatMap((member) =>
+    addedPaidYears.flatMap((year) => {
+      const requiredDays = addedPaidDates.filter((date) => yearOf(date) === year).length;
+      const refundDays = removedRecords.filter(
+        (record) =>
+          record.participantId === member.id &&
+          record.leaveType === "PAID" &&
+          yearOf(record.date) === year,
+      ).length;
+      const savedRemainingDays =
+        annualRows.find(
+          (annualRow) => annualRow.participantId === member.id && annualRow.year === year,
+        )?.remainingDays ?? 0;
+      const remainingDays = savedRemainingDays + refundDays;
+
+      return remainingDays < requiredDays
+        ? [{ participantId: member.id, name: member.name, year, remainingDays, requiredDays }]
+        : [];
+    }),
+  );
+
+  return { existingRows, removed, added, memberRows, removedRecords, shortages };
+};
+
+const parseGroupLeavesBody = async (c: Context<Env>) => {
+  const body = await c.req.json<{ leaves?: GroupLeaveInput[] }>();
+
+  return body.leaves;
+};
+
+// 조 일괄 휴무 목록 — 조 수정 달력이 근무일 위에 겹쳐 그린다.
+app.get("/:id/leaves", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadGroupWithProgram(db, id);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const rows = await db
+    .select({ date: groupLeaves.date, leaveType: groupLeaves.leaveType })
+    .from(groupLeaves)
+    .where(eq(groupLeaves.groupId, id))
+    .orderBy(groupLeaves.date);
+
+  return c.json({ groupId: id, leaves: rows });
+});
+
+// 저장 전 미리보기 — 새로 넣을 유급 휴무만큼 연차가 모자란 조원 명단. 화면은 이걸로
+// "이 사람들은 빼고 진행할까요?"를 먼저 묻고, 진행하면 PUT을 보낸다.
+app.post("/:id/leaves/preview", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadGroupWithProgram(db, id);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const leaves = await parseGroupLeavesBody(c);
+  if (!leaves) return c.json({ error: "휴무 목록을 지정해주세요." }, 400);
+  const error = validateGroupLeaves(leaves, found.program.startDate, found.program.endDate);
+  if (error) return c.json({ error }, 400);
+
+  const { shortages } = await planGroupLeaves(db, id, leaves);
+
+  return c.json({ shortages });
+});
+
+// 조 일괄 휴무를 통째로 저장한다 — 보낸 목록이 그 조의 휴무 전체가 된다. 달라진 날짜만
+// 조원 개인 휴무(participant_leaves, 하루짜리)를 지우고/만들고, 유급이면 그 날짜 연도의
+// 연차를 돌려주고/뺀다. 연차가 모자란 조원은 그 유급 휴무에서만 빠지고(무급은 그대로
+// 들어간다) skipped로 알려준다 — 미리보기 이후 잔여가 바뀌어도 연차를 마이너스로 만들지 않는다.
+app.put("/:id/leaves", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadGroupWithProgram(db, id);
+  if (!found) return c.json({ error: "조를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const leaves = await parseGroupLeavesBody(c);
+  if (!leaves) return c.json({ error: "휴무 목록을 지정해주세요." }, 400);
+  const error = validateGroupLeaves(leaves, found.program.startDate, found.program.endDate);
+  if (error) return c.json({ error }, 400);
+
+  const { removed, added, memberRows, removedRecords, shortages } = await planGroupLeaves(
+    db,
+    id,
+    leaves,
+  );
+
+  // 1) 빠진 날짜: 개인 기록과 조 휴무를 지우고, 유급이었던 만큼 연차를 돌려준다.
+  for (const removedIds of chunked(
+    removed.map((leave) => leave.id),
+    BINDING_CHUNK_SIZE,
+  )) {
+    await db.delete(participantLeaves).where(inArray(participantLeaves.groupLeaveId, removedIds));
+    await db.delete(groupLeaves).where(inArray(groupLeaves.id, removedIds));
+  }
+  const refunds = countByParticipantYear(
+    removedRecords.filter((record) => record.leaveType === "PAID"),
+  );
+  for (const refund of refunds) {
+    await db
+      .update(participantAnnualLeave)
+      .set({
+        usedDays: sql`${participantAnnualLeave.usedDays} - ${refund.days}`,
+        remainingDays: sql`${participantAnnualLeave.remainingDays} + ${refund.days}`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(participantAnnualLeave.participantId, refund.participantId),
+          eq(participantAnnualLeave.year, refund.year),
+        ),
+      );
+  }
+
+  // 2) 새 날짜: 조 휴무를 만들고, 조원마다 그 날 하루짜리 개인 휴무를 연결해 만든다.
+  const insertedLeaves = (
+    await Promise.all(
+      chunked(added, INSERT_ROW_CHUNK_SIZE).map((addedChunk) =>
+        db
+          .insert(groupLeaves)
+          .values(
+            addedChunk.map((leave) => ({
+              groupId: id,
+              date: leave.date,
+              leaveType: leave.leaveType,
+              createdBy: auth.id,
+            })),
+          )
+          .returning(),
+      ),
+    )
+  ).flat();
+
+  const shortageKeys = new Set(
+    shortages.map((shortage) => `${shortage.participantId}_${shortage.year}`),
+  );
+  const newRecords = insertedLeaves.flatMap((groupLeave) =>
+    memberRows
+      .filter(
+        (member) =>
+          groupLeave.leaveType === "UNPAID" ||
+          !shortageKeys.has(`${member.id}_${yearOf(groupLeave.date)}`),
+      )
+      .map((member) => ({
+        participantId: member.id,
+        leaveStart: groupLeave.date,
+        leaveEnd: groupLeave.date,
+        leaveType: groupLeave.leaveType,
+        leaveDays: 1,
+        reason: "조 일괄 휴무",
+        groupLeaveId: groupLeave.id,
+        createdBy: auth.id,
+      })),
+  );
+  for (const recordChunk of chunked(newRecords, INSERT_ROW_CHUNK_SIZE)) {
+    await db.insert(participantLeaves).values(recordChunk);
+  }
+
+  const deductions = countByParticipantYear(
+    newRecords
+      .filter((record) => record.leaveType === "PAID")
+      .map((record) => ({ participantId: record.participantId, date: record.leaveStart })),
+  );
+  for (const deduction of deductions) {
+    await db
+      .update(participantAnnualLeave)
+      .set({
+        usedDays: sql`${participantAnnualLeave.usedDays} + ${deduction.days}`,
+        remainingDays: sql`${participantAnnualLeave.remainingDays} - ${deduction.days}`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(participantAnnualLeave.participantId, deduction.participantId),
+          eq(participantAnnualLeave.year, deduction.year),
+        ),
+      );
+  }
+
+  // 오늘이 새로 휴무가 됐거나 풀렸을 수 있으니 출근 차단 상태를 다시 맞춘다.
+  await syncLeaveStatus(db, getKstNow().date, { programId: found.program.id });
+
+  const savedLeaves = await db
+    .select({ date: groupLeaves.date, leaveType: groupLeaves.leaveType })
+    .from(groupLeaves)
+    .where(eq(groupLeaves.groupId, id))
+    .orderBy(groupLeaves.date);
+
+  return c.json({ groupId: id, leaves: savedLeaves, skipped: shortages });
 });
 
 // 참여자 일괄 조 이동

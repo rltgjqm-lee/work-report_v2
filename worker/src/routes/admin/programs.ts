@@ -1044,7 +1044,8 @@ app.post("/:id/participants/bulk-leave", async (c) => {
 
   const leaveType = body.leaveType ?? "PAID";
   const leaveDays = toLeaveDays(body.leaveStart, body.leaveEnd);
-  const year = getKstNow().date.slice(0, 4);
+  // 개인 휴무 등록과 같은 기준 — 휴무 날짜의 연도 연차에서 뺀다.
+  const year = body.leaveStart.slice(0, 4);
 
   const targetRows = await db
     .select()

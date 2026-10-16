@@ -14,7 +14,7 @@ import { request } from "../client";
 import { groupKeys } from "./groups";
 import { programKeys } from "./programs";
 
-const participantKeys = {
+export const participantKeys = {
   all: ["participants"] as const,
   detail: (id: number) => [...participantKeys.all, id] as const,
   attendance: (id: number, month: string) =>
@@ -66,6 +66,34 @@ export const participantLeaveHistoryQueryOptions = (id: number, year: string) =>
   queryOptions({
     queryKey: participantKeys.leaveHistory(id, year),
     queryFn: () => getParticipantLeaveHistory(id, year),
+  });
+
+// 개인 근무 스케줄 모달의 달력용 — 그 달 날짜별 휴무 유형. 휴무 기록은 기간(시작~종료)이라
+// 달력이 바로 쓸 수 있게 그 달 날짜 하나하나로 펼친다. 조 일괄 휴무도 개인 기록으로
+// 들어가 있어서 여기에 같이 잡힌다.
+export type LeaveTypeByDate = Record<string, LeaveType>;
+
+export const participantMonthLeavesQueryOptions = (id: number, yearMonth: string) =>
+  queryOptions({
+    queryKey: participantKeys.leaveHistory(id, yearMonth.slice(0, 4)),
+    queryFn: () => getParticipantLeaveHistory(id, yearMonth.slice(0, 4)),
+    select: (history: ParticipantLeaveHistory): LeaveTypeByDate => {
+      const [year, month] = yearMonth.split("-").map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      return Object.fromEntries(
+        Array.from(
+          { length: daysInMonth },
+          (_, index) => `${yearMonth}-${String(index + 1).padStart(2, "0")}`,
+        ).flatMap((date) => {
+          const coveringLeave = history.leaves.find(
+            (leave) => leave.leaveStart <= date && leave.leaveEnd >= date,
+          );
+
+          return coveringLeave ? [[date, coveringLeave.leaveType]] : [];
+        }),
+      );
+    },
   });
 
 export interface AddParticipantVariables {
