@@ -20,7 +20,11 @@ const TIMEOUT_MS = 5000;
 // 좌표를 못 읽었을 때 기기 쪽 실패 이유 — 출퇴근 실패 기록(attendance_attempt_failures)에
 // 그대로 남겨서 "GPS 오류로 안 찍힌다" 문의가 왔을 때 원인을 구분하는 데 쓴다.
 export type LocationReadFailure =
-  "PERMISSION_DENIED" | "POSITION_UNAVAILABLE" | "TIMEOUT" | "UNSUPPORTED";
+  | "PERMISSION_DENIED"
+  | "LOCATION_SERVICES_OFF"
+  | "POSITION_UNAVAILABLE"
+  | "TIMEOUT"
+  | "UNSUPPORTED";
 
 export type LocationReading = {
   coordinates: Coordinates | null;
@@ -36,13 +40,8 @@ const failureFromErrorCode = (error: GeolocationPositionError): LocationReadFail
   return "TIMEOUT";
 };
 
-/**
- * 출퇴근 등록 직전에 현재 위치를 한 번 읽고, 실패했으면 그 이유와 걸린 시간도 같이 돌려줍니다.
- *
- * 서버는 좌표가 없으면 LOCATION_REQUIRED로 출퇴근 자체를 막으므로(근무지 확인·안전
- * 관리의 전제), 호출부는 coordinates가 null일 때 그 실패를 사용자에게 안내해야 합니다.
- */
-export const readCurrentLocation = (): Promise<LocationReading> => {
+// 웹(브라우저)용 — 브라우저 Geolocation API로 한 번 측위한다.
+const readCurrentLocationFromBrowser = (): Promise<LocationReading> => {
   if (!navigator.geolocation) {
     return Promise.resolve({ coordinates: null, failure: "UNSUPPORTED", elapsedMs: 0 });
   }
@@ -77,6 +76,111 @@ export const readCurrentLocation = (): Promise<LocationReading> => {
     );
   });
 };
+
+// 처음 한 번은 OS 위치 권한 팝업이 뜨는데, 참여자가 팝업을 읽고 누르는 시간까지
+// TIMEOUT_MS에 넣으면 허락하자마자 타임아웃이 된다 — 이 기기에서 네이티브 측위에 한 번도
+// 성공한 적이 없을 때만 이만큼 더 기다린다(브라우저 API는 권한 대기 시간을 timeout에
+// 안 넣어서 웹엔 필요 없다). 플러그인엔 권한 상태만 조회하는 API가 없어서 성공 이력으로
+// 대신 판단한다.
+const PERMISSION_PROMPT_GRACE_MS = 30_000;
+const NATIVE_LOCATION_SUCCEEDED_KEY = "nativeLocationSucceeded";
+
+const hasNativeLocationSucceeded = (): boolean => {
+  try {
+    return localStorage.getItem(NATIVE_LOCATION_SUCCEEDED_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const markNativeLocationSucceeded = () => {
+  try {
+    localStorage.setItem(NATIVE_LOCATION_SUCCEEDED_KEY, "true");
+  } catch {
+    // 저장이 안 되면 다음에도 권한 대기 시간을 더 줄 뿐이라 무시한다
+  }
+};
+
+const failureFromNativeError = (error: unknown): LocationReadFailure => {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (message.includes("disabled")) return "LOCATION_SERVICES_OFF";
+  if (message.includes("denied")) return "PERMISSION_DENIED";
+  return "POSITION_UNAVAILABLE";
+};
+
+// 하이브리드 앱용 — WebView의 브라우저 API 대신 네이티브 GPS로 측위한다. WebView 측위는
+// 기종/버전마다 동작이 달라 실내에서 첫 좌표를 늦게 잡거나 타임아웃까지 가는 경우가
+// 있었고, 위치 조작 여부(simulated)도 네이티브에서만 알 수 있다.
+//
+// 새 GPS 좌표 하나를 받으면 바로 감시를 끈다. 근무 중 백그라운드 감시(backgroundLocation.ts)가
+// 돌고 있어도 플러그인이 감시를 여러 개 따로 관리하므로 서로 영향이 없다.
+// backgroundMessage를 안 넣어서 상주 알림도 뜨지 않는다.
+const readCurrentLocationFromNative = (): Promise<LocationReading> => {
+  const startedAtMs = Date.now();
+  const timeoutMs = hasNativeLocationSucceeded()
+    ? TIMEOUT_MS
+    : TIMEOUT_MS + PERMISSION_PROMPT_GRACE_MS;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let watcherId: string | null = null;
+    const settle = (reading: LocationReading) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      resolve(reading);
+      if (watcherId !== null) {
+        BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
+      }
+    };
+    const settleWithFailure = (failure: LocationReadFailure) =>
+      settle({ coordinates: null, failure, elapsedMs: Date.now() - startedAtMs });
+
+    const timeoutId = window.setTimeout(() => settleWithFailure("TIMEOUT"), timeoutMs);
+
+    // 💡 최초 실패(권한 없음/위치 서비스 꺼짐)는 콜백이 아니라 addWatcher()가 돌려준
+    // 프로미스의 reject로 오기도 해서(checkGeolocationFailureReason 참고) 둘 다 본다.
+    BackgroundGeolocation.addWatcher(
+      // 오래된 좌표(예: 집에서 잡힌 위치)로 출퇴근을 기록하면 의미가 없다 — 새 측위만 받는다
+      { requestPermissions: true, stale: false },
+      (position, error) => {
+        if (error || !position) {
+          settleWithFailure(failureFromNativeError(error));
+          return;
+        }
+        markNativeLocationSucceeded();
+        settle({
+          coordinates: {
+            lat: position.latitude,
+            lng: position.longitude,
+            accuracy: Number.isFinite(position.accuracy) ? position.accuracy : null,
+            simulated: position.simulated,
+          },
+          failure: null,
+          elapsedMs: Date.now() - startedAtMs,
+        });
+      },
+    )
+      .then((id) => {
+        if (settled) {
+          BackgroundGeolocation.removeWatcher({ id }).catch(() => {});
+        } else {
+          watcherId = id;
+        }
+      })
+      .catch((error) => settleWithFailure(failureFromNativeError(error)));
+  });
+};
+
+/**
+ * 출퇴근 등록 직전에 현재 위치를 한 번 읽고, 실패했으면 그 이유와 걸린 시간도 같이 돌려줍니다.
+ * 하이브리드 앱에서는 네이티브 GPS, 웹에서는 브라우저 Geolocation API를 씁니다.
+ *
+ * 서버는 좌표가 없으면 LOCATION_REQUIRED로 출퇴근 자체를 막으므로(근무지 확인·안전
+ * 관리의 전제), 호출부는 coordinates가 null일 때 그 실패를 사용자에게 안내해야 합니다.
+ */
+export const readCurrentLocation = (): Promise<LocationReading> =>
+  Capacitor.isNativePlatform() ? readCurrentLocationFromNative() : readCurrentLocationFromBrowser();
 
 /**
  * 현재 위치를 한 번 읽습니다. 권한 거부·측위 실패·타임아웃·미지원 등 어떤 이유로든
