@@ -1,12 +1,12 @@
 import { sql } from "drizzle-orm";
 import {
-  type AnySQLiteColumn,
   index,
   integer,
   real,
   sqliteTable,
   text,
   uniqueIndex,
+  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 
 import { ROLES, type AdminRole } from "../types";
@@ -938,3 +938,41 @@ export const otaBundles = sqliteTable("ota_bundles", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// 출퇴근 버튼을 눌렀는데 실패한 시도 1건 = 1행. attendance_logs는 성공한 출퇴근만 남기므로
+// "GPS 오류로 안 찍힌다"는 문의가 와도 원인(측위 타임아웃/권한/구역 밖 판정/근무시간 등)을
+// 사후에 확인할 방법이 없었다 — 그걸 남기기 위한 진단용 기록이다.
+// 출퇴근 요청 시 보낸 좌표만 담고, 근무 중 위치 보고(/public/location)는 여기 남기지 않는다.
+export const attendanceAttemptFailures = sqliteTable(
+  "attendance_attempt_failures",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    kind: text("kind").$type<"CLOCK_IN" | "CLOCK_OUT">().notNull(),
+    // KST 기준 시도 날짜/시각 — attendance_logs.workDate와 같은 기준이라 그날 기록과 바로 맞춰볼 수 있다
+    workDate: text("work_date").notNull(),
+    attemptedAt: text("attempted_at").notNull(),
+    // 서버가 내려준 error 값 그대로(OUTSIDE_AREA 같은 코드거나 한글 안내 문구)
+    error: text("error").notNull(),
+    httpStatus: integer("http_status").notNull(),
+    lat: real("lat"),
+    lng: real("lng"),
+    accuracyM: real("accuracy_m"),
+    // OUTSIDE_AREA일 때 서버가 판정한 관제구역까지의 거리
+    distanceM: integer("distance_m"),
+    // 좌표를 못 읽었을 때 기기 쪽 실패 이유(PERMISSION_DENIED/POSITION_UNAVAILABLE/TIMEOUT/
+    // UNSUPPORTED) — 좌표가 있으면 null
+    locationFailure: text("location_failure"),
+    // 측위에 걸린 시간(ms). 타임아웃 기준(geolocation.ts)을 조정할 근거로 쓴다
+    locationElapsedMs: integer("location_elapsed_ms"),
+    platform: text("platform"),
+  },
+  (table) => [
+    index("idx_attendance_attempt_failures_participant_date").on(
+      table.participantId,
+      table.workDate,
+    ),
+  ],
+);

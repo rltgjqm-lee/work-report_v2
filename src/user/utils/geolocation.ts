@@ -17,26 +17,56 @@ export type Coordinates = {
 // 느껴질 만큼 길다).
 const TIMEOUT_MS = 5000;
 
-/**
- * 출퇴근 등록 직전에 현재 위치를 한 번 읽습니다.
- *
- * 권한 거부·측위 실패·타임아웃·미지원 등 어떤 이유로든 못 읽으면 null을 돌려줍니다.
- * 서버는 좌표가 없으면 LOCATION_REQUIRED로 출퇴근 자체를 막으므로(근무지 확인·안전
- * 관리의 전제), 호출부는 null이 왔을 때 그 실패를 사용자에게 안내해야 합니다.
- */
-export const readCurrentCoordinates = (): Promise<Coordinates | null> => {
-  if (!navigator.geolocation) return Promise.resolve(null);
+// 좌표를 못 읽었을 때 기기 쪽 실패 이유 — 출퇴근 실패 기록(attendance_attempt_failures)에
+// 그대로 남겨서 "GPS 오류로 안 찍힌다" 문의가 왔을 때 원인을 구분하는 데 쓴다.
+export type LocationReadFailure =
+  "PERMISSION_DENIED" | "POSITION_UNAVAILABLE" | "TIMEOUT" | "UNSUPPORTED";
 
+export type LocationReading = {
+  coordinates: Coordinates | null;
+  // coordinates가 있으면 null
+  failure: LocationReadFailure | null;
+  // 측위에 걸린 시간 — 타임아웃(TIMEOUT_MS)이 현장에서 충분한지 판단하는 근거
+  elapsedMs: number;
+};
+
+const failureFromErrorCode = (error: GeolocationPositionError): LocationReadFailure => {
+  if (error.code === error.PERMISSION_DENIED) return "PERMISSION_DENIED";
+  if (error.code === error.POSITION_UNAVAILABLE) return "POSITION_UNAVAILABLE";
+  return "TIMEOUT";
+};
+
+/**
+ * 출퇴근 등록 직전에 현재 위치를 한 번 읽고, 실패했으면 그 이유와 걸린 시간도 같이 돌려줍니다.
+ *
+ * 서버는 좌표가 없으면 LOCATION_REQUIRED로 출퇴근 자체를 막으므로(근무지 확인·안전
+ * 관리의 전제), 호출부는 coordinates가 null일 때 그 실패를 사용자에게 안내해야 합니다.
+ */
+export const readCurrentLocation = (): Promise<LocationReading> => {
+  if (!navigator.geolocation) {
+    return Promise.resolve({ coordinates: null, failure: "UNSUPPORTED", elapsedMs: 0 });
+  }
+
+  const startedAtMs = Date.now();
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (position) =>
         resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
-          simulated: null,
+          coordinates: {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+            simulated: null,
+          },
+          failure: null,
+          elapsedMs: Date.now() - startedAtMs,
         }),
-      () => resolve(null),
+      (error) =>
+        resolve({
+          coordinates: null,
+          failure: failureFromErrorCode(error),
+          elapsedMs: Date.now() - startedAtMs,
+        }),
       {
         enableHighAccuracy: true,
         timeout: TIMEOUT_MS,
@@ -47,6 +77,13 @@ export const readCurrentCoordinates = (): Promise<Coordinates | null> => {
     );
   });
 };
+
+/**
+ * 현재 위치를 한 번 읽습니다. 권한 거부·측위 실패·타임아웃·미지원 등 어떤 이유로든
+ * 못 읽으면 null을 돌려줍니다(실패 이유가 필요하면 readCurrentLocation을 쓰세요).
+ */
+export const readCurrentCoordinates = async (): Promise<Coordinates | null> =>
+  (await readCurrentLocation()).coordinates;
 
 export type GeolocationFailureReason = "permission-denied" | "location-services-off" | "other";
 
@@ -105,7 +142,9 @@ export const checkGeolocationFailureReason = (): Promise<GeolocationFailureReaso
       if (settled) return;
       settled = true;
       resolve(reason);
-      if (watcherId !== null) BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
+      if (watcherId !== null) {
+        BackgroundGeolocation.removeWatcher({ id: watcherId }).catch(() => {});
+      }
     };
 
     BackgroundGeolocation.addWatcher(

@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, like, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 
 import type { Env } from "../../types";
 
@@ -8,6 +8,7 @@ import {
   activityLogs,
   adminPushSubscriptions,
   admins,
+  attendanceAttemptFailures,
   attendanceLogs,
   demandSiteLocations,
   demandSites,
@@ -387,6 +388,67 @@ app.post("/attendance/location-consent", async (c) => {
 
   return c.json({ locationConsentAt });
 });
+
+// 출퇴근 요청 body 중 실패 기록에 필요한 필드만. locationFailure/locationElapsedMs/platform은
+// 출퇴근 처리 자체엔 안 쓰고 실패했을 때 원인을 남기는 용도로만 참여자 앱이 같이 보낸다.
+type AttendanceAttemptBody = {
+  participantId?: number;
+  lat?: number;
+  lng?: number;
+  accuracy?: number;
+  locationFailure?: string;
+  locationElapsedMs?: number;
+  platform?: string;
+  debugDate?: string;
+  debugTime?: string;
+};
+
+// 출퇴근 라우트가 4xx/5xx로 끝나면 그 시도를 attendance_attempt_failures에 남긴다. 실패
+// 지점(return)이 라우트마다 열 군데가 넘어서, 각 지점에 기록 코드를 끼워넣는 대신 응답이
+// 나간 뒤 한 곳에서 본다. 기록 저장이 실패해도 참여자 응답에는 영향을 주지 않는다.
+const recordAttendanceAttemptFailure =
+  (kind: "CLOCK_IN" | "CLOCK_OUT"): MiddlewareHandler<Env> =>
+  async (c, next) => {
+    await next();
+    if (c.res.status < 400) return;
+
+    try {
+      // Hono가 파싱한 body를 캐시해두므로 라우트에서 이미 읽었어도 다시 읽을 수 있다
+      const body = await c.req.json<AttendanceAttemptBody>();
+      if (!body.participantId) return;
+      const responseBody = await c.res
+        .clone()
+        .json<{ error?: string; distanceM?: number | null }>()
+        .catch(() => ({}) as { error?: string; distanceM?: number | null });
+
+      const debugOverride = await readDebugOverride(c, body);
+      const { date, iso } = getKstNow(debugOverride.date, debugOverride.time);
+
+      await drizzle(c.env.DB)
+        .insert(attendanceAttemptFailures)
+        .values({
+          participantId: body.participantId,
+          kind,
+          workDate: date,
+          attemptedAt: iso,
+          error: responseBody.error ?? "UNKNOWN",
+          httpStatus: c.res.status,
+          lat: body.lat ?? null,
+          lng: body.lng ?? null,
+          accuracyM: body.accuracy ?? null,
+          distanceM: responseBody.distanceM ?? null,
+          locationFailure: body.locationFailure ?? null,
+          locationElapsedMs: body.locationElapsedMs ?? null,
+          platform: body.platform ?? null,
+        });
+    } catch (error) {
+      // 참여자가 없는 id(본인 확인 만료 등)면 외래키로 저장이 안 되는데, 그건 남길 대상도 아니다
+      console.error("출퇴근 실패 기록 저장 실패:", error);
+    }
+  };
+
+app.use("/attendance/clock-in", recordAttendanceAttemptFailure("CLOCK_IN"));
+app.use("/attendance/clock-out", recordAttendanceAttemptFailure("CLOCK_OUT"));
 
 // lat/lng는 필수다 — 없으면(위치 동의를 안 했거나 권한이 막혀 있으면) LOCATION_REQUIRED로
 // 막는다. 좌표가 있는데 관제구역 밖으로 명확히 판정되면(position.inside === false)

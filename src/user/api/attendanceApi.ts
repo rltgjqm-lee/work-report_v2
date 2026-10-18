@@ -2,8 +2,8 @@ import { mutationOptions, queryOptions } from "@tanstack/react-query";
 
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
-import { readCurrentCoordinates } from "../utils/geolocation";
-import type { Coordinates } from "../utils/geolocation";
+import { readCurrentLocation } from "../utils/geolocation";
+import type { Coordinates, LocationReading } from "../utils/geolocation";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -161,6 +161,22 @@ const coordinatesPayload = (coordinates?: Coordinates | null) =>
       }
     : {};
 
+// 출퇴근이 실패했을 때 서버가 원인을 남기도록(attendance_attempt_failures) 같이 보내는
+// 진단값 — 좌표를 못 읽은 이유, 측위에 걸린 시간, 플랫폼. 출퇴근 처리 자체엔 안 쓰인다.
+const attemptDiagnosticsPayload = (reading: LocationReading) => ({
+  ...(reading.failure && { locationFailure: reading.failure }),
+  locationElapsedMs: reading.elapsedMs,
+  platform: Capacitor.getPlatform(),
+});
+
+const postAttendance = (path: string, body: object): Promise<Response> =>
+  fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
 // 💡 "너무 이르다" 실패는 안내 모달에 시간표까지 같이 보여줘야 해서(HomePage의
 // AttendanceTimeGuideModal), 문구가 아니라 코드/데이터 그대로 받아서 컴포넌트로 전달한다.
 export type ClockInErrorBody =
@@ -181,19 +197,15 @@ export class ClockInError extends Error {
 
 const clockIn = async (
   participantId: number,
-  debug?: DebugAttendanceOverride,
-  coordinates?: Coordinates | null,
+  debug: DebugAttendanceOverride | undefined,
+  reading: LocationReading,
 ): Promise<{ id: number; clockIn: string }> => {
-  const res = await fetch(`${BASE_URL}/public/attendance/clock-in`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      participantId,
-      ...coordinatesPayload(coordinates),
-      ...(debug?.date && { debugDate: debug.date }),
-      ...(debug?.time && { debugTime: debug.time }),
-    }),
+  const res = await postAttendance("/public/attendance/clock-in", {
+    participantId,
+    ...coordinatesPayload(reading.coordinates),
+    ...attemptDiagnosticsPayload(reading),
+    ...(debug?.date && { debugDate: debug.date }),
+    ...(debug?.time && { debugTime: debug.time }),
   });
   if (!res.ok) {
     const data = await res
@@ -219,19 +231,15 @@ export class ClockOutError extends Error {
 
 const clockOut = async (
   participantId: number,
-  debug?: DebugAttendanceOverride,
-  coordinates?: Coordinates | null,
+  debug: DebugAttendanceOverride | undefined,
+  reading: LocationReading,
 ): Promise<{ id: number; clockOut: string; totalMinutes: number }> => {
-  const res = await fetch(`${BASE_URL}/public/attendance/clock-out`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      participantId,
-      ...coordinatesPayload(coordinates),
-      ...(debug?.date && { debugDate: debug.date }),
-      ...(debug?.time && { debugTime: debug.time }),
-    }),
+  const res = await postAttendance("/public/attendance/clock-out", {
+    participantId,
+    ...coordinatesPayload(reading.coordinates),
+    ...attemptDiagnosticsPayload(reading),
+    ...(debug?.date && { debugDate: debug.date }),
+    ...(debug?.time && { debugTime: debug.time }),
   });
   if (!res.ok) {
     const data = await res
@@ -251,8 +259,8 @@ export interface ClockInVariables {
 // 서버 등록까지 전체 구간을 커버하게 한다 — 화면은 그동안 버튼만 잠그면 된다.
 export const clockInMutationOptions = mutationOptions({
   mutationFn: async ({ participantId, debug }: ClockInVariables) => {
-    const coordinates = await readCurrentCoordinates();
-    return clockIn(participantId, debug, coordinates);
+    const reading = await readCurrentLocation();
+    return clockIn(participantId, debug, reading);
   },
 });
 
@@ -284,8 +292,8 @@ export interface ClockOutVariables {
 
 export const clockOutMutationOptions = mutationOptions({
   mutationFn: async ({ participantId, debug }: ClockOutVariables) => {
-    const coordinates = await readCurrentCoordinates();
-    return clockOut(participantId, debug, coordinates);
+    const reading = await readCurrentLocation();
+    return clockOut(participantId, debug, reading);
   },
 });
 

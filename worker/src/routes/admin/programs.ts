@@ -7,6 +7,7 @@ import { ROLES, type Env } from "../../types";
 import {
   activityLogs,
   admins,
+  attendanceAttemptFailures,
   attendanceLogs,
   demandSites,
   demandSiteSchedules,
@@ -920,6 +921,9 @@ app.delete("/:id/participants/:participantId", async (c) => {
   await db.delete(activityLogs).where(eq(activityLogs.participantId, participantId));
   await db.delete(participantLeaves).where(eq(participantLeaves.participantId, participantId));
   await db.delete(attendanceLogs).where(eq(attendanceLogs.participantId, participantId));
+  await db
+    .delete(attendanceAttemptFailures)
+    .where(eq(attendanceAttemptFailures.participantId, participantId));
   await db
     .delete(participantAnnualLeave)
     .where(eq(participantAnnualLeave.participantId, participantId));
