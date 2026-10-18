@@ -169,13 +169,24 @@ const attemptDiagnosticsPayload = (reading: LocationReading) => ({
   platform: Capacitor.getPlatform(),
 });
 
-const postAttendance = (path: string, body: object): Promise<Response> =>
-  fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+// 모바일 데이터/와이파이가 꺼져 있으면 fetch가 브라우저 기본 문구("Failed to fetch" 등)로
+// 실패해서 참여자는 뭘 해야 할지 모른다 — 우리 문구로 바꿔서 던진다.
+export const OFFLINE_ATTENDANCE_MESSAGE =
+  "인터넷에 연결되어 있지 않아요. 모바일 데이터나 와이파이를 켜고 다시 눌러주세요.";
+
+const postAttendance = async (path: string, body: object): Promise<Response> => {
+  try {
+    return await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    if (!navigator.onLine) throw new Error(OFFLINE_ATTENDANCE_MESSAGE, { cause: error });
+    throw error;
+  }
+};
 
 // 💡 "너무 이르다" 실패는 안내 모달에 시간표까지 같이 보여줘야 해서(HomePage의
 // AttendanceTimeGuideModal), 문구가 아니라 코드/데이터 그대로 받아서 컴포넌트로 전달한다.
@@ -259,6 +270,8 @@ export interface ClockInVariables {
 // 서버 등록까지 전체 구간을 커버하게 한다 — 화면은 그동안 버튼만 잠그면 된다.
 export const clockInMutationOptions = mutationOptions({
   mutationFn: async ({ participantId, debug }: ClockInVariables) => {
+    // 오프라인이면 측위(최대 5초)를 기다리게 할 이유가 없다 — 어차피 서버에 못 보낸다
+    if (!navigator.onLine) throw new Error(OFFLINE_ATTENDANCE_MESSAGE);
     const reading = await readCurrentLocation();
     return clockIn(participantId, debug, reading);
   },
@@ -292,6 +305,8 @@ export interface ClockOutVariables {
 
 export const clockOutMutationOptions = mutationOptions({
   mutationFn: async ({ participantId, debug }: ClockOutVariables) => {
+    // 오프라인이면 측위(최대 5초)를 기다리게 할 이유가 없다 — 어차피 서버에 못 보낸다
+    if (!navigator.onLine) throw new Error(OFFLINE_ATTENDANCE_MESSAGE);
     const reading = await readCurrentLocation();
     return clockOut(participantId, debug, reading);
   },

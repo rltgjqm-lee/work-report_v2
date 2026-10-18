@@ -22,13 +22,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Escaped: Story = {
-  args: { escapedDemandSiteName: "행복복지관", reportFailing: false },
+  args: { escapedDemandSiteName: "행복복지관", reportFailing: false, offline: false },
 };
 
 export const ReportFailing: Story = {
-  args: { escapedDemandSiteName: null, reportFailing: true },
+  args: { escapedDemandSiteName: null, reportFailing: true, offline: false },
+};
+
+export const Offline: Story = {
+  args: { escapedDemandSiteName: null, reportFailing: true, offline: true },
 };
 
 export const Idle: Story = {
-  args: { escapedDemandSiteName: null, reportFailing: false },
+  args: { escapedDemandSiteName: null, reportFailing: false, offline: false },
 };

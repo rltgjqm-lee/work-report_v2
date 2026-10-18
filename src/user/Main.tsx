@@ -14,13 +14,13 @@ import {
 } from "../utils/timeFormat";
 // import { findIncompleteActivityLogDate } from "./utils/activityLogSync"; // 💡 일단 주석 처리
 import { getTodayAttendance } from "./api/attendanceApi";
+// import IncompleteDayModal from "./components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리
+
+import LocationTrackingStatusBanner from "./components/molecule/LocationTrackingStatusBanner";
 import AccidentCheckPage from "./pages/AccidentCheckPage";
 import ActivityDashboardPage from "./pages/ActivityDashboardPage";
 import ActivityReportPage from "./pages/ActivityReportPage";
 import ActivitySummaryPage from "./pages/ActivitySummaryPage";
-// import IncompleteDayModal from "./components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리
-
-import LocationTrackingStatusBanner from "./components/molecule/LocationTrackingStatusBanner";
 import AffiliationInputPage from "./pages/AffiliationInputPage";
 import HomePage from "./pages/HomePage";
 import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
@@ -496,6 +496,21 @@ const Main = () => {
     };
   }, [formData.participantId, isWorking]);
 
+  // 💡 모바일 데이터/와이파이가 꺼진 상태 — 근무 중 배너가 "전송 실패" 대신 데이터를
+  // 켜라고 정확히 안내하는 데 쓴다.
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+
+  useEffect(() => {
+    const handleNetworkOffline = () => setIsOffline(true);
+    const handleNetworkOnlineStatus = () => setIsOffline(false);
+    window.addEventListener("offline", handleNetworkOffline);
+    window.addEventListener("online", handleNetworkOnlineStatus);
+    return () => {
+      window.removeEventListener("offline", handleNetworkOffline);
+      window.removeEventListener("online", handleNetworkOnlineStatus);
+    };
+  }, []);
+
   // 💡 자동퇴근(worker/src/scheduled/autoClockOut.ts)은 조 근무 종료 시각 +10분
   // 유예(GRACE_MINUTES)가 지나야 처리되는, 시각이 정해진 일회성 이벤트다 — 폴링할
   // 필요 없이 "종료+10분(+크론 주기 1분 여유)" 딱 그 시점에 한 번만 다시 확인하면
@@ -529,6 +544,7 @@ const Main = () => {
           <LocationTrackingStatusBanner
             escapedDemandSiteName={locationReportState.escapedDemandSiteName}
             reportFailing={locationReportState.reportFailing}
+            offline={isOffline}
           />
         )}
 
