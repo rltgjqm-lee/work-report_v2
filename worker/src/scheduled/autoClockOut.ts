@@ -30,7 +30,7 @@ const toMinutes = (hhmm: string): number => {
   return hour * 60 + minute;
 };
 
-// 자정 기준 분 -> "HH:MM" (크론이 KST 09:00~18:00에만 돌아서 자정을 넘길 일이 없다)
+// 자정 기준 분 -> "HH:MM" (크론이 KST 09:00~18:15에만 돌아서 자정을 넘길 일이 없다)
 const toHHMM = (minutes: number): string =>
   `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 

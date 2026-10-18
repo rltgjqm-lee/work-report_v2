@@ -71,9 +71,18 @@ app.route("/api/attendance", attendance);
 app.route("/api/trainings", trainings);
 app.route("/api/ota-bundles", otaBundles);
 
+// KST 18:01~18:15 — 18:00에 끝나는 조의 자동퇴근 유예가 이 사이에 끝난다. 재난문자
+// 폴링(하루 호출 한도)·통신 끊김 감지 등은 근무시간(~18:00)까지만 돌면 되므로 이
+// 구간엔 자동퇴근만 돌린다. wrangler.jsonc의 crons와 같은 문자열이어야 한다.
+const AUTO_CLOCK_OUT_ONLY_CRON = "1-15 9 * * *";
+
 export default {
   fetch: app.fetch,
-  scheduled: async (_event: ScheduledEvent, env: Env["Bindings"], ctx: ExecutionContext) => {
+  scheduled: async (event: ScheduledEvent, env: Env["Bindings"], ctx: ExecutionContext) => {
+    if (event.cron === AUTO_CLOCK_OUT_ONLY_CRON) {
+      ctx.waitUntil(autoClockOut(env));
+      return;
+    }
     ctx.waitUntil(checkDisasterAlerts(env));
     ctx.waitUntil(checkSignalLoss(env));
     ctx.waitUntil(refreshLeaveStatuses(env));
