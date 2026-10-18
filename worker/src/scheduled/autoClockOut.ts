@@ -34,6 +34,24 @@ const toMinutes = (hhmm: string): number => {
 const toHHMM = (minutes: number): string =>
   `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 
+// 마지막 위치(participant_escape_meta)는 근무 건이 아니라 참여자당 하나라서, 다음 날
+// 출근해 보고한 위치로 갱신되면 전날 열려있던 근무까지 "지금 위치"로 판정하게 된다 —
+// 그러면 전날 이탈 의심/위치 확인 불가로 보류된 근무가 오늘 근무지에 있다는 이유로 정규
+// 종료시각 마감이 돼버린다. 그래서 지난 날짜 근무는 지금 기준 신선도가 아니라 "그날
+// 근무종료 무렵(종료 FRESHNESS_MINUTES 전 ~ 그날 자정 전)에 받은 위치"일 때만 쓴다.
+// lastLocationAt과 아래 경계값은 둘 다 KST 벽시계 시각에 Z를 붙인 형식이라 문자열로 비교한다.
+const isLocationUsableFor = (
+  log: { workDate: string; shiftEnd: string; lastLocationAt: string | null },
+  today: string,
+  staleBefore: string,
+): boolean => {
+  if (!log.lastLocationAt) return false;
+  if (log.workDate === today) return log.lastLocationAt >= staleBefore;
+
+  const windowStart = `${log.workDate}T${toHHMM(Math.max(0, toMinutes(log.shiftEnd) - FRESHNESS_MINUTES))}:00.000Z`;
+  return log.lastLocationAt.slice(0, 10) === log.workDate && log.lastLocationAt >= windowStart;
+};
+
 // 조가 배정된 근무만 대상으로 한다 — 조 미배정 참여자는 애초에 출근 시 근무시간
 // 검증 자체를 건너뛰므로(clock-in 참고) 기준으로 삼을 근무종료시각이 없다.
 export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
@@ -92,9 +110,9 @@ export const autoClockOut = async (env: Env["Bindings"]): Promise<void> => {
     if (!log.clockIn) continue;
 
     // 위치 신호가 오래됐거나(신호 끊김) 아예 없으면 "지금도 그 자리에 있었다"고 볼 근거가
-    // 없다 — 자동 마감을 보류하고 사유만 남긴다. 다음 분 재평가 때 새 위치가 들어와
-    // 신선해지면 그때 정상적으로 마감된다.
-    if (!log.lastLocationAt || log.lastLocationAt < staleBefore) {
+    // 없다 — 자동 마감을 보류하고 사유만 남긴다. 오늘 근무는 다음 분 재평가 때 새 위치가
+    // 들어와 신선해지면 그때 정상적으로 마감되고, 지난 날짜 근무는 관리자가 직접 처리한다.
+    if (!isLocationUsableFor(log, date, staleBefore)) {
       await db
         .update(attendanceLogs)
         .set({ clockOutReviewReason: "LOCATION_UNKNOWN" })
