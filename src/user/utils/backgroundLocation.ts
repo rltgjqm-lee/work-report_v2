@@ -4,7 +4,7 @@ import type {
 } from "@capacitor-community/background-geolocation";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
-import type { Coordinates } from "./geolocation";
+import { finiteOrNull, type Coordinates } from "./geolocation";
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
@@ -51,6 +51,8 @@ export const startBackgroundLocationWatch = ({
       accuracy: Number.isFinite(position.accuracy) ? position.accuracy : null,
       // OS가 알려주는 위치 조작 여부 — 이 값이 있는 건 네이티브 감시뿐이다
       simulated: position.simulated,
+      altitude: finiteOrNull(position.altitude),
+      locatedAtMs: finiteOrNull(position.time),
     });
   };
 

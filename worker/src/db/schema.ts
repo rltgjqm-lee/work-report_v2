@@ -823,6 +823,11 @@ export const escapeLogs = sqliteTable(
     // 낮다는 뜻이라, 나중에 참여자와 다툼이 생겼을 때 판단 근거로 남긴다.
     // 오차 때문에 판정을 보류한 좌표는 애초에 이탈 기록을 만들지 않는다(/public/location).
     accuracyM: real("accuracy_m"),
+    // 이탈을 판정한 좌표의 고도(m)와 휴대폰이 그 좌표를 측위한 시각(KST). GPS 좌표엔 보통
+    // 고도가 있고 와이파이·기지국 좌표엔 없어서, 허위 이탈이 났을 때 그 좌표가 GPS였는지,
+    // 예전에 잡힌 좌표가 다시 들어온 건지(locatedAt이 detectedAt보다 많이 이름) 가려본다.
+    altitudeM: real("altitude_m"),
+    locatedAt: text("located_at"),
     alertCount: integer("alert_count").notNull().default(1),
     status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
     // 관제 화면이 마지막으로 팝업을 띄운 시점의 alertCount. 이후 alertCount가 이 값보다

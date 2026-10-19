@@ -36,7 +36,7 @@ import {
   distanceToNearestArea,
   isInsideArea,
 } from "../../lib/geofence";
-import { getKstNow } from "../../lib/kst";
+import { getKstNow, toKstIso } from "../../lib/kst";
 import { syncLeaveStatus } from "../../lib/leaveStatus";
 import { resolveGroupShift, type GroupShift } from "../../lib/scheduling";
 import { sendWebPush } from "../../lib/webPush";
@@ -811,6 +811,8 @@ app.post("/location", async (c) => {
     lng?: number;
     accuracy?: number;
     simulated?: boolean;
+    altitude?: number;
+    locatedAtMs?: number;
   }>();
 
   if (!body.participantId || body.lat === undefined || body.lng === undefined) {
@@ -970,6 +972,8 @@ app.post("/location", async (c) => {
         lng: body.lng,
         distanceKm,
         accuracyM: body.accuracy ?? null,
+        altitudeM: body.altitude ?? null,
+        locatedAt: Number.isFinite(body.locatedAtMs) ? toKstIso(body.locatedAtMs!) : null,
         alertCount: newAlertCount,
       });
 

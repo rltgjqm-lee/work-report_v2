@@ -2,6 +2,10 @@
 // 재난문자 근무시간 매칭)에서 공통으로 쓴다.
 // overrideDate("YYYY-MM-DD")/overrideTime("HH:MM")은 로컬 개발 중 출퇴근 날짜·시간
 // 검증을 테스트하기 위한 것으로, 호출부(public.ts)에서 localhost 요청에서만 실제로 넘어온다.
+// epoch ms -> KST 벽시계 시각에 Z를 붙인 문자열(getKstNow().iso와 같은 형식)
+export const toKstIso = (epochMs: number): string =>
+  new Date(epochMs + 9 * 60 * 60 * 1000).toISOString();
+
 export const getKstNow = (
   overrideDate?: string,
   overrideTime?: string,

@@ -158,6 +158,12 @@ const coordinatesPayload = (coordinates?: Coordinates | null) =>
         ...(coordinates.simulated !== null && {
           simulated: coordinates.simulated,
         }),
+        ...(coordinates.altitude !== null && {
+          altitude: coordinates.altitude,
+        }),
+        ...(coordinates.locatedAtMs !== null && {
+          locatedAtMs: coordinates.locatedAtMs,
+        }),
       }
     : {};
 

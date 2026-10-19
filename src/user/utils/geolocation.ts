@@ -10,7 +10,16 @@ export type Coordinates = {
   // 좌표가 실제 GPS가 아니라 위치 조작 앱이 주입한 값인지. 브라우저 위치 API는 이 정보를
   // 주지 않아서 웹에서는 항상 null이고, 하이브리드 앱의 백그라운드 위치 감시에서만 채워진다.
   simulated: boolean | null;
+  // 해발 고도(m). GPS로 잡힌 좌표엔 보통 들어 있고, 와이파이·기지국으로 대신 잡힌
+  // 좌표엔 비어 있다 — 허위 이탈이 났을 때 그 좌표가 GPS였는지 가려보는 근거로 남긴다.
+  altitude: number | null;
+  // 휴대폰이 이 좌표를 실제로 측위한 시각(epoch ms). 받은 시각보다 많이 이르면 예전에
+  // 잡힌 좌표를 다시 준(또는 앱이 다시 보낸) 것이다.
+  locatedAtMs: number | null;
 };
+
+export const finiteOrNull = (value: number | null | undefined): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 // 고정밀 측위는 실내에서 오래 걸리거나 아예 못 잡는다. 출근 버튼을 누른 참여자를
 // 무한정 기다리게 할 수 없으니 여기서 끊는다(10초는 체감상 "출근 버튼이 멈춘 것처럼"
@@ -56,6 +65,8 @@ const readCurrentLocationFromBrowser = (): Promise<LocationReading> => {
             lng: position.coords.longitude,
             accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
             simulated: null,
+            altitude: finiteOrNull(position.coords.altitude),
+            locatedAtMs: finiteOrNull(position.timestamp),
           },
           failure: null,
           elapsedMs: Date.now() - startedAtMs,
@@ -155,6 +166,8 @@ const readCurrentLocationFromNative = (): Promise<LocationReading> => {
             lng: position.longitude,
             accuracy: Number.isFinite(position.accuracy) ? position.accuracy : null,
             simulated: position.simulated,
+            altitude: finiteOrNull(position.altitude),
+            locatedAtMs: finiteOrNull(position.time),
           },
           failure: null,
           elapsedMs: Date.now() - startedAtMs,
