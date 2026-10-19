@@ -41,6 +41,8 @@ export type Env = {
     RESEND_API_KEY: string;
     RESEND_FROM_EMAIL: string;
     ADMIN_APP_URL: string;
+    // 이동 경로를 시험 기록할 참여자 id 콤마구분 목록(wrangler.jsonc vars, location_traces 참고)
+    LOCATION_TRACE_PARTICIPANT_IDS?: string;
   };
   Variables: {
     admin: AdminSession;

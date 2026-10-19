@@ -13,6 +13,7 @@ const ContactPage = lazy(() => import("./pages/ContactPage"));
 const DisasterMessagesPage = lazy(() => import("./pages/DisasterMessagesTestPage"));
 const DisasterPushLogsPage = lazy(() => import("./pages/DisasterPushLogsPage"));
 const EscapesPage = lazy(() => import("./pages/EscapesPage"));
+const LocationTracesPage = lazy(() => import("./pages/LocationTracesPage"));
 const LoginHistoryPage = lazy(() => import("./pages/LoginHistoryPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const OrganizationsPage = lazy(() => import("./pages/organizations/OrganizationsPage"));
@@ -56,6 +57,7 @@ const AdminApp = () => (
                 <Route path="disaster-push-logs" element={<DisasterPushLogsPage />} />
                 <Route path="admins" element={<AdminsPage />} />
                 <Route path="login-history" element={<LoginHistoryPage />} />
+                <Route path="location-traces" element={<LocationTracesPage />} />
                 <Route path="contact" element={<ContactPage />} />
               </Route>
             </Route>

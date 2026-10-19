@@ -54,6 +54,13 @@ const LOGIN_HISTORY_NAV_ITEM = {
   badge: "11",
 };
 
+// SUPER_ADMIN에게만 노출 — 시험 대상 참여자의 이동 경로(location_traces)
+const LOCATION_TRACES_NAV_ITEM = {
+  to: "/admin/location-traces",
+  label: "이동 경로(시험)",
+  badge: "12",
+};
+
 const getTopbarTitle = (pathname: string) => {
   if (pathname === "/admin/program") return "사업단 관리 > 사업단 상세";
   if (pathname.startsWith("/admin/programs")) return "사업단 관리";
@@ -66,6 +73,7 @@ const getTopbarTitle = (pathname: string) => {
   if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 테스트";
   if (pathname.startsWith("/admin/admins")) return "관리자 계정";
   if (pathname.startsWith("/admin/login-history")) return "로그인 이력";
+  if (pathname.startsWith("/admin/location-traces")) return "이동 경로(시험)";
   if (pathname.startsWith("/admin/contact")) return "문의하기";
   return "관리자 콘솔";
 };
@@ -94,7 +102,9 @@ const AdminLayout = () => {
       : []),
     CONTACT_NAV_ITEM,
     ADMIN_MANUAL_NAV_ITEM,
-    ...(admin?.role === ROLES.SUPER_ADMIN ? [LOGIN_HISTORY_NAV_ITEM] : []),
+    ...(admin?.role === ROLES.SUPER_ADMIN
+      ? [LOGIN_HISTORY_NAV_ITEM, LOCATION_TRACES_NAV_ITEM]
+      : []),
   ];
 
   const handleLogoutButtonClick = async () => {

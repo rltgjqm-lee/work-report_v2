@@ -15,6 +15,7 @@ import {
   demandSiteSchedules,
   escapeLogs,
   groupMonthlySchedule,
+  locationTraces,
   organizations,
   participantEscapeMeta,
   participantGroupOverrides,
@@ -857,6 +858,27 @@ app.post("/location", async (c) => {
     .where(eq(participantEscapeMeta.participantId, participant.id));
   const meta = metaRows[0];
 
+  // 이동 경로 시험 기록 — 허용 목록(LOCATION_TRACE_PARTICIPANT_IDS)에 있는 참여자만 남긴다
+  const isTraceTarget = (c.env.LOCATION_TRACE_PARTICIPANT_IDS ?? "")
+    .split(",")
+    .map((participantId) => Number(participantId.trim()))
+    .includes(participant.id);
+  const recordTrace = async (judgement: "INSIDE" | "OUTSIDE" | "UNCERTAIN" | "NO_AREA") => {
+    if (!isTraceTarget) return;
+    await db.insert(locationTraces).values({
+      participantId: participant.id,
+      workDate: date,
+      receivedAt: iso,
+      lat: body.lat!,
+      lng: body.lng!,
+      accuracyM: body.accuracy ?? null,
+      altitudeM: body.altitude ?? null,
+      locatedAt: Number.isFinite(body.locatedAtMs) ? toKstIso(body.locatedAtMs!) : null,
+      simulated: body.simulated ?? false,
+      judgement,
+    });
+  };
+
   const saveMeta = (fields: { alertCount?: number; outsideStart?: string | null }) =>
     meta
       ? db
@@ -882,6 +904,7 @@ app.post("/location", async (c) => {
 
   if (!participant.demandSiteId) {
     await saveMeta({});
+    await recordTrace("NO_AREA");
     return c.json({ ok: true, escaped: false, message: "수요처 미배정" });
   }
 
@@ -892,6 +915,7 @@ app.post("/location", async (c) => {
   const demandSite = demandSiteRows[0];
   if (!demandSite) {
     await saveMeta({});
+    await recordTrace("NO_AREA");
     return c.json({
       ok: true,
       escaped: false,
@@ -909,6 +933,7 @@ app.post("/location", async (c) => {
 
   if (areas.length === 0) {
     await saveMeta({});
+    await recordTrace("NO_AREA");
     return c.json({
       ok: true,
       escaped: false,
@@ -946,6 +971,7 @@ app.post("/location", async (c) => {
       alertCount: currentAlertCount,
       outsideStart: meta?.outsideStart ?? null,
     });
+    await recordTrace("UNCERTAIN");
 
     return c.json({
       ok: true,
@@ -1038,6 +1064,7 @@ app.post("/location", async (c) => {
       alertCount: newAlertCount,
       outsideStart: meta?.outsideStart ?? iso,
     });
+    await recordTrace("OUTSIDE");
 
     return c.json({
       ok: true,
@@ -1050,6 +1077,7 @@ app.post("/location", async (c) => {
 
   // 반경 안으로 복귀 — alertCount는 유지하고(관리자가 RESOLVED해야 초기화) 진행 중이던 이탈만 종료
   await saveMeta({ alertCount: currentAlertCount, outsideStart: null });
+  await recordTrace("INSIDE");
 
   return c.json({
     ok: true,

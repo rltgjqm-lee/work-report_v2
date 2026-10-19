@@ -981,3 +981,32 @@ export const attendanceAttemptFailures = sqliteTable(
     ),
   ],
 );
+
+// 근무 중 위치 보고(/public/location) 1건 = 1행. 평소엔 마지막 좌표(participant_escape_meta)와
+// 이탈 시작 좌표(escape_logs)만 남아서 하루 이동 경로를 볼 수 없다 — 그걸 보려고 시험 삼아
+// 남기는 기록이다. 개인 위치 이력이라 LOCATION_TRACE_PARTICIPANT_IDS(wrangler.jsonc)에 넣은
+// 참여자(본인 동의를 받은 사람)만 남기고, 조회는 SUPER_ADMIN만 한다.
+export const locationTraces = sqliteTable(
+  "location_traces",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    // KST 기준 근무일/서버 수신 시각 — attendance_logs.workDate와 같은 기준
+    workDate: text("work_date").notNull(),
+    receivedAt: text("received_at").notNull(),
+    lat: real("lat").notNull(),
+    lng: real("lng").notNull(),
+    accuracyM: real("accuracy_m"),
+    altitudeM: real("altitude_m"),
+    // 휴대폰이 그 좌표를 측위한 시각(KST) — receivedAt과 많이 다르면 예전 좌표가 다시 온 것
+    locatedAt: text("located_at"),
+    simulated: integer("simulated", { mode: "boolean" }).notNull().default(false),
+    // 그 좌표로 서버가 내린 판정. INSIDE/OUTSIDE/UNCERTAIN(오차로 보류)/NO_AREA(수요처·관제구역 없음)
+    judgement: text("judgement").$type<"INSIDE" | "OUTSIDE" | "UNCERTAIN" | "NO_AREA">().notNull(),
+  },
+  (table) => [
+    index("idx_location_traces_participant_date").on(table.participantId, table.workDate),
+  ],
+);

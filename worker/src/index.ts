@@ -10,6 +10,7 @@ import disasterPushLogs from "./routes/admin/disasterPushLogs";
 import escapes from "./routes/admin/escapes";
 import excel from "./routes/admin/excel";
 import groups from "./routes/admin/groups";
+import locationTraces from "./routes/admin/locationTraces";
 import meRoutes from "./routes/admin/me";
 import organizations from "./routes/admin/organizations";
 import otaBundles from "./routes/admin/otaBundles";
@@ -70,6 +71,7 @@ app.route("/api/sos", sos);
 app.route("/api/attendance", attendance);
 app.route("/api/trainings", trainings);
 app.route("/api/ota-bundles", otaBundles);
+app.route("/api/location-traces", locationTraces);
 
 // KST 18:01~18:15 — 18:00에 끝나는 조의 자동퇴근 유예가 이 사이에 끝난다. 재난문자
 // 폴링(하루 호출 한도)·통신 끊김 감지 등은 근무시간(~18:00)까지만 돌면 되므로 이
