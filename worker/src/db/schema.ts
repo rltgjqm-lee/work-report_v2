@@ -985,7 +985,7 @@ export const attendanceAttemptFailures = sqliteTable(
 // 근무 중 위치 보고(/public/location) 1건 = 1행. 평소엔 마지막 좌표(participant_escape_meta)와
 // 이탈 시작 좌표(escape_logs)만 남아서 하루 이동 경로를 볼 수 없다 — 그걸 보려고 시험 삼아
 // 남기는 기록이다. 개인 위치 이력이라 LOCATION_TRACE_PARTICIPANT_IDS(wrangler.jsonc)에 넣은
-// 참여자(본인 동의를 받은 사람)만 남기고, 조회는 SUPER_ADMIN만 한다.
+// 테스트 계정만 남기고(실제 참여자 동선을 쌓으면 감시 용도로 변질될 수 있다), 조회는 SUPER_ADMIN만 한다.
 export const locationTraces = sqliteTable(
   "location_traces",
   {

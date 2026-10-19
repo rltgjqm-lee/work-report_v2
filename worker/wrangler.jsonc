@@ -44,7 +44,8 @@
     "RESEND_FROM_EMAIL": "no-reply@worksafe.co.kr",
     "ADMIN_APP_URL": "https://worksafe.co.kr",
     // 이동 경로(location_traces)를 시험 기록할 참여자 id 콤마구분 목록. 개인 위치 이력이라
-    // 본인 동의를 받은 참여자만 넣고, 시험이 끝나면 비운다. 32 = 양상수(대덕재난안전지킴이)
-    "LOCATION_TRACE_PARTICIPANT_IDS": "32",
+    // 실제 참여자는 넣지 않고 직원이 쓰는 테스트 계정만 넣는다. 시험이 끝나면 비운다.
+    // 19 = 테스트(구글 플레이스토어 테스트 사업단)
+    "LOCATION_TRACE_PARTICIPANT_IDS": "19",
   },
 }
