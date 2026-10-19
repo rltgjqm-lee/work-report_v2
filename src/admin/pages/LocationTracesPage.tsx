@@ -106,13 +106,15 @@ const LocationTracesPage = () => {
           fillOpacity: 0.05,
         }).addTo(layer);
       }
-      L.circleMarker([point.lat, point.lng], {
-        radius: 7,
-        color: "#fff",
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 1,
-      })
+      // 점 안에 순번을 적어 지도만 보고도 이동 순서를 알 수 있게 한다. 점이 겹치면
+      // 나중 점이 위에 오도록 순번만큼 zIndexOffset을 준다.
+      const icon = L.divIcon({
+        className: "",
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+        html: `<div style="width:22px;height:22px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.4);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;">${index + 1}</div>`,
+      });
+      L.marker([point.lat, point.lng], { icon, zIndexOffset: index })
         .bindTooltip(
           `#${index + 1} ${isoToKstTimeString(point.receivedAt)} · ${JUDGEMENT_LABELS[point.judgement]}` +
             (point.accuracyM !== null ? ` · 오차 ${Math.round(point.accuracyM)}m` : ""),
