@@ -121,6 +121,11 @@ const EscapesPage = () => {
   const escapePointLayerRef = useRef<L.LayerGroup | null>(null);
   // 이탈 목록 행을 누르면 그 지점으로 이동해 팝업을 열기 위해 이탈 id별 마커를 들고 있는다
   const escapeMarkersRef = useRef(new Map<number, L.Marker>());
+  // 관제구역 도형과 그 수요처 id — 마커를 누르면 그 사람 수요처의 구역만 강조하는 데 쓴다
+  const geofenceShapesRef = useRef<{ demandSiteId: number; shape: L.Path }[]>([]);
+  // 여러 조·수요처 구역이 겹쳐 그려지면 어느 마커가 어느 구역 기준으로 판정되는지 알 수
+  // 없어서, 근무자·이탈 지점 마커의 팝업이 열려 있는 동안 그 수요처 구역만 진하게 보여준다.
+  const [highlightedDemandSiteId, setHighlightedDemandSiteId] = useState<number | null>(null);
 
   const programId = preselectedProgramId ?? Number(selectedProgramId);
 
@@ -336,6 +341,7 @@ const EscapesPage = () => {
     if (!map || !layer) return;
 
     layer.clearLayers();
+    geofenceShapesRef.current = [];
 
     const shapeStyle = {
       color: "#3182f6",
@@ -345,15 +351,19 @@ const EscapesPage = () => {
     };
     const points: [number, number][] = [];
 
-    visibleGeofences.forEach(({ demandSiteName, location, baseArea }) => {
+    visibleGeofences.forEach(({ demandSiteId, demandSiteName, location, baseArea }) => {
+      const register = (shape: L.Path) => geofenceShapesRef.current.push({ demandSiteId, shape });
+
       if (baseArea) {
         points.push([baseArea.lat, baseArea.lng]);
-        L.circle([baseArea.lat, baseArea.lng], {
-          ...shapeStyle,
-          radius: baseArea.radius,
-        })
-          .bindTooltip(`${demandSiteName} 기본 관제구역`)
-          .addTo(layer);
+        register(
+          L.circle([baseArea.lat, baseArea.lng], {
+            ...shapeStyle,
+            radius: baseArea.radius,
+          })
+            .bindTooltip(`${demandSiteName} 기본 관제구역`)
+            .addTo(layer),
+        );
 
         return;
       }
@@ -368,20 +378,24 @@ const EscapesPage = () => {
         location.radius !== null
       ) {
         points.push([location.baseLat, location.baseLng]);
-        L.circle([location.baseLat, location.baseLng], {
-          ...shapeStyle,
-          radius: location.radius,
-        })
-          .bindTooltip(tooltipLabel)
-          .addTo(layer);
+        register(
+          L.circle([location.baseLat, location.baseLng], {
+            ...shapeStyle,
+            radius: location.radius,
+          })
+            .bindTooltip(tooltipLabel)
+            .addTo(layer),
+        );
       } else if (location.shapeType === "POLYGON" && location.polygon) {
         location.polygon.forEach((point) => points.push([point.lat, point.lng]));
-        L.polygon(
-          location.polygon.map((point) => [point.lat, point.lng] as [number, number]),
-          shapeStyle,
-        )
-          .bindTooltip(tooltipLabel)
-          .addTo(layer);
+        register(
+          L.polygon(
+            location.polygon.map((point) => [point.lat, point.lng] as [number, number]),
+            shapeStyle,
+          )
+            .bindTooltip(tooltipLabel)
+            .addTo(layer),
+        );
       }
     });
 
@@ -395,6 +409,21 @@ const EscapesPage = () => {
     // 때마다 관제구역을 다시 그릴 필요는 없어서 의존성에서 뺀다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleGeofences, programId]);
+
+  // 강조할 수요처가 정해지면 그 구역은 실선·진하게, 나머지는 흐리게 — 다시 그리지 않고
+  // 스타일만 바꿔서 지도 위치가 움직이지 않게 한다.
+  useEffect(() => {
+    geofenceShapesRef.current.forEach(({ demandSiteId, shape }) => {
+      if (highlightedDemandSiteId === null) {
+        shape.setStyle({ weight: 2, dashArray: "6 4", opacity: 1, fillOpacity: 0.06 });
+      } else if (demandSiteId === highlightedDemandSiteId) {
+        shape.setStyle({ weight: 3, dashArray: "", opacity: 1, fillOpacity: 0.16 });
+        shape.bringToFront();
+      } else {
+        shape.setStyle({ weight: 1, dashArray: "6 4", opacity: 0.25, fillOpacity: 0.02 });
+      }
+    });
+  }, [highlightedDemandSiteId, visibleGeofences, programId]);
 
   // 근무자 목록이 바뀔 때마다 마커 다시 그리기
   useEffect(() => {
@@ -434,6 +463,8 @@ const EscapesPage = () => {
           `수요처: ${worker.demandSiteName}<br/>` +
           `마지막 위치: ${worker.lastLocationAt ? isoToKstTimeString(worker.lastLocationAt) : "-"}`,
       );
+      marker.on("popupopen", () => setHighlightedDemandSiteId(worker.demandSiteId));
+      marker.on("popupclose", () => setHighlightedDemandSiteId(null));
       marker.addTo(layer);
     });
 
@@ -482,6 +513,8 @@ const EscapesPage = () => {
             `측위: ${describeLocationSource(escape)}` +
             (escape.accuracyM !== null ? ` (오차 ±${Math.round(escape.accuracyM)}m)` : ""),
         )
+        .on("popupopen", () => setHighlightedDemandSiteId(escape.demandSiteId))
+        .on("popupclose", () => setHighlightedDemandSiteId(null))
         .addTo(layer);
       escapeMarkersRef.current.set(escape.id, marker);
     });
