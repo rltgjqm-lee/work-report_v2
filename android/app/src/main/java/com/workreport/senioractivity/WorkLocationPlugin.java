@@ -1,5 +1,10 @@
 package com.workreport.senioractivity;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+
+import androidx.core.content.ContextCompat;
+
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -42,10 +47,18 @@ public class WorkLocationPlugin extends Plugin {
 
     @PluginMethod
     public void start(PluginCall call) {
-        Long participantId = call.getLong("participantId");
+        // JS 숫자는 범위에 따라 Integer로 들어와서 getLong이면 null이 된다 — 참여자 id는 int 범위다
+        Integer participantId = call.getInt("participantId");
         String apiBaseUrl = call.getString("apiBaseUrl");
         if (participantId == null || apiBaseUrl == null) {
             call.reject("participantId와 apiBaseUrl이 필요합니다.");
+            return;
+        }
+        // 위치 권한 없이 위치 유형 포그라운드 서비스를 시작하면 OS가 예외를 던져 앱이 죽는다 —
+        // 권한이 아직 없으면(첫 실행에 권한 팝업 응답 전 등) 거부해서 JS가 기존 방식으로 대신
+        // 보고하게 한다(기존 위치 플러그인은 권한을 직접 요청한다). 다음에 앱을 열면 다시 시도된다.
+        if (!hasLocationPermission()) {
+            call.reject("위치 권한이 없습니다.");
             return;
         }
         try {
@@ -56,6 +69,13 @@ public class WorkLocationPlugin extends Plugin {
             // 이 reject를 보고 기존 방식(위치 플러그인 + JS 타이머)으로 대신 보고한다.
             call.reject("위치 서비스를 시작하지 못했습니다.", exception);
         }
+    }
+
+    private boolean hasLocationPermission() {
+        return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED;
     }
 
     @PluginMethod

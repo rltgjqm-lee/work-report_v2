@@ -122,15 +122,22 @@ public class WorkLocationService extends Service {
             return START_NOT_STICKY;
         }
 
-        // startForegroundService로 시작했으면 몇 초 안에 반드시 startForeground를 불러야 한다
-        ServiceCompat.startForeground(
-                this,
-                NOTIFICATION_ID,
-                buildNotification(),
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                        ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-                        : 0
-        );
+        // startForegroundService로 시작했으면 몇 초 안에 반드시 startForeground를 불러야 한다.
+        // 위치 권한이 그새 회수됐거나 OS가 시작을 막으면 예외가 나는데, 잡지 않으면 앱이 죽는다.
+        try {
+            ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID,
+                    buildNotification(),
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                            ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                            : 0
+            );
+        } catch (Exception exception) {
+            notifyFailure();
+            stopTracking();
+            return START_NOT_STICKY;
+        }
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         boolean sameParticipant = running && prefs.getLong(PREF_PARTICIPANT_ID, 0) == participantId;
