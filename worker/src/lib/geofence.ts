@@ -30,8 +30,8 @@ export const isInsideArea = (lat: number, lng: number, area: GeofenceArea): bool
   return isPointInPolygon({ lat, lng }, polygon);
 };
 
-// 가장 가까운 구역까지의 거리(km) — 원형은 중심, 다각형은 중심점 기준의 대략적인 값.
-// 이탈 로그의 distanceKm과 출퇴근 기록의 distanceM이 같은 기준을 쓰도록 여기서만 계산한다.
+// 가장 가까운 구역 중심까지의 거리(km) — 원형은 중심, 다각형은 꼭짓점 평균 기준의 대략적인 값.
+// 원형 구역 안의 출퇴근 위치(judgePosition)에만 쓴다 — 이탈 거리는 distanceOutsideAreasM(경계 밖 거리)이다.
 export const distanceToNearestArea = (lat: number, lng: number, areas: GeofenceArea[]): number => {
   const distances = areas.map((area) => {
     if (area.shapeType === "RADIUS") {

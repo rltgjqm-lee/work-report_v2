@@ -70,6 +70,10 @@ const getMarkerColor = (worker: LiveWorker): string => {
 // 처리 안 된 채 남아 있으면 오늘 이탈처럼 보이므로, 감지일이 오늘이 아니면 따로 표시한다.
 const isFromPreviousWorkDay = (detectedAt: string) => detectedAt.slice(0, 10) !== getLocalToday();
 
+// 이탈 거리 = 관제구역 경계 밖으로 나간 거리. 대부분 수백 m라 1km 미만은 m로 보여준다.
+const formatEscapeDistance = (distanceKm: number) =>
+  distanceKm >= 1 ? `${distanceKm.toFixed(1)}km` : `${Math.round(distanceKm * 1000)}m`;
+
 /**
  * 관리자 페이지 > 안전 관제 페이지입니다.
  *
@@ -669,7 +673,7 @@ const EscapesPage = () => {
                           참여자명
                         </th>
                         <th className="w-[90px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-3 py-[11px] border-b border-admin-border-subtle">
-                          이탈거리
+                          경계 밖
                         </th>
                         <th className="w-[70px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-3 py-[11px] border-b border-admin-border-subtle">
                           단계
@@ -701,7 +705,7 @@ const EscapesPage = () => {
                             {row.participantName}
                           </td>
                           <td className="px-3 py-[13px] text-[13px] border-b border-border-faint">
-                            {row.escape.distanceKm.toFixed(2)}km
+                            {formatEscapeDistance(row.escape.distanceKm)}
                           </td>
                           <td className="px-3 py-[13px] text-[13px] border-b border-border-faint font-semibold">
                             {row.escape.alertCount >= 3
@@ -772,7 +776,8 @@ const EscapesPage = () => {
                 <strong>이탈 횟수:</strong> {currentAlert.row.escape.alertCount}회
               </p>
               <p>
-                <strong>이탈 거리:</strong> {currentAlert.row.escape.distanceKm.toFixed(2)}km
+                <strong>이탈 거리(경계 밖):</strong>{" "}
+                {formatEscapeDistance(currentAlert.row.escape.distanceKm)}
               </p>
             </div>
             <div className="flex gap-2.5">
@@ -813,7 +818,8 @@ const EscapesPage = () => {
                 <strong>이탈 횟수:</strong> {currentAlert.row.escape.alertCount}회
               </p>
               <p>
-                <strong>이탈 거리:</strong> {currentAlert.row.escape.distanceKm.toFixed(2)}km
+                <strong>이탈 거리(경계 밖):</strong>{" "}
+                {formatEscapeDistance(currentAlert.row.escape.distanceKm)}
               </p>
             </div>
             <button

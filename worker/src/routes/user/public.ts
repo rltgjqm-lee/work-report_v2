@@ -34,7 +34,6 @@ import {
   buildDemandSiteAreas,
   checkPositionAgainstDemandSite,
   distanceOutsideAreasM,
-  distanceToNearestArea,
   isInsideArea,
 } from "../../lib/geofence";
 import { getKstNow, toKstIso } from "../../lib/kst";
@@ -944,7 +943,9 @@ app.post("/location", async (c) => {
   }
 
   const isInside = areas.some((area) => isInsideArea(body.lat!, body.lng!, area));
-  const distanceKm = distanceToNearestArea(body.lat!, body.lng!, areas);
+  // 이탈 거리는 관제구역 경계 밖으로 나간 거리다(구역 안이면 0). 예전엔 구역 중심까지의
+  // 거리였는데, 길쭉한 다각형은 꼭짓점 평균인 "중심"이 실제 장소가 아니라 의미가 없었다.
+  const distanceKm = distanceOutsideAreasM(body.lat!, body.lng!, areas) / 1000;
   const currentAlertCount = meta?.alertCount ?? 0;
 
   // GPS 오차보다 덜 벗어난 좌표로는 "구역 밖에 있다"고 단정할 수 없다. 실내 측위는

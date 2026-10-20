@@ -819,6 +819,8 @@ export const escapeLogs = sqliteTable(
       .default(sql`(current_timestamp)`),
     lat: real("lat").notNull(),
     lng: real("lng").notNull(),
+    // 관제구역 경계 밖으로 나간 거리(km). 2026-10-20 이전 기록은 구역 중심까지의 거리였다가
+    // 경계 밖 거리로 다시 계산해 바꿨다.
     distanceKm: real("distance_km").notNull(),
     // 이탈을 판정한 좌표의 GPS 오차 반경(m). 이 값이 크면 이탈 기록 자체의 신뢰도가
     // 낮다는 뜻이라, 나중에 참여자와 다툼이 생겼을 때 판단 근거로 남긴다.
