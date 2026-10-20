@@ -27,6 +27,7 @@ import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignaturePage from "./pages/SignaturePage";
 import { syncPendingActivityLogs } from "./utils/activityLogSync";
+import { flushClientEvents } from "./utils/clientEventLog";
 import { readCurrentCoordinates } from "./utils/geolocation";
 import {
   IDLE_LOCATION_REPORT_STATE,
@@ -358,8 +359,8 @@ const Main = () => {
       const database = target.result;
       setDb(database); // 연결된 DB 객체를 상태에 보관
 
-      // 지난번에 오프라인으로 남겨둔 기록 재시도
-      syncPendingActivityLogs(database);
+      // 지난번에 오프라인으로 남겨둔 기록 재시도는 참여자가 정해진 뒤 아래 effect가
+      // 실패 기록 전송과 함께 한다(여기서도 부르면 같은 실패가 두 번 기록된다).
 
       // 💡 미완료(=synced:false)로 남은 지난 날짜 기록 안내 모달 — 일단 주석 처리.
       // syncPendingActivityLogs(database).then(() => {
@@ -378,13 +379,19 @@ const Main = () => {
     };
   }, []);
 
-  // 💡 오프라인 상태에서 저장해둔 기록을, 다시 온라인이 되는 순간 서버로 동기화
+  // 💡 오프라인 상태에서 저장해둔 업무일지를 앱을 열 때와 다시 온라인이 되는 순간 서버로
+  // 동기화하고, 폰에 쌓인 앱 실패 기록(출퇴근 전송 실패, 업무일지 미전송)도 이어서 서버로 보낸다. 일지 재전송을 먼저 끝낸 뒤 보내서, 방금 해결된 실패까지 같이 보고되게 한다.
+  // 보낼 게 없으면 flushClientEvents가 요청 자체를 하지 않는다.
   useEffect(() => {
-    if (!db) return;
-    const handleNetworkOnline = () => syncPendingActivityLogs(db);
-    window.addEventListener("online", handleNetworkOnline);
-    return () => window.removeEventListener("online", handleNetworkOnline);
-  }, [db]);
+    if (!db || !formData.participantId) return;
+    const participantId = formData.participantId;
+    const syncThenFlush = () =>
+      syncPendingActivityLogs(db).then(() => flushClientEvents(participantId));
+
+    syncThenFlush();
+    window.addEventListener("online", syncThenFlush);
+    return () => window.removeEventListener("online", syncThenFlush);
+  }, [db, formData.participantId]);
 
   // 💡 formData가 바뀔 때마다가 아니라 단계(view)가 넘어갈 때만 draft를 저장한다 —
   // 각 페이지의 "다음/저장" 시점에 formData가 그 단계에서 확정된 상태이므로, 입력

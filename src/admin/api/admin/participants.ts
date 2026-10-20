@@ -24,6 +24,7 @@ export const participantKeys = {
   annualLeave: (id: number, year: string) =>
     [...participantKeys.detail(id), "annual-leave", year] as const,
   groupOverrides: (id: number) => [...participantKeys.detail(id), "group-overrides"] as const,
+  appErrors: (id: number) => [...participantKeys.detail(id), "app-errors"] as const,
 };
 
 // 참여자 관리 화면(전체 사업단 통합 조회)용 — 사업단마다 상세를 반복 호출하지 않도록
@@ -58,6 +59,33 @@ export interface ParticipantLeaveHistory {
   leaves: ParticipantLeave[];
   annualLeave: AnnualLeave;
 }
+
+// 최근 30일 앱 오류 기록 — reachedServer=false는 폰에서 서버에 못 닿아 나중에 보고된 실패
+// (client_events), true는 서버에 닿았지만 거부된 출퇴근 실패(attendance_attempt_failures)
+export type ParticipantAppError = {
+  key: string;
+  reachedServer: boolean;
+  kind: "CLOCK_IN" | "CLOCK_OUT" | "ACTIVITY_LOG_SYNC";
+  workDate: string;
+  occurredAt: string;
+  occurrences: number;
+  message: string;
+  httpStatus: number | null;
+  online: boolean | null;
+  connectionType: string | null;
+  platform: string | null;
+  appVersion: string | null;
+  bundleVersion: string | null;
+};
+
+const listParticipantAppErrors = (id: number) =>
+  request<ParticipantAppError[]>(`/api/participants/${id}/app-errors`);
+
+export const participantAppErrorsQueryOptions = (id: number) =>
+  queryOptions({
+    queryKey: participantKeys.appErrors(id),
+    queryFn: () => listParticipantAppErrors(id),
+  });
 
 const getParticipantLeaveHistory = (id: number, year: string) =>
   request<ParticipantLeaveHistory>(`/api/participants/${id}/leaves?year=${year}`);

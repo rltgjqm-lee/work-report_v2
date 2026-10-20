@@ -20,11 +20,13 @@ import programs from "./routes/admin/programs";
 import safetyAlerts from "./routes/admin/safetyAlerts";
 import sos from "./routes/admin/sos";
 import trainings from "./routes/admin/trainings";
+import clientEventsPublicRoutes from "./routes/user/clientEvents";
 import otaPublicRoutes from "./routes/user/ota";
 import publicRoutes from "./routes/user/public";
 import { autoClockOut } from "./scheduled/autoClockOut";
 import { checkDisasterAlerts } from "./scheduled/checkDisasterAlerts";
 import { checkSignalLoss } from "./scheduled/checkSignalLoss";
+import { deleteOldClientEvents } from "./scheduled/deleteOldClientEvents";
 import { refreshLeaveStatuses } from "./scheduled/refreshLeaveStatuses";
 import type { Env } from "./types";
 
@@ -51,6 +53,7 @@ app.use(
 
 app.route("/public", publicRoutes);
 app.route("/public/ota", otaPublicRoutes);
+app.route("/public/client-events", clientEventsPublicRoutes);
 app.route("/auth", authRoutes);
 
 app.use("/api/*", requireAdmin);
@@ -77,6 +80,8 @@ app.route("/api/location-traces", locationTraces);
 // 폴링(하루 호출 한도)·통신 끊김 감지 등은 근무시간(~18:00)까지만 돌면 되므로 이
 // 구간엔 자동퇴근만 돌린다. wrangler.jsonc의 crons와 같은 문자열이어야 한다.
 const AUTO_CLOCK_OUT_ONLY_CRON = "1-15 9 * * *";
+// KST 18:00 정각 1회 — 하루 한 번이면 되는 정리 작업용(wrangler.jsonc의 crons와 같은 문자열)
+const DAILY_CRON = "0 9 * * *";
 
 export default {
   fetch: app.fetch,
@@ -89,5 +94,6 @@ export default {
     ctx.waitUntil(checkSignalLoss(env));
     ctx.waitUntil(refreshLeaveStatuses(env));
     ctx.waitUntil(autoClockOut(env));
+    if (event.cron === DAILY_CRON) ctx.waitUntil(deleteOldClientEvents(env));
   },
 };

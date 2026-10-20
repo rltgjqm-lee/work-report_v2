@@ -1,7 +1,8 @@
 import { INDEXED_DB_CONFIG } from "../../constants/storage";
 import type { ActivityLogItem } from "../../types/form";
 
-import { createActivityLog, updateActivityLog } from "../api/activityLogApi";
+import { ActivityLogApiError, createActivityLog, updateActivityLog } from "../api/activityLogApi";
+import { recordClientEvent } from "./clientEventLog";
 
 const toPayload = (item: ActivityLogItem) => ({
   participantId: item.participantId!,
@@ -26,20 +27,23 @@ const updateRecord = (db: IDBDatabase, item: ActivityLogItem) =>
     req.onerror = () => reject(req.error);
   });
 
-const runSyncOnce = async (db: IDBDatabase): Promise<void> => {
+// 💡 서버가 participantId/actDate/start/end를 필수로 요구한다 — 아직 출근·퇴근을
+// 다 안 마친 진행 중인 하루치 기록은 보내봐야 매번 검증 실패만 반복되니 건너뛴다.
+// 서명 완료 시점엔 이 값들이 다 채워진 뒤에 syncNow=true로 다시 호출되니 그때 보내진다.
+const readPendingItems = async (db: IDBDatabase): Promise<ActivityLogItem[]> => {
   const items: ActivityLogItem[] = await new Promise((resolve, reject) => {
     const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly");
     const req = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME).getAll();
     req.onsuccess = () => resolve(req.result || []);
     req.onerror = () => reject(req.error);
   });
-
-  // 💡 서버가 participantId/actDate/start/end를 필수로 요구한다 — 아직 출근·퇴근을
-  // 다 안 마친 진행 중인 하루치 기록은 보내봐야 매번 검증 실패만 반복되니 건너뛴다.
-  // 서명 완료 시점엔 이 값들이 다 채워진 뒤에 syncNow=true로 다시 호출되니 그때 보내진다.
-  const pending = items.filter(
+  return items.filter(
     (item) => !item.synced && item.participantId && item.date && item.start && item.end,
   );
+};
+
+const runSyncOnce = async (db: IDBDatabase): Promise<void> => {
+  const pending = await readPendingItems(db);
 
   for (const item of pending) {
     try {
@@ -48,8 +52,16 @@ const runSyncOnce = async (db: IDBDatabase): Promise<void> => {
         ? await updateActivityLog(item.serverId, toPayload(item))
         : await createActivityLog(toPayload(item));
       await updateRecord(db, { ...item, synced: true, serverId: id });
-    } catch (err) {
-      console.error("활동일지 서버 동기화 실패, 다음 기회에 재시도:", err);
+    } catch (error) {
+      console.error("활동일지 서버 동기화 실패, 다음 기회에 재시도:", error);
+      // 폰에만 남은 일지(서명 포함)는 서버가 알 길이 없어서, 실패 사실을 남겨 다음 연결 때 보낸다
+      recordClientEvent({
+        participantId: item.participantId!,
+        kind: "ACTIVITY_LOG_SYNC",
+        workDate: item.date,
+        message: error instanceof Error ? error.message : "업무일지 전송 실패",
+        httpStatus: error instanceof ActivityLogApiError ? error.status : null,
+      });
     }
   }
 };
@@ -65,7 +77,21 @@ let rerunRequested = false;
  * 네트워크 실패 시 그 레코드는 그대로 두고 다음 호출 때 다시 시도한다.
  */
 export const syncPendingActivityLogs = async (db: IDBDatabase | null): Promise<void> => {
-  if (!db || !navigator.onLine) return;
+  if (!db) return;
+  if (!navigator.onLine) {
+    // 서명은 했는데 인터넷이 없어 폰에만 남은 경우 — 나중에 "서명했다는데 안 들어왔다"는
+    // 문의가 오면 이 기록으로 확인한다. 연결되면 아래 동기화와 실패 기록 전송이 이어진다.
+    const pending = await readPendingItems(db).catch(() => []);
+    pending.forEach((item) =>
+      recordClientEvent({
+        participantId: item.participantId!,
+        kind: "ACTIVITY_LOG_SYNC",
+        workDate: item.date,
+        message: "인터넷 연결이 없어 폰에 전송 대기 중",
+      }),
+    );
+    return;
+  }
 
   if (isSyncing) {
     rerunRequested = true;

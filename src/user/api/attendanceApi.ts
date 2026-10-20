@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions } from "@tanstack/react-query";
 
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
+import { recordClientEvent } from "../utils/clientEventLog";
 import { readCurrentLocation } from "../utils/geolocation";
 import type { Coordinates, LocationReading } from "../utils/geolocation";
 
@@ -280,6 +281,11 @@ export const clockInMutationOptions = mutationOptions({
     if (!navigator.onLine) throw new Error(OFFLINE_ATTENDANCE_MESSAGE);
     const reading = await readCurrentLocation();
     return clockIn(participantId, debug, reading);
+  }, // critical: 요청이 서버에 못 닿은 실패(오프라인·네트워크 오류)는 서버가 모르니 폰에 남겨뒀다가
+  // 다음에 연결되면 보낸다. 서버가 거부한 실패(ClockInError)는 서버가 이미 기록한다.
+  onError: (error, { participantId }) => {
+    if (error instanceof ClockInError) return;
+    recordClientEvent({ participantId, kind: "CLOCK_IN", message: error.message });
   },
 });
 
@@ -315,6 +321,10 @@ export const clockOutMutationOptions = mutationOptions({
     if (!navigator.onLine) throw new Error(OFFLINE_ATTENDANCE_MESSAGE);
     const reading = await readCurrentLocation();
     return clockOut(participantId, debug, reading);
+  }, // critical: clockInMutationOptions와 같은 이유로 서버에 못 닿은 실패만 폰에 남긴다
+  onError: (error, { participantId }) => {
+    if (error instanceof ClockOutError) return;
+    recordClientEvent({ participantId, kind: "CLOCK_OUT", message: error.message });
   },
 });
 

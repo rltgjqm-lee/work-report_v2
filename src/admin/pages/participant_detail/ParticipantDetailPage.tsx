@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalToday, getLocalYearMonth, isoToKstMinuteString } from "../../../utils/timeFormat";
 import {
+  participantAppErrorsQueryOptions,
   participantAttendanceQueryOptions,
   participantLeaveHistoryQueryOptions,
   participantQueryOptions,
 } from "../../api/admin/participants";
+import type { ParticipantAppError } from "../../api/admin/participants";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
 import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 
@@ -71,6 +73,7 @@ const ParticipantDetailPage = () => {
   const leaves = leaveHistory?.leaves ?? [];
   const annualLeave = leaveHistory?.annualLeave;
   const { data: attendance } = useQuery(participantAttendanceQueryOptions(participantId, month));
+  const { data: appErrors = [] } = useQuery(participantAppErrorsQueryOptions(participantId));
 
   const attendanceLogs = attendance?.logs ?? [];
   const attendanceStats = attendance?.stats ?? emptyStats;
@@ -127,6 +130,9 @@ const ParticipantDetailPage = () => {
 
       {/* 휴가 이력 */}
       <LeaveHistorySection annualLeave={annualLeave} leaves={leaves} />
+
+      {/* 앱 오류 기록 */}
+      <AppErrorSection appErrors={appErrors} />
 
       {/* 급여 설정 모달 */}
       {payrollModalOpen && (
@@ -418,6 +424,104 @@ const LeaveHistorySection = ({ annualLeave, leaves }: LeaveHistorySectionProps) 
                   className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                 >
                   휴가 이력이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </>
+);
+
+const APP_ERROR_KIND_LABELS: Record<ParticipantAppError["kind"], string> = {
+  CLOCK_IN: "출근",
+  CLOCK_OUT: "퇴근",
+  ACTIVITY_LOG_SYNC: "업무일지·서명 전송",
+};
+
+const describeNetwork = (appError: ParticipantAppError): string => {
+  if (appError.reachedServer) return "서버 도달";
+  if (appError.online === false) return "인터넷 끊김";
+  return appError.connectionType ? `연결됨(${appError.connectionType})` : "연결됨";
+};
+
+interface AppErrorSectionProps {
+  appErrors: ParticipantAppError[];
+}
+
+// "폰에서는 했다는데 서버엔 없다"는 문의 대응용 — 출퇴근·업무일지 전송이 실패한 기록을 보여준다.
+// 서버에 못 닿은 실패는 앱이 다음에 연결됐을 때 보고하므로 실제 발생보다 늦게 나타날 수 있다.
+const AppErrorSection = ({ appErrors }: AppErrorSectionProps) => (
+  <>
+    <div className="mt-5 mb-3 flex items-baseline gap-2">
+      <span className="text-sm font-bold">앱 오류 기록</span>
+      <span className="text-xs text-admin-text-placeholder">
+        최근 30일 · 서버에 못 닿은 실패는 앱을 다시 열어 연결될 때 보고됩니다
+      </span>
+    </div>
+
+    <div className="bg-white border border-admin-border-subtle rounded-[2px]">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] table-fixed border-collapse">
+          <thead>
+            <tr>
+              {[
+                ["발생 시각", "w-[120px]"],
+                ["근무일", "w-[100px]"],
+                ["종류", "w-[130px]"],
+                ["네트워크", "w-[120px]"],
+                ["사유", ""],
+                ["앱 버전", "w-[110px]"],
+              ].map(([header, width]) => (
+                <th
+                  key={header}
+                  className={`${width} text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle`}
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {appErrors.map((appError) => (
+              <tr key={appError.key} className="hover:bg-admin-row-hover">
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                  {isoToKstMinuteString(appError.occurredAt)}
+                  {appError.occurrences > 1 && (
+                    <span className="text-admin-text-placeholder">
+                      {" "}
+                      외 {appError.occurrences - 1}회
+                    </span>
+                  )}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                  {appError.workDate}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {APP_ERROR_KIND_LABELS[appError.kind]}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {describeNetwork(appError)}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {appError.message}
+                  {appError.httpStatus !== null && (
+                    <span className="text-admin-text-placeholder"> ({appError.httpStatus})</span>
+                  )}
+                </td>
+                <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
+                  {appError.bundleVersion ?? appError.appVersion ?? appError.platform ?? "-"}
+                </td>
+              </tr>
+            ))}
+            {appErrors.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
+                >
+                  최근 30일 동안 기록된 앱 오류가 없습니다.
                 </td>
               </tr>
             )}

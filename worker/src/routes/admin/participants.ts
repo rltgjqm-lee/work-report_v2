@@ -6,7 +6,9 @@ import { ROLES, type Env } from "../../types";
 
 import {
   activityLogs,
+  attendanceAttemptFailures,
   attendanceLogs,
+  clientEvents,
   demandSites,
   escapeLogs,
   groups,
@@ -122,6 +124,75 @@ app.get("/:id", async (c) => {
     groupName: groupRows[0]?.name ?? null,
     organizationName: organizationRows[0]?.name ?? null,
   });
+});
+
+// 최근 30일 앱 오류 기록 — 폰에서 서버에 닿지 못해 나중에 보고된 실패(client_events)와
+// 서버에 닿았지만 거부된 출퇴근 실패(attendance_attempt_failures)를 한 목록으로 내려준다.
+// "폰에서는 했다는데 서버엔 없다"는 문의가 왔을 때 원인을 관리자가 직접 확인하는 용도다.
+app.get("/:id/app-errors", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const { iso } = getKstNow();
+  const since = new Date(Date.parse(iso) - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const [appRows, serverRows] = await Promise.all([
+    db
+      .select()
+      .from(clientEvents)
+      .where(and(eq(clientEvents.participantId, id), gte(clientEvents.workDate, since))),
+    db
+      .select()
+      .from(attendanceAttemptFailures)
+      .where(
+        and(
+          eq(attendanceAttemptFailures.participantId, id),
+          gte(attendanceAttemptFailures.workDate, since),
+        ),
+      ),
+  ]);
+
+  const rows = [
+    ...appRows.map((row) => ({
+      key: `app-${row.id}`,
+      reachedServer: false,
+      kind: row.kind,
+      workDate: row.workDate,
+      occurredAt: row.lastOccurredAt,
+      occurrences: row.occurrences,
+      message: row.message,
+      httpStatus: row.httpStatus,
+      online: row.online,
+      connectionType: row.connectionType,
+      platform: row.platform,
+      appVersion: row.appVersion,
+      bundleVersion: row.bundleVersion,
+    })),
+    ...serverRows.map((row) => ({
+      key: `server-${row.id}`,
+      reachedServer: true,
+      kind: row.kind,
+      workDate: row.workDate,
+      occurredAt: row.attemptedAt,
+      occurrences: 1,
+      message: row.locationFailure ? `${row.error} (위치: ${row.locationFailure})` : row.error,
+      httpStatus: row.httpStatus,
+      online: null,
+      connectionType: null,
+      platform: row.platform,
+      appVersion: null,
+      bundleVersion: null,
+    })),
+  ].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+
+  return c.json(rows);
 });
 
 // 참여자 개인 근무 이력 — 관리자 콘솔 참여자 상세 페이지에서 쓴다

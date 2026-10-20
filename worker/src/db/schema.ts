@@ -1019,3 +1019,43 @@ export const locationTraces = sqliteTable(
     index("idx_location_traces_participant_date").on(table.participantId, table.workDate),
   ],
 );
+
+// 참여자 앱에서 "서버에 닿지 못한" 실패 1건(같은 날·같은 종류·같은 사유는 1행으로 묶고 횟수만
+// 센다). attendance_attempt_failures는 요청이 서버에 닿은 출퇴근 실패만 남아서, 인터넷이 끊겨
+// 요청이 아예 못 간 경우나 폰에 미전송으로 쌓인 업무일지(서명 포함)는 서버에서 알 길이 없었다.
+// 앱이 폰에 기억해 뒀다가 다음에 연결됐을 때 보낼 게 있을 때만 모아서 보낸다(/public/client-events).
+// 위치 좌표는 담지 않는다 — 원인 진단용이다. 30일이 지나면 크론이 지운다.
+export const clientEvents = sqliteTable(
+  "client_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    // CLOCK_IN/CLOCK_OUT: 출퇴근 요청이 서버에 못 닿음, ACTIVITY_LOG_SYNC: 업무일지(서명 포함)
+    // 전송 실패 또는 인터넷이 없어 폰에 전송 대기 중. 앱을 열 때마다 재전송이 또 실패하면 같은
+    // 행의 occurrences가 늘어서, "아직도 폰에 남아 있다"는 것도 이 값과 lastOccurredAt으로 보인다.
+    kind: text("kind").$type<"CLOCK_IN" | "CLOCK_OUT" | "ACTIVITY_LOG_SYNC">().notNull(),
+    // KST 근무일 — attendance_logs.workDate와 같은 기준
+    workDate: text("work_date").notNull(),
+    // 폰에서 처음/마지막으로 발생한 시각(KST)과 서버가 마지막으로 받은 시각
+    firstOccurredAt: text("first_occurred_at").notNull(),
+    lastOccurredAt: text("last_occurred_at").notNull(),
+    receivedAt: text("received_at").notNull(),
+    occurrences: integer("occurrences").notNull().default(1),
+    message: text("message").notNull(),
+    // 서버가 거부한 경우의 HTTP 상태 — 네트워크 단계에서 실패했으면 null
+    httpStatus: integer("http_status"),
+    // 실패 당시 폰이 인터넷에 연결돼 있다고 알고 있었는지와 연결 종류(wifi/cellular 등)
+    online: integer("online", { mode: "boolean" }),
+    connectionType: text("connection_type"),
+    platform: text("platform"),
+    // 스토어 앱 버전과 OTA로 받은 화면 번들 버전
+    appVersion: text("app_version"),
+    bundleVersion: text("bundle_version"),
+  },
+  (table) => [
+    index("idx_client_events_participant_date").on(table.participantId, table.workDate),
+    index("idx_client_events_received").on(table.receivedAt),
+  ],
+);
