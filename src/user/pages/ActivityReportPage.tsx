@@ -53,7 +53,9 @@ const ActivityReportPage = ({
 
   // 활동내용/활동장소 둘 다 사업단 담당자가 미리 등록해둔 항목 중에서 고른다 — 목록에
   // 없으면 "기타"로 직접 입력한다(handleContentOptionChange/handlePlaceOptionChange).
-  const { data: activityOptions = [] } = useQuery(activityOptionsQueryOptions(formData.programId));
+  const { data: activityOptions = [], isPending: isActivityOptionsPending } = useQuery(
+    activityOptionsQueryOptions(formData.programId),
+  );
 
   const contentOptions = useMemo(
     () => activityOptions.filter((option) => option.category === "CONTENT"),
@@ -77,8 +79,14 @@ const ActivityReportPage = ({
   const isPlaceUnmatched =
     formData.actPlace !== "" && !placeOptions.some((option) => option.label === formData.actPlace);
 
-  const showContentOtherInput = isContentOtherSelected || isContentUnmatched;
-  const showPlaceOtherInput = isPlaceOtherSelected || isPlaceUnmatched;
+  // 사업단 담당자가 아직 항목을 하나도 등록 안 했으면(또는 오프라인 등으로 못 불러왔으면)
+  // 고를 게 "기타"뿐인 드롭다운 대신 바로 입력칸을 보여준다 — 드롭다운이 비어 보여서
+  // "선택이 안 된다"는 문의가 있었다. 불러오는 중엔 드롭다운이 깜빡 바뀌지 않게 기다린다.
+  const isContentFreeInput = !isActivityOptionsPending && contentOptions.length === 0;
+  const isPlaceFreeInput = !isActivityOptionsPending && placeOptions.length === 0;
+
+  const showContentOtherInput = isContentFreeInput || isContentOtherSelected || isContentUnmatched;
+  const showPlaceOtherInput = isPlaceFreeInput || isPlaceOtherSelected || isPlaceUnmatched;
 
   const contentSelectValue = showContentOtherInput ? OTHER_OPTION_VALUE : formData.actContent;
   const placeSelectValue = showPlaceOtherInput ? OTHER_OPTION_VALUE : formData.actPlace;
@@ -135,6 +143,8 @@ const ActivityReportPage = ({
           placeSelectValue={placeSelectValue}
           showContentOtherInput={showContentOtherInput}
           showPlaceOtherInput={showPlaceOtherInput}
+          isContentFreeInput={isContentFreeInput}
+          isPlaceFreeInput={isPlaceFreeInput}
           onContentOptionChange={handleContentOptionChange}
           onPlaceOptionChange={handlePlaceOptionChange}
         />
@@ -166,15 +176,17 @@ const ActivityReportPage = ({
               오늘 무엇을 하셨나요?
               <small className={labelSmallClass}>활동내용</small>
             </label>
-            <Dropdown
-              value={contentSelectValue}
-              onChange={handleContentOptionChange}
-              options={[
-                { value: "", label: "선택해주세요", disabled: true },
-                ...contentOptions.map((option) => ({ value: option.label, label: option.label })),
-                { value: OTHER_OPTION_VALUE, label: "기타" },
-              ]}
-            />
+            {!isContentFreeInput && (
+              <Dropdown
+                value={contentSelectValue}
+                onChange={handleContentOptionChange}
+                options={[
+                  { value: "", label: "선택해주세요", disabled: true },
+                  ...contentOptions.map((option) => ({ value: option.label, label: option.label })),
+                  { value: OTHER_OPTION_VALUE, label: "기타" },
+                ]}
+              />
+            )}
             {showContentOtherInput && (
               <textarea
                 value={formData.actContent}
@@ -184,7 +196,7 @@ const ActivityReportPage = ({
                     actContent: event.target.value,
                   }))
                 }
-                className={`${textareaClass} mt-2.5`}
+                className={`${textareaClass}${isContentFreeInput ? "" : " mt-2.5"}`}
                 placeholder="오늘 수행하신 활동 내용을 적어주세요."
               />
             )}
@@ -195,15 +207,17 @@ const ActivityReportPage = ({
               어디에서 하셨나요?
               <small className={labelSmallClass}>활동장소</small>
             </label>
-            <Dropdown
-              value={placeSelectValue}
-              onChange={handlePlaceOptionChange}
-              options={[
-                { value: "", label: "선택해주세요", disabled: true },
-                ...placeOptions.map((option) => ({ value: option.label, label: option.label })),
-                { value: OTHER_OPTION_VALUE, label: "기타" },
-              ]}
-            />
+            {!isPlaceFreeInput && (
+              <Dropdown
+                value={placeSelectValue}
+                onChange={handlePlaceOptionChange}
+                options={[
+                  { value: "", label: "선택해주세요", disabled: true },
+                  ...placeOptions.map((option) => ({ value: option.label, label: option.label })),
+                  { value: OTHER_OPTION_VALUE, label: "기타" },
+                ]}
+              />
+            )}
             {showPlaceOtherInput && (
               <textarea
                 value={formData.actPlace}
@@ -213,7 +227,7 @@ const ActivityReportPage = ({
                     actPlace: event.target.value,
                   }))
                 }
-                className={`${textareaClass} mt-2.5`}
+                className={`${textareaClass}${isPlaceFreeInput ? "" : " mt-2.5"}`}
                 placeholder="활동하신 장소를 적어주세요."
               />
             )}

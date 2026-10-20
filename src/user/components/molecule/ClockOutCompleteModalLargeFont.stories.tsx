@@ -15,3 +15,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+// 퇴근 직후, 아직 서명 전이면 버튼이 전체 확인·서명으로 이어진다
+export const BeforeSignature: Story = { args: { confirmLabel: "서명하러 가기" } };

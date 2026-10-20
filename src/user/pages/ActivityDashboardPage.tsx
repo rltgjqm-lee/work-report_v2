@@ -423,6 +423,13 @@ const ActivityDashboardPage = ({
     );
   };
 
+  // 퇴근 완료 안내의 버튼 — 서명 전이면 그대로 전체 확인·서명 화면으로 이어서, 퇴근하고
+  // 홈으로 돌아와 서명 버튼을 다시 찾지 않아도 되게 한다.
+  const handleClockOutCompleteConfirm = () => {
+    setClockOutCompleteTime(null);
+    if (!signatureDone) onOpenSummary();
+  };
+
   const handleOpenSummaryButtonClick = () => {
     if (!attendanceInDone) {
       setClockInRequiredOpen(true);
@@ -621,7 +628,9 @@ const ActivityDashboardPage = ({
         {clockOutCompleteTime && (
           <ClockOutCompleteModalLargeFont
             endTime={clockOutCompleteTime}
-            onConfirm={() => setClockOutCompleteTime(null)}
+            confirmLabel={signatureDone ? "확인" : "서명하러 가기"}
+            onConfirm={handleClockOutCompleteConfirm}
+            onClose={() => setClockOutCompleteTime(null)}
           />
         )}
 
@@ -751,7 +760,8 @@ const ActivityDashboardPage = ({
       {clockOutCompleteTime && (
         <ClockOutCompleteModal
           endTime={clockOutCompleteTime}
-          onConfirm={() => setClockOutCompleteTime(null)}
+          confirmLabel={signatureDone ? "확인" : "서명하러 가기"}
+          onConfirm={handleClockOutCompleteConfirm}
         />
       )}
 
