@@ -103,6 +103,9 @@ const EscapesPage = () => {
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const geofenceLayerRef = useRef<L.LayerGroup | null>(null);
+  const escapePointLayerRef = useRef<L.LayerGroup | null>(null);
+  // 이탈 목록 행을 누르면 그 지점으로 이동해 팝업을 열기 위해 이탈 id별 마커를 들고 있는다
+  const escapeMarkersRef = useRef(new Map<number, L.Marker>());
 
   const programId = preselectedProgramId ?? Number(selectedProgramId);
 
@@ -270,6 +273,17 @@ const EscapesPage = () => {
     return rows.filter((row) => row.escape.demandSiteId === Number(selectedDemandSiteId));
   }, [rows, selectedDemandSiteId]);
 
+  // 지도에 찍을 미처리 이탈 지점 — 상태 탭과 무관하게 OPEN만, 수요처 필터·이름 검색은 근무자와 같게
+  const visibleOpenEscapes = useMemo(
+    () =>
+      openEscapes.filter(
+        (row) =>
+          row.participantName.includes(search) &&
+          (!selectedDemandSiteId || row.escape.demandSiteId === Number(selectedDemandSiteId)),
+      ),
+    [openEscapes, search, selectedDemandSiteId],
+  );
+
   const visibleGeofences = useMemo(
     () =>
       geofences.filter(
@@ -290,6 +304,7 @@ const EscapesPage = () => {
     }).addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
     geofenceLayerRef.current = L.layerGroup().addTo(map);
+    escapePointLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     return () => {
@@ -414,6 +429,57 @@ const EscapesPage = () => {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
   }, [filteredWorkers, openEscapes]);
+
+  // 미처리 이탈이 "어디서" 잡혔는지 지도에 남긴다 — 근무자 마커는 지금 위치라서 이탈 지점과
+  // 다르다. 오차 원을 같이 그려서 오차 큰 좌표(기지국·와이파이 측위로 보이는 것)로 잡힌
+  // 허위 이탈을 관리자가 눈으로 가려낼 수 있게 한다(여러 사람이 같은 자리에 몰리는 경우 등).
+  useEffect(() => {
+    const layer = escapePointLayerRef.current;
+    if (!layer) return;
+
+    layer.clearLayers();
+    escapeMarkersRef.current.clear();
+
+    visibleOpenEscapes.forEach((row) => {
+      const { escape } = row;
+      if (escape.accuracyM !== null) {
+        L.circle([escape.lat, escape.lng], {
+          radius: escape.accuracyM,
+          color: "#f04452",
+          weight: 1,
+          dashArray: "4 3",
+          fillOpacity: 0.06,
+        }).addTo(layer);
+      }
+
+      const icon = L.divIcon({
+        className: "",
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+        html: `<div style="width:18px;height:18px;color:#f04452;font-size:18px;font-weight:900;line-height:18px;text-align:center;text-shadow:0 0 3px #fff,0 0 3px #fff;">✕</div>`,
+      });
+      const marker = L.marker([escape.lat, escape.lng], { icon })
+        .bindPopup(
+          `<strong>${row.participantName}</strong> 이탈 지점<br/>` +
+            `감지: ${isoToKstMinuteString(escape.detectedAt)}` +
+            (isFromPreviousWorkDay(escape.detectedAt) ? " (이전 근무일)" : "") +
+            "<br/>" +
+            `오차: ${escape.accuracyM !== null ? `±${Math.round(escape.accuracyM)}m` : "기록 없음"}<br/>` +
+            `고도: ${escape.altitudeM !== null ? `${Math.round(escape.altitudeM)}m` : "기록 없음"}`,
+        )
+        .addTo(layer);
+      escapeMarkersRef.current.set(escape.id, marker);
+    });
+  }, [visibleOpenEscapes, programId]);
+
+  const handleEscapeRowClick = (escapeId: number) => {
+    const marker = escapeMarkersRef.current.get(escapeId);
+    const map = mapRef.current;
+    if (!marker || !map) return;
+
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16));
+    marker.openPopup();
+  };
 
   const handleResolveButtonClick = (escapeId: number, participantName: string) => {
     setResolveTarget({ escapeId, participantName });
@@ -581,6 +647,12 @@ const EscapesPage = () => {
                     <span className="w-3 h-3 rounded-full border-2 border-dashed border-brand flex-none" />
                     관제구역
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14px] font-black leading-none text-danger-strong flex-none">
+                      ✕
+                    </span>
+                    이탈 지점
+                  </div>
                   <div className="text-text-subtle ml-auto">근무중 {filteredWorkers.length}명</div>
                 </div>
               </div>
@@ -609,11 +681,12 @@ const EscapesPage = () => {
                       {filteredRows.map((row) => (
                         <tr
                           key={row.escape.id}
-                          className={
+                          onClick={() => handleEscapeRowClick(row.escape.id)}
+                          className={`${row.escape.status === "OPEN" ? "cursor-pointer " : ""}${
                             row.escape.alertCount >= 3
                               ? "bg-admin-escape-alert-bg hover:bg-admin-escape-critical-bg"
                               : "hover:bg-admin-row-hover"
-                          }
+                          }`}
                         >
                           <td className="px-3 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                             {isoToKstMinuteString(row.escape.detectedAt)}

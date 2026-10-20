@@ -9,6 +9,11 @@ export type EscapeLog = {
   lat: number;
   lng: number;
   distanceKm: number;
+  // 이탈을 판정한 좌표의 GPS 오차(m)·고도(m)·휴대폰 측위 시각. 예전 기록이나 예전 앱에서
+  // 온 좌표는 비어 있다.
+  accuracyM: number | null;
+  altitudeM: number | null;
+  locatedAt: string | null;
   alertCount: number;
   status: EscapeStatus;
   alertedAtCount: number;
