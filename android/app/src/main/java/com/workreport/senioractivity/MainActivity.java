@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         // 이 앱 모듈 안에 직접 만든 로컬 플러그인(별도 npm 패키지가 아님)이라 cap sync로
         // 자동 등록되지 않는다 — 여기서 직접 등록해야 한다.
         registerPlugin(LocationServicesPlugin.class);
+        registerPlugin(WorkLocationPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

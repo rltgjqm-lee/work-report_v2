@@ -27,6 +27,12 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- 근무 중 10분마다 위치를 측위해 서버로 직접 보내는 서비스(WorkLocationService.java) -->
+        <service
+            android:name=".WorkLocationService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
     <!-- Permissions -->
@@ -42,4 +48,11 @@
          선언은 플러그인 자체 매니페스트에 있어서 병합된다. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- 위 서비스용. 위치 플러그인 매니페스트에도 있지만 이 앱의 서비스가 직접 쓰므로 명시한다.
+         WAKE_LOCK은 위치 콜백이 CPU를 깨운 뒤 서버 전송이 끝날 때까지만(최대 30초) 잡는다. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 </manifest>

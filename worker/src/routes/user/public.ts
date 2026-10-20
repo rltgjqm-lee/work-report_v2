@@ -840,7 +840,9 @@ app.post("/location", async (c) => {
       ),
     );
   if (openAttendance.length === 0) {
-    return c.json({ ok: true, escaped: false, message: "출근 중이 아닙니다." });
+    // working: false — 안드로이드 네이티브 위치 서비스(WorkLocationService)는 화면이 꺼진 사이
+    // 자동퇴근돼도 이 값을 보고 스스로 멈춘다(근무시간 외 위치 수집 방지).
+    return c.json({ ok: true, escaped: false, working: false, message: "출근 중이 아닙니다." });
   }
 
   // 좌표를 근무지로 위조하면 계속 "구역 안"으로만 찍혀서 이탈 기록이 아예 안 생긴다.

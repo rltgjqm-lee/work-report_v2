@@ -2,7 +2,7 @@ import type {
   BackgroundGeolocationPlugin,
   Location,
 } from "@capacitor-community/background-geolocation";
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 
 import { finiteOrNull, type Coordinates } from "./geolocation";
 
@@ -13,6 +13,39 @@ const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("Backg
 const DISTANCE_FILTER_M = 25;
 
 export const isNativePlatform = (): boolean => Capacitor.isNativePlatform();
+
+// 💡 android/app에 직접 작성한 로컬 네이티브 플러그인(WorkLocationPlugin.java) — 근무 중
+// 10분마다 측위해 서버로 직접 보내는 포그라운드 서비스를 켜고 끈다. 안드로이드 1.8 앱부터
+// 있어서, OTA로 이 코드를 받은 예전 스토어 앱·iOS에서는 isWorkLocationServiceAvailable()이
+// false다.
+type WorkLocationReport =
+  { ok: true; escaped: boolean; demandSiteName: string | null } | { ok: false };
+
+interface WorkLocationPlugin {
+  start(options: { participantId: number; apiBaseUrl: string }): Promise<void>;
+  stop(): Promise<void>;
+  addListener(
+    eventName: "report",
+    listener: (report: WorkLocationReport) => void,
+  ): Promise<PluginListenerHandle>;
+}
+
+const WorkLocation = registerPlugin<WorkLocationPlugin>("WorkLocation");
+
+export const isWorkLocationServiceAvailable = (): boolean =>
+  Capacitor.getPlatform() === "android" && Capacitor.isPluginAvailable("WorkLocation");
+
+export const startWorkLocationService = (participantId: number): Promise<void> =>
+  WorkLocation.start({
+    participantId,
+    apiBaseUrl: import.meta.env.VITE_API_BASE_URL as string,
+  });
+
+export const stopWorkLocationService = (): Promise<void> => WorkLocation.stop();
+
+export const addWorkLocationReportListener = (
+  listener: (report: WorkLocationReport) => void,
+): Promise<PluginListenerHandle> => WorkLocation.addListener("report", listener);
 
 export type BackgroundLocationWatch = {
   stop: () => void;

@@ -1,5 +1,12 @@
 import { reportLocation } from "../api/attendanceApi";
-import { isNativePlatform, startBackgroundLocationWatch } from "./backgroundLocation";
+import {
+  addWorkLocationReportListener,
+  isNativePlatform,
+  isWorkLocationServiceAvailable,
+  startBackgroundLocationWatch,
+  startWorkLocationService,
+  stopWorkLocationService,
+} from "./backgroundLocation";
 import { readCurrentCoordinates, type Coordinates } from "./geolocation";
 
 // 서버 보고 주기. 서버의 통신 끊김 판정(checkSignalLoss.ts, 25분)은 이 값의 2배 이상이어야
@@ -133,6 +140,42 @@ const startNativeReporting = (
   };
 };
 
+// 안드로이드 1.8+ 앱용 — 측위와 서버 전송을 전부 네이티브 서비스(WorkLocationService.java)가
+// 10분마다 직접 한다. 위의 startNativeReporting은 화면이 꺼지고 제자리에 있으면 이동 콜백도
+// JS 타이머도 멈춰서 보고가 끊겼다. 여기서 JS는 켜고 끄기와 결과 배너 갱신만 맡는다.
+//
+// 서비스 시작에 실패하면(앱이 백그라운드일 때 시작이 막히는 등) 기존 방식으로 대신 보고한다.
+const startNativeServiceReporting = (
+  participantId: number,
+  onStateChange: StateListener,
+): (() => void) => {
+  let stopped = false;
+  let stopFallback: (() => void) | null = null;
+
+  const listenerHandle = addWorkLocationReportListener((report) => {
+    if (stopped) return;
+    onStateChange(
+      report.ok
+        ? {
+            escapedDemandSiteName: report.escaped ? (report.demandSiteName ?? null) : null,
+            reportFailing: false,
+          }
+        : { escapedDemandSiteName: null, reportFailing: true },
+    );
+  });
+
+  startWorkLocationService(participantId).catch(() => {
+    if (!stopped) stopFallback = startNativeReporting(participantId, onStateChange);
+  });
+
+  return () => {
+    stopped = true;
+    stopFallback?.();
+    listenerHandle.then((handle) => handle.remove()).catch(() => {});
+    stopWorkLocationService().catch(() => {});
+  };
+};
+
 /**
  * 근무 중 위치 보고를 시작하고, 중단하는 함수를 돌려줍니다.
  *
@@ -145,7 +188,10 @@ const startNativeReporting = (
 export const startLocationReporting = (
   participantId: number,
   onStateChange: StateListener,
-): (() => void) =>
-  isNativePlatform()
-    ? startNativeReporting(participantId, onStateChange)
-    : startForegroundReporting(participantId, onStateChange);
+): (() => void) => {
+  if (!isNativePlatform()) return startForegroundReporting(participantId, onStateChange);
+  // OTA로 받은 이 코드는 네이티브 서비스가 없는 예전 스토어 앱(1.7 이하)·iOS에서도 돈다
+  return isWorkLocationServiceAvailable()
+    ? startNativeServiceReporting(participantId, onStateChange)
+    : startNativeReporting(participantId, onStateChange);
+};
