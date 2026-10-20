@@ -97,6 +97,13 @@ export const buildDemandSiteAreas = (
 // 출퇴근 위치를 기록할 때 쓰는 판정 결과.
 // 좌표가 없거나 수요처/관제구역이 없어서 판정 자체를 못 하면 둘 다 null이다 —
 // "구역 밖(false)"과 "판정 불가(null)"를 반드시 구분해서 저장해야 한다.
+//
+// distanceM은 inside에 따라 뜻이 다르다.
+// - 구역 밖: 경계 밖으로 나간 거리(m) — 이탈 판정과 같은 기준이고, 참여자에게
+//   "근무지까지 약 ○m"로도 그대로 보여준다.
+// - 구역 안: 들어가 있는 원형 구역의 중심까지 거리(m). 원형은 반경이 최소 1.5km라
+//   "안"인지만으론 자택 출근을 못 거르기 때문이다. 다각형 안에만 있으면 null — 길쭉한
+//   다각형(산책로 등)은 꼭짓점 평균인 "중심"이 길 위의 어떤 장소도 아니라 의미가 없다.
 export type PositionCheck = {
   inside: boolean | null;
   distanceM: number | null;
@@ -141,8 +148,25 @@ export const checkPositionAgainstDemandSite = async (
   const areas = buildDemandSiteAreas(demandSite, locations);
   if (areas.length === 0) return UNKNOWN_POSITION;
 
+  return judgePosition(lat, lng, areas);
+};
+
+// checkPositionAgainstDemandSite의 판정 부분 — 기존 근무 기록을 새 기준으로 다시 계산할
+// 때도 같은 함수를 쓰도록 분리한다.
+export const judgePosition = (lat: number, lng: number, areas: GeofenceArea[]): PositionCheck => {
+  const containingAreas = areas.filter((area) => isInsideArea(lat, lng, area));
+
+  if (containingAreas.length === 0) {
+    const outsideM = distanceOutsideAreasM(lat, lng, areas);
+    return { inside: false, distanceM: Number.isFinite(outsideM) ? Math.round(outsideM) : null };
+  }
+
+  const containingRadiusAreas = containingAreas.filter((area) => area.shapeType === "RADIUS");
   return {
-    inside: areas.some((area) => isInsideArea(lat, lng, area)),
-    distanceM: Math.round(distanceToNearestArea(lat, lng, areas) * 1000),
+    inside: true,
+    distanceM:
+      containingRadiusAreas.length > 0
+        ? Math.round(distanceToNearestArea(lat, lng, containingRadiusAreas) * 1000)
+        : null,
   };
 };

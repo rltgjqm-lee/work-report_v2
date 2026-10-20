@@ -714,8 +714,9 @@ export const attendanceLogs = sqliteTable(
     // accuracy: 브라우저가 알려주는 GPS 오차 반경(m) — 값이 크면 판정을 신뢰하면 안 된다.
     // inside: 배정 수요처의 관제구역 안이었는지. 좌표가 없거나 수요처/관제구역이
     //         없어서 판정 자체를 못 한 경우도 null이다 (false와 구분해야 한다).
-    // distanceM: 가장 가까운 관제구역 중심까지의 거리(m). 관제 반경이 넓어서(최소 1.5km)
-    //         inside만으론 자택 출근을 못 걸러내므로, 실제 판별은 이 거리로 한다.
+    // distanceM: inside가 false면 관제구역 경계 밖으로 나간 거리(m), true면 들어가 있는
+    //         원형 구역 중심까지의 거리(m — 반경이 최소 1.5km라 자택 출근을 거르는 근거).
+    //         다각형 안에만 있으면 null (lib/geofence.ts의 PositionCheck 참고).
     clockInLat: real("clock_in_lat"),
     clockInLng: real("clock_in_lng"),
     clockInAccuracy: real("clock_in_accuracy"),

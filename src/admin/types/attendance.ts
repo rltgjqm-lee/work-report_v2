@@ -15,7 +15,8 @@ export type AttendanceLog = {
   createdAt: string;
   // 출퇴근 버튼을 누른 시점의 위치. 위치 권한을 거부했거나 GPS를 못 잡으면 전부 null이다.
   // inside는 "구역 밖(false)"과 "판정 불가(null: 좌표·수요처·관제구역 없음)"가 다르다.
-  // 관제 반경이 최소 1.5km라 inside만으론 자택 출근을 못 걸러내므로 distanceM을 같이 본다.
+  // distanceM은 inside가 false면 경계 밖 거리, true면 원형 구역 중심까지 거리(관제 반경이 최소
+  // 1.5km라 inside만으론 자택 출근을 못 거른다)이고, 다각형 안에만 있으면 null이다.
   clockInLat: number | null;
   clockInLng: number | null;
   clockInAccuracy: number | null;

@@ -6,9 +6,10 @@ const formatDistance = (meters: number) =>
 /**
  * 근무 한 건의 위치 신뢰도 요약 — 근무 목록과 참여자 상세에서 같이 씁니다.
  *
- * 관제 반경이 최소 1.5km라서 "구역 내"인지만 보면 자택 출근을 걸러낼 수 없습니다 —
- * 관제 중심까지의 거리가 실제 판단 근거이고, GPS 오차가 크면 그 거리 자체를 믿을 수
- * 없으니 오차 반경도 같이 보여줍니다.
+ * 원형 관제 반경이 최소 1.5km라서 "구역 내"인지만 보면 자택 출근을 걸러낼 수 없습니다 —
+ * 구역 안이면 원형 구역 중심까지의 거리를, 구역 밖이면 경계 밖으로 나간 거리를 보여줍니다.
+ * 다각형 안에만 있으면 거리가 없습니다(길쭉한 다각형의 "중심"은 의미가 없어서).
+ * GPS 오차가 크면 그 거리 자체를 믿을 수 없으니 오차 반경도 같이 보여줍니다.
  *
  * 위치 조작 표시는 출근 시점만이 아니라 그 날 전체(근무 중 보고 포함) 기준이라
  * 마지막 줄에 따로 보여줍니다.
@@ -31,7 +32,9 @@ const AttendanceLocationCell = ({ log }: { log: AttendanceLog }) => {
   }
 
   const distanceLabel =
-    log.clockInDistanceM === null ? null : `중심 ${formatDistance(log.clockInDistanceM)}`;
+    log.clockInDistanceM === null
+      ? null
+      : `${log.clockInInside === false ? "경계 밖" : "중심"} ${formatDistance(log.clockInDistanceM)}`;
 
   return (
     <div>
