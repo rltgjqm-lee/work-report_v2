@@ -27,7 +27,7 @@ import PromptModal from "../components/modal/PromptModal";
 import SearchInput from "../components/SearchInput";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
 import type { DemandSiteLocation } from "../types/demandSites";
-import type { EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
+import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
 import type { SosRow } from "../types/sos";
 
 // 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
@@ -69,6 +69,17 @@ const getMarkerColor = (worker: LiveWorker): string => {
 // 이탈 횟수는 관리자가 확인 처리할 때까지 날짜가 바뀌어도 누적된다. 그래서 며칠 전 이탈이
 // 처리 안 된 채 남아 있으면 오늘 이탈처럼 보이므로, 감지일이 오늘이 아니면 따로 표시한다.
 const isFromPreviousWorkDay = (detectedAt: string) => detectedAt.slice(0, 10) !== getLocalToday();
+
+// 허위 이탈을 가려내는 핵심 단서 — 좌표가 GPS인지 와이파이·기지국 위치인지. 안드로이드 1.8+ 앱은
+// 출처를 확정해 보내고, 그 외엔 고도 유무와 오차로 추정한다(GPS 좌표엔 보통 고도가 있고 오차가
+// 작다). 10/19 이전 기록·예전 앱은 둘 다 없어 알 수 없다.
+const describeLocationSource = (escape: EscapeLog): string => {
+  if (escape.locationSource === "GPS") return "GPS";
+  if (escape.locationSource === "NETWORK") return "와이파이·기지국";
+  if (escape.accuracyM === null) return "알 수 없음";
+  if (escape.altitudeM === null) return "와이파이·기지국으로 보임";
+  return escape.accuracyM <= 50 ? "GPS로 보임" : "판단 어려움";
+};
 
 // 이탈 거리 = 관제구역 경계 밖으로 나간 거리. 대부분 수백 m라 1km 미만은 m로 보여준다.
 const formatEscapeDistance = (distanceKm: number) =>
@@ -468,8 +479,8 @@ const EscapesPage = () => {
             `감지: ${isoToKstMinuteString(escape.detectedAt)}` +
             (isFromPreviousWorkDay(escape.detectedAt) ? " (이전 근무일)" : "") +
             "<br/>" +
-            `오차: ${escape.accuracyM !== null ? `±${Math.round(escape.accuracyM)}m` : "기록 없음"}<br/>` +
-            `고도: ${escape.altitudeM !== null ? `${Math.round(escape.altitudeM)}m` : "기록 없음"}`,
+            `측위: ${describeLocationSource(escape)}` +
+            (escape.accuracyM !== null ? ` (오차 ±${Math.round(escape.accuracyM)}m)` : ""),
         )
         .addTo(layer);
       escapeMarkersRef.current.set(escape.id, marker);

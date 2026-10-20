@@ -831,6 +831,10 @@ export const escapeLogs = sqliteTable(
     // 예전에 잡힌 좌표가 다시 들어온 건지(locatedAt이 detectedAt보다 많이 이름) 가려본다.
     altitudeM: real("altitude_m"),
     locatedAt: text("located_at"),
+    // 좌표 출처 — 안드로이드 1.8+ 네이티브 위치 서비스가 GPS를 먼저 직접 요청하고, 못 잡으면
+    // 와이파이·기지국(NETWORK) 위치를 써서 확정적으로 알려준다. 그 외(예전 앱·웹·iOS)는 null이라
+    // 관리자 화면이 고도·오차로 추정해 보여준다.
+    locationSource: text("location_source").$type<"GPS" | "NETWORK">(),
     alertCount: integer("alert_count").notNull().default(1),
     status: text("status").$type<"OPEN" | "RESOLVED">().notNull().default("OPEN"),
     // 관제 화면이 마지막으로 팝업을 띄운 시점의 alertCount. 이후 alertCount가 이 값보다
@@ -1006,6 +1010,8 @@ export const locationTraces = sqliteTable(
     // 휴대폰이 그 좌표를 측위한 시각(KST) — receivedAt과 많이 다르면 예전 좌표가 다시 온 것
     locatedAt: text("located_at"),
     simulated: integer("simulated", { mode: "boolean" }).notNull().default(false),
+    // 좌표 출처(escape_logs.locationSource와 같은 뜻)
+    locationSource: text("location_source").$type<"GPS" | "NETWORK">(),
     // 그 좌표로 서버가 내린 판정. INSIDE/OUTSIDE/UNCERTAIN(오차로 보류)/NO_AREA(수요처·관제구역 없음)
     judgement: text("judgement").$type<"INSIDE" | "OUTSIDE" | "UNCERTAIN" | "NO_AREA">().notNull(),
   },

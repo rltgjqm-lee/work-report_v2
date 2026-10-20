@@ -14,6 +14,8 @@ export type EscapeLog = {
   accuracyM: number | null;
   altitudeM: number | null;
   locatedAt: string | null;
+  // 좌표 출처 — 안드로이드 1.8+ 앱만 확정적으로 알려주고, 그 외는 null
+  locationSource: "GPS" | "NETWORK" | null;
   alertCount: number;
   status: EscapeStatus;
   alertedAtCount: number;

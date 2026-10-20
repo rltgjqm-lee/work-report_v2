@@ -170,14 +170,16 @@ const LocationTracesPage = () => {
             <table className="w-full min-w-[720px] border-collapse">
               <thead>
                 <tr>
-                  {["#", "수신 시각", "측위 시각", "판정", "오차", "고도", "좌표"].map((header) => (
-                    <th
-                      key={header}
-                      className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle"
-                    >
-                      {header}
-                    </th>
-                  ))}
+                  {["#", "수신 시각", "측위 시각", "판정", "출처", "오차", "고도", "좌표"].map(
+                    (header) => (
+                      <th
+                        key={header}
+                        className="text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle"
+                      >
+                        {header}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -198,6 +200,13 @@ const LocationTracesPage = () => {
                     >
                       {JUDGEMENT_LABELS[point.judgement]}
                       {point.simulated && " · 위치 조작 의심"}
+                    </td>
+                    <td className="px-5 py-[11px] text-[13px] border-b border-border-faint">
+                      {point.locationSource === "GPS"
+                        ? "GPS"
+                        : point.locationSource === "NETWORK"
+                          ? "와이파이·기지국"
+                          : "-"}
                     </td>
                     <td className="px-5 py-[11px] text-[13px] border-b border-border-faint">
                       {point.accuracyM !== null ? `${Math.round(point.accuracyM)}m` : "-"}

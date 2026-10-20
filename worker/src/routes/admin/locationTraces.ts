@@ -63,6 +63,7 @@ app.get("/", async (c) => {
       accuracyM: locationTraces.accuracyM,
       altitudeM: locationTraces.altitudeM,
       simulated: locationTraces.simulated,
+      locationSource: locationTraces.locationSource,
       judgement: locationTraces.judgement,
     })
     .from(locationTraces)

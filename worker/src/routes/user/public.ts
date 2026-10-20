@@ -813,6 +813,7 @@ app.post("/location", async (c) => {
     simulated?: boolean;
     altitude?: number;
     locatedAtMs?: number;
+    source?: string;
   }>();
 
   if (!body.participantId || body.lat === undefined || body.lng === undefined) {
@@ -827,6 +828,12 @@ app.post("/location", async (c) => {
   if (!participant) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
 
   const { date, iso } = getKstNow();
+  const locationSource =
+    body.source === "gps"
+      ? ("GPS" as const)
+      : body.source === "network"
+        ? ("NETWORK" as const)
+        : null;
 
   const openAttendance = await db
     .select()
@@ -876,6 +883,7 @@ app.post("/location", async (c) => {
       altitudeM: body.altitude ?? null,
       locatedAt: Number.isFinite(body.locatedAtMs) ? toKstIso(body.locatedAtMs!) : null,
       simulated: body.simulated ?? false,
+      locationSource,
       judgement,
     });
   };
@@ -1003,6 +1011,7 @@ app.post("/location", async (c) => {
         accuracyM: body.accuracy ?? null,
         altitudeM: body.altitude ?? null,
         locatedAt: Number.isFinite(body.locatedAtMs) ? toKstIso(body.locatedAtMs!) : null,
+        locationSource,
         alertCount: newAlertCount,
       });
 

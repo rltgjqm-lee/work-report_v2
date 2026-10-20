@@ -23,6 +23,7 @@ export type LocationTracePoint = {
   accuracyM: number | null;
   altitudeM: number | null;
   simulated: boolean;
+  locationSource: "GPS" | "NETWORK" | null;
   judgement: LocationTraceJudgement;
 };
 

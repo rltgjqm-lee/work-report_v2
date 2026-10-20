@@ -10,12 +10,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 
@@ -59,8 +64,11 @@ public class WorkLocationService extends Service {
     // 못 멈춘 경우에도 출근 후 이 시간이 지나면 스스로 멈춘다.
     private static final long MAX_TRACKING_MS = 14 * 60 * 60 * 1000L;
     private static final int HTTP_TIMEOUT_MS = 15_000;
-    // 위치 콜백이 CPU를 깨운 뒤 전송이 끝나기 전에 다시 잠들지 않게 잡는 시간
-    private static final long SEND_WAKE_LOCK_MS = 30_000L;
+    // GPS를 직접 기다리는 최대 시간 — 실내에선 끝내 못 잡으므로 이 뒤엔 와이파이·기지국으로 넘어간다
+    private static final long GPS_FIX_TIMEOUT_MS = 20_000L;
+    private static final long NETWORK_FIX_TIMEOUT_MS = 10_000L;
+    // 깨어난 뒤 측위(GPS→네트워크)와 전송이 끝나기 전에 CPU가 다시 잠들지 않게 잡는 시간
+    private static final long REPORT_WAKE_LOCK_MS = GPS_FIX_TIMEOUT_MS + NETWORK_FIX_TIMEOUT_MS + 2 * HTTP_TIMEOUT_MS;
 
     private static final int NOTIFICATION_ID = 7301;
     private static final String CHANNEL_ID = "work_location";
@@ -81,6 +89,9 @@ public class WorkLocationService extends Service {
     private FusedLocationProviderClient locationClient;
     private LocationCallback locationCallback;
     private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    // 앞선 측위(GPS 대기 최대 20초)가 끝나기 전에 다음 주기가 겹치면 건너뛴다
+    private boolean measuring = false;
 
     static boolean isRunning() {
         return running;
@@ -180,11 +191,13 @@ public class WorkLocationService extends Service {
                 .setWaitForAccurateLocation(false)
                 .build();
 
+        // 이 통합 위치(fused) 좌표는 GPS·와이파이·기지국이 섞여 어디서 왔는지 알 수 없어서
+        // 보고에 바로 쓰지 않고, "10분마다 깨워주는" 신호로 쓴다. 깨어나면 measureAndReport가
+        // 출처를 아는 좌표를 새로 잡고, 그마저 실패할 때만 이 좌표를 출처 없이 보낸다.
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult result) {
-                Location location = result.getLastLocation();
-                if (location != null) sendReport(location);
+                measureAndReport(result.getLastLocation());
             }
         };
         locationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper());
@@ -193,32 +206,109 @@ public class WorkLocationService extends Service {
     // 10분 주기 요청의 첫 좌표가 언제 올지 OS가 보장하지 않아서, 시작 직후 한 번은 따로
     // 측위해 바로 보낸다 — 출근 직후 관제 공백을 만들지 않는다.
     private void sendCurrentLocationNow() {
-        locationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-                .addOnSuccessListener(location -> {
-                    if (location != null && running) sendReport(location);
-                });
+        measureAndReport(null);
     }
 
-    private void sendReport(Location location) {
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        long participantId = prefs.getLong(PREF_PARTICIPANT_ID, 0);
-        String apiBaseUrl = prefs.getString(PREF_API_BASE_URL, null);
-        long startedAt = prefs.getLong(PREF_STARTED_AT, 0);
-        if (participantId <= 0 || apiBaseUrl == null) {
-            stopTracking();
-            return;
-        }
-        if (System.currentTimeMillis() - startedAt > MAX_TRACKING_MS) {
-            stopTracking();
-            return;
-        }
+    // 관리자가 허위 이탈을 가려내려면 좌표가 GPS인지 와이파이·기지국(네트워크) 위치인지가 중요하다.
+    // 통합 위치는 이걸 알려주지 않아서, GPS를 먼저 직접 요청하고(최대 20초) 못 잡으면 네트워크
+    // 위치를 요청해 출처를 확정한다. 둘 다 실패하면 깨울 때 받은 통합 좌표를 출처 없이 보낸다.
+    private void measureAndReport(@Nullable Location fusedFallback) {
+        if (measuring) return;
+        measuring = true;
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
-                "WorkReport:WorkLocationSend"
+                "WorkReport:WorkLocationReport"
         );
-        wakeLock.acquire(SEND_WAKE_LOCK_MS);
+        wakeLock.acquire(REPORT_WAKE_LOCK_MS);
+
+        requestSingleFix(LocationManager.GPS_PROVIDER, GPS_FIX_TIMEOUT_MS, gpsLocation -> {
+            if (gpsLocation != null) {
+                finishMeasuring(gpsLocation, "gps", wakeLock);
+                return;
+            }
+            requestSingleFix(LocationManager.NETWORK_PROVIDER, NETWORK_FIX_TIMEOUT_MS, networkLocation -> {
+                if (networkLocation != null) {
+                    finishMeasuring(networkLocation, "network", wakeLock);
+                } else {
+                    finishMeasuring(fusedFallback, null, wakeLock);
+                }
+            });
+        });
+    }
+
+    private void finishMeasuring(@Nullable Location location, @Nullable String source, PowerManager.WakeLock wakeLock) {
+        measuring = false;
+        if (location == null || !running) {
+            if (wakeLock.isHeld()) wakeLock.release();
+            return;
+        }
+        sendReport(location, source, wakeLock);
+    }
+
+    private interface FixCallback {
+        void onFix(@Nullable Location location);
+    }
+
+    // provider(GPS/네트워크) 하나에서 새 좌표 한 개를 받는다. 예전에 잡힌 좌표(getLastKnownLocation)는
+    // 쓰지 않는다 — 오래된 좌표로 판정하면 안 된다. 제한 시간 안에 못 받으면 null.
+    private void requestSingleFix(String provider, long timeoutMs, FixCallback callback) {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager == null || !locationManager.isProviderEnabled(provider)) {
+            callback.onFix(null);
+            return;
+        }
+
+        final boolean[] finished = { false };
+        final LocationListener[] listenerHolder = new LocationListener[1];
+        final Runnable[] timeoutHolder = new Runnable[1];
+        FixCallback finish = location -> {
+            if (finished[0]) return;
+            finished[0] = true;
+            mainHandler.removeCallbacks(timeoutHolder[0]);
+            locationManager.removeUpdates(listenerHolder[0]);
+            callback.onFix(location);
+        };
+
+        // 안드로이드 10 이하에선 아래 메서드들이 기본 구현 없는 추상 메서드라 전부 직접 구현해야 한다
+        listenerHolder[0] = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                finish.onFix(location);
+            }
+
+            @Override
+            public void onStatusChanged(String changedProvider, int status, Bundle extras) {}
+
+            @Override
+            public void onProviderEnabled(@NonNull String enabledProvider) {}
+
+            @Override
+            public void onProviderDisabled(@NonNull String disabledProvider) {
+                finish.onFix(null);
+            }
+        };
+        timeoutHolder[0] = () -> finish.onFix(null);
+
+        try {
+            locationManager.requestLocationUpdates(provider, 0L, 0f, listenerHolder[0], Looper.getMainLooper());
+            mainHandler.postDelayed(timeoutHolder[0], timeoutMs);
+        } catch (SecurityException | IllegalArgumentException exception) {
+            finish.onFix(null);
+        }
+    }
+
+    private void sendReport(Location location, @Nullable String source, PowerManager.WakeLock wakeLock) {
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        long participantId = prefs.getLong(PREF_PARTICIPANT_ID, 0);
+        String apiBaseUrl = prefs.getString(PREF_API_BASE_URL, null);
+        long startedAt = prefs.getLong(PREF_STARTED_AT, 0);
+        if (participantId <= 0 || apiBaseUrl == null || System.currentTimeMillis() - startedAt > MAX_TRACKING_MS) {
+            if (wakeLock.isHeld()) wakeLock.release();
+            stopTracking();
+            return;
+        }
 
         sendExecutor.execute(() -> {
             try {
@@ -230,6 +320,7 @@ public class WorkLocationService extends Service {
                 if (location.hasAltitude()) body.put("altitude", location.getAltitude());
                 body.put("locatedAtMs", location.getTime());
                 body.put("simulated", isMock(location));
+                if (source != null) body.put("source", source);
 
                 JSONObject result = postJson(apiBaseUrl + "/public/location", body);
                 if (result == null) {
