@@ -6,7 +6,7 @@ import L from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 
-import { isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
+import { getLocalToday, isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
 import { useToast } from "../context/useToast";
 
 import {
@@ -65,6 +65,10 @@ const getMarkerColor = (worker: LiveWorker): string => {
   if (worker.alertCount >= 1) return "#FFD200";
   return "#2ECC71";
 };
+
+// 이탈 횟수는 관리자가 확인 처리할 때까지 날짜가 바뀌어도 누적된다. 그래서 며칠 전 이탈이
+// 처리 안 된 채 남아 있으면 오늘 이탈처럼 보이므로, 감지일이 오늘이 아니면 따로 표시한다.
+const isFromPreviousWorkDay = (detectedAt: string) => detectedAt.slice(0, 10) !== getLocalToday();
 
 /**
  * 관리자 페이지 > 안전 관제 페이지입니다.
@@ -148,7 +152,7 @@ const EscapesPage = () => {
     enabled: !!programId,
     refetchInterval: POLL_INTERVAL_MS,
   });
-  const openEscapes = liveMap?.openEscapes ?? [];
+  const openEscapes = useMemo(() => liveMap?.openEscapes ?? [], [liveMap]);
   const openSosEvents = liveMap?.openSosEvents ?? [];
   const workers = useMemo(() => liveMap?.workers ?? [], [liveMap]);
 
@@ -376,6 +380,15 @@ const EscapesPage = () => {
     );
 
     located.forEach((worker) => {
+      // openEscapes는 감지시각 내림차순이라 처음 찾은 게 그 참여자의 가장 최근 미처리 이탈이다
+      const latestOpenEscape = openEscapes.find(
+        (row) => row.escape.participantId === worker.participantId,
+      );
+      const latestEscapeLabel = latestOpenEscape
+        ? `마지막 이탈: ${isoToKstMinuteString(latestOpenEscape.escape.detectedAt)} (미처리${
+            isFromPreviousWorkDay(latestOpenEscape.escape.detectedAt) ? ", 이전 근무일" : ""
+          })<br/>`
+        : "";
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:18px;height:18px;border-radius:50%;background:${getMarkerColor(
@@ -387,6 +400,7 @@ const EscapesPage = () => {
         `<strong>${worker.name}</strong><br/>` +
           `상태: ${worker.status === "ESCAPE" ? "이탈중" : "정상"}<br/>` +
           `이탈횟수: ${worker.alertCount}회<br/>` +
+          latestEscapeLabel +
           `수요처: ${worker.demandSiteName}<br/>` +
           `마지막 위치: ${worker.lastLocationAt ? isoToKstTimeString(worker.lastLocationAt) : "-"}`,
       );
@@ -399,7 +413,7 @@ const EscapesPage = () => {
       );
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [filteredWorkers]);
+  }, [filteredWorkers, openEscapes]);
 
   const handleResolveButtonClick = (escapeId: number, participantName: string) => {
     setResolveTarget({ escapeId, participantName });
@@ -603,6 +617,12 @@ const EscapesPage = () => {
                         >
                           <td className="px-3 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                             {isoToKstMinuteString(row.escape.detectedAt)}
+                            {row.escape.status === "OPEN" &&
+                              isFromPreviousWorkDay(row.escape.detectedAt) && (
+                                <div className="text-[11px] text-text-subtle">
+                                  이전 근무일 · 미처리
+                                </div>
+                              )}
                           </td>
                           <td className="px-3 py-[13px] text-[13px] border-b border-border-faint">
                             {row.participantName}
