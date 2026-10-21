@@ -116,6 +116,9 @@ const initialFormData: ActivityLogFormData = {
 
 // 💡 새로고침해도 등록 상태(참여자 식별, 오늘 진행 상황)가 유지되도록 formData
 // 변경마다 저장해두는 draft를 읽어온다. 서명은 크기가 커서 별도 키로 관리되니 여기엔 안 담는다.
+// 같은 날 앱을 다시 화면에 띄웠을 때 서버 출퇴근 상태를 다시 확인하는 최소 간격
+const RESUME_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
 const loadFormDraft = (): Partial<ActivityLogFormData> => {
   try {
     const draftRaw = localStorage.getItem(LOCAL_STORAGE_KEYS.FORM_DRAFT);
@@ -481,6 +484,66 @@ const Main = () => {
   useEffect(() => {
     refreshTodayAttendance();
   }, [refreshTodayAttendance]);
+
+  // 💡 앱을 끄지 않고 백그라운드에 둔 채 다음 날 다시 열면, 위의 "오늘 기록 복원"과 서버
+  // 출퇴근 조회가 다시 돌지 않아 어제 상태(출근·퇴근·서명 완료)가 오늘 날짜 아래 그대로 남았다
+  // — 출근 버튼이 "확인"으로만 보여 출근을 못 누른 일이 있었다. 그래서 다시 화면에 뜰 때:
+  //  - 날짜가 바뀌었으면 앱을 새로 켠 것과 똑같이 처음부터 다시 띄운다(오늘 기록 복원, 서버 조회,
+  //    미전송 일지 재전송, OTA 적용까지 한 번에). 날짜가 넘어간 사이 입력 중이던 건 없다.
+  //  - 같은 날이면 서버 출퇴근 상태 확인과 미전송 일지 재전송만 다시 한다. 화면을 오갈 때마다
+  //    부르지 않게 마지막 확인 후 RESUME_REFRESH_INTERVAL_MS가 지났을 때만 한다.
+  // 핸들러는 ref로 최신 값을 읽어서, 상태가 바뀔 때마다 리스너를 다시 등록하지 않는다.
+  const lastResumeRefreshAtRef = useRef(0);
+  const handleAppResumeRef = useRef<() => void>(() => {});
+
+  // 앱을 켤 때 이미 위에서 조회했으니 그 시점을 마지막 확인 시각으로 둔다
+  useEffect(() => {
+    lastResumeRefreshAtRef.current = Date.now();
+  }, []);
+
+  useEffect(() => {
+    handleAppResumeRef.current = () => {
+      if (formData.actDate && formData.actDate !== getLocalToday()) {
+        window.location.reload();
+        return;
+      }
+      if (Date.now() - lastResumeRefreshAtRef.current < RESUME_REFRESH_INTERVAL_MS) return;
+      lastResumeRefreshAtRef.current = Date.now();
+
+      refreshTodayAttendance();
+      if (db && formData.participantId) {
+        const participantId = formData.participantId;
+        syncPendingActivityLogs(db).then(() => flushClientEvents(participantId));
+      }
+    };
+  });
+
+  useEffect(() => {
+    const handleAppResume = () => handleAppResumeRef.current();
+
+    // 네이티브 앱은 백그라운드로 가도 WebView를 멈추지 않아(KeepRunning) visibilitychange가
+    // 안 오므로 Capacitor의 resume 이벤트를, 웹은 visibilitychange를 쓴다.
+    if (Capacitor.isNativePlatform()) {
+      const listenerPromise = App.addListener("resume", handleAppResume);
+      return () => {
+        listenerPromise.then((listener) => listener.remove());
+      };
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") handleAppResume();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+  // 💡 화면을 켜둔 채 자정을 넘기는 경우도 같은 문제가 생기므로 1분마다 날짜만 확인한다(네트워크 없음)
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (formData.actDate && formData.actDate !== getLocalToday()) window.location.reload();
+    }, 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [formData.actDate]);
 
   // 💡 근무 중(출근 완료 ~ 퇴근 전) 위치를 주기적으로 서버에 보고해 관제구역 이탈을
   // 판정받는다. 어느 화면에 있어도 계속 보고돼야 하므로 개별 페이지가 아니라 여기서 돌린다.
