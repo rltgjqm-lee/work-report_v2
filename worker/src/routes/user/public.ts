@@ -799,6 +799,12 @@ app.post("/attendance/sign", async (c) => {
 // 실서버 기록 기준으로 GPS가 잡힌 좌표의 오차는 대부분 30m 이하, 허위 이탈 좌표는 93m 이상이었다.
 const LOW_ACCURACY_THRESHOLD_M = 80;
 const LOW_ACCURACY_MARGIN_MULTIPLIER = 2;
+// 네이티브 위치 서비스가 GPS를 못 잡아 와이파이·기지국으로 잡은 좌표(source: "network")는
+// 휴대폰이 알려주는 오차 자체를 믿을 수 없다 — 실서버에서 여러 참여자가 날짜가 달라도 소수점
+// 7자리까지 똑같은 한 지점(경계 밖 160~200m)으로 반복해서 튀었고, 테스트 폰에서도 "오차 21m"라던
+// 좌표가 실제 위치에서 600m 떨어져 있었다. 그래서 이 좌표로는 경계 밖으로 이만큼 넘게
+// 벗어났을 때만 이탈로 확정한다. 그보다 가까운 이탈은 다음 GPS 보고(약 10분 뒤)가 잡는다.
+const NETWORK_SOURCE_MIN_MARGIN_M = 1000;
 
 // 참여자 PWA(또는 향후 하이브리드 앱)가 출근 중일 때 주기적으로 위치를 보고하는 엔드포인트.
 // 배정된 수요처 반경을 벗어났는지 판정하고, 새로 벗어난 경우에만 이탈 이벤트를 기록한다
@@ -968,10 +974,14 @@ app.post("/location", async (c) => {
   // 그런 좌표는 경계 밖 거리가 오차의 LOW_ACCURACY_MARGIN_MULTIPLIER배 이상일 때만
   // 이탈로 본다(그래도 확실히 멀리 간 경우는 잡는다). GPS가 잡힌 좌표는 기존 기준 그대로다.
   const outsideMarginM = distanceOutsideAreasM(body.lat!, body.lng!, areas);
-  const requiredMarginM =
+  const accuracyMarginM =
     body.accuracy !== undefined && body.accuracy >= LOW_ACCURACY_THRESHOLD_M
       ? body.accuracy * LOW_ACCURACY_MARGIN_MULTIPLIER
       : body.accuracy;
+  const requiredMarginM =
+    locationSource === "NETWORK"
+      ? Math.max(accuracyMarginM ?? 0, NETWORK_SOURCE_MIN_MARGIN_M)
+      : accuracyMarginM;
   const isTooInaccurateToJudge =
     !isInside && requiredMarginM !== undefined && outsideMarginM <= requiredMarginM;
 
