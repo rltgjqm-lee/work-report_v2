@@ -726,8 +726,14 @@ app.post("/attendance/clock-out", async (c) => {
       ? `${log.workDate}T${shift.shiftEnd}:00.000Z`
       : iso;
 
+  // 근무시간(인정 시간)은 조 근무종료시각까지만 센다 — 종료시각을 지나 늦게 눌러도 퇴근 시각은
+  // 실제로 누른 시각으로 남기되, 몇 분 늦게 누른 만큼 사람마다 인정 시간이 늘어나지 않게 한다.
+  // (출근은 일찍 눌러도 근무시작시각으로 맞추고, 자동퇴근은 종료시각으로 마감하는 것과 같은 기준)
+  const shiftEndIso = shift ? `${log.workDate}T${shift.shiftEnd}:00.000Z` : null;
+  const countedUntil =
+    shiftEndIso && effectiveClockOut > shiftEndIso ? shiftEndIso : effectiveClockOut;
   const totalMinutes = Math.floor(
-    (new Date(effectiveClockOut).getTime() - new Date(log.clockIn).getTime()) / 60000,
+    (new Date(countedUntil).getTime() - new Date(log.clockIn).getTime()) / 60000,
   );
 
   // 퇴근 위치도 출근과 같은 기준으로 기록만 한다. 좌표를 못 받았으면 배정 수요처를
