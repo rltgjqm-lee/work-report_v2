@@ -85,17 +85,19 @@ const describeLocationSource = (escape: EscapeLog): string => {
 // 이탈로 확정하지 않은 상태. 다음 보고(약 10분 뒤)에서 GPS로 다시 밖이면 이탈로 잡힌다.
 const HELD_JUDGEMENT_COLOR = "#8B5CF6";
 
-const describeHeldJudgement = (worker: LiveWorker): string => {
+// 근무자 마지막 위치의 측위 출처·오차. 안드로이드 1.8+ 앱만 출처를 보내고, 그 외(1.7 이하·iOS)는
+// 오차만 있어 "알 수 없음"이다. 배포 전부터 위치가 갱신되지 않은 근무자는 둘 다 없다.
+const describeWorkerLocationSource = (worker: LiveWorker): string => {
+  if (worker.lastLocationSource === null && worker.lastAccuracyM === null) return "-";
   const source =
     worker.lastLocationSource === "NETWORK"
-      ? "와이파이·기지국 위치"
+      ? "와이파이·기지국"
       : worker.lastLocationSource === "GPS"
-        ? "GPS 위치"
-        : "위치";
+        ? "GPS"
+        : "알 수 없음";
   const accuracy =
-    worker.lastAccuracyM !== null ? `, 오차 ±${Math.round(worker.lastAccuracyM)}m` : "";
-  const outside = worker.lastOutsideM !== null ? `경계 밖 ${worker.lastOutsideM}m · ` : "";
-  return `${outside}${source}${accuracy}`;
+    worker.lastAccuracyM !== null ? ` (오차 ±${Math.round(worker.lastAccuracyM)}m)` : "";
+  return `${source}${accuracy}`;
 };
 
 // 이탈 거리 = 관제구역 경계 밖으로 나간 거리. 대부분 수백 m라 1km 미만은 m로 보여준다.
@@ -488,7 +490,7 @@ const EscapesPage = () => {
         worker.status === "ESCAPE"
           ? "이탈중"
           : worker.isJudgementHeld
-            ? `이탈 판정 보류 (${describeHeldJudgement(worker)})`
+            ? `이탈 판정 보류${worker.lastOutsideM !== null ? ` (경계 밖 ${worker.lastOutsideM}m)` : ""}`
             : "정상";
       const marker = L.marker([worker.lat, worker.lng], { icon });
       marker.bindPopup(
@@ -497,7 +499,8 @@ const EscapesPage = () => {
           `이탈횟수: ${worker.alertCount}회<br/>` +
           latestEscapeLabel +
           `수요처: ${worker.demandSiteName}<br/>` +
-          `마지막 위치: ${worker.lastLocationAt ? isoToKstTimeString(worker.lastLocationAt) : "-"}`,
+          `마지막 위치: ${worker.lastLocationAt ? isoToKstTimeString(worker.lastLocationAt) : "-"}<br/>` +
+          `측위: ${describeWorkerLocationSource(worker)}`,
       );
       marker.on("popupopen", () => setHighlightedDemandSiteId(worker.demandSiteId));
       marker.on("popupclose", () => setHighlightedDemandSiteId(null));
