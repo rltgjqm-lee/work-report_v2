@@ -454,6 +454,12 @@ app.use("/attendance/clock-out", recordAttendanceAttemptFailure("CLOCK_OUT"));
 // 막는다. 좌표가 있는데 관제구역 밖으로 명확히 판정되면(position.inside === false)
 // OUTSIDE_AREA로 막는다. 좌표는 있지만 그 수요처에 관제구역이 아직 등록 안 돼 있어
 // 판정 자체가 안 되는 경우(position.inside === null)는 비교 대상이 없으니 막지 않는다.
+// 인증 없는 /public 엔드포인트라 진단용 문자열 길이를 묶어둔다
+const MAX_USER_AGENT_LENGTH = 300;
+const MAX_VERSION_LENGTH = 40;
+const shortenVersion = (value: unknown): string | null =>
+  typeof value === "string" && value !== "" ? value.slice(0, MAX_VERSION_LENGTH) : null;
+
 app.post("/attendance/clock-in", async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json<{
@@ -464,6 +470,8 @@ app.post("/attendance/clock-in", async (c) => {
     simulated?: boolean;
     debugDate?: string;
     debugTime?: string;
+    appVersion?: string;
+    bundleVersion?: string;
   }>();
   if (!body.participantId) {
     return c.json({ error: "참여자를 지정해주세요." }, 400);
@@ -653,6 +661,9 @@ app.post("/attendance/clock-in", async (c) => {
       clockInInside: position.inside,
       clockInDistanceM: position.distanceM,
       simulatedCount: body.simulated ? 1 : 0,
+      clockInUserAgent: c.req.header("User-Agent")?.slice(0, MAX_USER_AGENT_LENGTH) ?? null,
+      clockInAppVersion: shortenVersion(body.appVersion),
+      clockInBundleVersion: shortenVersion(body.bundleVersion),
     })
     .returning();
 

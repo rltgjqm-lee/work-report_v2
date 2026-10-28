@@ -1592,6 +1592,23 @@ app.get("/:id/escapes", async (c) => {
   return c.json(rows);
 });
 
+// 웹뷰 user agent에서 기종과 OS 버전만 뽑는다.
+// 예) "Mozilla/5.0 (Linux; Android 14; SM-S918N Build/UP1A.231005.007; wv) ..." → SM-S918N, Android 14
+const describeUserAgent = (
+  userAgent: string | null,
+): { model: string | null; os: string | null } => {
+  if (!userAgent) return { model: null, os: null };
+  const android = /Android ([\d.]+);\s*([^;)]+?)(?:\s+Build\/[^;)]*)?[;)]/.exec(userAgent);
+  // 크롬의 user agent 축소가 적용되면 기종 자리에 "K"만 온다 — 그땐 기종을 모른다고 본다
+  if (android) {
+    const model = android[2].trim();
+    return { model: model === "K" ? null : model, os: `Android ${android[1]}` };
+  }
+  const ios = /(iPhone|iPad).*? OS ([\d_]+)/.exec(userAgent);
+  if (ios) return { model: ios[1], os: `iOS ${ios[2].replace(/_/g, ".")}` };
+  return { model: null, os: null };
+};
+
 // 안전 관제 지도용 — 실시간 근무자 위치와 확인 필요(OPEN) 이탈을 한 번에 내려준다.
 // EscapesPage가 둘 다 10초 폴링으로 같이 쓰는 데이터라 폴링 요청을 하나로 묶는다.
 app.get("/:id/live-map", async (c) => {
@@ -1649,6 +1666,9 @@ app.get("/:id/live-map", async (c) => {
         lastLocationSource: participantEscapeMeta.lastLocationSource,
         lastJudgement: participantEscapeMeta.lastJudgement,
         lastOutsideM: participantEscapeMeta.lastOutsideM,
+        clockInUserAgent: attendanceLogs.clockInUserAgent,
+        clockInAppVersion: attendanceLogs.clockInAppVersion,
+        clockInBundleVersion: attendanceLogs.clockInBundleVersion,
         alertCount: participantEscapeMeta.alertCount,
         outsideStart: participantEscapeMeta.outsideStart,
       })
@@ -1681,6 +1701,14 @@ app.get("/:id/live-map", async (c) => {
     lastOutsideM: row.lastOutsideM,
     // 구역 밖에 찍혔지만 오차가 크거나 와이파이·기지국 위치라 이탈로 확정하지 않은 상태
     isJudgementHeld: row.lastJudgement === "UNCERTAIN",
+    // 출근할 때 쓴 앱·기기 — 위치 보고 끊김 진단용이라 SUPER_ADMIN에게만 내려준다
+    ...(auth.role === ROLES.SUPER_ADMIN && {
+      clockInDevice: {
+        appVersion: row.clockInAppVersion,
+        bundleVersion: row.clockInBundleVersion,
+        ...describeUserAgent(row.clockInUserAgent),
+      },
+    }),
     alertCount: row.alertCount ?? 0,
     status: row.outsideStart ? ("ESCAPE" as const) : ("NORMAL" as const),
   }));

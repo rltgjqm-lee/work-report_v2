@@ -100,6 +100,18 @@ const describeWorkerLocationSource = (worker: LiveWorker): string => {
   return `${source}${accuracy}`;
 };
 
+// 출근할 때 쓴 앱·기기 — 서버가 SUPER_ADMIN에게만 내려주므로 없으면 줄 자체를 안 그린다.
+// 앱 버전은 이 기능이 들어간 OTA 이후 출근부터 채워진다.
+const describeClockInDevice = (worker: LiveWorker): string | null => {
+  const device = worker.clockInDevice;
+  if (!device) return null;
+  const app = device.appVersion
+    ? `앱 ${device.appVersion}${device.bundleVersion ? ` (OTA ${device.bundleVersion})` : ""}`
+    : "앱 버전 모름";
+  const machine = [device.model, device.os].filter(Boolean).join(", ");
+  return machine ? `${app} · ${machine}` : app;
+};
+
 // 이탈 거리 = 관제구역 경계 밖으로 나간 거리. 대부분 수백 m라 1km 미만은 m로 보여준다.
 const formatEscapeDistance = (distanceKm: number) =>
   distanceKm >= 1 ? `${distanceKm.toFixed(1)}km` : `${Math.round(distanceKm * 1000)}m`;
@@ -492,6 +504,7 @@ const EscapesPage = () => {
           : worker.isJudgementHeld
             ? `이탈 판정 보류${worker.lastOutsideM !== null ? ` (경계 밖 ${worker.lastOutsideM}m)` : ""}`
             : "정상";
+      const clockInDeviceLabel = describeClockInDevice(worker);
       const marker = L.marker([worker.lat, worker.lng], { icon });
       marker.bindPopup(
         `<strong>${worker.name}</strong><br/>` +
@@ -500,7 +513,8 @@ const EscapesPage = () => {
           latestEscapeLabel +
           `수요처: ${worker.demandSiteName}<br/>` +
           `마지막 위치: ${worker.lastLocationAt ? isoToKstTimeString(worker.lastLocationAt) : "-"}<br/>` +
-          `측위: ${describeWorkerLocationSource(worker)}`,
+          `측위: ${describeWorkerLocationSource(worker)}` +
+          (clockInDeviceLabel ? `<br/>기기: ${clockInDeviceLabel}` : ""),
       );
       marker.on("popupopen", () => setHighlightedDemandSiteId(worker.demandSiteId));
       marker.on("popupclose", () => setHighlightedDemandSiteId(null));

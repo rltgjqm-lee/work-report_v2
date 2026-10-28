@@ -737,6 +737,12 @@ export const attendanceLogs = sqliteTable(
     // 숨길 수 있으므로 "0이면 결백"이 아니라 "0보다 크면 확인 필요"로만 읽어야 한다.
     // 개발자 옵션을 다른 목적으로 켜둔 기기도 있으니 자동 판정하지 않고 관리자가 확인한다.
     simulatedCount: integer("simulated_count").notNull().default(0),
+    // 출근할 때 쓴 앱·기기 — 근무 중 위치 보고가 끊기는 사람이 구버전 앱인지, 특정 기종인지
+    // 가려내는 진단용(관제 지도에서 SUPER_ADMIN에게만 보인다). user agent는 웹뷰가 요청에
+    // 자동으로 붙여 보내서 앱 수정 없이 받고, 앱·OTA 버전은 앱이 본문에 실어 보낸다.
+    clockInUserAgent: text("clock_in_user_agent"),
+    clockInAppVersion: text("clock_in_app_version"),
+    clockInBundleVersion: text("clock_in_bundle_version"),
     // 자동퇴근(autoClockOut)이 마지막 위치를 확인했는데 구역 밖으로 보이거나(OUTSIDE_AREA)
     // 위치 신호가 오래돼 판단을 못 하면(LOCATION_UNKNOWN) 정규 종료시각으로 자동 마감하지
     // 않고 이 사유만 남긴 채 clockOut을 비워둔다 — 관리자가 근무 강제수정으로 직접

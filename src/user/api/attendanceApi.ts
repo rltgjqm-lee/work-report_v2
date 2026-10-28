@@ -2,7 +2,7 @@ import { mutationOptions, queryOptions } from "@tanstack/react-query";
 
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
-import { recordClientEvent } from "../utils/clientEventLog";
+import { readAppInfo, recordClientEvent } from "../utils/clientEventLog";
 import { readCurrentLocation } from "../utils/geolocation";
 import type { Coordinates, LocationReading } from "../utils/geolocation";
 
@@ -218,8 +218,11 @@ const clockIn = async (
   debug: DebugAttendanceOverride | undefined,
   reading: LocationReading,
 ): Promise<{ id: number; clockIn: string }> => {
+  const { appVersion, bundleVersion } = await readAppInfo();
   const res = await postAttendance("/public/attendance/clock-in", {
     participantId,
+    appVersion,
+    bundleVersion,
     ...coordinatesPayload(reading.coordinates),
     ...attemptDiagnosticsPayload(reading),
     ...(debug?.date && { debugDate: debug.date }),

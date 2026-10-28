@@ -103,7 +103,8 @@ export const recordClientEvent = ({
   writeQueue(queue);
 };
 
-const readAppInfo = async () => {
+// 출근 요청에도 같이 실어 보낸다(attendanceApi) — 위치 보고가 끊기는 사람이 어떤 앱 버전인지 보려고
+export const readAppInfo = async () => {
   const platform = Capacitor.getPlatform();
   if (!Capacitor.isNativePlatform()) {
     return { platform, appVersion: null, bundleVersion: null };

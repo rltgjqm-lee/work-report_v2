@@ -44,6 +44,13 @@ export type LiveWorker = {
   lastLocationSource: "GPS" | "NETWORK" | null;
   lastOutsideM: number | null;
   isJudgementHeld: boolean;
+  // SUPER_ADMIN 응답에만 있다 — 출근할 때 쓴 앱·기기(위치 보고 끊김 진단용)
+  clockInDevice?: {
+    appVersion: string | null;
+    bundleVersion: string | null;
+    model: string | null;
+    os: string | null;
+  };
   alertCount: number;
   status: "NORMAL" | "ESCAPE";
 };
