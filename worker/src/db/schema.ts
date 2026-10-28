@@ -861,6 +861,13 @@ export const participantEscapeMeta = sqliteTable("participant_escape_meta", {
   lastLat: real("last_lat"),
   lastLng: real("last_lng"),
   lastLocationAt: text("last_location_at"),
+  // 마지막 위치 한 건의 측위 정보와 판정 결과 — 관제 지도에서 "구역 밖에 찍혔지만 오차가 크거나
+  // 와이파이·기지국 위치라 이탈 판정을 보류함"을 보여주기 위해 덮어써 둔다(이력은 남기지 않음).
+  lastAccuracyM: real("last_accuracy_m"),
+  lastLocationSource: text("last_location_source").$type<"GPS" | "NETWORK">(),
+  lastJudgement: text("last_judgement").$type<"INSIDE" | "OUTSIDE" | "UNCERTAIN" | "NO_AREA">(),
+  // 관제구역 경계 밖으로 나간 거리(m) — 구역 밖(OUTSIDE/UNCERTAIN)일 때만 채운다
+  lastOutsideM: integer("last_outside_m"),
   // 통신 끊김 푸시를 매 폴링(1분)마다 중복 발송하지 않기 위한 표시 —
   // 이미 알림을 보낸 상태면 다시 안 보내고, 새 위치가 들어오면(/location) null로 초기화
   signalLossAlertedAt: text("signal_loss_alerted_at"),

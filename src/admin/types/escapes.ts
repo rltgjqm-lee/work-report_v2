@@ -40,6 +40,10 @@ export type LiveWorker = {
   lat: number | null;
   lng: number | null;
   lastLocationAt: string | null;
+  lastAccuracyM: number | null;
+  lastLocationSource: "GPS" | "NETWORK" | null;
+  lastOutsideM: number | null;
+  isJudgementHeld: boolean;
   alertCount: number;
   status: "NORMAL" | "ESCAPE";
 };

@@ -1645,6 +1645,10 @@ app.get("/:id/live-map", async (c) => {
         lat: participantEscapeMeta.lastLat,
         lng: participantEscapeMeta.lastLng,
         lastLocationAt: participantEscapeMeta.lastLocationAt,
+        lastAccuracyM: participantEscapeMeta.lastAccuracyM,
+        lastLocationSource: participantEscapeMeta.lastLocationSource,
+        lastJudgement: participantEscapeMeta.lastJudgement,
+        lastOutsideM: participantEscapeMeta.lastOutsideM,
         alertCount: participantEscapeMeta.alertCount,
         outsideStart: participantEscapeMeta.outsideStart,
       })
@@ -1672,6 +1676,11 @@ app.get("/:id/live-map", async (c) => {
     lat: row.lat,
     lng: row.lng,
     lastLocationAt: row.lastLocationAt,
+    lastAccuracyM: row.lastAccuracyM,
+    lastLocationSource: row.lastLocationSource,
+    lastOutsideM: row.lastOutsideM,
+    // 구역 밖에 찍혔지만 오차가 크거나 와이파이·기지국 위치라 이탈로 확정하지 않은 상태
+    isJudgementHeld: row.lastJudgement === "UNCERTAIN",
     alertCount: row.alertCount ?? 0,
     status: row.outsideStart ? ("ESCAPE" as const) : ("NORMAL" as const),
   }));

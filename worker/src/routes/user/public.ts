@@ -806,6 +806,8 @@ const LOW_ACCURACY_MARGIN_MULTIPLIER = 2;
 // 벗어났을 때만 이탈로 확정한다. 그보다 가까운 이탈은 다음 GPS 보고(약 10분 뒤)가 잡는다.
 const NETWORK_SOURCE_MIN_MARGIN_M = 1000;
 
+type LocationJudgement = NonNullable<(typeof participantEscapeMeta.$inferSelect)["lastJudgement"]>;
+
 // 참여자 PWA(또는 향후 하이브리드 앱)가 출근 중일 때 주기적으로 위치를 보고하는 엔드포인트.
 // 배정된 수요처 반경을 벗어났는지 판정하고, 새로 벗어난 경우에만 이탈 이벤트를 기록한다
 // (반경 밖에 계속 있는 동안 매 호출마다 새로 기록하지 않음 — 벗어난 "사건" 단위로 집계).
@@ -877,7 +879,7 @@ app.post("/location", async (c) => {
     .split(",")
     .map((participantId) => Number(participantId.trim()))
     .includes(participant.id);
-  const recordTrace = async (judgement: "INSIDE" | "OUTSIDE" | "UNCERTAIN" | "NO_AREA") => {
+  const recordTrace = async (judgement: LocationJudgement) => {
     if (!isTraceTarget) return;
     await db.insert(locationTraces).values({
       participantId: participant.id,
@@ -894,15 +896,28 @@ app.post("/location", async (c) => {
     });
   };
 
-  const saveMeta = (fields: { alertCount?: number; outsideStart?: string | null }) =>
-    meta
+  // 마지막 위치와 함께 그 위치를 어떻게 판정했는지(판정 보류 포함)·오차·측위 출처를 덮어써 둔다 —
+  // 관제 지도가 "구역 밖에 찍혔는데 왜 이탈이 아닌지"를 보여줄 수 있게. 위치 이력은 쌓지 않는다.
+  const saveMeta = (
+    judgement: LocationJudgement,
+    fields: { alertCount?: number; outsideStart?: string | null; outsideM?: number | null },
+  ) => {
+    const { outsideM = null, ...escapeFields } = fields;
+    const lastPosition = {
+      lastLat: body.lat,
+      lastLng: body.lng,
+      lastLocationAt: iso,
+      lastAccuracyM: body.accuracy ?? null,
+      lastLocationSource: locationSource,
+      lastJudgement: judgement,
+      lastOutsideM: outsideM,
+    };
+    return meta
       ? db
           .update(participantEscapeMeta)
           .set({
-            ...fields,
-            lastLat: body.lat,
-            lastLng: body.lng,
-            lastLocationAt: iso,
+            ...escapeFields,
+            ...lastPosition,
             // 새 위치가 들어왔으니 통신 끊김 상태는 해제
             signalLossAlertedAt: null,
             updatedAt: iso,
@@ -910,15 +925,14 @@ app.post("/location", async (c) => {
           .where(eq(participantEscapeMeta.participantId, participant.id))
       : db.insert(participantEscapeMeta).values({
           participantId: participant.id,
-          alertCount: fields.alertCount ?? 0,
-          outsideStart: fields.outsideStart ?? null,
-          lastLat: body.lat,
-          lastLng: body.lng,
-          lastLocationAt: iso,
+          alertCount: escapeFields.alertCount ?? 0,
+          outsideStart: escapeFields.outsideStart ?? null,
+          ...lastPosition,
         });
+  };
 
   if (!participant.demandSiteId) {
-    await saveMeta({});
+    await saveMeta("NO_AREA", {});
     await recordTrace("NO_AREA");
     return c.json({ ok: true, escaped: false, message: "수요처 미배정" });
   }
@@ -929,7 +943,7 @@ app.post("/location", async (c) => {
     .where(eq(demandSites.id, participant.demandSiteId));
   const demandSite = demandSiteRows[0];
   if (!demandSite) {
-    await saveMeta({});
+    await saveMeta("NO_AREA", {});
     await recordTrace("NO_AREA");
     return c.json({
       ok: true,
@@ -947,7 +961,7 @@ app.post("/location", async (c) => {
   const areas = buildDemandSiteAreas(demandSite, locations);
 
   if (areas.length === 0) {
-    await saveMeta({});
+    await saveMeta("NO_AREA", {});
     await recordTrace("NO_AREA");
     return c.json({
       ok: true,
@@ -988,9 +1002,10 @@ app.post("/location", async (c) => {
   if (isTooInaccurateToJudge) {
     // 이미 이탈 중이었다면 그 상태를 끝내지 않고 그대로 둔다 — 오차가 큰 좌표 한 건이
     // 진행 중인 이탈을 "복귀"로 지워버리면 안 된다.
-    await saveMeta({
+    await saveMeta("UNCERTAIN", {
       alertCount: currentAlertCount,
       outsideStart: meta?.outsideStart ?? null,
+      outsideM: Math.round(outsideMarginM),
     });
     await recordTrace("UNCERTAIN");
 
@@ -1082,9 +1097,10 @@ app.post("/location", async (c) => {
       }
     }
 
-    await saveMeta({
+    await saveMeta("OUTSIDE", {
       alertCount: newAlertCount,
       outsideStart: meta?.outsideStart ?? iso,
+      outsideM: Math.round(outsideMarginM),
     });
     await recordTrace("OUTSIDE");
 
@@ -1098,7 +1114,7 @@ app.post("/location", async (c) => {
   }
 
   // 반경 안으로 복귀 — alertCount는 유지하고(관리자가 RESOLVED해야 초기화) 진행 중이던 이탈만 종료
-  await saveMeta({ alertCount: currentAlertCount, outsideStart: null });
+  await saveMeta("INSIDE", { alertCount: currentAlertCount, outsideStart: null });
   await recordTrace("INSIDE");
 
   return c.json({

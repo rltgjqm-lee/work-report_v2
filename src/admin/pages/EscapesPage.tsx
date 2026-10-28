@@ -81,6 +81,23 @@ const describeLocationSource = (escape: EscapeLog): string => {
   return escape.accuracyM <= 50 ? "GPS로 보임" : "판단 어려움";
 };
 
+// 이탈 판정 보류 = 마지막 위치가 구역 밖에 찍혔지만 오차가 크거나 와이파이·기지국 위치라서 서버가
+// 이탈로 확정하지 않은 상태. 다음 보고(약 10분 뒤)에서 GPS로 다시 밖이면 이탈로 잡힌다.
+const HELD_JUDGEMENT_COLOR = "#8B5CF6";
+
+const describeHeldJudgement = (worker: LiveWorker): string => {
+  const source =
+    worker.lastLocationSource === "NETWORK"
+      ? "와이파이·기지국 위치"
+      : worker.lastLocationSource === "GPS"
+        ? "GPS 위치"
+        : "위치";
+  const accuracy =
+    worker.lastAccuracyM !== null ? `, 오차 ±${Math.round(worker.lastAccuracyM)}m` : "";
+  const outside = worker.lastOutsideM !== null ? `경계 밖 ${worker.lastOutsideM}m · ` : "";
+  return `${outside}${source}${accuracy}`;
+};
+
 // 이탈 거리 = 관제구역 경계 밖으로 나간 거리. 대부분 수백 m라 1km 미만은 m로 보여준다.
 const formatEscapeDistance = (distanceKm: number) =>
   distanceKm >= 1 ? `${distanceKm.toFixed(1)}km` : `${Math.round(distanceKm * 1000)}m`;
@@ -448,16 +465,35 @@ const EscapesPage = () => {
             isFromPreviousWorkDay(latestOpenEscape.escape.detectedAt) ? ", 이전 근무일" : ""
           })<br/>`
         : "";
+      if (worker.isJudgementHeld && worker.lastAccuracyM !== null) {
+        L.circle([worker.lat, worker.lng], {
+          radius: worker.lastAccuracyM,
+          color: HELD_JUDGEMENT_COLOR,
+          weight: 1,
+          dashArray: "4 3",
+          fillOpacity: 0.06,
+          interactive: false,
+        }).addTo(layer);
+      }
+      const markerBorder = worker.isJudgementHeld
+        ? `3px solid ${HELD_JUDGEMENT_COLOR}`
+        : "3px solid #fff";
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:18px;height:18px;border-radius:50%;background:${getMarkerColor(
           worker,
-        )};border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.4);"></div>`,
+        )};border:${markerBorder};box-shadow:0 0 6px rgba(0,0,0,0.4);"></div>`,
       });
+      const statusLabel =
+        worker.status === "ESCAPE"
+          ? "이탈중"
+          : worker.isJudgementHeld
+            ? `이탈 판정 보류 (${describeHeldJudgement(worker)})`
+            : "정상";
       const marker = L.marker([worker.lat, worker.lng], { icon });
       marker.bindPopup(
         `<strong>${worker.name}</strong><br/>` +
-          `상태: ${worker.status === "ESCAPE" ? "이탈중" : "정상"}<br/>` +
+          `상태: ${statusLabel}<br/>` +
           `이탈횟수: ${worker.alertCount}회<br/>` +
           latestEscapeLabel +
           `수요처: ${worker.demandSiteName}<br/>` +
@@ -700,6 +736,13 @@ const EscapesPage = () => {
                       ✕
                     </span>
                     이탈 지점
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full border-2 flex-none"
+                      style={{ borderColor: HELD_JUDGEMENT_COLOR }}
+                    />
+                    판정 보류
                   </div>
                   <div className="text-text-subtle ml-auto">근무중 {filteredWorkers.length}명</div>
                 </div>
