@@ -1229,6 +1229,34 @@ const validateActivityLogRequiredSections = (
   return null;
 };
 
+// 활동일지 시작·종료시간은 그날 조 근무시간 안으로 맞춘다 — 출근을 일찍 눌러도 근무시작시각으로,
+// 퇴근을 늦게 눌러도 근무종료시각까지만 인정하는 근무시간(attendance_logs)과 같은 기준이다.
+// 앱에는 실제로 누른 시각이 그대로 보이고 서버에 저장되는 값만 맞춘다. 늦게 시작했거나 일찍 끝난
+// 경우(지각·조퇴)는 그대로 둔다. 그날 출근 기록이나 조가 없으면 기준이 없으니 그대로 둔다.
+const clampActivityTimesToShift = async (
+  db: ReturnType<typeof drizzle>,
+  participantId: number,
+  actDate: string,
+  times: { startTime: string; endTime: string },
+): Promise<{ startTime: string; endTime: string }> => {
+  const attendanceRows = await db
+    .select({ groupId: attendanceLogs.groupId })
+    .from(attendanceLogs)
+    .where(
+      and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, actDate)),
+    );
+  const groupId = attendanceRows[0]?.groupId;
+  if (!groupId) return times;
+
+  const shift = await resolveGroupShift(db, groupId, actDate);
+  // 종료시각이 시작시각보다 이르게 잘못 입력된 조(예: 12:30을 00:30으로)는 기준으로 쓸 수 없다
+  if (!shift || shift.shiftEnd <= shift.shiftStart) return times;
+  return {
+    startTime: times.startTime < shift.shiftStart ? shift.shiftStart : times.startTime,
+    endTime: times.endTime > shift.shiftEnd ? shift.shiftEnd : times.endTime,
+  };
+};
+
 // 활동일지 등록 — IndexedDB에 먼저 저장된 뒤(오프라인 대응) 온라인일 때 여기로 동기화된다.
 // 참여자 식별은 /attendance/identify와 동일한 이름+전화번호 흐름에서 얻은 participantId를 그대로 쓴다.
 app.post("/activity-logs", async (c) => {
@@ -1252,6 +1280,16 @@ app.post("/activity-logs", async (c) => {
   if (validationError) {
     return c.json({ error: validationError }, 400);
   }
+
+  const { startTime, endTime } = await clampActivityTimesToShift(
+    db,
+    body.participantId,
+    body.actDate,
+    {
+      startTime: body.startTime,
+      endTime: body.endTime,
+    },
+  );
 
   const [userSignatureKey, demandSignatureKey] = await Promise.all([
     uploadSignatureToR2(
@@ -1280,8 +1318,8 @@ app.post("/activity-logs", async (c) => {
     .values({
       participantId: body.participantId,
       actDate: body.actDate,
-      startTime: body.startTime,
-      endTime: body.endTime,
+      startTime,
+      endTime,
       content: body.content,
       place: body.place,
       hasAccident: body.hasAccident ?? false,
@@ -1294,8 +1332,8 @@ app.post("/activity-logs", async (c) => {
     .onConflictDoUpdate({
       target: [activityLogs.participantId, activityLogs.actDate],
       set: {
-        startTime: body.startTime,
-        endTime: body.endTime,
+        startTime,
+        endTime,
         content: body.content,
         place: body.place,
         hasAccident: body.hasAccident ?? false,
@@ -1336,6 +1374,16 @@ app.put("/activity-logs/:id", async (c) => {
     return c.json({ error: validationError }, 400);
   }
 
+  const { startTime, endTime } = await clampActivityTimesToShift(
+    db,
+    body.participantId,
+    body.actDate,
+    {
+      startTime: body.startTime,
+      endTime: body.endTime,
+    },
+  );
+
   const [userSignatureKey, demandSignatureKey] = await Promise.all([
     uploadSignatureToR2(
       c.env.SIGNATURES_BUCKET,
@@ -1359,8 +1407,8 @@ app.put("/activity-logs/:id", async (c) => {
     .update(activityLogs)
     .set({
       actDate: body.actDate,
-      startTime: body.startTime,
-      endTime: body.endTime,
+      startTime,
+      endTime,
       content: body.content,
       place: body.place,
       hasAccident: body.hasAccident ?? false,
