@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, like, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, like, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono, type MiddlewareHandler } from "hono";
 
@@ -1257,6 +1257,47 @@ const clampActivityTimesToShift = async (
   };
 };
 
+// 2026-10-29 일회성 조치: 앱 사용 첫 주(10/13~10/19)에 서명 단계를 못 마쳐, 폰에 남은 채 서명이
+// 없다고 계속 거부되던 활동일지 9건("참여자id:근무일"). 이 일지가 서명 없이 들어오면 본인이 직접
+// 한 가장 최근 서명으로 채워 받고 "서명 대체"로 표시한다 — 받아주면 폰은 전송 완료로 보고 재시도를
+// 멈춘다. 9건이 다 들어오면 이 목록과 findSubstituteSignature를 지운다.
+const SIGNATURE_SUBSTITUTION_TARGETS = new Set([
+  "31:2026-10-13",
+  "50:2026-10-13",
+  "59:2026-10-13",
+  "62:2026-10-13",
+  "63:2026-10-13",
+  "46:2026-10-14",
+  "41:2026-10-15",
+  "41:2026-10-16",
+  "50:2026-10-19",
+]);
+
+// 대체 대상인데 서명이 비어 있으면 대신 쓸 서명(R2 키)을, 아니면 null을 돌려준다.
+const findSubstituteSignature = async (
+  db: ReturnType<typeof drizzle>,
+  participantId: number,
+  actDate: string,
+  userSignature: string | undefined,
+): Promise<string | null> => {
+  if (userSignature?.trim()) return null;
+  if (!SIGNATURE_SUBSTITUTION_TARGETS.has(`${participantId}:${actDate}`)) return null;
+
+  const signatureRows = await db
+    .select({ userSignature: activityLogs.userSignature })
+    .from(activityLogs)
+    .where(
+      and(
+        eq(activityLogs.participantId, participantId),
+        eq(activityLogs.signatureSubstituted, false),
+        ne(activityLogs.userSignature, ""),
+      ),
+    )
+    .orderBy(desc(activityLogs.actDate))
+    .limit(1);
+  return signatureRows[0]?.userSignature ?? null;
+};
+
 // 활동일지 등록 — IndexedDB에 먼저 저장된 뒤(오프라인 대응) 온라인일 때 여기로 동기화된다.
 // 참여자 식별은 /attendance/identify와 동일한 이름+전화번호 흐름에서 얻은 participantId를 그대로 쓴다.
 app.post("/activity-logs", async (c) => {
@@ -1276,7 +1317,19 @@ app.post("/activity-logs", async (c) => {
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
   }
 
-  const validationError = validateActivityLogRequiredSections(body, participantRows[0].programType);
+  const substituteSignature = await findSubstituteSignature(
+    db,
+    body.participantId,
+    body.actDate,
+    body.userSignature,
+  );
+  const userSignature = substituteSignature ?? body.userSignature;
+  const signatureSubstituted = substituteSignature !== null;
+
+  const validationError = validateActivityLogRequiredSections(
+    { ...body, userSignature },
+    participantRows[0].programType,
+  );
   if (validationError) {
     return c.json({ error: validationError }, 400);
   }
@@ -1298,7 +1351,7 @@ app.post("/activity-logs", async (c) => {
       body.participantId,
       body.actDate,
       "user",
-      body.userSignature,
+      userSignature,
     ),
     uploadSignatureToR2(
       c.env.SIGNATURES_BUCKET,
@@ -1327,6 +1380,7 @@ app.post("/activity-logs", async (c) => {
       accidentDetail: body.accidentDetail,
       accidentAction: body.accidentAction,
       userSignature: userSignatureKey,
+      signatureSubstituted,
       demandSignature: demandSignatureKey,
     })
     .onConflictDoUpdate({
@@ -1341,6 +1395,7 @@ app.post("/activity-logs", async (c) => {
         accidentDetail: body.accidentDetail,
         accidentAction: body.accidentAction,
         userSignature: userSignatureKey,
+        signatureSubstituted,
         demandSignature: demandSignatureKey,
       },
     })
@@ -1369,7 +1424,19 @@ app.put("/activity-logs/:id", async (c) => {
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
   }
 
-  const validationError = validateActivityLogRequiredSections(body, participantRows[0].programType);
+  const substituteSignature = await findSubstituteSignature(
+    db,
+    body.participantId,
+    body.actDate,
+    body.userSignature,
+  );
+  const userSignature = substituteSignature ?? body.userSignature;
+  const signatureSubstituted = substituteSignature !== null;
+
+  const validationError = validateActivityLogRequiredSections(
+    { ...body, userSignature },
+    participantRows[0].programType,
+  );
   if (validationError) {
     return c.json({ error: validationError }, 400);
   }
@@ -1391,7 +1458,7 @@ app.put("/activity-logs/:id", async (c) => {
       body.participantId,
       body.actDate,
       "user",
-      body.userSignature,
+      userSignature,
     ),
     uploadSignatureToR2(
       c.env.SIGNATURES_BUCKET,
@@ -1416,6 +1483,7 @@ app.put("/activity-logs/:id", async (c) => {
       accidentDetail: body.accidentDetail,
       accidentAction: body.accidentAction,
       userSignature: userSignatureKey,
+      signatureSubstituted,
       demandSignature: demandSignatureKey,
     })
     .where(and(eq(activityLogs.id, id), eq(activityLogs.participantId, body.participantId)))

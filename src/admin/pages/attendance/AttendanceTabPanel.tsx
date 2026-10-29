@@ -530,7 +530,9 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                       )}
                     </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                      {row.activity.signed ? (
+                      {row.activity.signatureSubstituted ? (
+                        <StatusChip variant="info">서명 대체</StatusChip>
+                      ) : row.activity.signed ? (
                         <StatusChip variant="ok">완료</StatusChip>
                       ) : (
                         <StatusChip variant="warn">미완료</StatusChip>

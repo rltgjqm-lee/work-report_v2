@@ -324,7 +324,11 @@ const AttendanceHistorySection = ({
                     )}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint">
-                    {row.activity.signed ? "✓" : "-"}
+                    {row.activity.signatureSubstituted
+                      ? "서명 대체"
+                      : row.activity.signed
+                        ? "✓"
+                        : "-"}
                   </td>
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-pre-wrap break-words">
                     {row.log.note ?? "-"}

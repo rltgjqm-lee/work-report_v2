@@ -47,6 +47,8 @@ export type ActivityLogSummary = {
   accidentDetail: string | null;
   accidentAction: string | null;
   signed: boolean;
+  // 그날 서명이 없어 본인의 다른 날 서명으로 채운 일지
+  signatureSubstituted: boolean;
 };
 
 export type ParticipantAttendanceRow = {

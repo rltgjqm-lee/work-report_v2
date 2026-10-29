@@ -231,6 +231,7 @@ app.get("/:id/attendance", async (c) => {
       accidentDetail: activityLogs.accidentDetail,
       accidentAction: activityLogs.accidentAction,
       userSignature: activityLogs.userSignature,
+      signatureSubstituted: activityLogs.signatureSubstituted,
     })
     .from(attendanceLogs)
     .leftJoin(groups, eq(attendanceLogs.groupId, groups.id))
@@ -305,6 +306,7 @@ app.get("/:id/attendance", async (c) => {
         accidentDetail: row.accidentDetail ?? null,
         accidentAction: row.accidentAction ?? null,
         signed: !!row.userSignature,
+        signatureSubstituted: row.signatureSubstituted ?? false,
       },
       escapeStatus: matchedEscape?.status ?? null,
       escapeMemo: matchedEscape?.memo ?? null,

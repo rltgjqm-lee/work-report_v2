@@ -939,6 +939,11 @@ export const activityLogs = sqliteTable(
     accidentAction: text("accident_action"),
     userSignature: text("user_signature"),
     demandSignature: text("demand_signature"),
+    // 참여자가 그날 서명하지 않아 다른 날 서명(본인의 가장 최근 서명)으로 채운 일지 — 직접 서명한
+    // 일지와 구분하려고 남긴다. 관리자 화면에 "서명 대체"로 보인다.
+    signatureSubstituted: integer("signature_substituted", { mode: "boolean" })
+      .notNull()
+      .default(false),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

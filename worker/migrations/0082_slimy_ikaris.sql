@@ -1,0 +1,1 @@
+ALTER TABLE `activity_logs` ADD `signature_substituted` integer DEFAULT false NOT NULL;
