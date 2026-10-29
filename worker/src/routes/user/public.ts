@@ -1229,26 +1229,45 @@ const validateActivityLogRequiredSections = (
   return null;
 };
 
-// 활동일지 시작·종료시간은 그날 조 근무시간 안으로 맞춘다 — 출근을 일찍 눌러도 근무시작시각으로,
-// 퇴근을 늦게 눌러도 근무종료시각까지만 인정하는 근무시간(attendance_logs)과 같은 기준이다.
-// 앱에는 실제로 누른 시각이 그대로 보이고 서버에 저장되는 값만 맞춘다. 늦게 시작했거나 일찍 끝난
-// 경우(지각·조퇴)는 그대로 둔다. 그날 출근 기록이나 조가 없으면 기준이 없으니 그대로 둔다.
-const clampActivityTimesToShift = async (
+// 활동일지 시작·종료시간을 그날 근무 기록에 맞춘다. 앱에는 실제로 누른 시각이 그대로 보이고 서버에
+// 저장되는 값만 맞춘다. 그날 근무 기록이 없으면 기준이 없으니 그대로 둔다.
+//  - 관리자가 고친 근무 기록(대체근무를 늦게 입력하는 등)은 그 출퇴근 시각을 그대로 따른다 — 조
+//    근무시간과 다른 시간으로 일한 게 관리자 확인으로 확정된 경우라, 조 시간으로 맞추면 근무관리와
+//    어긋난다.
+//  - 그 외에는 조 근무시간 안으로 맞춘다 — 출근을 일찍 눌러도 근무시작시각으로, 퇴근을 늦게 눌러도
+//    근무종료시각까지만 인정하는 근무시간과 같은 기준이다. 늦게 시작했거나 일찍 끝난 경우(지각·조퇴)는
+//    그대로 둔다. 예전 근무 기록은 이 규칙이 생기기 전 값(일찍 누른 출근 시각 등)이 남아 있어서 출퇴근
+//    시각을 그대로 쓰지 않는다.
+const alignActivityTimesToAttendance = async (
   db: ReturnType<typeof drizzle>,
   participantId: number,
   actDate: string,
   times: { startTime: string; endTime: string },
 ): Promise<{ startTime: string; endTime: string }> => {
   const attendanceRows = await db
-    .select({ groupId: attendanceLogs.groupId })
+    .select({
+      groupId: attendanceLogs.groupId,
+      clockIn: attendanceLogs.clockIn,
+      clockOut: attendanceLogs.clockOut,
+      correctedByAdminId: attendanceLogs.correctedByAdminId,
+    })
     .from(attendanceLogs)
     .where(
       and(eq(attendanceLogs.participantId, participantId), eq(attendanceLogs.workDate, actDate)),
     );
-  const groupId = attendanceRows[0]?.groupId;
-  if (!groupId) return times;
+  const attendance = attendanceRows[0];
+  if (!attendance) return times;
 
-  const shift = await resolveGroupShift(db, groupId, actDate);
+  // clock_in/clock_out은 KST 벽시계 시각에 Z만 붙인 값이라 시:분을 그대로 잘라 쓴다
+  if (attendance.correctedByAdminId !== null && attendance.clockIn) {
+    return {
+      startTime: attendance.clockIn.slice(11, 16),
+      endTime: attendance.clockOut?.slice(11, 16) ?? times.endTime,
+    };
+  }
+
+  if (!attendance.groupId) return times;
+  const shift = await resolveGroupShift(db, attendance.groupId, actDate);
   // 종료시각이 시작시각보다 이르게 잘못 입력된 조(예: 12:30을 00:30으로)는 기준으로 쓸 수 없다
   if (!shift || shift.shiftEnd <= shift.shiftStart) return times;
   return {
@@ -1334,7 +1353,7 @@ app.post("/activity-logs", async (c) => {
     return c.json({ error: validationError }, 400);
   }
 
-  const { startTime, endTime } = await clampActivityTimesToShift(
+  const { startTime, endTime } = await alignActivityTimesToAttendance(
     db,
     body.participantId,
     body.actDate,
@@ -1441,7 +1460,7 @@ app.put("/activity-logs/:id", async (c) => {
     return c.json({ error: validationError }, 400);
   }
 
-  const { startTime, endTime } = await clampActivityTimesToShift(
+  const { startTime, endTime } = await alignActivityTimesToAttendance(
     db,
     body.participantId,
     body.actDate,
