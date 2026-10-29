@@ -484,7 +484,10 @@ app.post("/attendance/clock-in", async (c) => {
   }
 
   const debugOverride = await readDebugOverride(c, body);
-  const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
+  const { date, time } = getKstNow(debugOverride.date, debugOverride.time);
+  // 출퇴근 시각은 분 단위로 저장한다 — 초까지 남기면 화면에 보이는 시:분(08:20~11:30 = 190분)과
+  // 근무시간(초 때문에 189분)이 어긋난다.
+  const iso = `${date}T${time}:00.000Z`;
   const yearMonth = date.slice(0, 7);
 
   // 서로 의존관계가 없는 조회 4개를 한 번에 실행해서 왕복 횟수를 줄인다 — 순차 실행 시
@@ -686,7 +689,10 @@ app.post("/attendance/clock-out", async (c) => {
   }
 
   const debugOverride = await readDebugOverride(c, body);
-  const { date, time, iso } = getKstNow(debugOverride.date, debugOverride.time);
+  const { date, time } = getKstNow(debugOverride.date, debugOverride.time);
+  // 출퇴근 시각은 분 단위로 저장한다 — 초까지 남기면 화면에 보이는 시:분(08:20~11:30 = 190분)과
+  // 근무시간(초 때문에 189분)이 어긋난다.
+  const iso = `${date}T${time}:00.000Z`;
 
   const rows = await db
     .select()
