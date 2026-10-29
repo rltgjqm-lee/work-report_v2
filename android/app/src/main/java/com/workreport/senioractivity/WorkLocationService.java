@@ -12,6 +12,9 @@ import android.content.pm.ServiceInfo;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -72,6 +75,10 @@ public class WorkLocationService extends Service {
 
     private static final int NOTIFICATION_ID = 7301;
     private static final String CHANNEL_ID = "work_location";
+    // 인터넷이 없어 보고를 못 보낼 때 참여자에게 데이터를 켜라고 알리는 알림 — 상주 알림과 달리
+    // 소리·팝업으로 눈에 띄어야 해서 중요도가 높은 채널을 따로 쓴다.
+    private static final int OFFLINE_NOTIFICATION_ID = 7302;
+    private static final String OFFLINE_CHANNEL_ID = "work_location_offline";
     private static final String PREFS = "work_location";
     private static final String PREF_PARTICIPANT_ID = "participantId";
     private static final String PREF_API_BASE_URL = "apiBaseUrl";
@@ -92,6 +99,9 @@ public class WorkLocationService extends Service {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     // 앞선 측위(GPS 대기 최대 20초)가 끝나기 전에 다음 주기가 겹치면 건너뛴다
     private boolean measuring = false;
+    // 이번 끊김에 이미 인터넷 끊김 알림을 울렸는지 — 끊김 한 번에 한 번만 울리고, 보고가 다시
+    // 성공하면 false로 돌려 다음 끊김 때 또 알린다. 퇴근(stopTracking)은 메인 스레드에서도 오므로 volatile.
+    private volatile boolean offlineAlerted = false;
 
     static boolean isRunning() {
         return running;
@@ -324,9 +334,10 @@ public class WorkLocationService extends Service {
 
                 JSONObject result = postJson(apiBaseUrl + "/public/location", body);
                 if (result == null) {
-                    notifyFailure();
+                    handleSendFailure();
                     return;
                 }
+                cancelOfflineNotification();
                 // 화면이 꺼진 사이 자동퇴근(또는 관리자 처리)으로 근무가 끝났으면 스스로 멈춘다
                 if (result.has("working") && !result.optBoolean("working", true)) {
                     stopTracking();
@@ -335,11 +346,76 @@ public class WorkLocationService extends Service {
                 ReportListener listener = reportListener;
                 if (listener != null) listener.onReport(result);
             } catch (Exception exception) {
-                notifyFailure();
+                handleSendFailure();
             } finally {
                 if (wakeLock.isHeld()) wakeLock.release();
             }
         });
+    }
+
+    // 화면이 꺼져 있으면 앱 안의 "데이터를 켜 주세요" 배너를 못 보므로, 인터넷이 없어서 실패한
+    // 거면 폰 알림으로 직접 알린다(알림은 폰 안에서 띄우는 거라 인터넷이 없어도 뜬다). 서버 오류
+    // 등 인터넷은 있는데 실패한 경우는 참여자가 할 수 있는 게 없으므로 알리지 않는다.
+    private void handleSendFailure() {
+        notifyFailure();
+        if (offlineAlerted || hasInternet()) return;
+        offlineAlerted = true;
+        showOfflineNotification();
+    }
+
+    // 데이터를 다 써서 통신사가 막은 경우처럼 연결은 잡혀 있어도 실제로 인터넷이 안 되면
+    // VALIDATED가 빠진다 — 그 경우도 인터넷 없음으로 본다.
+    private boolean hasInternet() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) return true;
+        Network network = connectivityManager.getActiveNetwork();
+        if (network == null) return false;
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+        return capabilities != null
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    }
+
+    // 끊김 한 번에 한 번만 띄운다 — 10분마다 울리면 참여자가 당황하고, 놓치더라도 관리자 쪽 통신
+    // 끊김 알림(25분)으로 확인할 수 있다. 참여자가 지운 알림은 같은 끊김 동안 다시 띄우지 않는다.
+    private void showOfflineNotification() {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && manager.getNotificationChannel(OFFLINE_CHANNEL_ID) == null) {
+            NotificationChannel channel = new NotificationChannel(
+                    OFFLINE_CHANNEL_ID,
+                    "근무 중 인터넷 연결 끊김",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            // 진동 모드로 두고 일하는 경우가 많아 진동도 켠다 — 채널 설정은 처음 만들 때 고정되고
+            // 이후 코드로는 못 바꾸므로, 바꾸려면 채널 id를 새로 정해야 한다.
+            channel.enableVibration(true);
+            manager.createNotificationChannel(channel);
+        }
+
+        Notification notification = new NotificationCompat.Builder(this, OFFLINE_CHANNEL_ID)
+                .setContentTitle("위치를 보내지 못하고 있어요")
+                .setContentText("인터넷이 연결되지 않았어요. 모바일 데이터나 와이파이를 켜 주세요.")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("인터넷이 연결되지 않았어요. 모바일 데이터나 와이파이를 켜 주세요."))
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setContentIntent(buildLaunchIntent())
+                .setAutoCancel(true)
+                .build();
+        try {
+            manager.notify(OFFLINE_NOTIFICATION_ID, notification);
+        } catch (SecurityException exception) {
+            // 안드로이드 13+에서 알림 권한을 거부했으면 띄울 수 없다 — 관리자 쪽 통신 끊김 알림에 맡긴다
+        }
+    }
+
+    // 다시 보고가 성공했거나 퇴근해서 서비스가 멈추면 지난 끊김 알림은 의미가 없으니 지운다
+    private void cancelOfflineNotification() {
+        offlineAlerted = false;
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) manager.cancel(OFFLINE_NOTIFICATION_ID);
     }
 
     // 2xx면 응답 JSON, 그 외(네트워크 오류·서버 오류)는 null. 실패한 좌표를 쌓아뒀다가 나중에
@@ -392,6 +468,7 @@ public class WorkLocationService extends Service {
         }
         locationCallback = null;
         getSharedPreferences(PREFS, MODE_PRIVATE).edit().clear().apply();
+        cancelOfflineNotification();
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
@@ -417,19 +494,22 @@ public class WorkLocationService extends Service {
             manager.createNotificationChannel(channel);
         }
 
-        // 알림을 누르면 앱 화면으로 돌아온다
-        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        PendingIntent contentIntent = launchIntent == null
-                ? null
-                : PendingIntent.getActivity(this, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE);
-
         // 문구는 기존 위치 플러그인(backgroundLocation.ts)과 같게 둬서 참여자에게 보이는 게 바뀌지 않게 한다
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("안전을 위해 위치를 확인하고 있어요")
                 .setContentText("퇴근을 등록하면 종료됩니다.")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
-                .setContentIntent(contentIntent)
+                .setContentIntent(buildLaunchIntent())
                 .build();
+    }
+
+    // 알림을 누르면 앱 화면으로 돌아온다
+    @Nullable
+    private PendingIntent buildLaunchIntent() {
+        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        return launchIntent == null
+                ? null
+                : PendingIntent.getActivity(this, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE);
     }
 }
