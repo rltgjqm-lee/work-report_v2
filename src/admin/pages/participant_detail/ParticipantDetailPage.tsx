@@ -178,6 +178,7 @@ const AttendanceHistorySection = ({
   ];
 
   const isFiltered = dayFilter !== "all";
+  const handleAllDaysButtonClick = () => onDayFilterChange("all");
   const filteredLogs = logs.filter(
     (row) => dayFilter === "all" || row.log.workDate === `${month}-${dayFilter.padStart(2, "0")}`,
   );
@@ -211,6 +212,14 @@ const AttendanceHistorySection = ({
         <div className="flex items-center gap-2.5">
           <MonthPicker value={month} onChange={onMonthChange} />
           <FilterSelect value={dayFilter} onChange={onDayFilterChange} options={dayFilterOptions} />
+          <Button
+            variant="ghost"
+            onClick={handleAllDaysButtonClick}
+            disabled={!isFiltered}
+            className="disabled:opacity-50 disabled:cursor-default"
+          >
+            전체 일자
+          </Button>
         </div>
       </div>
 
