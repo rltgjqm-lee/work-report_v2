@@ -81,10 +81,12 @@ export type ParticipantAppError = {
 const listParticipantAppErrors = (id: number) =>
   request<ParticipantAppError[]>(`/api/participants/${id}/app-errors`);
 
-export const participantAppErrorsQueryOptions = (id: number) =>
+// 진단용이라 서버가 SUPER_ADMIN에게만 내려준다 — 그 외 역할은 아예 호출하지 않는다
+export const participantAppErrorsQueryOptions = (id: number, isSuperAdmin: boolean) =>
   queryOptions({
     queryKey: participantKeys.appErrors(id),
     queryFn: () => listParticipantAppErrors(id),
+    enabled: isSuperAdmin,
   });
 
 const getParticipantLeaveHistory = (id: number, year: string) =>

@@ -128,9 +128,12 @@ app.get("/:id", async (c) => {
 
 // 최근 30일 앱 오류 기록 — 폰에서 서버에 닿지 못해 나중에 보고된 실패(client_events)와
 // 서버에 닿았지만 거부된 출퇴근 실패(attendance_attempt_failures)를 한 목록으로 내려준다.
-// "폰에서는 했다는데 서버엔 없다"는 문의가 왔을 때 원인을 관리자가 직접 확인하는 용도다.
+// "폰에서는 했다는데 서버엔 없다"는 문의가 왔을 때 원인을 확인하는 진단용이라 SUPER_ADMIN만 본다.
 app.get("/:id/app-errors", async (c) => {
   const auth = getAuth(c);
+  if (auth.role !== ROLES.SUPER_ADMIN) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
   const db = drizzle(c.env.DB);
   const id = Number(c.req.param("id"));
 

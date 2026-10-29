@@ -10,6 +10,8 @@ import {
   participantQueryOptions,
 } from "../../api/admin/participants";
 import type { ParticipantAppError } from "../../api/admin/participants";
+import { useAuth } from "../../context/useAuth";
+import { ROLES } from "../../types/admins";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
 import type { AnnualLeave, ParticipantLeave } from "../../types/participants";
 
@@ -53,6 +55,8 @@ const ParticipantDetailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const participantId = Number(searchParams.get("id"));
+  const { admin } = useAuth();
+  const isSuperAdmin = admin?.role === ROLES.SUPER_ADMIN;
 
   const [month, setMonth] = useState(getLocalYearMonth());
   // 기본값은 오늘 — 이번 달 전체보다 당일 근무 기록을 먼저 보여준다.
@@ -73,7 +77,9 @@ const ParticipantDetailPage = () => {
   const leaves = leaveHistory?.leaves ?? [];
   const annualLeave = leaveHistory?.annualLeave;
   const { data: attendance } = useQuery(participantAttendanceQueryOptions(participantId, month));
-  const { data: appErrors = [] } = useQuery(participantAppErrorsQueryOptions(participantId));
+  const { data: appErrors = [] } = useQuery(
+    participantAppErrorsQueryOptions(participantId, isSuperAdmin),
+  );
 
   const attendanceLogs = attendance?.logs ?? [];
   const attendanceStats = attendance?.stats ?? emptyStats;
@@ -131,8 +137,8 @@ const ParticipantDetailPage = () => {
       {/* 휴가 이력 */}
       <LeaveHistorySection annualLeave={annualLeave} leaves={leaves} />
 
-      {/* 앱 오류 기록 */}
-      <AppErrorSection appErrors={appErrors} />
+      {/* 앱 오류 기록 — 진단용이라 SUPER_ADMIN에게만 보인다 */}
+      {isSuperAdmin && <AppErrorSection appErrors={appErrors} />}
 
       {/* 급여 설정 모달 */}
       {payrollModalOpen && (
