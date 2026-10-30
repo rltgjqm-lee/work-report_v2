@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
+
 import { useAuth } from "../context/useAuth";
 
 import { organizationQueryOptions } from "../api/admin/organizations";
@@ -227,9 +229,9 @@ const AdminLayout = () => {
               onClick={handleSidebarToggleButtonClick}
               aria-label={sidebarCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
               title={sidebarCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
-              className="w-8 h-8 flex items-center justify-center rounded-[4px] text-lg text-admin-text-secondary cursor-pointer bg-transparent border border-admin-border hover:bg-admin-surface-hover"
+              className="w-8 h-8 p-0 inline-flex flex-none items-center justify-center rounded-lg text-admin-text-secondary cursor-pointer bg-white border border-admin-border hover:bg-admin-surface-hover"
             >
-              ☰
+              {sidebarCollapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
             </button>
             <div className="text-base font-bold">{getTopbarTitle(location.pathname)}</div>
           </div>
