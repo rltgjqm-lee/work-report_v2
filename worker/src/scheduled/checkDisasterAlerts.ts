@@ -124,7 +124,14 @@ const fetchNewMessagesWithBudget = async (
     collected.push(...messages);
 
     state.callCount += 1;
-    state.processedCount += messages.length;
+    // 누적합(+=)이 아니라 "오늘치 중 몇 번째 줄까지 받았는지" 절대 위치로 덮어쓴다 — 하루치는
+    // 보통 1페이지 안이라 매분 같은 페이지를 다시 받는데, 더하면 몇 분 만에 1000을 넘겨 빈
+    // 다음 페이지만 조회하다 그날 새 메시지를 전부 놓쳤다. totalCount로 상한을 두어, 예전 값처럼
+    // 실제 건수보다 앞서간 오프셋도 다음 실행에서 올바른 페이지로 돌아오게 한다.
+    state.processedCount = Math.min(
+      (pageNo - 1) * MAX_ROWS_PER_PAGE + messages.length,
+      totalCount,
+    );
     await saveCallBudgetState(db, date, state);
     state.exists = true;
 
