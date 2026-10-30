@@ -78,6 +78,26 @@ const getTopbarTitle = (pathname: string) => {
   return "관리자 콘솔";
 };
 
+// 사이드바 접힘 여부는 관리자 본인 브라우저에만 기억한다(다음에 열어도 그대로). 저장소를 못 쓰는
+// 환경(시크릿 창 등)이면 기억만 못 할 뿐 펼친 상태로 동작한다.
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
+
+const readSidebarCollapsed = (): boolean => {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const writeSidebarCollapsed = (collapsed: boolean) => {
+  try {
+    localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(collapsed));
+  } catch {
+    // 저장 실패는 무시한다 — 지금 화면의 접힘 상태에는 영향이 없다
+  }
+};
+
 /**
  * 관리자 콘솔의 사이드바 + 상단바를 포함한 공통 레이아웃입니다.
  *
@@ -87,6 +107,13 @@ const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+
+  const handleSidebarToggleButtonClick = () => {
+    const nextCollapsed = !sidebarCollapsed;
+    setSidebarCollapsed(nextCollapsed);
+    writeSidebarCollapsed(nextCollapsed);
+  };
 
   const { data: organization } = useQuery({
     ...organizationQueryOptions(admin?.organizationId ?? 0),
@@ -141,7 +168,9 @@ const AdminLayout = () => {
 
   return (
     <div className="flex w-full min-h-screen bg-surface-page text-text-strong font-sans">
-      <aside className="w-[248px] flex-none bg-admin-navy-strong text-admin-sidebar-text flex flex-col py-6">
+      <aside
+        className={`${sidebarCollapsed ? "hidden" : "flex"} w-[248px] flex-none bg-admin-navy-strong text-admin-sidebar-text flex-col py-6`}
+      >
         <div className="px-6 pb-[22px] border-b border-white/[0.08] mb-3.5">
           <div className="text-[15px] font-bold text-white">기관 통합관리시스템</div>
           <div className="text-[11px] text-admin-sidebar-icon-muted mt-[5px]">
@@ -193,7 +222,17 @@ const AdminLayout = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         <div className="h-[60px] flex-none bg-white border-b border-admin-border-subtle flex items-center justify-between px-8">
-          <div className="text-base font-bold">{getTopbarTitle(location.pathname)}</div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSidebarToggleButtonClick}
+              aria-label={sidebarCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
+              title={sidebarCollapsed ? "메뉴 펼치기" : "메뉴 접기"}
+              className="w-8 h-8 flex items-center justify-center rounded-[4px] text-lg text-admin-text-secondary cursor-pointer bg-transparent border border-admin-border hover:bg-admin-surface-hover"
+            >
+              ☰
+            </button>
+            <div className="text-base font-bold">{getTopbarTitle(location.pathname)}</div>
+          </div>
           <div className="flex items-center gap-4 text-xs text-text-subtle">
             <span>
               {sessionRemainingLabel} · {admin?.name ?? admin?.email}
