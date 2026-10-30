@@ -1,5 +1,7 @@
 import ExcelJS from "exceljs";
 
+import { columnWidthToPx, fitSignatureInCell, rowHeightToPx } from "./signatureImage";
+
 type CapacityAttendanceMarker = "HOLIDAY" | "WEEKEND" | "PRESENT" | "ABSENT" | "NONE";
 
 interface CapacityAttendanceDay {
@@ -47,6 +49,8 @@ const sanitizeSheetName = (name: string, usedNames: Set<string>) => {
 
 // 열 순서(반쪽당 5열): 날짜 · 근무시작시간 · 근무종료시간 · 결근 · 참여자서명
 const COL_COUNT_PER_HALF = 5;
+// 날짜 행 높이 — 서명 이미지가 들어갈 만큼만 기본(15pt)보다 조금 키운다(한 장에 16줄이 들어가야 함)
+const DATA_ROW_HEIGHT = 22;
 
 export const DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT =
   "안전수칙을 지켜서 즐겁고 안전한 일자리를 우리가 만들어요!\n" +
@@ -160,10 +164,15 @@ const addCapacityAttendanceSheet = (
             base64: day.signatureDataUrl,
             extension: "png",
           });
-          sheet.addImage(imageId, {
-            tl: { col: offset + 4, row: rowIdx - 1 },
-            ext: { width: 45, height: 20 },
-          });
+          sheet.addImage(
+            imageId,
+            fitSignatureInCell(day.signatureDataUrl, {
+              col: offset + 4,
+              row: rowIdx - 1,
+              cellWidthPx: columnWidthToPx(halfWidths[4]),
+              cellHeightPx: rowHeightToPx(DATA_ROW_HEIGHT),
+            }),
+          );
         } catch {
           // 서명 이미지가 깨져있어도 출근부 자체는 정상 출력되게 무시한다
         }
@@ -180,6 +189,7 @@ const addCapacityAttendanceSheet = (
   const lastDay = participant.days.length;
   for (let day = 1; day <= 16; day++) {
     const rowIdx = DATA_START_ROW + day - 1;
+    sheet.getRow(rowIdx).height = DATA_ROW_HEIGHT;
     const leftDay = participant.days[day - 1];
     if (leftDay) writeDayCell(rowIdx, 0, leftDay);
 

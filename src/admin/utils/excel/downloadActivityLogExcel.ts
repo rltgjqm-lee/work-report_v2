@@ -2,6 +2,12 @@ import ExcelJS from "exceljs";
 
 import type { ActivityLogItem } from "../../../types/form";
 
+import { columnWidthToPx, fitSignatureInCell, rowHeightToPx } from "./signatureImage";
+
+// 서명 칸(I·J열) 너비와 데이터 행 높이 — 서명 이미지를 이 칸 크기에 맞춰 넣는다
+const SIGNATURE_COLUMN_WIDTH = 12;
+const DATA_ROW_HEIGHT = 40;
+
 export const DEFAULT_ACTIVITY_LOG_TITLE = "노인일자리 및 사회활동 지원사업 공익활동 활동일지(예시)";
 
 export interface ActivityLogSheetHeader {
@@ -125,8 +131,8 @@ export const addActivityLogSheet = (
     { width: 25 },
     { width: 15 },
     { width: 20 },
-    { width: 12 },
-    { width: 12 },
+    { width: SIGNATURE_COLUMN_WIDTH },
+    { width: SIGNATURE_COLUMN_WIDTH },
   ];
 
   // 7. 데이터 행 순회 삽입 및 서명 이미지 렌더링
@@ -156,7 +162,7 @@ export const addActivityLogSheet = (
 
     const currentRow = startRow + index;
     const row = sheet.getRow(currentRow);
-    row.height = 40;
+    row.height = DATA_ROW_HEIGHT;
     row.values = [
       index + 1,
       log.date,
@@ -192,10 +198,15 @@ export const addActivityLogSheet = (
           base64: base64Data,
           extension: "png",
         });
-        sheet.addImage(imageId, {
-          tl: { col: 8, row: currentRow - 1 },
-          ext: { width: 45, height: 25 },
-        });
+        sheet.addImage(
+          imageId,
+          fitSignatureInCell(log.uSign, {
+            col: 8,
+            row: currentRow - 1,
+            cellWidthPx: columnWidthToPx(SIGNATURE_COLUMN_WIDTH),
+            cellHeightPx: rowHeightToPx(DATA_ROW_HEIGHT),
+          }),
+        );
       } catch (error) {
         console.error("참여자 서명 이미지 내보내기 실패:", error);
       }
@@ -209,10 +220,15 @@ export const addActivityLogSheet = (
           base64: base64Data,
           extension: "png",
         });
-        sheet.addImage(imageId, {
-          tl: { col: 9, row: currentRow - 1 },
-          ext: { width: 45, height: 25 },
-        });
+        sheet.addImage(
+          imageId,
+          fitSignatureInCell(log.dSign, {
+            col: 9,
+            row: currentRow - 1,
+            cellWidthPx: columnWidthToPx(SIGNATURE_COLUMN_WIDTH),
+            cellHeightPx: rowHeightToPx(DATA_ROW_HEIGHT),
+          }),
+        );
       } catch (error) {
         console.error("수요처 서명 이미지 내보내기 실패:", error);
       }

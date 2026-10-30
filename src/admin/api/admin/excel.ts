@@ -19,6 +19,7 @@ import {
   downloadWorkScheduleWorkbook,
   type WorkScheduleParticipant,
 } from "../../utils/excel/downloadWorkScheduleExcel";
+import { trimSignatureDataUrl } from "../../utils/excel/signatureImage";
 
 import { request } from "../client";
 
@@ -81,7 +82,23 @@ export const downloadActivityLogExcel = async (
   const workbook = new ExcelJS.Workbook();
   const usedSheetNames = new Set<string>();
 
-  data.participants.forEach((participant) => {
+  // 서명 칸에 꽉 차게 넣으려고 서명 이미지의 빈 여백을 먼저 잘라낸다
+  const participants = await Promise.all(
+    data.participants.map(async (participant) => ({
+      ...participant,
+      logs: await Promise.all(
+        participant.logs.map(async (log) => ({
+          ...log,
+          userSignature: log.userSignature ? await trimSignatureDataUrl(log.userSignature) : null,
+          demandSignature: log.demandSignature
+            ? await trimSignatureDataUrl(log.demandSignature)
+            : null,
+        })),
+      ),
+    })),
+  );
+
+  participants.forEach((participant) => {
     const sheetName = sanitizeSheetName(participant.participantName, usedSheetNames);
     const logs: ActivityLogItem[] = participant.logs.map((log) => ({
       date: log.actDate,
@@ -153,12 +170,21 @@ export const downloadAttendanceExcel = async (
   const data = await request<CapacityAttendanceExportResponse>(
     `/api/programs/${programId}/export/attendance?month=${month}`,
   );
-  await downloadCapacityAttendanceWorkbook(
-    data.programName,
-    data.month,
-    data.participants,
-    bannerText,
+  // 서명 칸에 꽉 차게 넣으려고 서명 이미지의 빈 여백을 먼저 잘라낸다
+  const participants = await Promise.all(
+    data.participants.map(async (participant) => ({
+      ...participant,
+      days: await Promise.all(
+        participant.days.map(async (day) => ({
+          ...day,
+          signatureDataUrl: day.signatureDataUrl
+            ? await trimSignatureDataUrl(day.signatureDataUrl)
+            : day.signatureDataUrl,
+        })),
+      ),
+    })),
   );
+  await downloadCapacityAttendanceWorkbook(data.programName, data.month, participants, bannerText);
 };
 
 interface PaymentLedgerExportResponse {
