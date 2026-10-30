@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, like } from "drizzle-orm";
+import { and, eq, getTableColumns, like, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -20,6 +20,11 @@ import {
 } from "../../db/schema";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { getHolidayName } from "../../lib/koreanHolidays";
+
+// 월별 양식(출근부·급여대장·명세서·근무스케줄·활동비 대장)에 넣을 참여자 — 중단(DROPPED)만 뺀다.
+// 휴가 중(ON_LEAVE)은 "오늘" 기준 상태라, 내려받는 날 하루 휴가인 사람이 그 달 근무를 다 했는데도
+// 양식에서 통째로 빠졌다(2026-10-30 대덕 24명 중 휴가 12명 누락).
+const isListedInMonthlyExport = ne(participants.status, "DROPPED");
 
 const app = new Hono<Env>();
 
@@ -193,7 +198,7 @@ app.get("/:id/export/activity-payment", async (c) => {
     })
     .from(participants)
     .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
-    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
 
   const logRows = await db
     .select({ log: activityLogs })
@@ -271,7 +276,7 @@ app.get("/:id/export/attendance", async (c) => {
     })
     .from(participants)
     .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
 
   const groupScheduleRows = await db
     .select()
@@ -419,7 +424,7 @@ app.get("/:id/export/work-schedule", async (c) => {
     })
     .from(participants)
     .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
 
   const groupScheduleRows = await db
     .select()
@@ -546,7 +551,7 @@ app.get("/:id/export/payslip", async (c) => {
   const activeParticipants = await db
     .select()
     .from(participants)
-    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
 
   const attendanceRows = await db
     .select()
@@ -603,7 +608,7 @@ app.get("/:id/export/payment", async (c) => {
     })
     .from(participants)
     .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(and(eq(participants.programId, programId), eq(participants.status, "ACTIVE")));
+    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
 
   const attendanceRows = await db
     .select()
