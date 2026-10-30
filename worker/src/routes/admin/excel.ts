@@ -242,6 +242,9 @@ app.get("/:id/export/activity-payment", async (c) => {
       name: participant.name,
       demandName: participant.demandName ?? participant.demandSiteName ?? null,
       minutes: minutesByParticipant.get(participant.id) ?? 0,
+      // 새 양식은 지침 단가표로 계산해 이 값을 쓰지 않지만, 아직 예전 관리자 화면(시급 × 시간)을
+      // 쓰는 브라우저가 있으면 이 값이 없을 때 실지급액이 undefined가 된다 — 관리자 화면이 다 바뀐 뒤 지운다.
+      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
     })),
   });
 });
