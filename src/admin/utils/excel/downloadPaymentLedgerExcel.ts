@@ -119,7 +119,10 @@ export const downloadPaymentLedgerWorkbook = async (
   };
   sheet.getRow(ROW_TITLE).height = 39.75;
 
-  // 2. 월 소정근로시간 기준(만근 판정 기준) — 이 사업단만의 정책값이라 직접 입력 셀로 둔다.
+  // 2. 월 소정근로시간 기준(만근 판정 기준) — 노인역량활용사업 근로계약서(첨부1)의 월 60시간을
+  // 기본값으로 채우되, 사업단마다 다를 수 있어 직접 고칠 수 있는 입력 셀로 둔다. 비워두면
+  // 근무일수 수식이 0으로 나눠 #DIV/0!이 된다.
+  const MONTHLY_STANDARD_HOURS = 60;
   sheet.mergeCells(`A${ROW_SETTINGS}:E${ROW_SETTINGS}`);
   sheet.getCell(`A${ROW_SETTINGS}`).value = "※ 월 소정근로시간 기준(직접 입력) :";
   sheet.getCell(`A${ROW_SETTINGS}`).font = {
@@ -132,6 +135,7 @@ export const downloadPaymentLedgerWorkbook = async (
     vertical: "middle",
   };
   const settingsCellRef = "F" + ROW_SETTINGS;
+  sheet.getCell(settingsCellRef).value = MONTHLY_STANDARD_HOURS;
   sheet.getCell(settingsCellRef).border = {
     top: THIN,
     left: THIN,
@@ -327,7 +331,7 @@ export const downloadPaymentLedgerWorkbook = async (
   sheet.mergeCells(`A${ROW_NOTES}:${lastCol}${ROW_NOTES}`);
   sheet.getCell(`A${ROW_NOTES}`).value =
     "[급여 산정방법]\n" +
-    "* 월 소정근로시간 기준은 사업단마다 달라 직접 입력합니다 (만근여부·기본급 계산에 쓰입니다).\n" +
+    "* 월 소정근로시간 기준은 근로계약서 기준 60시간이 기본으로 들어가며, 사업단에 맞게 고칠 수 있습니다 (만근여부·기본급·근무일수 계산에 쓰입니다).\n" +
     "* 만근 시 기본급(a) = 월 소정근로시간 기준 × 시간당 단가 / 미만 시 = 실제 총근무시간 × 시간당 단가\n" +
     "* 주휴시간은 이 사업단의 근무 패턴에 맞춰 직접 입력합니다 (주휴수당 = 주휴시간 × 시간당 단가).\n" +
     "* 결근·조퇴 시간, 은행·계좌번호, 생년월일은 데이터가 없어 직접 입력합니다.";
