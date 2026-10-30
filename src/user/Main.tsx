@@ -26,7 +26,7 @@ import HomePage from "./pages/HomePage";
 import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignaturePage from "./pages/SignaturePage";
-import { syncPendingActivityLogs } from "./utils/activityLogSync";
+import { pruneOldActivityLogs, syncPendingActivityLogs } from "./utils/activityLogSync";
 import { flushClientEvents } from "./utils/clientEventLog";
 import { readCurrentCoordinates } from "./utils/geolocation";
 import {
@@ -397,7 +397,8 @@ const Main = () => {
     const syncThenFlush = () =>
       syncPendingActivityLogs(db).then(() => flushClientEvents(participantId));
 
-    syncThenFlush();
+    // 앱을 열 때 한 번, 재전송을 마친 뒤 오래된 일지를 정리한다(방금 전송된 것까지 반영되게)
+    syncThenFlush().then(() => pruneOldActivityLogs(db));
     window.addEventListener("online", syncThenFlush);
     return () => window.removeEventListener("online", syncThenFlush);
   }, [db, formData.participantId]);

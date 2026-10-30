@@ -1,5 +1,6 @@
 import { INDEXED_DB_CONFIG } from "../../constants/storage";
 import type { ActivityLogItem } from "../../types/form";
+import { getLocalToday } from "../../utils/timeFormat";
 
 import { ActivityLogApiError, createActivityLog, updateActivityLog } from "../api/activityLogApi";
 import { recordClientEvent } from "./clientEventLog";
@@ -109,6 +110,43 @@ export const syncPendingActivityLogs = async (db: IDBDatabase | null): Promise<v
       await syncPendingActivityLogs(db);
     }
   }
+};
+
+// 폰에 일지를 남겨두는 기간 — 지난 일지는 서버에서 다시 받아올 수 있어(GET /activity-logs) 오래
+// 들고 있을 필요가 없다. 서명 이미지가 일지마다 들어 있어 지우지 않으면 계속 쌓인다.
+const LOCAL_LOG_RETENTION_DAYS = 30;
+
+/**
+ * 오래된 활동일지를 폰(IndexedDB)에서 지운다. 서버에 전송된 것, 또는 서명이 없어 앞으로도 보낼 수
+ * 없는 것만 지운다 — 서명까지 했는데 아직 전송 못 한 일지는 폰에만 있는 원본이라 날짜가 지나도
+ * 남겨둔다(다음 연결 때 재전송된다).
+ */
+export const pruneOldActivityLogs = async (db: IDBDatabase): Promise<void> => {
+  const cutoff = new Date(`${getLocalToday()}T00:00:00Z`);
+  cutoff.setUTCDate(cutoff.getUTCDate() - LOCAL_LOG_RETENTION_DAYS);
+  const cutoffDate = cutoff.toISOString().slice(0, 10);
+
+  await new Promise<void>((resolve) => {
+    const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readwrite");
+    const store = tx.objectStore(INDEXED_DB_CONFIG.STORE_NAME);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const items: ActivityLogItem[] = request.result || [];
+      items
+        .filter(
+          (item) =>
+            item.id !== undefined &&
+            item.date &&
+            item.date < cutoffDate &&
+            (item.synced || !item.uSign),
+        )
+        .forEach((item) => store.delete(item.id!));
+    };
+    tx.oncomplete = () => resolve();
+    // 정리 실패는 다음에 앱을 열 때 다시 시도하면 된다 — 화면 동작에는 영향이 없다
+    tx.onerror = () => resolve();
+    tx.onabort = () => resolve();
+  });
 };
 
 /**
