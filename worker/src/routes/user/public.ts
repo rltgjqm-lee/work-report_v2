@@ -1325,6 +1325,30 @@ const findSubstituteSignature = async (
   return signatureRows[0]?.userSignature ?? null;
 };
 
+// 같은 참여자·날짜로 서명된 일지가 이미 있는데 서명 없는 일지가 또 들어오면, 폰에 남은 같은
+// 날짜의 서명 없는 복사본이다(원인 미상으로 일부 폰에 생김). 거부하면 폰이 앱을 열 때마다 영원히
+// 재전송하므로, 기존 일지를 그대로 돌려줘 폰이 "전송 완료"로 처리하고 멈추게 한다. 기존 일지는
+// 건드리지 않는다.
+const findSignedActivityLog = async (
+  db: ReturnType<typeof drizzle>,
+  participantId: number,
+  actDate: string,
+  userSignature: string | undefined,
+) => {
+  if (userSignature?.trim()) return null;
+  const rows = await db
+    .select()
+    .from(activityLogs)
+    .where(
+      and(
+        eq(activityLogs.participantId, participantId),
+        eq(activityLogs.actDate, actDate),
+        ne(activityLogs.userSignature, ""),
+      ),
+    );
+  return rows[0] ?? null;
+};
+
 // 활동일지 등록 — IndexedDB에 먼저 저장된 뒤(오프라인 대응) 온라인일 때 여기로 동기화된다.
 // 참여자 식별은 /attendance/identify와 동일한 이름+전화번호 흐름에서 얻은 participantId를 그대로 쓴다.
 app.post("/activity-logs", async (c) => {
@@ -1343,6 +1367,14 @@ app.post("/activity-logs", async (c) => {
   if (!participantRows[0]) {
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
   }
+
+  const signedLog = await findSignedActivityLog(
+    db,
+    body.participantId,
+    body.actDate,
+    body.userSignature,
+  );
+  if (signedLog) return c.json(signedLog);
 
   const substituteSignature = await findSubstituteSignature(
     db,
@@ -1450,6 +1482,14 @@ app.put("/activity-logs/:id", async (c) => {
   if (!participantRows[0]) {
     return c.json({ error: "일치하는 참여자를 찾을 수 없습니다." }, 404);
   }
+
+  const signedLog = await findSignedActivityLog(
+    db,
+    body.participantId,
+    body.actDate,
+    body.userSignature,
+  );
+  if (signedLog) return c.json(signedLog);
 
   const substituteSignature = await findSubstituteSignature(
     db,

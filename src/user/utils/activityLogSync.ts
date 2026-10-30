@@ -27,9 +27,9 @@ const updateRecord = (db: IDBDatabase, item: ActivityLogItem) =>
     req.onerror = () => reject(req.error);
   });
 
-// 💡 서버가 participantId/actDate/start/end를 필수로 요구한다 — 아직 출근·퇴근을
-// 다 안 마친 진행 중인 하루치 기록은 보내봐야 매번 검증 실패만 반복되니 건너뛴다.
-// 서명 완료 시점엔 이 값들이 다 채워진 뒤에 syncNow=true로 다시 호출되니 그때 보내진다.
+// 💡 서버가 participantId/actDate/start/end와 참여자 서명을 필수로 요구한다 — 아직 출근·퇴근이나
+// 서명을 다 안 마친 하루치 기록은 보내봐야 매번 "서명 필요"로 거부만 반복되니(앱을 열 때마다
+// 재전송돼 수백 번씩 쌓였다) 건너뛴다. 서명 완료 시점에 syncNow=true로 다시 호출되니 그때 보내진다.
 const readPendingItems = async (db: IDBDatabase): Promise<ActivityLogItem[]> => {
   const items: ActivityLogItem[] = await new Promise((resolve, reject) => {
     const tx = db.transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly");
@@ -38,7 +38,8 @@ const readPendingItems = async (db: IDBDatabase): Promise<ActivityLogItem[]> => 
     req.onerror = () => reject(req.error);
   });
   return items.filter(
-    (item) => !item.synced && item.participantId && item.date && item.start && item.end,
+    (item) =>
+      !item.synced && item.participantId && item.date && item.start && item.end && item.uSign,
   );
 };
 
