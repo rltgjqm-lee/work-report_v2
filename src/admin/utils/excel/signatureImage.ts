@@ -1,3 +1,5 @@
+import type { Anchor } from "exceljs";
+
 // 엑셀 양식의 서명 칸에 서명 이미지를 꽉 차게 넣기 위한 도우미.
 // 앱에서 받은 서명은 캔버스 전체(빈 여백 포함)라 그대로 칸에 맞추면 글씨가 작게 보인다 —
 // 브라우저에서 획이 있는 부분만 잘라낸 뒤, 칸 크기에 비율을 유지하며 맞춘다.
@@ -97,9 +99,16 @@ const readPngSize = (dataUrl: string): { width: number; height: number } | null 
 export const columnWidthToPx = (width: number) => Math.round(width * 7 + 5);
 export const rowHeightToPx = (heightPt: number) => Math.round((heightPt * 4) / 3);
 
+// 엑셀 그림 위치의 단위(EMU) — 화면 1px = 9525 EMU
+const EMU_PER_PX = 9525;
+
 /**
  * 서명 이미지를 칸(col, row, 칸 크기 px) 안에 비율을 유지하며 최대한 크게, 가운데에 놓을
- * 위치(tl)와 크기(ext)를 계산한다. 크기를 못 읽으면 칸에 꽉 채운다.
+ * 범위를 계산한다. 크기를 못 읽으면 칸에 꽉 채운다.
+ *
+ * 위치는 칸 안 좌표(EMU)로 네 모서리를 직접 지정한다(twoCellAnchor). ExcelJS에 소수 열·행
+ * (col: 8.04처럼)으로 주면 열 너비를 엉뚱한 단위로 환산해 오프셋이 1/9 수준으로 줄어 서명이 칸
+ * 왼쪽 위에 붙고, 시작점+크기(ext)만 주면 일부 프로그램(맥 Numbers 등)이 크기를 무시해 작게 보였다.
  */
 export const fitSignatureInCell = (
   dataUrl: string,
@@ -117,11 +126,20 @@ export const fitSignatureInCell = (
   const scale = size ? Math.min(boxWidth / size.width, boxHeight / size.height) : 1;
   const width = size ? Math.round(size.width * scale) : boxWidth;
   const height = size ? Math.round(size.height * scale) : boxHeight;
+  const left = Math.round((cellWidthPx - width) / 2);
+  const top = Math.round((cellHeightPx - height) / 2);
+
+  const anchorAt = (offsetX: number, offsetY: number) =>
+    ({
+      nativeCol: col,
+      nativeColOff: offsetX * EMU_PER_PX,
+      nativeRow: row,
+      nativeRowOff: offsetY * EMU_PER_PX,
+    }) as unknown as Anchor;
+
   return {
-    tl: {
-      col: col + (cellWidthPx - width) / 2 / cellWidthPx,
-      row: row + (cellHeightPx - height) / 2 / cellHeightPx,
-    },
-    ext: { width, height },
+    tl: anchorAt(left, top),
+    br: anchorAt(left + width, top + height),
+    editAs: "oneCell",
   };
 };
