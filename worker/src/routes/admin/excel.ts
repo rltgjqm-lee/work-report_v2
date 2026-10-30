@@ -242,7 +242,6 @@ app.get("/:id/export/activity-payment", async (c) => {
       name: participant.name,
       demandName: participant.demandName ?? participant.demandSiteName ?? null,
       minutes: minutesByParticipant.get(participant.id) ?? 0,
-      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
     })),
   });
 });

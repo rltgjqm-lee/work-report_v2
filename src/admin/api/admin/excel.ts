@@ -248,7 +248,6 @@ interface ActivityPaymentExportResponse {
     name: string;
     demandName: string | null;
     minutes: number;
-    hourlyWage: number;
   }[];
 }
 

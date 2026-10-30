@@ -10,8 +10,13 @@ export interface ActivityPaymentLedgerParticipant {
   name: string;
   demandName: string | null;
   minutes: number;
-  hourlyWage: number;
 }
+
+// 공익활동 활동비 단가('26 노인일자리 지침, 활동비 지급표) — 시급을 곱하는 게 아니라 3시간 묶음
+// 단가다. 3시간마다 29,000원, 3시간에 못 미치는 나머지 시간은 1시간당 9,500원
+// (예: 30시간 290,000원, 31시간 299,500원). 활동시간은 1시간 단위로 버린다.
+const THREE_HOUR_UNIT_WAGE = 29000;
+const REMAINDER_HOUR_WAGE = 9500;
 
 // color를 안 주면 스펙상 automatic(보통 검정)이지만, 구글 시트는 xlsx를 가져올 때
 // color가 없는 테두리를 안 그리는 경우가 있어서 명시적으로 검정을 지정한다.
@@ -116,16 +121,16 @@ const addActivityPaymentLedgerSheet = (
     let groupStartRow = startRow;
     participants.forEach((participant, index) => {
       const row = startRow + index;
-      const hours = Math.round((participant.minutes / 60) * 10) / 10;
+      const hours = Math.floor(participant.minutes / 60);
 
       sheet.getRow(row).height = DATA_ROW_HEIGHT;
       sheet.getCell(`B${row}`).value = index + 1;
       sheet.getCell(`D${row}`).value = participant.name;
       sheet.getCell(`F${row}`).value = hours;
-      // 실지급액 = 시급 × 월활동시간 + 교육(G) + 치매검진(H) — 교육/치매검진은
+      // 실지급액 = 활동시간 단가(3시간 묶음 + 나머지 시간) + 교육(G) + 치매검진(H) — 교육/치매검진은
       // 정산 페이지에서 나중에 채워질 빈 칸이라 수식으로 걸어두면 자동 반영된다.
       sheet.getCell(`I${row}`).value = {
-        formula: `ROUND(${participant.hourlyWage}*F${row},0)+G${row}+H${row}`,
+        formula: `INT(F${row}/3)*${THREE_HOUR_UNIT_WAGE}+MOD(F${row},3)*${REMAINDER_HOUR_WAGE}+G${row}+H${row}`,
       };
       sheet.getCell(`I${row}`).numFmt = '_-* #,##0_-;-* #,##0_-;_-* "-"_-;_-@_-';
 
