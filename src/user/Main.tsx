@@ -328,9 +328,15 @@ const Main = () => {
       id: savedId,
     }));
 
-    // 💡 온라인이면 바로 서버 동기화 시도, 오프라인/실패 시 다음 기회(mount/online 이벤트)에 재시도
+    // 💡 온라인이면 바로 서버 동기화 시도, 오프라인/실패 시 다음 기회(mount/online 이벤트)에 재시도.
+    // 서명 직후 전송이 실패하면 그 사유(서버 거부·네트워크 오류)도 곧바로 서버로 보고한다 — 안 그러면
+    // 다음에 앱을 열 때까지 폰에만 남아, "서명했는데 안 들어왔다"는 문의에 원인을 확인할 수 없었다.
+    // 인터넷 자체가 없으면 보고도 못 하니 연결될 때(online 이벤트) 일지와 함께 보낸다.
     if (syncNow) {
-      syncPendingActivityLogs(db);
+      const participantId = formData.participantId;
+      syncPendingActivityLogs(db).then(() => {
+        if (participantId) flushClientEvents(participantId);
+      });
     }
   };
 
