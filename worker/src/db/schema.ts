@@ -52,6 +52,9 @@ export const programs = sqliteTable("programs", {
     .default(1.15),
   industrialAccidentRate: real("industrial_accident_rate").notNull().default(1.5),
   annualLeaveDailyWage: integer("annual_leave_daily_wage").notNull().default(31710),
+  // 역량활용 팀장수당(월 정액) — 조 팀장(groups.leaderId)에게 급여와 별도로 지급한다.
+  // 기본급/주휴수당으로 나누지 않고 보험료 산정에도 넣지 않는다.
+  teamLeaderAllowance: integer("team_leader_allowance").notNull().default(0),
   // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다
   // (addActivityLogSheet 참고).
   activityLogTitle: text("activity_log_title"),
@@ -362,6 +365,9 @@ export const participants = sqliteTable(
       .notNull()
       .default(false),
     weeklyHolidayHours: real("weekly_holiday_hours").notNull().default(0),
+    // 입사일 — 역량활용 평일 공휴일 유급(1일 3시간)은 "그 공휴일 당시 재직자"에게만 주므로
+    // 재직 시작일이 필요하다. 비어 있으면 사업단 시작일(programs.startDate)부터 재직으로 본다.
+    hireDate: text("hire_date"),
     // 위치정보법상 위치 수집 전 고지·동의 기록 — 최초 출근 시 동의 화면을 거치면 채워지고,
     // 이후 출근에서는 이 값이 있으면 동의 화면을 다시 띄우지 않는다(설정 화면에서 다시 볼 수 있음).
     locationConsentAt: text("location_consent_at"),
@@ -784,6 +790,31 @@ export const projectTrainings = sqliteTable("project_trainings", {
     .notNull()
     .default(sql`(current_timestamp)`),
 });
+
+// 역량활용 월 개근 연차 적립 기록 — 지난달(1일~말일) 인정 근로시간이 60시간이면 연차 1일
+// (3시간)을 participant_annual_leave에 더한다(scheduled/accrueAnnualLeave.ts). 적립 여부와
+// 상관없이 판정한 달마다 한 행을 남겨, 같은 달을 두 번 적립하거나 매일 다시 계산하지 않게 한다.
+export const participantLeaveAccruals = sqliteTable(
+  "participant_leave_accruals",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id),
+    yearMonth: text("year_month").notNull(), // "YYYY-MM"
+    recognizedHours: real("recognized_hours").notNull(),
+    accrued: integer("accrued", { mode: "boolean" }).notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("participant_leave_accruals_participant_month_unique").on(
+      table.participantId,
+      table.yearMonth,
+    ),
+  ],
+);
 
 // 참여자별 교육 이수 기록. payAmount는 등록 시 교육의 payMode 기준으로 서버가 계산해 저장한다.
 export const participantTrainingLogs = sqliteTable(

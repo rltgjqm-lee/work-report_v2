@@ -15,7 +15,14 @@ export interface PaymentLedgerParticipant {
   actualWorkHours: number;
   trainingHours: number;
   paidLeaveHours: number;
+  // 평일 공휴일(대체공휴일·노동절 포함) 유급 1일 3시간 — 그 공휴일 당시 재직자만
+  holidayPaidHours: number;
+  // 주휴 구간·만근·연차 발생 기준 — 출근한 소정근로일은 지각·조퇴와 상관없이 전체 인정
+  recognizedHours: number;
+  weeklyHolidayHours: number;
+  // 계약 종료 달에만 값이 있다 (미사용 연차는 계약 종료 시 정산)
   remainingLeaveHours: number;
+  teamLeaderAllowance: number;
   hourlyWage: number;
   healthInsuranceEnrolled: boolean;
   longtermCareInsuranceEnrolled: boolean;
@@ -50,19 +57,22 @@ const COMPUTED_FILL: ExcelJS.Fill = {
   fgColor: { argb: "FFDBEEF4" },
 };
 
-const COL_COUNT = 33; // A~AG
+// 원본 서식 33열에 공휴일 유급시간(N)·팀장수당(AE) 두 열을 더했다.
+const COL_COUNT = 35; // A~AI
 const COL_WIDTHS = [
-  5, 7.75, 7.75, 7.75, 10.75, 3.75, 3.75, 7.75, 7.75, 7.75, 6.875, 7.375, 7.75, 5.75, 10.75, 7.75,
-  7.75, 7.75, 10.75, 7.75, 7.75, 7.75, 7.75, 10.75, 10.75, 5.75, 8.75, 5.75, 8.75, 10.75, 10.75,
-  10.75, 8.875,
+  5, 7.75, 7.75, 7.75, 10.75, 3.75, 3.75, 7.75, 7.75, 7.75, 6.875, 7.375, 7.75, 7.75, 5.75, 10.75,
+  7.75, 7.75, 7.75, 10.75, 7.75, 7.75, 7.75, 7.75, 10.75, 10.75, 5.75, 8.75, 5.75, 8.75, 8.75,
+  10.75, 10.75, 10.75, 8.875,
 ];
 // 원본 서식의 열 그룹 경계(굵은 테두리) — 이 열의 왼쪽/오른쪽에 medium 테두리를 준다.
-const LEFT_MEDIUM_COLS = new Set([1, 9, 16, 20, 25, 26, 32]);
-const RIGHT_MEDIUM_COLS = new Set([15, 24, 25, 30, 32, 33]);
+const LEFT_MEDIUM_COLS = new Set([1, 9, 17, 21, 26, 27, 34]);
+const RIGHT_MEDIUM_COLS = new Set([16, 25, 26, 32, 34, 35]);
 // 계산된(수식) 값이 들어가는 열 — 원본에서 옅은 청록색으로 구분해뒀다.
 const COMPUTED_COLS = new Set([
-  9, 10, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 29, 30, 31, 32,
+  9, 10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 30, 32, 33, 34,
 ]);
+// 금액이지만 직접 넣는 값이라 색은 칠하지 않는 열 — 시간당 단가(H), 팀장수당(AE)
+const MONEY_INPUT_COLS = new Set([8, 31]);
 
 const colLetter = (n: number) => {
   let result = "";
@@ -76,9 +86,10 @@ const colLetter = (n: number) => {
 
 /**
  * 💡 사업단 1개월치 급여대장을 실제 서식(work-report-v4/서식(1)/역량활용/2026ESG
- * 급여대장.xlsx의 "인건비 (6)" 시트)과 같은 33열 구조로 만들어 다운로드합니다.
- * 만근 기준 근무시간/주휴시간/결근·조퇴시간/은행/계좌/생년월일은 이 사업단만의
- * 정책값이거나 우리 시스템에 없는 데이터라 자동 계산하지 않고 빈 칸으로 둔다.
+ * 급여대장.xlsx의 "인건비 (6)" 시트) 구조에 공휴일 유급시간·팀장수당 열을 더해 만들어
+ * 다운로드합니다. 주휴시간·연차 정산·팀장수당은 2026년 노인역량활용사업 임금산정 기준대로
+ * 서버가 계산한 값을 넣고(worker/src/lib/capacityPayroll.ts), 결근·조퇴시간/은행/계좌/
+ * 생년월일은 우리 시스템에 없는 데이터라 빈 칸으로 둔다.
  */
 export const downloadPaymentLedgerWorkbook = async (
   header: PaymentLedgerHeader,
@@ -142,7 +153,7 @@ export const downloadPaymentLedgerWorkbook = async (
     bottom: THIN,
     right: THIN,
   };
-  sheet.getCell("G" + ROW_SETTINGS).value = "시간 (만근여부·기본급·주휴시간 계산 기준)";
+  sheet.getCell("G" + ROW_SETTINGS).value = "시간 (만근여부·근무일수 계산 기준)";
   sheet.getCell("G" + ROW_SETTINGS).font = {
     size: 9,
     italic: true,
@@ -170,25 +181,27 @@ export const downloadPaymentLedgerWorkbook = async (
     { label: "시간당\n단  가" },
     { label: "근무일수" },
     { label: "총\n근무시간" },
-    { label: "근무시간", groupStart: 3 }, // K~M: 총근무시간 그룹
+    { label: "근무시간", groupStart: 4 }, // K~N: 총근무시간 그룹
     { label: "연차\n사용시간", inGroup: true },
     { label: "교육시간", inGroup: true },
+    { label: "공휴일\n유급시간", inGroup: true },
     { label: "만근여부" },
     { label: "기본급\n(a)" },
-    { label: "건강보험", groupStart: 3 }, // P~R: 사회보험(개인공제)
+    { label: "건강보험", groupStart: 3 }, // Q~S: 사회보험(개인공제)
     { label: "장기요양\n보      험", inGroup: true },
     { label: "고용보험", inGroup: true },
     { label: "사회보험\n(개인공제)\n소  계(b)" },
-    { label: "건강보험", groupStart: 4 }, // T~W: 사회보험(기관부담)
+    { label: "건강보험", groupStart: 4 }, // U~X: 사회보험(기관부담)
     { label: "장기요양\n보      험", inGroup: true },
     { label: "고용보험", inGroup: true },
     { label: "산재보험", inGroup: true },
     { label: "사회보험\n(기관부담)\n소     계" },
     { label: "인건비\n차감 소계\n(a-b)" },
-    { label: "주휴\n시간", groupStart: 2 }, // Z~AA: 주휴수당
+    { label: "주휴\n시간", groupStart: 2 }, // AA~AB: 주휴수당
     { label: "주휴수당", inGroup: true },
-    { label: "미사용\n시간", groupStart: 2 }, // AB~AC: 연차수당
+    { label: "미사용\n시간", groupStart: 2 }, // AC~AD: 연차수당
     { label: "연차수당", inGroup: true },
+    { label: "팀장수당" },
     { label: "부대경비\n소     계\n(c)" },
     { label: "총 지급액\n(a+c)" },
     { label: "실수령액\n(a-b+c)" },
@@ -196,10 +209,10 @@ export const downloadPaymentLedgerWorkbook = async (
   ];
   const groupLabels: Record<number, string> = {
     11: "총근무시간",
-    16: "사회보험(개인공제)",
-    20: "사회보험(기관부담)",
-    26: "주휴수당",
-    28: "연차수당",
+    17: "사회보험(개인공제)",
+    21: "사회보험(기관부담)",
+    27: "주휴수당",
+    29: "연차수당",
   };
 
   let colIndex = 1;
@@ -243,47 +256,52 @@ export const downloadPaymentLedgerWorkbook = async (
     sheet.getCell(`A${row}`).value = i + 1;
     sheet.getCell(`B${row}`).value = participant.name;
     sheet.getCell(`H${row}`).value = participant.hourlyWage;
-    // 근무일수 = 총근무시간 ÷ 1일 소정근로시간(= 월 소정근로시간 기준 ÷ 4주 ÷ 5일)
+    // 근무일수 = 총근무시간 ÷ 1일 소정근로시간(= 월 소정근로시간 기준 ÷ 20일)
     sheet.getCell(`I${row}`).value = {
       formula: `J${row}*20/$F$${ROW_SETTINGS}`,
     };
-    sheet.getCell(`J${row}`).value = { formula: `SUM(K${row}:M${row})` };
+    sheet.getCell(`J${row}`).value = { formula: `SUM(K${row}:N${row})` };
     sheet.getCell(`K${row}`).value = participant.actualWorkHours;
     sheet.getCell(`L${row}`).value = Math.round(participant.paidLeaveHours * 10) / 10;
     sheet.getCell(`M${row}`).value = Math.round(participant.trainingHours * 10) / 10;
-    sheet.getCell(`N${row}`).value = {
-      formula: `IF(J${row}=$F$${ROW_SETTINGS},"O","X")`,
-    };
+    sheet.getCell(`N${row}`).value = participant.holidayPaidHours;
+    // 만근(개근)은 실제 근무시간이 아니라 인정 근로시간으로 본다 — 소정근로일에 출근했다면
+    // 지각·조퇴가 있어도 그날 전체를 인정한다(임금산정 기준 첨부1).
     sheet.getCell(`O${row}`).value = {
-      formula: `IF(N${row}="O",$F$${ROW_SETTINGS}*H${row},H${row}*J${row})`,
+      formula: `IF(${participant.recognizedHours}>=$F$${ROW_SETTINGS},"O","X")`,
     };
-    sheet.getCell(`P${row}`).value = participant.healthInsuranceEnrolled
-      ? { formula: `ROUND((O${row}+AA${row})*${header.healthInsuranceRate}/100,0)` }
+    // 기본급은 실제로 일한 시간(유급 포함) × 단가 — 조퇴로 못 채운 시간까지 주지는 않는다.
+    sheet.getCell(`P${row}`).value = { formula: `H${row}*J${row}` };
+    // 4대보험은 기본급 + 주휴수당 기준 — 팀장수당·연차수당은 넣지 않는다.
+    const insuranceBase = `(P${row}+AB${row})`;
+    sheet.getCell(`Q${row}`).value = participant.healthInsuranceEnrolled
+      ? { formula: `ROUND(${insuranceBase}*${header.healthInsuranceRate}/100,0)` }
       : 0;
-    sheet.getCell(`Q${row}`).value = participant.longtermCareInsuranceEnrolled
-      ? { formula: `ROUND(P${row}*${header.longtermCareRate}/100,0)` }
+    sheet.getCell(`R${row}`).value = participant.longtermCareInsuranceEnrolled
+      ? { formula: `ROUND(Q${row}*${header.longtermCareRate}/100,0)` }
       : 0;
-    sheet.getCell(`R${row}`).value = participant.employmentInsuranceEnrolled
-      ? { formula: `ROUND((O${row}+AA${row})*${header.employmentInsuranceRate}/100,0)` }
+    sheet.getCell(`S${row}`).value = participant.employmentInsuranceEnrolled
+      ? { formula: `ROUND(${insuranceBase}*${header.employmentInsuranceRate}/100,0)` }
       : 0;
-    sheet.getCell(`S${row}`).value = { formula: `SUM(P${row}:R${row})` };
-    sheet.getCell(`T${row}`).value = { formula: `P${row}` };
+    sheet.getCell(`T${row}`).value = { formula: `SUM(Q${row}:S${row})` };
     sheet.getCell(`U${row}`).value = { formula: `Q${row}` };
-    sheet.getCell(`V${row}`).value = participant.employmentInsuranceEnrolled
-      ? { formula: `ROUND((O${row}+AA${row})*${header.employmentInsuranceEmployerRate}/100,0)` }
+    sheet.getCell(`V${row}`).value = { formula: `R${row}` };
+    sheet.getCell(`W${row}`).value = participant.employmentInsuranceEnrolled
+      ? { formula: `ROUND(${insuranceBase}*${header.employmentInsuranceEmployerRate}/100,0)` }
       : 0;
-    sheet.getCell(`W${row}`).value = participant.industrialAccidentInsuranceEnrolled
-      ? { formula: `ROUND((O${row}+AA${row})*${header.industrialAccidentRate}/100,0)` }
+    sheet.getCell(`X${row}`).value = participant.industrialAccidentInsuranceEnrolled
+      ? { formula: `ROUND(${insuranceBase}*${header.industrialAccidentRate}/100,0)` }
       : 0;
-    sheet.getCell(`X${row}`).value = { formula: `SUM(T${row}:W${row})` };
-    sheet.getCell(`Y${row}`).value = { formula: `O${row}-S${row}` };
-    // 주휴시간(Z)은 이 사업단만의 정책 산식이라 직접 입력하게 비워둔다.
-    sheet.getCell(`AA${row}`).value = { formula: `H${row}*Z${row}` };
-    sheet.getCell(`AB${row}`).value = Math.round(participant.remainingLeaveHours * 10) / 10;
-    sheet.getCell(`AC${row}`).value = { formula: `H${row}*AB${row}` };
-    sheet.getCell(`AD${row}`).value = { formula: `AA${row}+AC${row}` };
-    sheet.getCell(`AE${row}`).value = { formula: `O${row}+AD${row}` };
-    sheet.getCell(`AF${row}`).value = { formula: `AE${row}-S${row}` };
+    sheet.getCell(`Y${row}`).value = { formula: `SUM(U${row}:X${row})` };
+    sheet.getCell(`Z${row}`).value = { formula: `P${row}-T${row}` };
+    sheet.getCell(`AA${row}`).value = participant.weeklyHolidayHours;
+    sheet.getCell(`AB${row}`).value = { formula: `H${row}*AA${row}` };
+    sheet.getCell(`AC${row}`).value = Math.round(participant.remainingLeaveHours * 10) / 10;
+    sheet.getCell(`AD${row}`).value = { formula: `H${row}*AC${row}` };
+    sheet.getCell(`AE${row}`).value = participant.teamLeaderAllowance;
+    sheet.getCell(`AF${row}`).value = { formula: `AB${row}+AD${row}+AE${row}` };
+    sheet.getCell(`AG${row}`).value = { formula: `P${row}+AF${row}` };
+    sheet.getCell(`AH${row}`).value = { formula: `AG${row}-T${row}` };
   });
 
   // 5. 합계 행
@@ -297,7 +315,7 @@ export const downloadPaymentLedgerWorkbook = async (
     "K",
     "L",
     "M",
-    "O",
+    "N",
     "P",
     "Q",
     "R",
@@ -315,6 +333,8 @@ export const downloadPaymentLedgerWorkbook = async (
     "AD",
     "AE",
     "AF",
+    "AG",
+    "AH",
   ].forEach((colLetterStr) => {
     sheet.getCell(`${colLetterStr}${ROW_TOTAL}`).value = {
       formula: `SUM(${totalRange(colLetterStr)})`,
@@ -331,17 +351,18 @@ export const downloadPaymentLedgerWorkbook = async (
   sheet.mergeCells(`A${ROW_NOTES}:${lastCol}${ROW_NOTES}`);
   sheet.getCell(`A${ROW_NOTES}`).value =
     "[급여 산정방법]\n" +
-    "* 월 소정근로시간 기준은 근로계약서 기준 60시간이 기본으로 들어가며, 사업단에 맞게 고칠 수 있습니다 (만근여부·기본급·근무일수 계산에 쓰입니다).\n" +
-    "* 만근 시 기본급(a) = 월 소정근로시간 기준 × 시간당 단가 / 미만 시 = 실제 총근무시간 × 시간당 단가\n" +
-    "* 주휴시간은 이 사업단의 근무 패턴에 맞춰 직접 입력합니다 (주휴수당 = 주휴시간 × 시간당 단가).\n" +
-    "* 결근·조퇴 시간, 은행·계좌번호, 생년월일은 데이터가 없어 직접 입력합니다.";
+    "* 총근무시간 = 근무시간 + 연차 사용시간 + 교육시간 + 평일 공휴일 유급시간(1일 3시간, 그 공휴일 당시 재직자) / 기본급(a) = 총근무시간 × 시간당 단가\n" +
+    "* 만근여부·주휴시간은 인정 근로시간(소정근로일에 출근했으면 지각·조퇴와 상관없이 그날 전체 인정 + 유급시간)으로 판단합니다. 월 소정근로시간 기준(기본 60시간)은 고칠 수 있습니다.\n" +
+    "* 주휴시간: 월 15시간 미만 0 / 15시간 이상 3 / 30시간 이상 6 / 45시간 이상 9 / 60시간(개근) 12시간 (주휴수당 = 주휴시간 × 시간당 단가)\n" +
+    "* 연차: 월 60시간 개근 시 3시간(최대 30시간) 자동 적립, 미사용 연차수당은 계약 종료 달에만 정산합니다. 팀장수당은 별도 지급하며 4대보험 산정(기본급+주휴수당)에 넣지 않습니다.\n" +
+    "* 결근·조퇴 시간, 은행·계좌번호, 생년월일은 데이터가 없어 직접 입력합니다. 월을 걸치는 주의 법정 주휴·월 중 퇴사자의 법정 연차는 자동 계산하지 않으니 해당자는 직접 고쳐주세요.";
   sheet.getCell(`A${ROW_NOTES}`).font = { size: 10, name: "맑은 고딕" };
   sheet.getCell(`A${ROW_NOTES}`).alignment = {
     horizontal: "left",
     vertical: "top",
     wrapText: true,
   };
-  sheet.getRow(ROW_NOTES).height = 100;
+  sheet.getRow(ROW_NOTES).height = 120;
 
   // 7. 테두리/서식/정렬 일괄 적용
   for (let rowNumber = ROW_HEADER1; rowNumber <= ROW_TOTAL; rowNumber++) {
@@ -358,7 +379,7 @@ export const downloadPaymentLedgerWorkbook = async (
         cell.font = { bold: true, size: 10, name: "맑은 고딕" };
       }
       if (!cell.alignment) cell.alignment = CENTER;
-      if (rowNumber === ROW_TOTAL && COMPUTED_COLS.has(c) && !cell.numFmt) {
+      if (rowNumber === ROW_TOTAL && (COMPUTED_COLS.has(c) || c === 31) && !cell.numFmt) {
         cell.numFmt = MONEY_FMT;
       }
     }
@@ -377,7 +398,7 @@ export const downloadPaymentLedgerWorkbook = async (
       if (COMPUTED_COLS.has(c)) {
         cell.fill = COMPUTED_FILL;
         cell.numFmt = MONEY_FMT;
-      } else if (c === 8) {
+      } else if (MONEY_INPUT_COLS.has(c)) {
         cell.numFmt = MONEY_FMT;
       }
     }

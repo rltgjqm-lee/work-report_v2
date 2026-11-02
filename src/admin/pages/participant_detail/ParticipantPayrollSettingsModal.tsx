@@ -24,7 +24,8 @@ interface ParticipantPayrollSettingsModalProps {
 
 /**
  * 관리자 페이지 > 참여자 상세 페이지에서 참여자별 급여 관련 설정(교육비/치매검진비/
- * 4대보험/주휴수당)을 편집하는 모달입니다. 4대보험·주휴수당은 역량 활용에만 노출됩니다.
+ * 4대보험/입사일)을 편집하는 모달입니다. 4대보험·입사일은 역량 활용에만 노출됩니다.
+ * 주휴시간은 월 인정 근로시간 구간으로 급여대장에서 자동 계산하므로 여기서 받지 않습니다.
  *
  */
 const ParticipantPayrollSettingsModal = ({
@@ -44,7 +45,7 @@ const ParticipantPayrollSettingsModal = ({
     longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
     employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
     industrialAccidentInsuranceEnrolled: participant.industrialAccidentInsuranceEnrolled,
-    weeklyHolidayHours: String(participant.weeklyHolidayHours),
+    hireDate: participant.hireDate ?? "",
   });
 
   const isCompetencyProgram = participant.programType === "역량 활용";
@@ -65,7 +66,7 @@ const ParticipantPayrollSettingsModal = ({
                 longtermCareInsuranceEnrolled: form.longtermCareInsuranceEnrolled,
                 employmentInsuranceEnrolled: form.employmentInsuranceEnrolled,
                 industrialAccidentInsuranceEnrolled: form.industrialAccidentInsuranceEnrolled,
-                weeklyHolidayHours: Number(form.weeklyHolidayHours),
+                hireDate: form.hireDate || null,
               }
             : {}),
         },
@@ -97,7 +98,7 @@ const ParticipantPayrollSettingsModal = ({
       }
     >
       <p className="text-xs text-admin-text-placeholder m-0">
-        시급·교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
+        시급·교육비·치매검진비·4대보험 가입 여부와 입사일을 관리합니다.
       </p>
 
       <FormField label="시급(원)">
@@ -178,17 +179,21 @@ const ParticipantPayrollSettingsModal = ({
 
       {isCompetencyProgram && (
         <>
-          <FormField label="주휴시간(월, 시간)">
+          <FormField label="입사일">
             <Input
-              type="number"
-              value={form.weeklyHolidayHours}
+              type="date"
+              value={form.hireDate}
               onChange={(event) =>
                 setForm((form) => ({
                   ...form,
-                  weeklyHolidayHours: event.target.value,
+                  hireDate: event.target.value,
                 }))
               }
             />
+            <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
+              평일 공휴일 유급(1일 3시간)은 입사일 이후 공휴일에만 줍니다. 비워두면 사업단 시작일(
+              {participant.programStartDate})부터 재직으로 봅니다.
+            </p>
           </FormField>
 
           <FormField label="4대보험 가입">

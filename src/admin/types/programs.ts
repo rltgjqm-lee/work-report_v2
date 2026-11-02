@@ -16,6 +16,8 @@ export type Program = {
   employmentInsuranceEmployerRate: number;
   industrialAccidentRate: number;
   annualLeaveDailyWage: number;
+  // 역량활용 팀장수당(월 정액) — 조 팀장에게 급여와 별도로 지급한다.
+  teamLeaderAllowance: number;
   // 공익활동 활동대장 엑셀 1행 제목 — 비어있으면 다운로드 시 기본 문구를 쓴다.
   activityLogTitle: string | null;
   // 역량활용 출근부 엑셀 27행 안전수칙 배너 문구 — 비어있으면 다운로드 시 기본 문구를 쓴다.

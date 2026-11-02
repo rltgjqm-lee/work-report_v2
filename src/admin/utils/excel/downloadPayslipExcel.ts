@@ -11,6 +11,13 @@ export interface PayslipHeader {
 export interface PayslipParticipant {
   name: string;
   actualWorkHours: number;
+  paidLeaveHours: number;
+  trainingHours: number;
+  holidayPaidHours: number;
+  weeklyHolidayHours: number;
+  // 계약 종료 달에만 값이 있다 (미사용 연차는 계약 종료 시 정산)
+  remainingLeaveHours: number;
+  teamLeaderAllowance: number;
   hourlyWage: number;
   healthInsuranceEnrolled: boolean;
   longtermCareInsuranceEnrolled: boolean;
@@ -180,25 +187,30 @@ const addPayslipSheet = (
     valueCell.numFmt = MONEY_FMT;
   };
 
-  // 지급 항목 — 기본급만 자동 계산(실제근무시간 × 시급), 나머지는 데이터가 없어 공란
-  setMoneyValue("B11:D11", "E11:G11", "기본급", { formula: "B23*D23" });
-  setMoneyValue("B12:D12", "E12:G12", "주휴수당", null);
-  setMoneyValue("B13:D13", "E13:G13", "연차수당", null);
+  // 지급 항목 — 급여대장과 같은 기준(worker/src/lib/capacityPayroll.ts)으로 채운다.
+  // 기본급 = (실제근무 + 연차사용 + 기타근무(교육·공휴일 유급)) × 시급, 주휴수당 = 주휴시간 × 시급.
+  // 연차수당은 계약 종료 달에만 미사용 연차를 정산하고, 팀장수당은 별도 정액이다.
+  setMoneyValue("B11:D11", "E11:G11", "기본급", { formula: "B23*(D23+G23+L23)" });
+  setMoneyValue("B12:D12", "E12:G12", "주휴수당", { formula: "B23*I23" });
+  setMoneyValue("B13:D13", "E13:G13", "연차수당", {
+    formula: `B23*${participant.remainingLeaveHours}`,
+  });
   setMoneyValue("B14:D14", "E14:G14", "기타수당", null);
-  setMoneyValue("B15:D15", "E15:G15", "팀장수당", null);
+  setMoneyValue("B15:D15", "E15:G15", "팀장수당", participant.teamLeaderAllowance);
   setMoneyValue("B16:D16", "E16:G16", "기관보조금(보수)", null);
   setMoneyValue("B17:D17", "E17:G17", "지급액(a)", { formula: "SUM(E11:E16)" });
 
   // 공제 항목 — 4대보험만 자동 계산, 나머지(소득세/지방세/기타공제)는 공란.
-  // 건강보험 = 지급액(a) × 건강보험료율 / 장기요양보험 = 건강보험료 × 장기요양보험료율
-  // (실무 관례대로 건강보험료에 대한 비율로 계산) / 고용보험 = 지급액(a) × 고용보험료율.
+  // 보험료 기준은 급여대장과 같이 기본급 + 주휴수당 — 팀장수당·연차수당은 넣지 않는다.
+  // 건강보험 = 기준액 × 건강보험료율 / 장기요양보험 = 건강보험료 × 장기요양보험료율
+  // (실무 관례대로 건강보험료에 대한 비율로 계산) / 고용보험 = 기준액 × 고용보험료율.
   // 산재보험은 전액 사업주 부담이라 근로자 명세서엔 0으로 고정.
   setMoneyValue(
     "H11:J11",
     "K11:M11",
     "건강보험",
     participant.healthInsuranceEnrolled
-      ? { formula: `ROUND(E17*${header.healthInsuranceRate}/100,0)` }
+      ? { formula: `ROUND((E11+E12)*${header.healthInsuranceRate}/100,0)` }
       : 0,
   );
   setMoneyValue(
@@ -214,7 +226,7 @@ const addPayslipSheet = (
     "K13:M13",
     "고용보험",
     participant.employmentInsuranceEnrolled
-      ? { formula: `ROUND(E17*${header.employmentInsuranceRate}/100,0)` }
+      ? { formula: `ROUND((E11+E12)*${header.employmentInsuranceRate}/100,0)` }
       : 0,
   );
   setMoneyValue("H14:J14", "K14:M14", "산재보험", 0);
@@ -252,8 +264,13 @@ const addPayslipSheet = (
   sheet.mergeCells("D23:F23");
   sheet.getCell("D23").value = participant.actualWorkHours;
   sheet.mergeCells("G23:H23");
+  sheet.getCell("G23").value = participant.paidLeaveHours;
   sheet.mergeCells("I23:K23");
+  sheet.getCell("I23").value = participant.weeklyHolidayHours;
   sheet.mergeCells("L23:M23");
+  // 기타근무시간 = 교육시간 + 평일 공휴일 유급시간
+  sheet.getCell("L23").value =
+    Math.round((participant.trainingHours + participant.holidayPaidHours) * 10) / 10;
   ["B23", "D23", "G23", "I23", "L23"].forEach((ref) => {
     const cell = sheet.getCell(ref);
     cell.font = VALUE_FONT;
@@ -269,14 +286,14 @@ const addPayslipSheet = (
   });
 
   const guideRows: [string, string][] = [
-    ["기본급", "실제근무시간 × 시급"],
-    ["주휴수당", "(수기 입력 — 주 단위 근무시간 기준 산정 필요)"],
-    ["연차수당", "(수기 입력 — 미사용연차시간 기준 산정 필요)"],
+    ["기본급", "(실제근무 + 연차사용 + 기타근무(교육·평일 공휴일 유급)) × 시급"],
+    ["주휴수당", "주휴시간(월 근로시간 15h↑3 / 30h↑6 / 45h↑9 / 60h 12시간) × 시급"],
+    ["연차수당", "계약 종료 시 미사용 연차시간 × 시급 (매월 지급하지 않음)"],
     ["기타수당", "(수기 입력 — 초과근무시간 기준 산정 필요)"],
-    ["팀장수당", "근로계약서 제6조 제1항에 따른 월 정액"],
-    ["건강보험", `지급액(a) × 건강보험료율(${header.healthInsuranceRate}%)`],
+    ["팀장수당", "근로계약서 제6조 제1항에 따른 월 정액 (별도 지급)"],
+    ["건강보험", `(기본급 + 주휴수당) × 건강보험료율(${header.healthInsuranceRate}%)`],
     ["장기요양보험", `건강보험료 × 장기요양보험료율(${header.longtermCareRate}%)`],
-    ["고용보험", `지급액(a) × 고용보험료율(${header.employmentInsuranceRate}%)`],
+    ["고용보험", `(기본급 + 주휴수당) × 고용보험료율(${header.employmentInsuranceRate}%)`],
   ];
   guideRows.forEach(([label, desc], index) => {
     const row = 26 + index;
@@ -322,8 +339,8 @@ const addPayslipSheet = (
 
 /**
  * 💡 사업단 1개월치 급여 명세서를 참여자별 시트로 만들어 다운로드합니다.
- * 4대보험(건강/장기요양/고용)만 자동 계산하고, 데이터가 없는 항목(주휴수당/연차수당/
- * 기타수당/팀장수당/소득세/지방세/생년월일/지급일/기관보조금/산재보험)은 공란으로 둔다.
+ * 기본급·주휴수당·연차 정산·팀장수당·4대보험(건강/장기요양/고용)을 자동 계산하고, 데이터가
+ * 없는 항목(기타수당/소득세/지방세/생년월일/지급일/기관보조금)은 공란, 산재보험은 0으로 둔다.
  */
 export const downloadPayslipWorkbook = async (
   header: PayslipHeader,

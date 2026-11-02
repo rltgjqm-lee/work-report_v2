@@ -39,6 +39,7 @@ const emptyForm = {
   endTime: "",
   programType: "",
   hourlyWage: "10320",
+  teamLeaderAllowance: "0",
 };
 
 interface ProgramFormModalProps {
@@ -75,6 +76,7 @@ const ProgramFormModal = ({
           endTime: editingProgram.endTime,
           programType: editingProgram.programType ?? "",
           hourlyWage: String(editingProgram.hourlyWage),
+          teamLeaderAllowance: String(editingProgram.teamLeaderAllowance),
         }
       : emptyForm,
   );
@@ -173,6 +175,9 @@ const ProgramFormModal = ({
         endTime: form.endTime,
         programType: form.programType || undefined,
         hourlyWage: Number(form.hourlyWage),
+        ...(form.programType === "역량 활용"
+          ? { teamLeaderAllowance: Number(form.teamLeaderAllowance) }
+          : {}),
         ...(currentRole === ROLES.SUPER_ADMIN && !editingProgram
           ? { organizationId: Number(form.organizationId) }
           : {}),
@@ -300,8 +305,7 @@ const ProgramFormModal = ({
           options={secondaryContactAdminOptions}
         />
         <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
-          수요처 담당자로 지정할 수 있는 사람은 이 사업단 담당자와 보조 담당자
-          둘뿐입니다.
+          수요처 담당자로 지정할 수 있는 사람은 이 사업단 담당자와 보조 담당자 둘뿐입니다.
         </p>
       </FormField>
 
@@ -443,6 +447,23 @@ const ProgramFormModal = ({
           onChange={(event) => setForm((form) => ({ ...form, hourlyWage: event.target.value }))}
         />
       </FormField>
+
+      {/* 팀장수당 — 역량 활용만. 조 팀장에게 급여와 별도로 주는 월 정액 */}
+      {form.programType === "역량 활용" && (
+        <FormField label="팀장수당(원, 월)">
+          <Input
+            type="number"
+            value={form.teamLeaderAllowance}
+            onChange={(event) =>
+              setForm((form) => ({ ...form, teamLeaderAllowance: event.target.value }))
+            }
+          />
+          <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
+            조 팀장으로 지정된 참여자에게 급여대장·명세서에서 기본급·주휴수당과 별도로 지급합니다.
+            4대보험 산정에는 넣지 않습니다.
+          </p>
+        </FormField>
+      )}
 
       {error && <p className="text-[12.5px] text-admin-error-text">{error}</p>}
     </SlideModal>

@@ -121,6 +121,8 @@ app.get("/:id", async (c) => {
     programName: found.program.name,
     programType: found.program.programType,
     programHourlyWage: found.program.hourlyWage,
+    // 입사일이 비어 있으면 이 날짜부터 재직으로 본다 — 급여 설정 모달 안내 문구용.
+    programStartDate: found.program.startDate,
     groupName: groupRows[0]?.name ?? null,
     organizationName: organizationRows[0]?.name ?? null,
   });
@@ -384,6 +386,7 @@ app.put("/:id", async (c) => {
     employmentInsuranceEnrolled?: boolean;
     industrialAccidentInsuranceEnrolled?: boolean;
     weeklyHolidayHours?: number;
+    hireDate?: string | null;
   }>();
 
   if (body.demandSiteId) {
@@ -395,6 +398,9 @@ app.put("/:id", async (c) => {
       return c.json({ error: "해당 사업단의 수요처가 아닙니다." }, 400);
     }
   }
+
+  // 입사일 입력란을 비우면 ""가 오는데, 그건 "사업단 시작일부터 재직"이라는 뜻이라 null로 저장한다.
+  if (body.hireDate === "") body.hireDate = null;
 
   const result = await db.update(participants).set(body).where(eq(participants.id, id)).returning();
 

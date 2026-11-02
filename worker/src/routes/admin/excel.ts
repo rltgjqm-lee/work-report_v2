@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, like, ne } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, like, ne, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -15,10 +15,14 @@ import {
   participantLeaves,
   participantMonthlySchedule,
   participants,
-  participantTrainingLogs,
   programs,
 } from "../../db/schema";
 import { canAccessProgram, getAuth } from "../../lib/authz";
+import {
+  computeCapacityPayrollMonth,
+  DAILY_STANDARD_HOURS,
+  isContractEndingInMonth,
+} from "../../lib/capacityPayroll";
 import { getHolidayName } from "../../lib/koreanHolidays";
 
 // 월별 양식(출근부·급여대장·명세서·근무스케줄·활동비 대장)에 넣을 참여자 — 중단(DROPPED)만 뺀다.
@@ -528,8 +532,87 @@ app.get("/:id/export/work-schedule", async (c) => {
   });
 });
 
-// 급여 명세서 (역량활용) — 4대보험만 자동 계산하고 나머지(주휴수당/연차수당/기타수당/
-// 팀장수당/소득세/지방세/생년월일/기관보조금)는 데이터가 없어서 빈 칸으로 남긴다.
+// 급여 명세서·급여대장(역량활용)에 넣을 참여자 — 다른 월별 양식과 달리 그달에 참여 종료된
+// 사람도 넣는다. 마지막 달 급여와 미사용 연차 정산이 그 달 양식에 나와야 하기 때문.
+const listCapacityPayrollParticipants = async (
+  db: ReturnType<typeof drizzle>,
+  programId: number,
+  month: string,
+) =>
+  db
+    .select()
+    .from(participants)
+    .where(
+      and(
+        eq(participants.programId, programId),
+        or(isListedInMonthlyExport, gte(participants.droppedAt, `${month}-01`)),
+      ),
+    );
+
+// 역량활용 급여 계산값(lib/capacityPayroll.ts)에 팀장수당·미사용 연차 정산까지 붙여
+// 명세서와 급여대장이 같은 숫자를 쓰게 한다.
+const buildCapacityPayrollRows = async (
+  db: ReturnType<typeof drizzle>,
+  program: typeof programs.$inferSelect,
+  month: string,
+) => {
+  const listedParticipants = await listCapacityPayrollParticipants(db, program.id, month);
+  const payrollByParticipant = await computeCapacityPayrollMonth(
+    db,
+    program,
+    month,
+    listedParticipants,
+  );
+
+  const leaderRows = await db
+    .select({ leaderId: groups.leaderId })
+    .from(groups)
+    .where(eq(groups.programId, program.id));
+  const leaderIds = new Set(leaderRows.map((row) => row.leaderId));
+
+  const annualLeaveRows = await db
+    .select({ leave: participantAnnualLeave })
+    .from(participantAnnualLeave)
+    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
+    .where(
+      and(
+        eq(participants.programId, program.id),
+        eq(participantAnnualLeave.year, month.slice(0, 4)),
+      ),
+    )
+    .then((rows) => rows.map((row) => row.leave));
+  const remainingLeaveDaysByParticipant = new Map(
+    annualLeaveRows.map((leave) => [leave.participantId, leave.remainingDays]),
+  );
+
+  return listedParticipants.map((participant) => {
+    const payroll = payrollByParticipant.get(participant.id)!;
+    const remainingLeaveHours = isContractEndingInMonth(participant, program, month)
+      ? Math.max(remainingLeaveDaysByParticipant.get(participant.id) ?? 0, 0) * DAILY_STANDARD_HOURS
+      : 0;
+
+    return {
+      name: participant.name,
+      actualWorkHours: payroll.actualWorkHours,
+      trainingHours: payroll.trainingHours,
+      paidLeaveHours: payroll.paidLeaveHours,
+      holidayPaidHours: payroll.holidayPaidHours,
+      recognizedHours: payroll.recognizedHours,
+      weeklyHolidayHours: payroll.weeklyHolidayHours,
+      // 계약 종료 달에만 값이 있다 — 그 외 달은 0 (미사용 연차는 계약 종료 시 정산)
+      remainingLeaveHours,
+      teamLeaderAllowance: leaderIds.has(participant.id) ? program.teamLeaderAllowance : 0,
+      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
+      healthInsuranceEnrolled: participant.healthInsuranceEnrolled,
+      longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
+      employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
+      industrialAccidentInsuranceEnrolled: participant.industrialAccidentInsuranceEnrolled,
+    };
+  });
+};
+
+// 급여 명세서 (역량활용) — 기본급·주휴수당·연차 정산·팀장수당·4대보험을 임금산정 기준대로
+// 채운다. 소득세/지방세/생년월일/기관보조금은 데이터가 없어서 빈 칸으로 남긴다.
 // 산재보험은 전액 사업주 부담이라 근로자 명세서엔 0으로 표시(계산 안 함).
 app.get("/:id/export/payslip", async (c) => {
   const auth = getAuth(c);
@@ -548,47 +631,19 @@ app.get("/:id/export/payslip", async (c) => {
     .where(eq(organizations.id, program.organizationId));
   const org = orgRows[0];
 
-  const activeParticipants = await db
-    .select()
-    .from(participants)
-    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
-
-  const attendanceRows = await db
-    .select()
-    .from(attendanceLogs)
-    .where(
-      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
-    );
-  const minutesByParticipant = new Map<number, number>();
-  for (const log of attendanceRows) {
-    if (!log.totalMinutes) continue;
-    minutesByParticipant.set(
-      log.participantId,
-      (minutesByParticipant.get(log.participantId) ?? 0) + log.totalMinutes,
-    );
-  }
-
   return c.json({
     organizationName: org?.name ?? "",
     month,
     healthInsuranceRate: program.healthInsuranceRate,
     longtermCareRate: program.longtermCareRate,
     employmentInsuranceRate: program.employmentInsuranceRate,
-    participants: activeParticipants.map((participant) => ({
-      name: participant.name,
-      actualWorkHours: Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
-      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
-      healthInsuranceEnrolled: participant.healthInsuranceEnrolled,
-      longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
-      employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
-    })),
+    participants: await buildCapacityPayrollRows(db, program, month),
   });
 });
 
-// 급여대장 CSV — 계좌/주민번호는 담당자가 수기로 채우도록 빈 칸 (9장 결정)
 // 급여대장 (역량활용) — 실제 서식(work-report-v4/서식(1)/역량활용/2026ESG 급여대장.xlsx
-// 의 "인건비 (6)" 시트)과 같은 33열 구조. 만근 기준 근무시간/주휴시간은 이 사업만의
-// 정책값이라 자동 계산하지 않고 엑셀에서 직접 입력하도록 빈 칸으로 남긴다.
+// 의 "인건비 (6)" 시트) 구조에 공휴일 유급시간·팀장수당 열을 더했다. 주휴시간은 인정
+// 근로시간 구간으로 자동 계산한다(lib/capacityPayroll.ts).
 app.get("/:id/export/payment", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -600,119 +655,6 @@ app.get("/:id/export/payment", async (c) => {
   if (!program) return c.json({ error: "사업단을 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, program)) return c.json({ error: "권한이 없습니다." }, 403);
 
-  const activeParticipants = await db
-    .select({
-      participant: participants,
-      shiftStart: groups.shiftStart,
-      shiftEnd: groups.shiftEnd,
-    })
-    .from(participants)
-    .leftJoin(groups, eq(participants.groupId, groups.id))
-    .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
-
-  const attendanceRows = await db
-    .select()
-    .from(attendanceLogs)
-    .where(
-      and(eq(attendanceLogs.programId, programId), like(attendanceLogs.workDate, `${month}%`)),
-    );
-  const minutesByParticipant = new Map<number, number>();
-  for (const log of attendanceRows) {
-    if (!log.totalMinutes) continue;
-    minutesByParticipant.set(
-      log.participantId,
-      (minutesByParticipant.get(log.participantId) ?? 0) + log.totalMinutes,
-    );
-  }
-
-  const trainingRows = await db
-    .select({ log: participantTrainingLogs })
-    .from(participantTrainingLogs)
-    .innerJoin(participants, eq(participantTrainingLogs.participantId, participants.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participantTrainingLogs.status, "COMPLETED"),
-        like(participantTrainingLogs.attendDate, `${month}%`),
-      ),
-    )
-    .then((rows) => rows.map((row) => row.log));
-  const trainingHoursByParticipant = new Map<number, number>();
-  for (const log of trainingRows) {
-    trainingHoursByParticipant.set(
-      log.participantId,
-      (trainingHoursByParticipant.get(log.participantId) ?? 0) + log.attendHours,
-    );
-  }
-
-  const monthStart = `${month}-01`;
-  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
-  const monthEnd = `${month}-${String(daysInMonth).padStart(2, "0")}`;
-  const clipLeaveDaysToMonth = (leaveStart: string, leaveEnd: string): number => {
-    const start = leaveStart > monthStart ? leaveStart : monthStart;
-    const end = leaveEnd < monthEnd ? leaveEnd : monthEnd;
-    if (start > end) return 0;
-    const diffDays =
-      (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime()) /
-      86400000;
-    return diffDays + 1;
-  };
-
-  const leaveRows = await db
-    .select({ leave: participantLeaves })
-    .from(participantLeaves)
-    .innerJoin(participants, eq(participantLeaves.participantId, participants.id))
-    .where(and(eq(participants.programId, programId), eq(participantLeaves.leaveType, "PAID")))
-    .then((rows) => rows.map((row) => row.leave));
-  const paidLeaveDaysByParticipant = new Map<number, number>();
-  for (const leave of leaveRows) {
-    if (leave.leaveEnd < monthStart || leave.leaveStart > monthEnd) continue;
-    const days = clipLeaveDaysToMonth(leave.leaveStart, leave.leaveEnd);
-    paidLeaveDaysByParticipant.set(
-      leave.participantId,
-      (paidLeaveDaysByParticipant.get(leave.participantId) ?? 0) + days,
-    );
-  }
-
-  const annualLeaveRows = await db
-    .select({ leave: participantAnnualLeave })
-    .from(participantAnnualLeave)
-    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
-    .where(
-      and(
-        eq(participants.programId, programId),
-        eq(participantAnnualLeave.year, month.slice(0, 4)),
-      ),
-    )
-    .then((rows) => rows.map((row) => row.leave));
-  const remainingLeaveDaysByParticipant = new Map(
-    annualLeaveRows.map((leave) => [leave.participantId, leave.remainingDays]),
-  );
-
-  const participantsPayload = activeParticipants.map(({ participant, shiftStart, shiftEnd }) => {
-    const dailyHours =
-      shiftStart && shiftEnd
-        ? (() => {
-            const [sh, sm] = shiftStart.split(":").map(Number);
-            const [eh, em] = shiftEnd.split(":").map(Number);
-            return (eh * 60 + em - (sh * 60 + sm)) / 60;
-          })()
-        : 0;
-
-    return {
-      name: participant.name,
-      actualWorkHours: Math.round(((minutesByParticipant.get(participant.id) ?? 0) / 60) * 10) / 10,
-      trainingHours: trainingHoursByParticipant.get(participant.id) ?? 0,
-      paidLeaveHours: (paidLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
-      remainingLeaveHours: (remainingLeaveDaysByParticipant.get(participant.id) ?? 0) * dailyHours,
-      hourlyWage: participant.hourlyWage ?? program.hourlyWage,
-      healthInsuranceEnrolled: participant.healthInsuranceEnrolled,
-      longtermCareInsuranceEnrolled: participant.longtermCareInsuranceEnrolled,
-      employmentInsuranceEnrolled: participant.employmentInsuranceEnrolled,
-      industrialAccidentInsuranceEnrolled: participant.industrialAccidentInsuranceEnrolled,
-    };
-  });
-
   return c.json({
     programName: program.name,
     month,
@@ -721,7 +663,7 @@ app.get("/:id/export/payment", async (c) => {
     employmentInsuranceRate: program.employmentInsuranceRate,
     employmentInsuranceEmployerRate: program.employmentInsuranceEmployerRate,
     industrialAccidentRate: program.industrialAccidentRate,
-    participants: participantsPayload,
+    participants: await buildCapacityPayrollRows(db, program, month),
   });
 });
 

@@ -24,6 +24,8 @@ export type Participant = {
   employmentInsuranceEnrolled: boolean;
   industrialAccidentInsuranceEnrolled: boolean;
   weeklyHolidayHours: number;
+  // 입사일 — 역량활용 평일 공휴일 유급 대상(그 공휴일 당시 재직자) 판단용. null이면 사업단 시작일.
+  hireDate: string | null;
   createdAt: string;
   // 오늘 하루만 다른 조로 임시 배정된 경우에만 값이 있다 (participants.groupId는 그대로 유지됨)
   todayGroupOverride: { groupId: number; groupName: string } | null;
@@ -33,6 +35,7 @@ export type ParticipantDetail = Participant & {
   programName: string;
   programType: string | null;
   programHourlyWage: number;
+  programStartDate: string;
   groupName: string | null;
   organizationName: string | null;
 };

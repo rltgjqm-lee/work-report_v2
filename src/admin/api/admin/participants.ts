@@ -134,6 +134,7 @@ export interface AddParticipantVariables {
     demandSiteId?: number;
     groupId?: number;
     birthYear?: number;
+    hireDate?: string | null;
   };
 }
 
@@ -237,7 +238,7 @@ export interface UpdateParticipantVariables {
       | "longtermCareInsuranceEnrolled"
       | "employmentInsuranceEnrolled"
       | "industrialAccidentInsuranceEnrolled"
-      | "weeklyHolidayHours"
+      | "hireDate"
     >
   >;
 }

@@ -28,6 +28,7 @@ const emptyForm = {
   gender: "",
   demandSiteId: "",
   groupId: "",
+  hireDate: "",
 };
 
 interface ParticipantAddModalProps {
@@ -128,6 +129,7 @@ const ParticipantAddModal = ({
             gender: form.gender as "남성" | "여성",
             demandSiteId: form.demandSiteId ? Number(form.demandSiteId) : undefined,
             groupId: form.groupId ? Number(form.groupId) : undefined,
+            hireDate: form.hireDate || null,
           },
         });
         showToast(`'${form.name}' 님을 참여자로 등록했습니다.`);
@@ -251,6 +253,16 @@ const ParticipantAddModal = ({
         />
         <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
           선택한 수요처에 배정된 조여야 저장됩니다. 조는 나중에 다시 수정할 수 있어요.
+        </p>
+      </FormField>
+      <FormField label="입사일 (선택)">
+        <Input
+          type="date"
+          value={form.hireDate}
+          onChange={(event) => setForm((form) => ({ ...form, hireDate: event.target.value }))}
+        />
+        <p className="text-[11.5px] text-admin-text-placeholder mt-1.5">
+          역량 활용 평일 공휴일 유급 대상 판단에 씁니다. 비워두면 사업단 시작일부터 재직으로 봅니다.
         </p>
       </FormField>
     </SlideModal>

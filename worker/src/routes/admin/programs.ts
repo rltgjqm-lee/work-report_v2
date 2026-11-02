@@ -19,6 +19,7 @@ import {
   participantAnnualLeave,
   participantEscapeMeta,
   participantGroupOverrides,
+  participantLeaveAccruals,
   participantLeaves,
   participantMonthlySchedule,
   participants,
@@ -63,6 +64,7 @@ type ProgramBody = {
   employmentInsuranceEmployerRate?: number;
   industrialAccidentRate?: number;
   annualLeaveDailyWage?: number;
+  teamLeaderAllowance?: number;
   activityLogTitle?: string | null;
   capacityAttendanceBannerText?: string | null;
   isActive?: boolean;
@@ -412,6 +414,7 @@ app.post("/", async (c) => {
       employmentInsuranceEmployerRate: body.employmentInsuranceEmployerRate,
       industrialAccidentRate: body.industrialAccidentRate,
       annualLeaveDailyWage: body.annualLeaveDailyWage,
+      teamLeaderAllowance: body.teamLeaderAllowance,
       secondaryContactAdminId: body.secondaryContactAdminId,
     })
     .returning();
@@ -707,6 +710,7 @@ app.post("/:id/participants", async (c) => {
     demandSiteId?: number;
     groupId?: number;
     birthYear?: number;
+    hireDate?: string | null;
   }>();
 
   if (!body.name) {
@@ -770,6 +774,7 @@ app.post("/:id/participants", async (c) => {
       demandSiteId: body.demandSiteId,
       groupId: body.groupId,
       birthYear: body.birthYear,
+      hireDate: body.hireDate || null,
     })
     .returning();
 
@@ -927,6 +932,9 @@ app.delete("/:id/participants/:participantId", async (c) => {
   await db
     .delete(participantAnnualLeave)
     .where(eq(participantAnnualLeave.participantId, participantId));
+  await db
+    .delete(participantLeaveAccruals)
+    .where(eq(participantLeaveAccruals.participantId, participantId));
   await db.delete(escapeLogs).where(eq(escapeLogs.participantId, participantId));
   await db
     .delete(participantEscapeMeta)
