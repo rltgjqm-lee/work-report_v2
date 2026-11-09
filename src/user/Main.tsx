@@ -26,7 +26,12 @@ import HomePage from "./pages/HomePage";
 import RegistrationConfirmPage from "./pages/RegistrationConfirmPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignaturePage from "./pages/SignaturePage";
-import { pruneOldActivityLogs, syncPendingActivityLogs } from "./utils/activityLogSync";
+import {
+  isActivityLogSynced,
+  pruneOldActivityLogs,
+  syncPendingActivityLogs,
+  type ActivityLogSaveResult,
+} from "./utils/activityLogSync";
 import { flushClientEvents } from "./utils/clientEventLog";
 import { readCurrentCoordinates } from "./utils/geolocation";
 import {
@@ -118,6 +123,8 @@ const initialFormData: ActivityLogFormData = {
 // 변경마다 저장해두는 draft를 읽어온다. 서명은 크기가 커서 별도 키로 관리되니 여기엔 안 담는다.
 // 같은 날 앱을 다시 화면에 띄웠을 때 서버 출퇴근 상태를 다시 확인하는 최소 간격
 const RESUME_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+// 서명 저장 후 서버 전송 결과를 기다리는 최대 시간 — 넘으면 "아직 전송 안 됨"으로 안내한다
+const SIGNATURE_SYNC_WAIT_MS = 20 * 1000;
 
 const loadFormDraft = (): Partial<ActivityLogFormData> => {
   try {
@@ -275,10 +282,10 @@ const Main = () => {
   // 시도해봐야 서버 검증에 걸려 실패만 반복된다. IndexedDB 로컬 저장은 매 단계 그대로 한다.
   // (출근/퇴근 자체는 이 activity_logs 동기화와 별개로 attendanceApi의 clockIn/clockOut이
   // 등록 시점에 즉시 서버로 보낸다.)
-  const handleStepDataSave = async (syncNow = false) => {
+  const handleStepDataSave = async (syncNow = false): Promise<ActivityLogSaveResult> => {
     if (!db) {
       await handleAlertModalOpen(["데이터베이스가 연결되지 않았습니다."]);
-      return;
+      return "failed";
     }
 
     // 💡 이미 저장된 적 있는 글이면(id 존재) 그 레코드의 동기화 상태(synced/serverId)를
@@ -318,7 +325,7 @@ const Main = () => {
 
     if (savedId === undefined) {
       await handleAlertModalOpen(["저장 중 오류가 발생했습니다."]);
-      return;
+      return "failed";
     }
 
     // 💡 중요: 새로 생성된 글이라면 발급된 고유 id를 리액트 상태창고에도 업데이트해 줍니다.
@@ -332,12 +339,28 @@ const Main = () => {
     // 서명 직후 전송이 실패하면 그 사유(서버 거부·네트워크 오류)도 곧바로 서버로 보고한다 — 안 그러면
     // 다음에 앱을 열 때까지 폰에만 남아, "서명했는데 안 들어왔다"는 문의에 원인을 확인할 수 없었다.
     // 인터넷 자체가 없으면 보고도 못 하니 연결될 때(online 이벤트) 일지와 함께 보낸다.
-    if (syncNow) {
-      const participantId = formData.participantId;
-      syncPendingActivityLogs(db).then(() => {
-        if (participantId) flushClientEvents(participantId);
-      });
-    }
+    if (!syncNow) return "saved";
+
+    // 서명 화면은 이 결과를 기다렸다가 전송이 안 됐으면 참여자에게 알린다 — 예전엔 전송을 안
+    // 기다리고 바로 "완료"로 넘어가서, 참여자가 다 끝난 줄 알고 앱을 닫으면 전송이 끊긴 일지가
+    // 폰에만 남았다(서버엔 실패 기록조차 안 남는다). 응답이 너무 늦으면 기다리지 않고 미전송으로
+    // 안내하되, 진행 중인 전송은 그대로 둔다(끝나면 synced로 바뀐다).
+    const participantId = formData.participantId;
+    // IndexedDB 읽기 실패 같은 예외로 서명 화면이 "전송 중…"에 멈추지 않게, 실패는 미전송으로 본다
+    const syncing = syncPendingActivityLogs(db).catch(() => {});
+    syncing.then(() => {
+      if (participantId) flushClientEvents(participantId);
+    });
+    await Promise.race([
+      syncing,
+      new Promise<void>((resolve) => window.setTimeout(resolve, SIGNATURE_SYNC_WAIT_MS)),
+    ]);
+    return (await isActivityLogSynced(db, savedId)) ? "sent" : "unsent";
+  };
+
+  // 서명 전 단계(업무/안전 등록 등)의 저장 — 폰에만 저장하고 결과는 쓰지 않는다
+  const handleStepDraftSave = async () => {
+    await handleStepDataSave();
   };
 
   // 💡 앱이 처음 구동될 때 IndexedDB를 최초 1회 연결하는 이펙트
@@ -684,7 +707,7 @@ const Main = () => {
             todayStatus={todayStatus}
             onHome={() => setView(VIEW_TYPE.MAIN)}
             onAlert={handleAlertModalOpen}
-            onSave={handleStepDataSave}
+            onSave={handleStepDraftSave}
             onOpenWork={() => setView(VIEW_TYPE.REPORT)}
             onOpenSafety={() => setView(VIEW_TYPE.ACCIDENT)}
             onOpenSummary={() => setView(VIEW_TYPE.SUMMARY)}
@@ -713,7 +736,7 @@ const Main = () => {
             setFormData={setFormData}
             onBack={() => setView(VIEW_TYPE.DASHBOARD)}
             onAlert={handleAlertModalOpen}
-            onSave={handleStepDataSave}
+            onSave={handleStepDraftSave}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
             isLargeFontMode={isLargeFontMode}
           />
@@ -726,7 +749,7 @@ const Main = () => {
             setFormData={setFormData}
             onBack={() => setView(VIEW_TYPE.DASHBOARD)}
             onAlert={handleAlertModalOpen}
-            onSave={handleStepDataSave}
+            onSave={handleStepDraftSave}
             onNext={() => setView(VIEW_TYPE.DASHBOARD)}
             isLargeFontMode={isLargeFontMode}
           />

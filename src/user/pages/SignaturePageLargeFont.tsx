@@ -13,6 +13,8 @@ interface SignaturePageLargeFontProps {
   setFormData: React.Dispatch<React.SetStateAction<ActivityLogFormData>>;
   onBack: () => void;
   onSaveAndFinishButtonClick: () => void;
+  // 서버 전송 결과를 기다리는 중 — 버튼을 "전송 중…"으로 바꾸고 막는다
+  isSending: boolean;
 }
 
 const sigBoxLargeClass =
@@ -29,6 +31,7 @@ const SignaturePageLargeFont = ({
   setFormData,
   onBack,
   onSaveAndFinishButtonClick,
+  isSending,
 }: SignaturePageLargeFontProps) => {
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
 
@@ -48,9 +51,7 @@ const SignaturePageLargeFont = ({
         >
           <ChevronLeft size={22} color="#333d4b" strokeWidth={2.2} />
         </button>
-        <span className="flex-1 text-center text-[20px] font-extrabold text-text-strong">
-          서명
-        </span>
+        <span className="flex-1 text-center text-[20px] font-extrabold text-text-strong">서명</span>
         {formData.participantId ? (
           <button
             onClick={() => setIsSosModalOpen(true)}
@@ -109,14 +110,18 @@ const SignaturePageLargeFont = ({
       <div className="flex-none bg-white px-7 pt-5 pb-6 flex flex-col gap-3.5 border-t border-surface-page">
         <button
           onClick={onSaveAndFinishButtonClick}
-          className="w-full h-[74px] bg-brand text-white border-none rounded-2xl text-[23px] font-extrabold font-sans cursor-pointer"
+          disabled={isSending}
+          className="w-full h-[74px] bg-brand text-white border-none rounded-2xl text-[23px] font-extrabold font-sans cursor-pointer disabled:opacity-60"
         >
-          저장하고 마치기
+          {isSending ? "전송 중…" : "저장하고 마치기"}
         </button>
       </div>
 
       {isSosModalOpen && (
-        <SosConfirmModalLargeFont onSend={handleSosSend} onCancel={() => setIsSosModalOpen(false)} />
+        <SosConfirmModalLargeFont
+          onSend={handleSosSend}
+          onCancel={() => setIsSosModalOpen(false)}
+        />
       )}
     </div>
   );

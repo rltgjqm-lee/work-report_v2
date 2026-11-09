@@ -69,9 +69,19 @@ const runSyncOnce = async (db: IDBDatabase): Promise<void> => {
 };
 
 // 마운트 직후(React StrictMode의 이펙트 이중 실행 포함)와 online 이벤트가 겹쳐 들어와도
-// 같은 미동기화 레코드를 동시에 두 번 POST하지 않도록 직렬화한다.
-let isSyncing = false;
+// 같은 미동기화 레코드를 동시에 두 번 POST하지 않도록 직렬화한다. 이미 돌고 있으면 한 번 더
+// 돌도록 표시만 하고 그 진행 중인 동기화를 같이 기다린다 — 서명 화면이 "방금 저장한 일지가
+// 실제로 전송됐는지"를 이 호출이 끝난 뒤에 확인하기 때문에, 먼저 돌던 동기화가 그 일지를
+// 놓쳤더라도 재실행까지 끝난 다음에 돌아와야 한다.
+let currentSync: Promise<void> | null = null;
 let rerunRequested = false;
+
+const runUntilSettled = async (db: IDBDatabase): Promise<void> => {
+  do {
+    rerunRequested = false;
+    await runSyncOnce(db);
+  } while (rerunRequested);
+};
 
 /**
  * IndexedDB에 쌓인, 아직 서버에 반영 안 된(synced !== true) 활동일지를 온라인일 때 순서대로
@@ -95,22 +105,34 @@ export const syncPendingActivityLogs = async (db: IDBDatabase | null): Promise<v
     return;
   }
 
-  if (isSyncing) {
+  if (currentSync) {
     rerunRequested = true;
-    return;
+    return currentSync;
   }
 
-  isSyncing = true;
-  try {
-    await runSyncOnce(db);
-  } finally {
-    isSyncing = false;
-    if (rerunRequested) {
-      rerunRequested = false;
-      await syncPendingActivityLogs(db);
-    }
-  }
+  currentSync = runUntilSettled(db).finally(() => {
+    currentSync = null;
+  });
+  return currentSync;
 };
+
+// 일지 저장 결과 — failed: 폰 저장부터 실패(이미 안내함), saved: 폰에만 저장(전송은 요청 안 함),
+// sent: 서버 전송까지 끝남, unsent: 폰엔 저장됐지만 아직 서버에 못 보냄(다음에 앱을 열 때 재전송)
+export type ActivityLogSaveResult = "failed" | "saved" | "sent" | "unsent";
+
+// 폰에 저장된 일지 한 건이 서버까지 전송됐는지 — 서명 화면이 저장 직후 결과를 참여자에게
+// 알려주는 데 쓴다. 저장만 되고 전송이 안 된 채 앱을 닫으면 그 일지는 다음에 앱을 열 때까지
+// 폰에만 남는데, 참여자는 다 끝난 줄 알기 때문이다.
+export const isActivityLogSynced = (db: IDBDatabase, id: number): Promise<boolean> =>
+  new Promise((resolve) => {
+    const request = db
+      .transaction(INDEXED_DB_CONFIG.STORE_NAME, "readonly")
+      .objectStore(INDEXED_DB_CONFIG.STORE_NAME)
+      .get(id);
+    request.onsuccess = () =>
+      resolve((request.result as ActivityLogItem | undefined)?.synced === true);
+    request.onerror = () => resolve(false);
+  });
 
 // 폰에 일지를 남겨두는 기간 — 지난 일지는 서버에서 다시 받아올 수 있어(GET /activity-logs) 오래
 // 들고 있을 필요가 없다. 서명 이미지가 일지마다 들어 있어 지우지 않으면 계속 쌓인다.
