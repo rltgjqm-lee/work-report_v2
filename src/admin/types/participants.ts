@@ -77,6 +77,9 @@ export type AnnualLeave = {
   remainingDays: number;
   // true면 총 일수를 만근한 달 수로 자동 계산한 것(역량활용) — 직접 정할 수 없다
   autoAccrued: boolean;
+  // 역량활용: 총 일수 = min(도입 전 만근 일수 + 시스템 기록으로 센 만근 달 수, 10)
+  preSystemAccruedDays: number;
+  accruedDays: number;
 };
 
 export type ParticipantMonthlySchedule = {

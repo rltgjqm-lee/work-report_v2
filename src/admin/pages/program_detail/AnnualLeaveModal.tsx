@@ -17,6 +17,8 @@ const currentYear = new Date().getFullYear().toString();
 const emptyForm = {
   year: currentYear,
   totalDays: "",
+  // 역량활용 전용 — 시스템 도입 전(출퇴근 기록이 없는 달)에 만근해서 생긴 연차 일수
+  preSystemAccruedDays: "",
 };
 
 interface AnnualLeaveModalProps {
@@ -41,13 +43,17 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
 
   const handleSaveButtonClick = () => {
     if (!target) return;
-    if (!form.totalDays) {
-      alert("총 연차 일수를 입력해주세요.");
+    const isAutoAccrued = !!balance?.autoAccrued;
+    const value = isAutoAccrued ? form.preSystemAccruedDays : form.totalDays;
+    if (!value) {
+      alert(isAutoAccrued ? "도입 전 만근 일수를 입력해주세요." : "총 연차 일수를 입력해주세요.");
 
       return;
     }
     setAnnualLeaveMutation.mutate(
-      { participantId: target.id, year: form.year, totalDays: Number(form.totalDays) },
+      isAutoAccrued
+        ? { participantId: target.id, year: form.year, preSystemAccruedDays: Number(value) }
+        : { participantId: target.id, year: form.year, totalDays: Number(value) },
       {
         onSuccess: () => {
           showToast("연차를 저장했습니다.");
@@ -68,7 +74,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
           <Button variant="ghost" onClick={onClose}>
             닫기
           </Button>
-          {!balance?.autoAccrued && <Button onClick={handleSaveButtonClick}>저장</Button>}
+          <Button onClick={handleSaveButtonClick}>저장</Button>
         </>
       }
     >
@@ -79,10 +85,32 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
         </div>
       )}
       {balance?.autoAccrued ? (
-        <div className="text-[12.5px] text-text-subtle">
-          역량활용 연차는 매월 1일~말일 60시간을 만근한 달마다 1일씩(최대 10일) 자동으로 생겨서 직접
-          정할 수 없습니다. 진행 중인 달은 끝난 뒤에 반영됩니다.
-        </div>
+        <>
+          <div className="text-[12.5px] text-text-subtle mb-3">
+            역량활용 연차는 매월 1일~말일 60시간을 만근한 달마다 1일씩(최대 10일) 생깁니다. 시스템
+            기록으로 센 만근 {balance.accruedDays}개월 + 도입 전 만근 {balance.preSystemAccruedDays}
+            일 = 총 {balance.totalDays}일. 시스템을 쓰기 전 달은 출퇴근 기록이 없어 셀 수 없으니, 그
+            기간에 만근한 달 수를 아래에 넣어주세요.
+          </div>
+          <FormField label="연도">
+            <Input
+              value={form.year}
+              onChange={(event) => setForm((form) => ({ ...form, year: event.target.value }))}
+            />
+          </FormField>
+          <FormField label="도입 전 만근 일수(0~10)">
+            <Input
+              type="number"
+              min={0}
+              max={10}
+              value={form.preSystemAccruedDays}
+              placeholder={`현재 ${balance.preSystemAccruedDays}일`}
+              onChange={(event) =>
+                setForm((form) => ({ ...form, preSystemAccruedDays: event.target.value }))
+              }
+            />
+          </FormField>
+        </>
       ) : (
         <>
           <FormField label="연도">

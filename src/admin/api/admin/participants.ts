@@ -498,13 +498,18 @@ export const participantAnnualLeaveQueryOptions = (id: number, year: string) =>
     queryFn: () => getAnnualLeave(id, year),
   });
 
+// 공익활동은 totalDays(총 일수), 역량활용은 preSystemAccruedDays(시스템 도입 전 만근 일수)를 보낸다
 export interface SetAnnualLeaveVariables {
   participantId: number;
   year: string;
-  totalDays: number;
+  totalDays?: number;
+  preSystemAccruedDays?: number;
 }
 
-const setAnnualLeave = (id: number, data: { year: string; totalDays: number }) =>
+const setAnnualLeave = (
+  id: number,
+  data: { year: string; totalDays?: number; preSystemAccruedDays?: number },
+) =>
   request<AnnualLeave>(`/api/participants/${id}/annual-leave`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -513,13 +518,16 @@ const setAnnualLeave = (id: number, data: { year: string; totalDays: number }) =
 // critical: 방금 저장한 연차 현황을 그 쿼리 캐시에 바로 반영한다 — 다시 불러오지 않아도 된다.
 export const setAnnualLeaveMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ participantId, year, totalDays }: SetAnnualLeaveVariables) =>
-      setAnnualLeave(participantId, { year, totalDays }),
-    onSuccess: (updated, variables) => {
-      queryClient.setQueryData(
-        participantKeys.annualLeave(variables.participantId, variables.year),
-        updated,
-      );
+    mutationFn: ({
+      participantId,
+      year,
+      totalDays,
+      preSystemAccruedDays,
+    }: SetAnnualLeaveVariables) =>
+      setAnnualLeave(participantId, { year, totalDays, preSystemAccruedDays }),
+    onSuccess: (_updated, variables) => {
+      // 연차 현황과 휴가 이력 화면의 연차 현황이 같이 바뀐다
+      queryClient.invalidateQueries({ queryKey: participantKeys.detail(variables.participantId) });
     },
   });
 
@@ -575,18 +583,25 @@ export const bulkRegisterParticipantLeaveMutationOptions = (queryClient: QueryCl
     },
   });
 
+// 공익활동은 totalDays(총 일수), 역량활용은 preSystemAccruedDays(시스템 도입 전 만근 일수)를 보낸다
 export interface BulkSetAnnualLeaveVariables {
   programId: number;
   participantIds: number[];
   year: string;
-  totalDays: number;
+  totalDays?: number;
+  preSystemAccruedDays?: number;
 }
 
 const bulkSetAnnualLeave = (
   programId: number,
-  data: { participantIds: number[]; year: string; totalDays: number },
+  data: {
+    participantIds: number[];
+    year: string;
+    totalDays?: number;
+    preSystemAccruedDays?: number;
+  },
 ) =>
-  request<AnnualLeave[]>(`/api/programs/${programId}/participants/bulk-annual-leave`, {
+  request<unknown>(`/api/programs/${programId}/participants/bulk-annual-leave`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -595,10 +610,19 @@ const bulkSetAnnualLeave = (
 // 무효화해서 목록 재조회 때 반영되게 한다(연차 상세는 모달을 다시 열 때 새로 받음).
 export const bulkSetAnnualLeaveMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: ({ programId, participantIds, year, totalDays }: BulkSetAnnualLeaveVariables) =>
-      bulkSetAnnualLeave(programId, { participantIds, year, totalDays }),
+    mutationFn: ({
+      programId,
+      participantIds,
+      year,
+      totalDays,
+      preSystemAccruedDays,
+    }: BulkSetAnnualLeaveVariables) =>
+      bulkSetAnnualLeave(programId, { participantIds, year, totalDays, preSystemAccruedDays }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
+      variables.participantIds.forEach((participantId) =>
+        queryClient.invalidateQueries({ queryKey: participantKeys.detail(participantId) }),
+      );
     },
   });
 

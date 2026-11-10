@@ -31,6 +31,8 @@ import {
 import {
   getAnnualLeaveBalances,
   isCapacityProgram,
+  savePreSystemAccruedDays,
+  validatePreSystemAccruedDays,
   type AnnualLeaveBalance,
 } from "../../lib/annualLeaveBalance";
 import {
@@ -1153,17 +1155,31 @@ app.post("/:id/participants/bulk-annual-leave", async (c) => {
     participantIds?: number[];
     year?: string;
     totalDays?: number;
+    preSystemAccruedDays?: number;
   }>();
+
+  // 역량활용은 총 일수를 정하지 않고(만근한 달 수로 계산) 시스템 도입 전 만근 일수만 넣는다
+  if (isCapacityProgram(program)) {
+    if (!body.participantIds?.length || !body.year) {
+      return c.json({ error: "참여자와 연도를 지정해주세요." }, 400);
+    }
+    const validationError = validatePreSystemAccruedDays(body.preSystemAccruedDays);
+    if (validationError) return c.json({ error: validationError }, 400);
+
+    const targetIds = (
+      await db
+        .select({ id: participants.id })
+        .from(participants)
+        .where(
+          and(eq(participants.programId, programId), inArray(participants.id, body.participantIds)),
+        )
+    ).map((row) => row.id);
+    await savePreSystemAccruedDays(db, targetIds, body.year, body.preSystemAccruedDays!);
+    return c.json({ updatedCount: targetIds.length });
+  }
 
   if (!body.participantIds?.length || !body.year || body.totalDays === undefined) {
     return c.json({ error: "참여자와 연도·총 일수를 지정해주세요." }, 400);
-  }
-  // 역량활용 연차는 개근한 달 수로 계산하므로(lib/annualLeaveBalance.ts) 직접 정하지 않는다
-  if (isCapacityProgram(program)) {
-    return c.json(
-      { error: "역량활용 연차는 만근한 달 수로 자동 계산되어 직접 정할 수 없습니다." },
-      400,
-    );
   }
 
   const targetRows = await db

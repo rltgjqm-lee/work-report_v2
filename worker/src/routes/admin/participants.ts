@@ -21,7 +21,12 @@ import {
   participants,
   programs,
 } from "../../db/schema";
-import { getAnnualLeaveBalances, isCapacityProgram } from "../../lib/annualLeaveBalance";
+import {
+  getAnnualLeaveBalances,
+  isCapacityProgram,
+  savePreSystemAccruedDays,
+  validatePreSystemAccruedDays,
+} from "../../lib/annualLeaveBalance";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
@@ -783,15 +788,28 @@ app.post("/:id/annual-leave", async (c) => {
     return c.json({ error: "권한이 없습니다." }, 403);
   }
 
-  // 역량활용 연차는 개근한 달 수로 계산하므로(lib/annualLeaveBalance.ts) 직접 정하지 않는다
+  const body = await c.req.json<{
+    year?: string;
+    totalDays?: number;
+    preSystemAccruedDays?: number;
+  }>();
+
+  // 역량활용은 총 일수를 정하지 않고(만근한 달 수로 계산) 시스템 도입 전 만근 일수만 넣는다
   if (isCapacityProgram(found.program)) {
-    return c.json(
-      { error: "역량활용 연차는 만근한 달 수로 자동 계산되어 직접 정할 수 없습니다." },
-      400,
+    if (!body.year) return c.json({ error: "연도를 입력해주세요." }, 400);
+    const validationError = validatePreSystemAccruedDays(body.preSystemAccruedDays);
+    if (validationError) return c.json({ error: validationError }, 400);
+
+    await savePreSystemAccruedDays(db, [id], body.year, body.preSystemAccruedDays!);
+    const balances = await getAnnualLeaveBalances(
+      db,
+      found.program,
+      [found.participant],
+      body.year,
     );
+    return c.json(balances.get(id));
   }
 
-  const body = await c.req.json<{ year?: string; totalDays?: number }>();
   if (!body.year || body.totalDays === undefined) {
     return c.json({ error: "연도와 총 일수를 입력해주세요." }, 400);
   }

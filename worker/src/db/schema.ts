@@ -422,6 +422,10 @@ export const participantAnnualLeave = sqliteTable(
     totalDays: integer("total_days").notNull().default(0),
     usedDays: integer("used_days").notNull().default(0),
     remainingDays: integer("remaining_days").notNull().default(0),
+    // 역량활용 전용 — 시스템 도입 전(출퇴근 기록이 없는 달)에 만근해서 생긴 연차 일수.
+    // 관리자가 기존 근무 기록으로 확인해 넣고, 시스템 기록으로 센 만근 달 수에 더한다
+    // (lib/annualLeaveBalance.ts). 공익활동은 쓰지 않는다.
+    preSystemAccruedDays: integer("pre_system_accrued_days").notNull().default(0),
     updatedAt: text("updated_at")
       .notNull()
       .default(sql`(current_timestamp)`),

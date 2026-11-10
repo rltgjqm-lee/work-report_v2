@@ -1,0 +1,1 @@
+ALTER TABLE `participant_annual_leave` ADD `pre_system_accrued_days` integer DEFAULT 0 NOT NULL;
