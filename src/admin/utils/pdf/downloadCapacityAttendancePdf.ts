@@ -50,7 +50,7 @@ const PAGE_STYLE = `
   .attendance-page .weekend { background: #d9d9d9; }
   .attendance-page .holiday { color: #ff0000; font-weight: bold; }
   .attendance-page .absent { color: #c0392b; font-weight: bold; }
-  .attendance-page .signature { height: 24px; max-width: 100%; object-fit: contain; display: block; margin: 0 auto; }
+  .attendance-page .signature { height: 24px; max-width: 100%; object-fit: contain; vertical-align: middle; }
   .attendance-page .result td { height: 28px; }
   .attendance-page .note td.text { text-align: left; padding: 4px 6px; line-height: 1.5; }
   .attendance-page .guide { font-size: 10px; line-height: 1.6; margin-top: 12px; }
@@ -186,6 +186,13 @@ export const downloadCapacityAttendancePdf = async (
   wrapper.appendChild(content);
   document.body.appendChild(wrapper);
 
+  // Tailwind 기본 스타일(img { display: block })이 html2canvas의 글자 기준선 측정(body 바로
+  // 아래에 잠깐 붙이는 측정용 div 안의 img)을 틀어서 모든 글자가 칸 아래로 처진다. 캡처하는
+  // 동안만 그 측정용 img를 inline으로 되돌린다.
+  const baselineFix = document.createElement("style");
+  baselineFix.textContent = "body > div > img { display: inline !important; }";
+  document.head.appendChild(baselineFix);
+
   try {
     const worker = new html2pdf.Worker();
     // html2pdf.js 타입 정의에 pagebreak 옵션이 빠져 있어서 그 필드만 덧붙인다
@@ -195,7 +202,14 @@ export const downloadCapacityAttendancePdf = async (
         margin: [10, 10, 10, 10],
         filename: `출근부_${month}.pdf`,
         image: { type: "jpeg", quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          // 관리자 화면을 스크롤한 상태에서 눌러도 오른쪽·아래가 잘리지 않게 캡처 기준을 고정한다
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 1200,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         // 참여자마다 새 페이지에서 시작한다(.attendance-page + .attendance-page의 page-break-before)
         pagebreak: { mode: ["css"] },
@@ -204,5 +218,6 @@ export const downloadCapacityAttendancePdf = async (
       .save();
   } finally {
     wrapper.remove();
+    baselineFix.remove();
   }
 };
