@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getLocalToday, getLocalYearMonth, isoToKstMinuteString } from "../../../utils/timeFormat";
 import {
@@ -8,8 +8,9 @@ import {
   participantAttendanceQueryOptions,
   participantLeaveHistoryQueryOptions,
   participantQueryOptions,
+  resetParticipantDeviceMutationOptions,
+  type ParticipantAppError,
 } from "../../api/admin/participants";
-import type { ParticipantAppError } from "../../api/admin/participants";
 import { useAuth } from "../../context/useAuth";
 import { ROLES } from "../../types/admins";
 import type { AttendanceStats, ParticipantAttendanceRow } from "../../types/attendance";
@@ -71,6 +72,10 @@ const ParticipantDetailPage = () => {
   }
 
   const { data: participant } = useQuery(participantQueryOptions(participantId));
+  const queryClient = useQueryClient();
+  const resetParticipantDeviceMutation = useMutation(
+    resetParticipantDeviceMutationOptions(queryClient),
+  );
   const { data: leaveHistory } = useQuery(
     participantLeaveHistoryQueryOptions(participantId, new Date().getFullYear().toString()),
   );
@@ -91,6 +96,23 @@ const ParticipantDetailPage = () => {
       </div>
     );
   }
+  const handleDeviceResetButtonClick = () => {
+    if (
+      !confirm(
+        `'${participant.name}' 님의 기기 등록을 해제하시겠습니까?\n다음에 등록하거나 출근하는 기기로 다시 고정됩니다.`,
+      )
+    )
+      return;
+    resetParticipantDeviceMutation.mutate(
+      { participantId },
+      {
+        onSuccess: () => alert(`'${participant.name}' 님의 기기 등록을 해제했습니다.`),
+        onError: (error) =>
+          alert(error instanceof Error ? error.message : "기기 등록 해제에 실패했습니다."),
+      },
+    );
+  };
+
   const participantSummary = `${participant.organizationName} · ${participant.programName}${
     participant.groupName ? ` · ${participant.groupName}` : ""
   } · ${PARTICIPANT_STATUS_LABEL[participant.status]}`;
@@ -121,6 +143,26 @@ const ParticipantDetailPage = () => {
         </div>
         <p className="text-xs text-admin-text-placeholder m-0">
           교육비·치매검진비·4대보험·주휴수당의 지급 여부를 관리합니다.
+        </p>
+      </div>
+
+      {/* 출퇴근 기기 — 대리 출근을 막으려고 한 기기에서만 등록·출퇴근할 수 있다 */}
+      <div className="bg-white border border-admin-border-subtle rounded-[2px] px-5 py-4 mb-5">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-sm font-bold">출퇴근 기기</span>
+          {participant.boundDeviceAt && (
+            <Button
+              onClick={handleDeviceResetButtonClick}
+              disabled={resetParticipantDeviceMutation.isPending}
+            >
+              기기 등록 해제
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-admin-text-placeholder m-0">
+          {participant.boundDeviceAt
+            ? `${isoToKstMinuteString(participant.boundDeviceAt)}부터 기기 1대에 고정되어 다른 기기에서는 등록·출퇴근할 수 없습니다. 폰을 바꿨거나 앱을 다시 설치했다면 해제해 주세요.`
+            : "아직 고정된 기기가 없습니다. 다음에 등록하거나 출근하는 기기로 고정됩니다."}
         </p>
       </div>
 

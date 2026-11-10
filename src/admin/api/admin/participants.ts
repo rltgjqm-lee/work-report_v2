@@ -253,6 +253,23 @@ const updateParticipant = (id: number, data: UpdateParticipantVariables["data"])
 // 않아도 상세 화면이 최신 상태를 보여준다. name/demandName 등은 참여자 관리(전체 사업단
 // 통합 조회) 목록에도 보이는 필드라 그 목록은 무효화한다. 모달 닫기 같은 UI 한정 동작은
 // 호출부의 mutate(variables, { onSuccess, onError })에 둔다.
+export interface ResetParticipantDeviceVariables {
+  participantId: number;
+}
+
+const resetParticipantDevice = (id: number) =>
+  request<Participant>(`/api/participants/${id}/device/reset`, { method: "POST" });
+
+// critical: 고정 기기 표시가 바뀌므로 그 참여자 상세를 무효화한다
+export const resetParticipantDeviceMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ participantId }: ResetParticipantDeviceVariables) =>
+      resetParticipantDevice(participantId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: participantKeys.detail(variables.participantId) });
+    },
+  });
+
 export const updateParticipantMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ id, data }: UpdateParticipantVariables) => updateParticipant(id, data),

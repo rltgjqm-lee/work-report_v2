@@ -3,6 +3,7 @@ import { mutationOptions, queryOptions } from "@tanstack/react-query";
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 
 import { readAppInfo, recordClientEvent } from "../utils/clientEventLog";
+import { getDeviceId } from "../utils/deviceId";
 import { readCurrentLocation } from "../utils/geolocation";
 import type { Coordinates, LocationReading } from "../utils/geolocation";
 
@@ -69,7 +70,8 @@ export type IdentifiedParticipant = {
 // 💡 메시지 문구는 화면(RegistrationConfirmPage)에서 조립한다 — 여기서는 백엔드가 내려준
 // 코드/데이터를 그대로 실어 던지기만 한다.
 export type IdentifyErrorBody =
-  | { error: "MISSING_FIELDS" | "PROGRAM_NOT_FOUND" }
+  // DEVICE_MISMATCH: 이 참여자가 이미 다른 기기에 고정돼 있다(관리자가 기기 등록을 해제해야 함)
+  | { error: "MISSING_FIELDS" | "PROGRAM_NOT_FOUND" | "DEVICE_MISMATCH" }
   | {
       error: "NOT_REGISTERED";
       organization: {
@@ -97,7 +99,7 @@ const identifyParticipant = async (
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ programId, name }),
+    body: JSON.stringify({ programId, name, deviceId: getDeviceId() }),
   });
   if (!res.ok) {
     const data = await res
@@ -221,6 +223,7 @@ const clockIn = async (
   const { appVersion, bundleVersion } = await readAppInfo();
   const res = await postAttendance("/public/attendance/clock-in", {
     participantId,
+    deviceId: getDeviceId(),
     appVersion,
     bundleVersion,
     ...coordinatesPayload(reading.coordinates),
@@ -257,6 +260,7 @@ const clockOut = async (
 ): Promise<{ id: number; clockOut: string; totalMinutes: number }> => {
   const res = await postAttendance("/public/attendance/clock-out", {
     participantId,
+    deviceId: getDeviceId(),
     ...coordinatesPayload(reading.coordinates),
     ...attemptDiagnosticsPayload(reading),
     ...(debug?.date && { debugDate: debug.date }),

@@ -106,6 +106,16 @@ const RegistrationConfirmPage = ({
         ),
         note: "해당 기관이나 담당자에게\n문의해 주세요",
       };
+    } else if (
+      identifyError instanceof IdentifyError &&
+      identifyError.body.error === "DEVICE_MISMATCH"
+    ) {
+      exception = {
+        variant: "warn",
+        title: "이미 다른 기기에 등록되어 있어요",
+        body: "한 사람은 기기 한 대에서만 쓸 수 있어요",
+        note: "폰을 바꾸셨다면 기관 담당자에게\n기기 등록 해제를 요청해 주세요",
+      };
     } else {
       exception = {
         variant: "warn",

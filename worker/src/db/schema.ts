@@ -371,6 +371,11 @@ export const participants = sqliteTable(
     // 위치정보법상 위치 수집 전 고지·동의 기록 — 최초 출근 시 동의 화면을 거치면 채워지고,
     // 이후 출근에서는 이 값이 있으면 동의 화면을 다시 띄우지 않는다(설정 화면에서 다시 볼 수 있음).
     locationConsentAt: text("location_consent_at"),
+    // 이 참여자로 출퇴근할 수 있는 기기 — 앱이 처음 실행할 때 만든 무작위 기기 번호다. 처음
+    // 등록(본인 확인)하거나 출근한 기기로 고정되고, 다른 기기에서는 등록·출퇴근을 막는다(대리
+    // 출근 방지). 폰을 바꾸면 관리자가 해제(null)해서 다음 기기로 다시 고정되게 한다.
+    boundDeviceId: text("bound_device_id"),
+    boundDeviceAt: text("bound_device_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

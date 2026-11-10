@@ -29,6 +29,7 @@ import {
 } from "../../db/schema";
 import { canAccessProgram, parseIdArray } from "../../lib/authz";
 import { readDebugOverride } from "../../lib/debugTime";
+import { checkAndBindDevice, DEVICE_MISMATCH_MESSAGE } from "../../lib/deviceBinding";
 import { getFcmAccessToken, sendFcmPush } from "../../lib/fcmPush";
 import {
   buildDemandSiteAreas,
@@ -169,6 +170,7 @@ app.post("/attendance/identify", async (c) => {
   const body = await c.req.json<{
     programId?: number;
     name?: string;
+    deviceId?: string;
   }>();
 
   if (!body.programId || !body.name) {
@@ -213,6 +215,12 @@ app.post("/attendance/identify", async (c) => {
     }
 
     return c.json({ error: "PROGRAM_NOT_FOUND" }, 404);
+  }
+
+  // 본인 확인이 곧 등록이다(화면이 이 응답으로 바로 참여자를 저장한다) — 처음 등록한 기기로
+  // 고정하고, 이미 다른 기기에 고정돼 있으면 막는다(lib/deviceBinding.ts)
+  if (!(await checkAndBindDevice(db, participant, body.deviceId))) {
+    return c.json({ error: "DEVICE_MISMATCH" }, 409);
   }
 
   return c.json({
@@ -472,6 +480,7 @@ app.post("/attendance/clock-in", async (c) => {
     debugTime?: string;
     appVersion?: string;
     bundleVersion?: string;
+    deviceId?: string;
   }>();
   if (!body.participantId) {
     return c.json({ error: "참여자를 지정해주세요." }, 400);
@@ -481,6 +490,10 @@ app.post("/attendance/clock-in", async (c) => {
   let participant = rows[0];
   if (!participant) {
     return c.json({ error: "본인 확인이 만료되었습니다. 다시 확인해주세요." }, 404);
+  }
+  // 기기 고정 전부터 쓰던 참여자는 처음 출근한 기기로 고정된다
+  if (!(await checkAndBindDevice(db, participant, body.deviceId))) {
+    return c.json({ error: DEVICE_MISMATCH_MESSAGE }, 403);
   }
 
   const debugOverride = await readDebugOverride(c, body);
@@ -683,9 +696,18 @@ app.post("/attendance/clock-out", async (c) => {
     simulated?: boolean;
     debugDate?: string;
     debugTime?: string;
+    deviceId?: string;
   }>();
   if (!body.participantId) {
     return c.json({ error: "참여자를 지정해주세요." }, 400);
+  }
+
+  const participantRows = await db
+    .select()
+    .from(participants)
+    .where(eq(participants.id, body.participantId));
+  if (participantRows[0] && !(await checkAndBindDevice(db, participantRows[0], body.deviceId))) {
+    return c.json({ error: DEVICE_MISMATCH_MESSAGE }, 403);
   }
 
   const debugOverride = await readDebugOverride(c, body);

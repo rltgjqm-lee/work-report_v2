@@ -777,6 +777,27 @@ app.get("/:id/annual-leave", async (c) => {
   return c.json(balances.get(id));
 });
 
+// 참여자가 폰을 바꿨을 때 — 고정된 기기를 풀어서 다음에 등록(본인 확인)하거나 출근하는 기기로
+// 다시 고정되게 한다(lib/deviceBinding.ts)
+app.post("/:id/device/reset", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+  const id = Number(c.req.param("id"));
+
+  const found = await loadParticipantWithProgram(db, id);
+  if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
+  if (!canAccessProgram(auth, found.program)) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const result = await db
+    .update(participants)
+    .set({ boundDeviceId: null, boundDeviceAt: null })
+    .where(eq(participants.id, id))
+    .returning();
+  return c.json(result[0]);
+});
+
 app.post("/:id/annual-leave", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
