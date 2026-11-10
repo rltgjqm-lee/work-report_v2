@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { registerParticipantLeaveMutationOptions } from "../../api/admin/participants";
+import {
+  participantAnnualLeaveQueryOptions,
+  registerParticipantLeaveMutationOptions,
+} from "../../api/admin/participants";
 import { useToast } from "../../context/useToast";
 import type { LeaveType } from "../../types/participants";
 
@@ -22,6 +25,12 @@ const LEAVE_TYPE_OPTIONS = [
   { value: "PAID", label: "유급(연차 차감)" },
   { value: "UNPAID", label: "무급" },
 ];
+
+const toLeaveDays = (leaveStart: string, leaveEnd: string) =>
+  Math.floor(
+    (new Date(`${leaveEnd}T00:00:00Z`).getTime() - new Date(`${leaveStart}T00:00:00Z`).getTime()) /
+      (1000 * 60 * 60 * 24),
+  ) + 1;
 
 interface ParticipantLeaveAddModalProps {
   onClose: () => void;
@@ -45,13 +54,36 @@ const ParticipantLeaveAddModal = ({
     registerParticipantLeaveMutationOptions(queryClient),
   );
 
-  const handleSaveButtonClick = () => {
+  const handleSaveButtonClick = async () => {
     if (!target) return;
     if (!form.leaveStart || !form.leaveEnd) {
       alert("휴무 시작일과 종료일을 입력해주세요.");
 
       return;
     }
+
+    // 유급은 잔여 연차가 모자라면 서버가 거절한다 — 저장을 누르기 전에 먼저 알려준다.
+    // 역량활용은 만근한 달 수로 계산한 잔여라, 미리 받은 연차보다 많이 써서 0일 이하일 수 있다.
+    if (form.leaveType === "PAID") {
+      const leaveDays = toLeaveDays(form.leaveStart, form.leaveEnd);
+      try {
+        const balance = await queryClient.fetchQuery(
+          participantAnnualLeaveQueryOptions(target.id, form.leaveStart.slice(0, 4)),
+        );
+        if (balance.remainingDays < leaveDays) {
+          alert(
+            balance.remainingDays <= 0
+              ? `'${target.name}' 님은 ${balance.year}년 잔여 연차가 없어 유급휴무를 사용할 수 없습니다.\n(총 ${balance.totalDays}일 / 사용 ${balance.usedDays}일 / 잔여 ${balance.remainingDays}일)`
+              : `'${target.name}' 님의 ${balance.year}년 잔여 연차가 부족해 유급휴무를 사용할 수 없습니다.\n(잔여 ${balance.remainingDays}일, 신청 ${leaveDays}일)`,
+          );
+
+          return;
+        }
+      } catch {
+        // 잔여를 못 읽었으면 서버 검증에 맡긴다(서버도 같은 기준으로 거절한다)
+      }
+    }
+
     registerParticipantLeaveMutation.mutate(
       {
         participantId: target.id,

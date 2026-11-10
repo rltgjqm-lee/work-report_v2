@@ -21,6 +21,7 @@ import {
   participants,
   programs,
 } from "../../db/schema";
+import { getAnnualLeaveBalances, isCapacityProgram } from "../../lib/annualLeaveBalance";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { matchEscapeToWorkDate } from "../../lib/escapeMatching";
 import { getKstNow } from "../../lib/kst";
@@ -333,29 +334,18 @@ app.get("/:id/leaves", async (c) => {
 
   const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
 
-  const [leaveRows, annualLeaveRows] = await Promise.all([
+  const [leaveRows, balances] = await Promise.all([
     db
       .select()
       .from(participantLeaves)
       .where(eq(participantLeaves.participantId, id))
       .orderBy(desc(participantLeaves.leaveStart)),
-    db
-      .select()
-      .from(participantAnnualLeave)
-      .where(
-        and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
-      ),
+    getAnnualLeaveBalances(db, found.program, [found.participant], year),
   ]);
 
   return c.json({
     leaves: leaveRows,
-    annualLeave: annualLeaveRows[0] ?? {
-      participantId: id,
-      year,
-      totalDays: 0,
-      usedDays: 0,
-      remainingDays: 0,
-    },
+    annualLeave: balances.get(id),
   });
 });
 
@@ -628,13 +618,8 @@ app.post("/:id/leave", async (c) => {
   const year = body.leaveStart.slice(0, 4);
 
   if (leaveType === "PAID") {
-    const annualRows = await db
-      .select()
-      .from(participantAnnualLeave)
-      .where(
-        and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
-      );
-    const remainingDays = annualRows[0]?.remainingDays ?? 0;
+    const balances = await getAnnualLeaveBalances(db, found.program, [found.participant], year);
+    const remainingDays = balances.get(id)?.remainingDays ?? 0;
     if (remainingDays < leaveDays) {
       return c.json(
         {
@@ -783,22 +768,8 @@ app.get("/:id/annual-leave", async (c) => {
 
   const year = c.req.query("year") ?? getKstNow().date.slice(0, 4);
 
-  const rows = await db
-    .select()
-    .from(participantAnnualLeave)
-    .where(
-      and(eq(participantAnnualLeave.participantId, id), eq(participantAnnualLeave.year, year)),
-    );
-
-  return c.json(
-    rows[0] ?? {
-      participantId: id,
-      year,
-      totalDays: 0,
-      usedDays: 0,
-      remainingDays: 0,
-    },
-  );
+  const balances = await getAnnualLeaveBalances(db, found.program, [found.participant], year);
+  return c.json(balances.get(id));
 });
 
 app.post("/:id/annual-leave", async (c) => {
@@ -810,6 +781,14 @@ app.post("/:id/annual-leave", async (c) => {
   if (!found) return c.json({ error: "참여자를 찾을 수 없습니다." }, 404);
   if (!canAccessProgram(auth, found.program)) {
     return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  // 역량활용 연차는 개근한 달 수로 계산하므로(lib/annualLeaveBalance.ts) 직접 정하지 않는다
+  if (isCapacityProgram(found.program)) {
+    return c.json(
+      { error: "역량활용 연차는 만근한 달 수로 자동 계산되어 직접 정할 수 없습니다." },
+      400,
+    );
   }
 
   const body = await c.req.json<{ year?: string; totalDays?: number }>();

@@ -68,7 +68,7 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
           <Button variant="ghost" onClick={onClose}>
             닫기
           </Button>
-          <Button onClick={handleSaveButtonClick}>저장</Button>
+          {!balance?.autoAccrued && <Button onClick={handleSaveButtonClick}>저장</Button>}
         </>
       }
     >
@@ -78,19 +78,28 @@ const AnnualLeaveModal = ({ onClose, target }: AnnualLeaveModalProps) => {
           {balance.remainingDays}일
         </div>
       )}
-      <FormField label="연도">
-        <Input
-          value={form.year}
-          onChange={(event) => setForm((form) => ({ ...form, year: event.target.value }))}
-        />
-      </FormField>
-      <FormField label="총 연차 일수">
-        <Input
-          type="number"
-          value={form.totalDays}
-          onChange={(event) => setForm((form) => ({ ...form, totalDays: event.target.value }))}
-        />
-      </FormField>
+      {balance?.autoAccrued ? (
+        <div className="text-[12.5px] text-text-subtle">
+          역량활용 연차는 매월 1일~말일 60시간을 만근한 달마다 1일씩(최대 10일) 자동으로 생겨서 직접
+          정할 수 없습니다. 진행 중인 달은 끝난 뒤에 반영됩니다.
+        </div>
+      ) : (
+        <>
+          <FormField label="연도">
+            <Input
+              value={form.year}
+              onChange={(event) => setForm((form) => ({ ...form, year: event.target.value }))}
+            />
+          </FormField>
+          <FormField label="총 연차 일수">
+            <Input
+              type="number"
+              value={form.totalDays}
+              onChange={(event) => setForm((form) => ({ ...form, totalDays: event.target.value }))}
+            />
+          </FormField>
+        </>
+      )}
     </SlideModal>
   );
 };

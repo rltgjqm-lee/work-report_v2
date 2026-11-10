@@ -11,12 +11,12 @@ import {
   groupMonthlySchedule,
   groups,
   organizations,
-  participantAnnualLeave,
   participantLeaves,
   participantMonthlySchedule,
   participants,
   programs,
 } from "../../db/schema";
+import { getAnnualLeaveBalances } from "../../lib/annualLeaveBalance";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import {
   computeCapacityPayrollMonth,
@@ -570,25 +570,22 @@ const buildCapacityPayrollRows = async (
     .where(eq(groups.programId, program.id));
   const leaderIds = new Set(leaderRows.map((row) => row.leaderId));
 
-  const annualLeaveRows = await db
-    .select({ leave: participantAnnualLeave })
-    .from(participantAnnualLeave)
-    .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
-    .where(
-      and(
-        eq(participants.programId, program.id),
-        eq(participantAnnualLeave.year, month.slice(0, 4)),
-      ),
-    )
-    .then((rows) => rows.map((row) => row.leave));
-  const remainingLeaveDaysByParticipant = new Map(
-    annualLeaveRows.map((leave) => [leave.participantId, leave.remainingDays]),
+  // 미사용 연차는 계약이 끝나는 달에만 정산하므로 그 참여자들만 계산한다(lib/annualLeaveBalance.ts)
+  const endingParticipants = listedParticipants.filter((participant) =>
+    isContractEndingInMonth(participant, program, month),
+  );
+  const leaveBalances = await getAnnualLeaveBalances(
+    db,
+    program,
+    endingParticipants,
+    month.slice(0, 4),
+    { throughMonth: month },
   );
 
   return listedParticipants.map((participant) => {
     const payroll = payrollByParticipant.get(participant.id)!;
     const remainingLeaveHours = isContractEndingInMonth(participant, program, month)
-      ? Math.max(remainingLeaveDaysByParticipant.get(participant.id) ?? 0, 0) * DAILY_STANDARD_HOURS
+      ? Math.max(leaveBalances.get(participant.id)?.remainingDays ?? 0, 0) * DAILY_STANDARD_HOURS
       : 0;
 
     return {

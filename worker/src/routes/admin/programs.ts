@@ -19,7 +19,6 @@ import {
   participantAnnualLeave,
   participantEscapeMeta,
   participantGroupOverrides,
-  participantLeaveAccruals,
   participantLeaves,
   participantMonthlySchedule,
   participants,
@@ -29,6 +28,11 @@ import {
   pushSubscriptions,
   sosEvents,
 } from "../../db/schema";
+import {
+  getAnnualLeaveBalances,
+  isCapacityProgram,
+  type AnnualLeaveBalance,
+} from "../../lib/annualLeaveBalance";
 import {
   canAccessProgram,
   canManageProgram,
@@ -932,9 +936,6 @@ app.delete("/:id/participants/:participantId", async (c) => {
   await db
     .delete(participantAnnualLeave)
     .where(eq(participantAnnualLeave.participantId, participantId));
-  await db
-    .delete(participantLeaveAccruals)
-    .where(eq(participantLeaveAccruals.participantId, participantId));
   await db.delete(escapeLogs).where(eq(escapeLogs.participantId, participantId));
   await db
     .delete(participantEscapeMeta)
@@ -1068,6 +1069,10 @@ app.post("/:id/participants/bulk-leave", async (c) => {
 
   const skipped: { participantId: number; name: string; reason: string }[] = [];
   const registeredParticipantIds = new Set<number>();
+  const balances =
+    leaveType === "PAID"
+      ? await getAnnualLeaveBalances(db, program, targetRows, year)
+      : new Map<number, AnnualLeaveBalance>();
 
   // 지금 휴무 중인 참여자에게도 다른 기간 휴무는 미리 넣을 수 있어야 한다 — 휴무 중 상태는
   // 휴무 기간 기준으로 다시 맞춰지므로(syncLeaveStatus) 탈락자만 건너뛴다.
@@ -1082,16 +1087,7 @@ app.post("/:id/participants/bulk-leave", async (c) => {
     }
 
     if (leaveType === "PAID") {
-      const annualRows = await db
-        .select()
-        .from(participantAnnualLeave)
-        .where(
-          and(
-            eq(participantAnnualLeave.participantId, participant.id),
-            eq(participantAnnualLeave.year, year),
-          ),
-        );
-      const remainingDays = annualRows[0]?.remainingDays ?? 0;
+      const remainingDays = balances.get(participant.id)?.remainingDays ?? 0;
       if (remainingDays < leaveDays) {
         skipped.push({
           participantId: participant.id,
@@ -1161,6 +1157,13 @@ app.post("/:id/participants/bulk-annual-leave", async (c) => {
 
   if (!body.participantIds?.length || !body.year || body.totalDays === undefined) {
     return c.json({ error: "참여자와 연도·총 일수를 지정해주세요." }, 400);
+  }
+  // 역량활용 연차는 개근한 달 수로 계산하므로(lib/annualLeaveBalance.ts) 직접 정하지 않는다
+  if (isCapacityProgram(program)) {
+    return c.json(
+      { error: "역량활용 연차는 만근한 달 수로 자동 계산되어 직접 정할 수 없습니다." },
+      400,
+    );
   }
 
   const targetRows = await db
@@ -1542,7 +1545,7 @@ app.get("/:id/leaves", async (c) => {
     conditions.push(eq(participants.demandSiteId, Number(demandSiteIdParam)));
   }
 
-  const rows = await db
+  const storedRows = await db
     .select({
       leave: participantLeaves,
       participantName: participants.name,
@@ -1563,6 +1566,26 @@ app.get("/:id/leaves", async (c) => {
     )
     .where(and(...conditions))
     .orderBy(sql`${participantLeaves.leaveStart} DESC`);
+
+  // 역량활용은 저장된 연차 대신 개근한 달 수로 계산한 현황을 붙인다(lib/annualLeaveBalance.ts).
+  // 조회 조건상 모든 행이 그 해(year) 휴무라 연도는 하나다.
+  let rows = storedRows;
+  if (isCapacityProgram(program)) {
+    const leaveParticipantIds = new Set(storedRows.map((row) => row.leave.participantId));
+    const leaveParticipants = (
+      await db.select().from(participants).where(eq(participants.programId, programId))
+    ).filter((participant) => leaveParticipantIds.has(participant.id));
+    const balances = await getAnnualLeaveBalances(db, program, leaveParticipants, year);
+    rows = storedRows.map((row) => {
+      const balance = balances.get(row.leave.participantId);
+      return {
+        ...row,
+        annualTotalDays: balance?.totalDays ?? 0,
+        annualUsedDays: balance?.usedDays ?? 0,
+        annualRemainingDays: balance?.remainingDays ?? 0,
+      };
+    });
+  }
 
   const monthly = Array.from({ length: 12 }, (_, index) => {
     const month = String(index + 1).padStart(2, "0");

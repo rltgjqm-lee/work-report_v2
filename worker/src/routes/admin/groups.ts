@@ -14,6 +14,7 @@ import {
   participants,
   programs,
 } from "../../db/schema";
+import { getAnnualLeaveBalances } from "../../lib/annualLeaveBalance";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { getKstNow } from "../../lib/kst";
 import { syncLeaveStatus } from "../../lib/leaveStatus";
@@ -422,24 +423,16 @@ const countByParticipantYear = (rows: { participantId: number; date: string }[])
  */
 const planGroupLeaves = async (
   db: ReturnType<typeof drizzle>,
+  program: typeof programs.$inferSelect,
   groupId: number,
   requested: GroupLeaveInput[],
 ) => {
-  const [existingRows, memberRows, annualRows] = await Promise.all([
+  const [existingRows, memberRows] = await Promise.all([
     db.select().from(groupLeaves).where(eq(groupLeaves.groupId, groupId)),
     db
-      .select({ id: participants.id, name: participants.name })
+      .select()
       .from(participants)
       .where(and(eq(participants.groupId, groupId), ne(participants.status, "DROPPED"))),
-    db
-      .select({
-        participantId: participantAnnualLeave.participantId,
-        year: participantAnnualLeave.year,
-        remainingDays: participantAnnualLeave.remainingDays,
-      })
-      .from(participantAnnualLeave)
-      .innerJoin(participants, eq(participantAnnualLeave.participantId, participants.id))
-      .where(eq(participants.groupId, groupId)),
   ]);
 
   const requestedTypeByDate = new Map(requested.map((leave) => [leave.date, leave.leaveType]));
@@ -472,6 +465,15 @@ const planGroupLeaves = async (
     .filter((leave) => leave.leaveType === "PAID")
     .map((leave) => leave.date);
   const addedPaidYears = [...new Set(addedPaidDates.map(yearOf))];
+  // 역량활용은 개근한 달 수로 계산한 잔여, 그 외는 저장된 잔여(lib/annualLeaveBalance.ts)
+  const balancesByYear = new Map(
+    await Promise.all(
+      addedPaidYears.map(
+        async (year) =>
+          [year, await getAnnualLeaveBalances(db, program, memberRows, year)] as const,
+      ),
+    ),
+  );
 
   const shortages: AnnualLeaveShortage[] = memberRows.flatMap((member) =>
     addedPaidYears.flatMap((year) => {
@@ -482,10 +484,7 @@ const planGroupLeaves = async (
           record.leaveType === "PAID" &&
           yearOf(record.date) === year,
       ).length;
-      const savedRemainingDays =
-        annualRows.find(
-          (annualRow) => annualRow.participantId === member.id && annualRow.year === year,
-        )?.remainingDays ?? 0;
+      const savedRemainingDays = balancesByYear.get(year)?.get(member.id)?.remainingDays ?? 0;
       const remainingDays = savedRemainingDays + refundDays;
 
       return remainingDays < requiredDays
@@ -542,7 +541,7 @@ app.post("/:id/leaves/preview", async (c) => {
   const error = validateGroupLeaves(leaves, found.program.startDate, found.program.endDate);
   if (error) return c.json({ error }, 400);
 
-  const { shortages } = await planGroupLeaves(db, id, leaves);
+  const { shortages } = await planGroupLeaves(db, found.program, id, leaves);
 
   return c.json({ shortages });
 });
@@ -569,6 +568,7 @@ app.put("/:id/leaves", async (c) => {
 
   const { removed, added, memberRows, removedRecords, shortages } = await planGroupLeaves(
     db,
+    found.program,
     id,
     leaves,
   );

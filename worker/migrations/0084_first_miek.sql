@@ -1,0 +1,1 @@
+DROP TABLE `participant_leave_accruals`;

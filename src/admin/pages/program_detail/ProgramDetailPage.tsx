@@ -219,6 +219,7 @@ const ProgramDetailPage = () => {
         {tab === PROGRAM_DETAIL_TAB.PARTICIPANTS && (
           <ProgramParticipantsSection
             programId={programId}
+            isCapacityProgram={program.programType === "역량 활용"}
             participants={filtered}
             groups={groups}
             demandSites={demandSites}

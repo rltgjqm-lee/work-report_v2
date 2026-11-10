@@ -791,31 +791,6 @@ export const projectTrainings = sqliteTable("project_trainings", {
     .default(sql`(current_timestamp)`),
 });
 
-// 역량활용 월 개근 연차 적립 기록 — 지난달(1일~말일) 인정 근로시간이 60시간이면 연차 1일
-// (3시간)을 participant_annual_leave에 더한다(scheduled/accrueAnnualLeave.ts). 적립 여부와
-// 상관없이 판정한 달마다 한 행을 남겨, 같은 달을 두 번 적립하거나 매일 다시 계산하지 않게 한다.
-export const participantLeaveAccruals = sqliteTable(
-  "participant_leave_accruals",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    participantId: integer("participant_id")
-      .notNull()
-      .references(() => participants.id),
-    yearMonth: text("year_month").notNull(), // "YYYY-MM"
-    recognizedHours: real("recognized_hours").notNull(),
-    accrued: integer("accrued", { mode: "boolean" }).notNull(),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
-  },
-  (table) => [
-    uniqueIndex("participant_leave_accruals_participant_month_unique").on(
-      table.participantId,
-      table.yearMonth,
-    ),
-  ],
-);
-
 // 참여자별 교육 이수 기록. payAmount는 등록 시 교육의 payMode 기준으로 서버가 계산해 저장한다.
 export const participantTrainingLogs = sqliteTable(
   "participant_training_logs",

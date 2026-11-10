@@ -73,7 +73,10 @@ export type AnnualLeave = {
   year: string;
   totalDays: number;
   usedDays: number;
+  // 역량활용은 쓴 연차가 만근한 달 수보다 많으면 0 아래일 수 있다
   remainingDays: number;
+  // true면 총 일수를 만근한 달 수로 자동 계산한 것(역량활용) — 직접 정할 수 없다
+  autoAccrued: boolean;
 };
 
 export type ParticipantMonthlySchedule = {

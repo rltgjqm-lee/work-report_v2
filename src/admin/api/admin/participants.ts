@@ -441,6 +441,8 @@ export const registerParticipantLeaveMutationOptions = (queryClient: QueryClient
     }: RegisterParticipantLeaveVariables) =>
       registerParticipantLeave(participantId, { leaveStart, leaveEnd, leaveType, reason }),
     onSuccess: (_data, variables) => {
+      // 연차 잔여·휴가 이력이 바뀌므로 그 참여자 쿼리도 무효화한다
+      queryClient.invalidateQueries({ queryKey: participantKeys.detail(variables.participantId) });
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
     },
@@ -461,6 +463,7 @@ export const endParticipantLeaveMutationOptions = (queryClient: QueryClient) =>
     mutationFn: ({ participantId }: EndParticipantLeaveVariables) =>
       endParticipantLeave(participantId),
     onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: participantKeys.detail(variables.participantId) });
       queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
       queryClient.invalidateQueries({ queryKey: groupKeys.byProgram(variables.programId) });
     },

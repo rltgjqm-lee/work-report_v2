@@ -44,6 +44,8 @@ const STATUS_FILTER_OPTIONS = [
 
 interface ProgramParticipantsSectionProps {
   programId: number;
+  // 역량활용은 연차를 만근한 달 수로 자동 계산해서 총 일수를 직접 정하지 않는다
+  isCapacityProgram: boolean;
   participants: Participant[];
   groups: Group[];
   demandSites: DemandSite[];
@@ -64,6 +66,7 @@ interface ProgramParticipantsSectionProps {
  */
 const ProgramParticipantsSection = ({
   programId,
+  isCapacityProgram,
   participants,
   groups,
   demandSites,
@@ -328,9 +331,11 @@ const ProgramParticipantsSection = ({
           <button className={rowActionBtnClass} onClick={handleBulkLeaveButtonClick}>
             일괄 휴무
           </button>
-          <button className={rowActionBtnClass} onClick={handleBulkAnnualButtonClick}>
-            일괄 연차
-          </button>
+          {!isCapacityProgram && (
+            <button className={rowActionBtnClass} onClick={handleBulkAnnualButtonClick}>
+              일괄 연차
+            </button>
+          )}
           <button className={rowActionBtnClass} onClick={handleBulkDropButtonClick}>
             일괄 참여종료
           </button>
