@@ -5,13 +5,13 @@ import { getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   downloadActivityLogExcel,
   downloadActivityPaymentLedgerExcel,
-  downloadAttendanceExcel,
+  downloadAttendancePdf,
   downloadPaymentExcel,
   downloadPayslipExcel,
   downloadWorkScheduleExcel,
 } from "../../api/admin/excel";
 import { updateProgramMutationOptions } from "../../api/admin/programs";
-import { DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT } from "../../utils/excel/downloadCapacityAttendanceExcel";
+import { DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT } from "../../utils/pdf/downloadCapacityAttendancePdf";
 
 import ConfirmModal from "../../../components/molecule/ConfirmModal";
 import FormField from "../../components/FormField";
@@ -40,6 +40,8 @@ type ExcelExportItem = {
   name: string;
   desc: string;
   download: ((programId: number, month: string, customText?: string | null) => void) | null;
+  // 다운로드 버튼에 보일 파일 형식 — 없으면 엑셀
+  format?: "PDF";
 };
 
 const PUBLIC_INTEREST_ITEMS: ExcelExportItem[] = [
@@ -65,7 +67,8 @@ const COMPETENCY_ITEMS: ExcelExportItem[] = [
     icon: "🗓️",
     name: "출근부",
     desc: "참여자별 월간 출근·결근 현황입니다.",
-    download: downloadAttendanceExcel,
+    download: downloadAttendancePdf,
+    format: "PDF",
   },
   {
     key: "workSchedule",
@@ -190,7 +193,11 @@ const ProgramExcelExportSection = ({
                 disabled={!ready || isDownloading}
                 onClick={() => handleDownloadButtonClick(exportItem, month)}
               >
-                {isDownloading ? "다운로드 중..." : ready ? "엑셀 다운로드" : "준비중"}
+                {isDownloading
+                  ? "다운로드 중..."
+                  : ready
+                    ? `${exportItem.format ?? "엑셀"} 다운로드`
+                    : "준비중"}
               </button>
             </div>
           </div>

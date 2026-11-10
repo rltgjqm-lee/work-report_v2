@@ -4,10 +4,6 @@ import type { ActivityLogItem } from "../../../types/form";
 import { addActivityLogSheet } from "../../utils/excel/downloadActivityLogExcel";
 import { buildActivityPaymentLedgerWorkbook } from "../../utils/excel/downloadActivityPaymentLedgerExcel";
 import {
-  downloadCapacityAttendanceWorkbook,
-  type CapacityAttendanceParticipant,
-} from "../../utils/excel/downloadCapacityAttendanceExcel";
-import {
   downloadPaymentLedgerWorkbook,
   type PaymentLedgerParticipant,
 } from "../../utils/excel/downloadPaymentLedgerExcel";
@@ -20,6 +16,10 @@ import {
   type WorkScheduleParticipant,
 } from "../../utils/excel/downloadWorkScheduleExcel";
 import { trimSignatureDataUrl } from "../../utils/excel/signatureImage";
+import {
+  downloadCapacityAttendancePdf,
+  type CapacityAttendanceParticipant,
+} from "../../utils/pdf/downloadCapacityAttendancePdf";
 
 import { request } from "../client";
 
@@ -162,7 +162,7 @@ interface CapacityAttendanceExportResponse {
   participants: CapacityAttendanceParticipant[];
 }
 
-export const downloadAttendanceExcel = async (
+export const downloadAttendancePdf = async (
   programId: number,
   month: string,
   bannerText?: string | null,
@@ -184,7 +184,7 @@ export const downloadAttendanceExcel = async (
       ),
     })),
   );
-  await downloadCapacityAttendanceWorkbook(data.programName, data.month, participants, bannerText);
+  await downloadCapacityAttendancePdf(data.programName, data.month, participants, bannerText);
 };
 
 interface PaymentLedgerExportResponse {
