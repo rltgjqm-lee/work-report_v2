@@ -25,7 +25,7 @@ requireEnv(email, password);
 
 // 스토어 앱에 처음부터 들어 있는 번들은 네이티브 앱 버전(안드로이드 versionName, iOS
 // MARKETING_VERSION)을 번들 버전으로 쓴다. 서버는 OTA 버전이 그보다 높을 때만 내려주므로
-// (worker/src/routes/user/ota.ts), 이보다 낮거나 같은 OTA는 그 스토어 버전 사용자에게 아예
+// (apps/worker/src/routes/user/ota.ts), 이보다 낮거나 같은 OTA는 그 스토어 버전 사용자에게 아예
 // 안 간다 — 스토어 1.7 사용자가 OTA 1.6.5를 못 받은 적이 있다.
 const compareVersions = (a, b) => {
   const aParts = a.split(".").map(Number);

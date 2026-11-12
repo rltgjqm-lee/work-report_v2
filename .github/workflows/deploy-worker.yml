@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "worker/**"
+      - "apps/worker/**"
+      # npm workspaces라 Worker 의존성 버전도 루트 lock 파일에 기록된다
+      - "package-lock.json"
   workflow_dispatch: {}
 
 jobs:
@@ -13,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: worker
+        working-directory: apps/worker
     steps:
       - uses: actions/checkout@v4
 
@@ -21,7 +23,9 @@ jobs:
         with:
           node-version: 20
 
+      # lock 파일이 저장소 루트 하나뿐이라(npm workspaces) 설치는 루트에서 한다
       - run: npm ci
+        working-directory: .
 
       - run: npx tsc --noEmit
 

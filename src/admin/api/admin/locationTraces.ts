@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { request } from "../client";
 
-// 이동 경로 시험 기록(SUPER_ADMIN 전용) — worker/src/routes/admin/locationTraces.ts
+// 이동 경로 시험 기록(SUPER_ADMIN 전용) — apps/worker/src/routes/admin/locationTraces.ts
 
 export type LocationTraceDay = {
   participantId: number;

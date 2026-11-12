@@ -88,7 +88,7 @@ const colLetter = (n: number) => {
  * 💡 사업단 1개월치 급여대장을 실제 서식(work-report-v4/서식(1)/역량활용/2026ESG
  * 급여대장.xlsx의 "인건비 (6)" 시트) 구조에 공휴일 유급시간·팀장수당 열을 더해 만들어
  * 다운로드합니다. 주휴시간·연차 정산·팀장수당은 2026년 노인역량활용사업 임금산정 기준대로
- * 서버가 계산한 값을 넣고(worker/src/lib/capacityPayroll.ts), 결근·조퇴시간/은행/계좌/
+ * 서버가 계산한 값을 넣고(apps/worker/src/lib/capacityPayroll.ts), 결근·조퇴시간/은행/계좌/
  * 생년월일은 우리 시스템에 없는 데이터라 빈 칸으로 둔다.
  */
 export const downloadPaymentLedgerWorkbook = async (

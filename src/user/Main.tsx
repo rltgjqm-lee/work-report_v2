@@ -611,7 +611,7 @@ const Main = () => {
     };
   }, []);
 
-  // 💡 자동퇴근(worker/src/scheduled/autoClockOut.ts)은 조 근무 종료 시각 +10분
+  // 💡 자동퇴근(apps/worker/src/scheduled/autoClockOut.ts)은 조 근무 종료 시각 +10분
   // 유예(GRACE_MINUTES)가 지나야 처리되는, 시각이 정해진 일회성 이벤트다 — 폴링할
   // 필요 없이 "종료+10분(+크론 주기 1분 여유)" 딱 그 시점에 한 번만 다시 확인하면
   // 된다. 화면이 다시 보일 때(백그라운드→포그라운드)는 시각과 무관하게 그 즉시

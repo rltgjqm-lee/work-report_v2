@@ -187,7 +187,7 @@ const addPayslipSheet = (
     valueCell.numFmt = MONEY_FMT;
   };
 
-  // 지급 항목 — 급여대장과 같은 기준(worker/src/lib/capacityPayroll.ts)으로 채운다.
+  // 지급 항목 — 급여대장과 같은 기준(apps/worker/src/lib/capacityPayroll.ts)으로 채운다.
   // 기본급 = (실제근무 + 연차사용 + 기타근무(교육·공휴일 유급)) × 시급, 주휴수당 = 주휴시간 × 시급.
   // 연차수당은 계약 종료 달에만 미사용 연차를 정산하고, 팀장수당은 별도 정액이다.
   setMoneyValue("B11:D11", "E11:G11", "기본급", { formula: "B23*(D23+G23+L23)" });

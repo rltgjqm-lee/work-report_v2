@@ -292,7 +292,7 @@ export const programActivityOptions = sqliteTable(
 
 // 수요처에 배치된 조 매핑 — 근무시간은 조 자체의 값(groups.shiftStart/shiftEnd)을
 // 그대로 따른다. 예전엔 이 표에 수요처별로 다른 시간을 따로 저장했지만, 실제 출퇴근
-// 판정(worker/src/routes/public.ts)은 항상 groups.shiftStart/shiftEnd만 봐서 두 값이
+// 판정(apps/worker/src/routes/public.ts)은 항상 groups.shiftStart/shiftEnd만 봐서 두 값이
 // 어긋날 수 있었다 — 조 시간 하나로 통일했다.
 export const demandSiteSchedules = sqliteTable(
   "demand_site_schedules",
@@ -459,7 +459,7 @@ export const admins = sqliteTable("admins", {
   groupIds: text("group_ids"),
   // 계약 종료/퇴사 시 row를 지우지 않고 비활성화 — requireAdmin에서 비활성 계정은 로그인 차단
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-  // "salt:iterations:hash" 형식 (worker/src/lib/password.ts 참고). CF Access 시절 수동
+  // "salt:iterations:hash" 형식 (apps/worker/src/lib/password.ts 참고). CF Access 시절 수동
   // 등록분엔 없을 수 있어 nullable — 없는 계정은 로그인 자체가 불가 (관리자가 새로 발급해야 함).
   passwordHash: text("password_hash"),
   // 비밀번호 찾기(자가 재설정) 토큰 — 세션 토큰과 동일하게 원문은 이메일로만 보내고

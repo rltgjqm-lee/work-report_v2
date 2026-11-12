@@ -40,9 +40,9 @@ node_modules/.vite
 Thumbs.db
 
 # Cloudflare Workers local state
-worker/.wrangler
+apps/worker/.wrangler
 .wrangler
-worker/.dev.vars
+apps/worker/.dev.vars
 
 *storybook.log
 storybook-static

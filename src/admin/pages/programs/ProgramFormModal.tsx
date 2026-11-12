@@ -202,7 +202,7 @@ const ProgramFormModal = ({
       } else {
         const createdProgram = await createProgramMutation.mutateAsync(payload);
         // SUB_ADMIN/MANAGER가 만들면 서버가 본인을 우선 담당자로 자동 등록해두므로
-        // (worker/routes/admin/programs.ts POST /) 아래 PUT /:id/manager 호출이
+        // (apps/worker/routes/admin/programs.ts POST /) 아래 PUT /:id/manager 호출이
         // canManageProgram 기준으로 통과한다 — 위에서 고른 담당자로 갈아끼운다.
         await saveManagerAdmin(createdProgram.id);
       }

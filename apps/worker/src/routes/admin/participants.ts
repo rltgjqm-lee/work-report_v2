@@ -467,7 +467,7 @@ app.post("/:id/demand-site", async (c) => {
 });
 
 // 특정 날짜만 다른 조로 취급하는 임시 배정 이력 — 원래 조(participants.groupId)는 그대로 두고
-// 그날의 출퇴근 시간/근무일 판정에서만 이 조를 우선 적용한다 (worker/src/routes/public.ts 참고)
+// 그날의 출퇴근 시간/근무일 판정에서만 이 조를 우선 적용한다 (apps/worker/src/routes/public.ts 참고)
 app.get("/:id/group-overrides", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);

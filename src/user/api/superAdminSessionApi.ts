@@ -4,7 +4,7 @@ import { queryOptions } from "@tanstack/react-query";
 // isDebugPanelVisible) 통째로 걷어낼 것.
 //
 // 같은 브라우저에서 관리자 콘솔에 SUPER_ADMIN으로 로그인해두면, 그 httpOnly 세션 쿠키가
-// credentials:"include" 덕에 이 요청에도 같이 실려간다 — 서버(worker/src/lib/debugTime.ts)가
+// credentials:"include" 덕에 이 요청에도 같이 실려간다 — 서버(apps/worker/src/lib/debugTime.ts)가
 // 이미 배포 서버에서도 SUPER_ADMIN 세션에 한해 테스트용 날짜/시간 override를 허용하고
 // 있으므로, 그 판단 기준과 UI 노출 조건을 동일하게 맞추기 위한 용도다. 쿠키가 httpOnly라
 // 클라이언트에서 직접 읽을 방법이 없어 서버에 물어보는 것 외엔 방법이 없다.

@@ -145,7 +145,7 @@ const ActivityDashboardPage = ({
   // 소유 — "오늘 이미 출근했는지" 재조회도 같은 값을 써야 해서). 개발 빌드에서 보이고,
   // 배포 서버에서는 이 브라우저가 관리자 콘솔에 SUPER_ADMIN으로 로그인돼 있을 때만
   // 보인다(TEMP, superAdminSessionApi.ts 참고 — 시연 끝나면 같이 걷어낼 것). 서버도
-  // 그 두 경우에만 override를 실제로 반영한다(worker/src/lib/debugTime.ts).
+  // 그 두 경우에만 override를 실제로 반영한다(apps/worker/src/lib/debugTime.ts).
   const { data: isSuperAdmin } = useQuery(isSuperAdminQueryOptions);
   const isDebugPanelVisible = import.meta.env.DEV || !!isSuperAdmin;
 

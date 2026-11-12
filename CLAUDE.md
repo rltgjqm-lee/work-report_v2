@@ -5,7 +5,7 @@
 ## 프로젝트 개요
 
 - React 19 + TypeScript + Vite + Tailwind 프론트엔드 (`src/`)
-- Cloudflare Workers + D1 백엔드 (`worker/`)
+- Cloudflare Workers + D1 백엔드 (`apps/worker/`, npm workspaces)
 - `src/admin/` : 관리자 콘솔
 - `src/pages/main_pages/` : 활동일지 등 메인 사용자 플로우 페이지
 
