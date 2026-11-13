@@ -6,7 +6,7 @@
 
 - React 19 + TypeScript + Vite + Tailwind 프론트엔드 (`src/`)
 - Cloudflare Workers + D1 백엔드 (`apps/worker/`, npm workspaces)
-- `src/admin/` : 관리자 콘솔
+- `apps/admin-web/` : 관리자 콘솔 (admin.worksafe.co.kr, 로컬 `npm run dev -w apps/admin-web` → 5174). 주소는 예전처럼 `/admin/...`을 쓴다
 - `packages/admin-core/` (`@work-report/admin-core`) : 관리자 웹·관리자 앱이 같이 쓰는 API 파일, 쿼리 옵션, 도메인 타입. 서버 주소는 앱이 `configureClient()`로 넣어준다
 - `packages/shared/` (`@work-report/shared`) : 참여자 앱과 관리자 웹이 같이 쓰는 컴포넌트(`components/atoms`, `components/molecule`), `utils/timeFormat`, `constants/koreanRegions`, `types/form`
 - `src/pages/main_pages/` : 활동일지 등 메인 사용자 플로우 페이지
@@ -117,8 +117,8 @@ export const sendTestSafetyAlert = (data: { ... }) => request(...); // 뮤테이
 ```
 
 admin 콘솔 페이지에서는 `@work-report/admin-core/api/<도메인>`, `@work-report/admin-core/types/<도메인>`으로
-import합니다. 엑셀 출력(`src/admin/api/admin/excel.ts`)처럼 PC 콘솔에서만 쓰는 API는 패키지에
-넣지 않고 `src/admin/`에 둡니다.
+import합니다. 엑셀 출력(`apps/admin-web/src/api/admin/excel.ts`)처럼 PC 콘솔에서만 쓰는 API는 패키지에
+넣지 않고 `apps/admin-web/`에 둡니다.
 
 - **타입**: `packages/admin-core/src/types/`에는 여러 API 파일·여러 페이지·여러 컴포넌트에서 같이 쓰는
   진짜 공유 도메인 모델(`Participant`, `Program`, `DemandSite` 등)만 둡니다. 소비자가 API 함수
@@ -178,9 +178,9 @@ deleteParticipantMutation.mutate(variables, {
 직접 호출하는 스타일을 유지합니다. mutationFn의 변수 타입은 그 뮤테이션과 같은 API 파일에
 인터페이스로 export합니다(예: `DeleteParticipantVariables`).
 
-레퍼런스: `src/admin/pages/LoginHistoryPage.tsx`, `src/admin/pages/DisasterMessagesPage.tsx`,
-`src/admin/pages/ParticipantsPage.tsx` + `packages/admin-core/src/api/participants.ts`
-(critical/UI 분리 예시), `src/admin/AdminApp.tsx`의 `QueryClientProvider` 설정.
+레퍼런스: `apps/admin-web/src/pages/LoginHistoryPage.tsx`, `apps/admin-web/src/pages/DisasterMessagesPage.tsx`,
+`apps/admin-web/src/pages/ParticipantsPage.tsx` + `packages/admin-core/src/api/participants.ts`
+(critical/UI 분리 예시), `apps/admin-web/src/AdminApp.tsx`의 `QueryClientProvider` 설정.
 
 같은 규칙이 참여자 앱(`src/pages/main_pages/`)의 데이터 조회에도 그대로 적용됩니다 —
 그 앱의 API 파일 위치는 `src/utils/<도메인>Api.ts`(예: `affiliationsApi.ts`,

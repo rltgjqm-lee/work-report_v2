@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@work-report/shared/styles/theme.css";
+
+/* Tailwind는 이 앱 폴더만 자동으로 훑으므로, 공용 패키지 컴포넌트의 클래스명도 읽게 한다 */
+@source "../../../packages/shared/src";
