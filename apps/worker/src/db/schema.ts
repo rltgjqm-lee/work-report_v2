@@ -593,8 +593,8 @@ export const pushDeviceTokens = sqliteTable(
 
 // 관리자 웹 푸시 구독. 참여자 쪽(pushSubscriptions)과 별도 테이블인 이유는 관리자는
 // 사업단이 아니라 admins.id로 식별되고, 담당 범위(canAccessProgram)로 대상을 골라야 해서다.
-// 관리자 콘솔은 /admin 스코프로 좁힌 서비스워커(public/admin/sw.js)로만 구독하므로,
-// 참여자 화면의 서비스워커 유무와 무관하게 독립적으로 동작한다.
+// 관리자 콘솔은 자기 도메인(admin.worksafe.co.kr)의 서비스워커(apps/admin-web/public/sw.js)로만
+// 구독하므로, 참여자 화면의 서비스워커 유무와 무관하게 독립적으로 동작한다.
 export const adminPushSubscriptions = sqliteTable(
   "admin_push_subscriptions",
   {

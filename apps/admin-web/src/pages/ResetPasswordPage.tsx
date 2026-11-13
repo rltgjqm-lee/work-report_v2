@@ -57,7 +57,7 @@ const ResetPasswordPage = () => {
             <p className="text-[13px] text-text-subtle mb-6">
               비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해주세요.
             </p>
-            <Button className="w-full py-3" onClick={() => navigate("/admin/login")}>
+            <Button className="w-full py-3" onClick={() => navigate("/login")}>
               로그인하러 가기
             </Button>
           </>
@@ -67,7 +67,9 @@ const ResetPasswordPage = () => {
           </p>
         ) : (
           <>
-            <p className="text-[13px] text-text-subtle mb-6">새로 사용할 비밀번호를 입력해주세요.</p>
+            <p className="text-[13px] text-text-subtle mb-6">
+              새로 사용할 비밀번호를 입력해주세요.
+            </p>
 
             <label className="block text-[12.5px] font-semibold text-admin-text-secondary mb-1.5">
               새 비밀번호 (8자 이상)

@@ -30,8 +30,12 @@ import type {
   LiveWorker,
 } from "@work-report/admin-core/types/escapes";
 import type { SosRow } from "@work-report/admin-core/types/sos";
+import {
+  getLocalToday,
+  isoToKstMinuteString,
+  isoToKstTimeString,
+} from "@work-report/shared/utils/timeFormat";
 
-import { getLocalToday, isoToKstMinuteString, isoToKstTimeString } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../context/useToast";
 
 import FilterSelect from "../components/FilterSelect";
@@ -678,7 +682,7 @@ const EscapesPage = () => {
             <div className="text-xs text-text-subtle mb-1.5">
               사업단 관리 /{" "}
               <a
-                onClick={() => navigate(`/admin/program?id=${preselectedProgramId}`)}
+                onClick={() => navigate(`/program?id=${preselectedProgramId}`)}
                 className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
               >
                 {programName || "사업단 상세"}

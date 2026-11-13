@@ -1769,13 +1769,15 @@ app.post("/sos", async (c) => {
         .from(adminPushSubscriptions)
         .where(inArray(adminPushSubscriptions.adminId, eligibleAdminIds));
 
-      // url은 알림을 클릭했을 때 관리자 콘솔이 열 경로 — 사업단과 참여자 이름을 같이
+      // url은 알림을 클릭했을 때 관리자 콘솔이 열 주소 — 사업단과 참여자 이름을 같이
       // 실어 보내서, 안전 관제 화면이 그 사업단으로 바로 들어가면서 이름 검색까지
       // 채워진 상태로 뜨게 한다(EscapesPage의 programId/name 쿼리 파라미터).
+      // 도메인까지 붙인 절대 주소로 보낸다 — 예전 worksafe.co.kr/admin 스코프에 남은
+      // 서비스워커가 받아도 관리자 콘솔(admin.worksafe.co.kr)이 열리게 하기 위해서다.
       const adminPushPayload = {
         title: "🚨 SOS 발생",
         body: `${participant.name}님이 SOS를 요청했습니다. 관제 화면을 확인해주세요.`,
-        url: `/admin/escapes?programId=${participant.programId}&name=${encodeURIComponent(participant.name)}`,
+        url: `${c.env.ADMIN_APP_URL}/escapes?programId=${participant.programId}&name=${encodeURIComponent(participant.name)}`,
       };
 
       for (const subscription of adminSubscriptions) {

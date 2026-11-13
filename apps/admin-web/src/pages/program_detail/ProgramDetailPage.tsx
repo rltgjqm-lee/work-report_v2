@@ -102,7 +102,7 @@ const ProgramDetailPage = () => {
           {programError instanceof Error ? programError.message : "사업단을 불러오지 못했습니다."}
         </p>
         <a
-          onClick={() => navigate("/admin/programs")}
+          onClick={() => navigate("/programs")}
           className="cursor-pointer text-admin-brand hover:text-admin-brand-dark text-[13px] font-semibold"
         >
           사업단 관리로 돌아가기
@@ -120,7 +120,7 @@ const ProgramDetailPage = () => {
           <div className="text-xs text-text-subtle mb-1.5">
             사업단 관리 /{" "}
             <a
-              onClick={() => navigate("/admin/programs")}
+              onClick={() => navigate("/programs")}
               className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
             >
               목록으로
@@ -138,7 +138,7 @@ const ProgramDetailPage = () => {
           <select
             className="border border-admin-border px-3 py-2 text-[13px] rounded-[2px] bg-white"
             value={programId}
-            onChange={(event) => navigate(`/admin/program?id=${event.target.value}`)}
+            onChange={(event) => navigate(`/program?id=${event.target.value}`)}
           >
             {allPrograms.map((program) => (
               <option key={program.id} value={program.id}>
@@ -146,14 +146,11 @@ const ProgramDetailPage = () => {
               </option>
             ))}
           </select>
-          <Button
-            variant="ghost"
-            onClick={() => navigate(`/admin/attendance?programId=${programId}`)}
-          >
+          <Button variant="ghost" onClick={() => navigate(`/attendance?programId=${programId}`)}>
             근무 관리
           </Button>
 
-          <Button variant="ghost" onClick={() => navigate(`/admin/escapes?programId=${programId}`)}>
+          <Button variant="ghost" onClick={() => navigate(`/escapes?programId=${programId}`)}>
             안전 관제
           </Button>
 

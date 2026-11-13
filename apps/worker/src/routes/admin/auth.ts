@@ -143,7 +143,7 @@ app.post("/forgot-password", async (c) => {
       .set({ resetTokenHash: tokenHash, resetTokenExpiresAt: expiresAt.toISOString() })
       .where(eq(admins.id, admin.id));
 
-    const resetUrl = `${c.env.ADMIN_APP_URL}/admin/reset-password?token=${token}`;
+    const resetUrl = `${c.env.ADMIN_APP_URL}/reset-password?token=${token}`;
     await sendEmail(c.env.RESEND_API_KEY, {
       from: c.env.RESEND_FROM_EMAIL,
       to: email,

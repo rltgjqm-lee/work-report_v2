@@ -15,29 +15,29 @@ import ChangePasswordModal from "./modal/ChangePasswordModal";
 import SessionExpiryBanner from "./SessionExpiryBanner";
 
 const BASE_NAV_ITEMS = [
-  { to: "/admin/organizations", label: "기관 관리", badge: "1" },
-  { to: "/admin/programs", label: "사업단 관리", badge: "2" },
-  { to: "/admin/participants", label: "참여자 관리", badge: "3" },
-  { to: "/admin/attendance", label: "근무 관리", badge: "4" },
-  { to: "/admin/escapes", label: "안전 관제", badge: "5" },
-  { to: "/admin/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
+  { to: "/organizations", label: "기관 관리", badge: "1" },
+  { to: "/programs", label: "사업단 관리", badge: "2" },
+  { to: "/participants", label: "참여자 관리", badge: "3" },
+  { to: "/attendance", label: "근무 관리", badge: "4" },
+  { to: "/escapes", label: "안전 관제", badge: "5" },
+  { to: "/disaster-push-logs", label: "재난문자 발송이력", badge: "6" },
 ];
 
 // SUPER_ADMIN에게만 노출
 const SAFETY_ALERT_TEST_NAV_ITEM = {
-  to: "/admin/safety-alerts",
+  to: "/safety-alerts",
   label: "재난문자 테스트",
   badge: "7",
 };
 
 const ADMIN_ACCOUNTS_NAV_ITEM = {
-  to: "/admin/admins",
+  to: "/admins",
   label: "관리자 계정",
   badge: "8",
 };
 
 const CONTACT_NAV_ITEM = {
-  to: "/admin/contact",
+  to: "/contact",
   label: "문의하기",
   badge: "9",
 };
@@ -52,32 +52,32 @@ const ADMIN_MANUAL_NAV_ITEM = {
 
 // SUPER_ADMIN에게만 노출
 const LOGIN_HISTORY_NAV_ITEM = {
-  to: "/admin/login-history",
+  to: "/login-history",
   label: "로그인 이력",
   badge: "11",
 };
 
 // SUPER_ADMIN에게만 노출 — 시험 대상 참여자의 이동 경로(location_traces)
 const LOCATION_TRACES_NAV_ITEM = {
-  to: "/admin/location-traces",
+  to: "/location-traces",
   label: "이동 경로(시험)",
   badge: "12",
 };
 
 const getTopbarTitle = (pathname: string) => {
-  if (pathname === "/admin/program") return "사업단 관리 > 사업단 상세";
-  if (pathname.startsWith("/admin/programs")) return "사업단 관리";
-  if (pathname.startsWith("/admin/organizations")) return "기관 관리";
-  if (pathname === "/admin/participant") return "참여자 관리 > 참여자 상세";
-  if (pathname.startsWith("/admin/participants")) return "참여자 관리";
-  if (pathname.startsWith("/admin/attendance")) return "근무 관리";
-  if (pathname.startsWith("/admin/escapes")) return "안전 관제";
-  if (pathname.startsWith("/admin/disaster-push-logs")) return "재난문자 발송이력";
-  if (pathname.startsWith("/admin/safety-alerts")) return "재난문자 테스트";
-  if (pathname.startsWith("/admin/admins")) return "관리자 계정";
-  if (pathname.startsWith("/admin/login-history")) return "로그인 이력";
-  if (pathname.startsWith("/admin/location-traces")) return "이동 경로(시험)";
-  if (pathname.startsWith("/admin/contact")) return "문의하기";
+  if (pathname === "/program") return "사업단 관리 > 사업단 상세";
+  if (pathname.startsWith("/programs")) return "사업단 관리";
+  if (pathname.startsWith("/organizations")) return "기관 관리";
+  if (pathname === "/participant") return "참여자 관리 > 참여자 상세";
+  if (pathname.startsWith("/participants")) return "참여자 관리";
+  if (pathname.startsWith("/attendance")) return "근무 관리";
+  if (pathname.startsWith("/escapes")) return "안전 관제";
+  if (pathname.startsWith("/disaster-push-logs")) return "재난문자 발송이력";
+  if (pathname.startsWith("/safety-alerts")) return "재난문자 테스트";
+  if (pathname.startsWith("/admins")) return "관리자 계정";
+  if (pathname.startsWith("/login-history")) return "로그인 이력";
+  if (pathname.startsWith("/location-traces")) return "이동 경로(시험)";
+  if (pathname.startsWith("/contact")) return "문의하기";
   return "관리자 콘솔";
 };
 
@@ -140,7 +140,7 @@ const AdminLayout = () => {
   const handleLogoutButtonClick = async () => {
     await logout();
     await refresh();
-    navigate("/admin/login");
+    navigate("/login");
   };
 
   // 세션 만료까지 남은 시간을 1초마다 갱신해 보여준다.

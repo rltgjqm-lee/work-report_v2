@@ -50,7 +50,7 @@ const AdminApp = () => (
             <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AdminLayout />}>
-                <Route index element={<Navigate to="/admin/organizations" replace />} />
+                <Route index element={<Navigate to="/organizations" replace />} />
                 <Route path="organizations" element={<OrganizationsPage />} />
                 <Route path="programs" element={<ProgramsPage />} />
                 <Route path="program" element={<ProgramDetailPage />} />
@@ -66,7 +66,7 @@ const AdminApp = () => (
                 <Route path="contact" element={<ContactPage />} />
               </Route>
             </Route>
-            <Route path="*" element={<Navigate to="/admin" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </AuthProvider>

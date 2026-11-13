@@ -20,7 +20,7 @@ const ProtectedRoute = () => {
   // 세션이 없거나(로그인 안 함) 만료/비활성 계정이면 로그인 페이지로 보낸다.
   // "이 계정은 등록 안 됨" 같은 세부 사유는 로그인 시도 자체에서 에러 메시지로 드러난다.
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

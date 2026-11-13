@@ -1,5 +1,5 @@
-// 관리자 콘솔 전용 서비스워커 — navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" })
-// 로만 등록되므로 /admin 밖 화면(참여자 앱 포함)엔 영향이 없다.
+// 관리자 콘솔(admin.worksafe.co.kr) 전용 서비스워커 — register("/sw.js", { scope: "/" })로 등록한다.
+// 이 도메인에는 관리자 콘솔만 있어서 사이트 전체 스코프여도 참여자 앱엔 영향이 없다.
 //
 // fetch 핸들러는 의도적으로 안 만든다 — 예전 참여자용 sw.js가 network-first 캐싱으로
 // 모든 요청(admin 포함)을 가로채 사고가 난 적이 있어서(2026-08-11 제거, bb67bbe) 완전히
@@ -30,20 +30,20 @@ self.addEventListener("push", (event) => {
       renotify: true,
       // url이 있으면(예: SOS는 사업단+참여자 이름까지 실어 보낸다) 클릭 시 그 경로로
       // 이동한다 — 없으면 기본 안전 관제 화면으로 보낸다.
-      data: { url: data.url ?? "/admin/escapes" },
+      data: { url: data.url ?? "/escapes" },
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url ?? "/admin/escapes";
+  const targetUrl = event.notification.data?.url ?? "/escapes";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // 이미 admin 탭이 열려있으면 보고 있던 화면 그대로 두지 않고, 알림이 가리키는
+      // 이미 관리자 콘솔 탭이 열려있으면 보고 있던 화면 그대로 두지 않고, 알림이 가리키는
       // 화면으로 이동시킨 뒤 포커스한다 — 알림을 클릭했는데 엉뚱한 화면이 그대로면 헷갈리므로.
-      const adminClient = clientList.find((client) => client.url.includes("/admin"));
+      const adminClient = clientList[0];
       if (adminClient && "navigate" in adminClient) {
         return adminClient
           .navigate(targetUrl)

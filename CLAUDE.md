@@ -6,7 +6,7 @@
 
 - React 19 + TypeScript + Vite + Tailwind 프론트엔드, npm workspaces 모노레포 (`apps/*`, `packages/*`)
 - Cloudflare Workers + D1 백엔드 (`apps/worker/`, npm workspaces)
-- `apps/admin-web/` : 관리자 콘솔 (admin.worksafe.co.kr, 로컬 `npm run dev -w apps/admin-web` → 5174). 주소는 예전처럼 `/admin/...`을 쓴다
+- `apps/admin-web/` : 관리자 콘솔 (admin.worksafe.co.kr, 로컬 `npm run dev -w apps/admin-web` → 5174). 주소에 /admin을 붙이지 않는다(예전 `/admin/...` 주소는 App.tsx에서 떼고 보낸다)
 - `packages/admin-core/` (`@work-report/admin-core`) : 관리자 웹·관리자 앱이 같이 쓰는 API 파일, 쿼리 옵션, 도메인 타입. 서버 주소는 앱이 `configureClient()`로 넣어준다
 - `packages/shared/` (`@work-report/shared`) : 참여자 앱과 관리자 웹이 같이 쓰는 컴포넌트(`components/atoms`, `components/molecule`), `utils/timeFormat`, `constants/koreanRegions`, `types/form`
 - `apps/participant/` : 참여자 앱 (웹 worksafe.co.kr + Capacitor Android/iOS, 로컬 `npm run dev -w apps/participant` → 5173). 활동일지 등 메인 플로우 페이지는 `src/user/pages/`

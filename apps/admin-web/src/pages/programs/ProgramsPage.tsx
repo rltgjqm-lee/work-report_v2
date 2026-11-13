@@ -240,7 +240,7 @@ const ProgramsPage = () => {
                 <tr
                   key={program.id}
                   className="hover:bg-admin-row-hover"
-                  onClick={() => navigate(`/admin/program?id=${program.id}`)}
+                  onClick={() => navigate(`/program?id=${program.id}`)}
                 >
                   <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-normal break-words">
                     <span className="inline-flex items-center gap-2">

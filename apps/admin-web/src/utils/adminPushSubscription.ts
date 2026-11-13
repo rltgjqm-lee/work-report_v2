@@ -11,14 +11,27 @@ const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
   return outputArray;
 };
 
-// 관리자 콘솔 진입(AdminLayout 마운트) 시 호출 — /admin 스코프로 좁힌 서비스워커만
-// 등록하므로(public/admin/sw.js) 참여자 앱 쪽엔 전혀 영향이 없다. 이미 허용/구독된
-// 상태면 권한 팝업 없이 조용히 같은 구독을 다시 upsert할 뿐이라 반복 호출해도 무해하다.
+// 처음 admin.worksafe.co.kr로 옮겼을 때(2026-11-13)는 주소가 /admin/... 이라 서비스워커를
+// /admin/ 스코프로 등록했다. 그 등록이 남아 있으면 새 / 스코프 구독과 함께 알림이 두 번
+// 울리므로, 구독을 해지하고(푸시 서버가 410을 돌려줘 Worker가 DB에서 지운다) 등록을 지운다.
+const removeLegacyAdminScopeRegistration = async () => {
+  const registration = await navigator.serviceWorker.getRegistration("/admin/");
+  if (!registration || registration.scope !== `${window.location.origin}/admin/`) return;
+  const subscription = await registration.pushManager.getSubscription();
+  await subscription?.unsubscribe();
+  await registration.unregister();
+};
+
+// 관리자 콘솔 진입(AdminLayout 마운트) 시 호출 — 이 도메인은 관리자 콘솔 전용이라 서비스워커를
+// 사이트 전체(/) 스코프로 등록한다. 이미 허용/구독된 상태면 권한 팝업 없이 조용히 같은 구독을
+// 다시 upsert할 뿐이라 반복 호출해도 무해하다.
 export const subscribeAdminToPush = async (): Promise<void> => {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
-    await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
+    await removeLegacyAdminScopeRegistration();
+
+    await navigator.serviceWorker.register("/sw.js", { scope: "/" });
 
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return;

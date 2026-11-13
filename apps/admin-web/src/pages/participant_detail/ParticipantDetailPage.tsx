@@ -16,8 +16,12 @@ import type {
   ParticipantAttendanceRow,
 } from "@work-report/admin-core/types/attendance";
 import type { AnnualLeave, ParticipantLeave } from "@work-report/admin-core/types/participants";
+import {
+  getLocalToday,
+  getLocalYearMonth,
+  isoToKstMinuteString,
+} from "@work-report/shared/utils/timeFormat";
 
-import { getLocalToday, getLocalYearMonth, isoToKstMinuteString } from "@work-report/shared/utils/timeFormat";
 import { useAuth } from "../../context/useAuth";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
@@ -127,7 +131,7 @@ const ParticipantDetailPage = () => {
         <div>
           <div className="text-xs text-text-subtle mb-1.5">
             <a
-              onClick={() => navigate("/admin/participants")}
+              onClick={() => navigate("/participants")}
               className="cursor-pointer text-admin-brand hover:text-admin-brand-dark"
             >
               참여자 관리

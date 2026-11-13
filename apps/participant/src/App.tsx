@@ -12,15 +12,16 @@ function WebLandingPage() {
   );
 }
 
-// 관리자 콘솔은 admin.worksafe.co.kr로 옮겼다 — 예전 주소(/admin/...)로 들어오면 같은 경로로
-// 보낸다. 서버 단(_redirects)이 아니라 여기서 보내는 이유: 이 주소에서 예전에 등록한 관리자
-// 알림(/admin/ 스코프 서비스워커)이 살아 있으면 새 주소에서 받는 알림과 함께 두 번 울린다.
+// 관리자 콘솔은 admin.worksafe.co.kr로 옮겼다 — 예전 주소(/admin/...)로 들어오면 /admin을 뗀
+// 같은 화면으로 보낸다. 서버 단(_redirects)이 아니라 여기서 보내는 이유: 이 주소에서 예전에
+// 등록한 관리자 알림(/admin/ 스코프 서비스워커)이 살아 있으면 새 주소에서 받는 알림과 함께
+// 두 번 울린다.
 // 구독을 해지해두면 푸시 서버가 410을 돌려줘 Worker가 그 구독을 DB에서 지운다.
 function AdminMovedRedirect() {
   const { pathname, search } = useLocation();
 
   useEffect(() => {
-    const target = `${import.meta.env.VITE_ADMIN_WEB_URL}${pathname}${search}`;
+    const target = `${import.meta.env.VITE_ADMIN_WEB_URL}${pathname.replace(/^\/admin/, "")}${search}`;
 
     const removeOldAdminPush = async () => {
       if (!("serviceWorker" in navigator)) return;
