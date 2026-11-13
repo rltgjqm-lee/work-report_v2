@@ -1,9 +1,8 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { Role } from "../../types/admins";
-import type { Organization, OrganizationOption } from "../../types/organizations";
-
 import { request } from "../client";
+import type { Role } from "../types/admins";
+import type { Organization, OrganizationOption } from "../types/organizations";
 
 const organizationKeys = {
   all: ["organizations"] as const,

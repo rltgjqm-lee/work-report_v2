@@ -5,9 +5,10 @@ import {
   assignableDemandSiteAdminsQueryOptions,
   createDemandSiteMutationOptions,
   updateDemandSiteMutationOptions,
-} from "../../api/admin/demandSites";
+} from "@work-report/admin-core/api/demandSites";
+import type { DemandSite } from "@work-report/admin-core/types/demandSites";
+
 import { useToast } from "../../context/useToast";
-import type { DemandSite } from "../../types/demandSites";
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 
 import Button from "../../components/Button";

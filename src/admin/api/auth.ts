@@ -1,4 +1,4 @@
-import { BASE_URL, request } from "./client";
+import { getBaseUrl, request } from "@work-report/admin-core/client";
 
 // client.ts의 request()는 401/403을 전부 "접근 권한이 없습니다"로 뭉뚱그려 던지는데,
 // 로그인 실패는 이유(비밀번호 오류/잠금 등)를 그대로 사용자에게 보여줘야 하므로
@@ -6,7 +6,7 @@ import { BASE_URL, request } from "./client";
 export const login = async (email: string, password: string) => {
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}/auth/login`, {
+    res = await fetch(`${getBaseUrl()}/auth/login`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -30,7 +30,7 @@ export const logout = () => request<{ ok: true }>("/auth/logout", { method: "POS
 export const forgotPassword = async (email: string) => {
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+    res = await fetch(`${getBaseUrl()}/auth/forgot-password`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -52,7 +52,7 @@ export const forgotPassword = async (email: string) => {
 export const resetPassword = async (token: string, newPassword: string) => {
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}/auth/reset-password`, {
+    res = await fetch(`${getBaseUrl()}/auth/reset-password`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

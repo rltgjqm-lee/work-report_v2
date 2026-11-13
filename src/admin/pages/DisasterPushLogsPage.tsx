@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { disasterPushLogsQueryOptions } from "../api/admin/disasterPushLogs";
+import { disasterPushLogsQueryOptions } from "@work-report/admin-core/api/disasterPushLogs";
 
 /**
  * 관리자 페이지 > 재난문자 발송이력 페이지입니다.

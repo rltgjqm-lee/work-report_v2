@@ -2,9 +2,9 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import { groupsQueryOptions } from "../../api/admin/groups";
-import { programQueryOptions, programsQueryOptions } from "../../api/admin/programs";
+import { demandSitesQueryOptions } from "@work-report/admin-core/api/demandSites";
+import { groupsQueryOptions } from "@work-report/admin-core/api/groups";
+import { programQueryOptions, programsQueryOptions } from "@work-report/admin-core/api/programs";
 
 import TabBar from "../../components/bar/TabBar";
 import Button from "../../components/Button";

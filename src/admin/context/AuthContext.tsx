@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { meKeys, meQueryOptions } from "../api/admin/me";
-import { setOnUnauthorized } from "../api/client";
+import { meKeys, meQueryOptions } from "@work-report/admin-core/api/me";
+import { setOnUnauthorized } from "@work-report/admin-core/client";
+
 import { AuthContext, type AuthContextValue } from "./authContextInstance";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

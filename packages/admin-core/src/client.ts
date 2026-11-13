@@ -1,4 +1,19 @@
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// 관리자 웹과 관리자 앱이 같은 API 파일을 쓰므로, 서버 주소처럼 앱마다 다른 값은
+// 패키지 안에서 정하지 않고 각 앱이 시작할 때 configureClient()로 넣어준다.
+type ClientConfig = {
+  baseUrl: string;
+};
+
+let config: ClientConfig | null = null;
+
+export const configureClient = (nextConfig: ClientConfig) => {
+  config = nextConfig;
+};
+
+export const getBaseUrl = () => {
+  if (!config) throw new Error("configureClient()가 호출되지 않았습니다.");
+  return config.baseUrl;
+};
 
 let onUnauthorized: (() => void) | null = null;
 
@@ -12,7 +27,7 @@ export const setOnUnauthorized = (handler: () => void) => {
 export const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
+    response = await fetch(`${getBaseUrl()}${path}`, {
       ...options,
       credentials: "include",
       headers: {

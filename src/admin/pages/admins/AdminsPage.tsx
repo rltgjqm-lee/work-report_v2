@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { adminsQueryOptions, updateAdminMutationOptions } from "../../api/admin/admins";
+import { adminsQueryOptions, updateAdminMutationOptions } from "@work-report/admin-core/api/admins";
+import { ROLES, type Admin, type Role } from "@work-report/admin-core/types/admins";
+
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
-import { ROLES, type Admin, type Role } from "../../types/admins";
 
 import Button from "../../components/Button";
 import SearchInput from "../../components/SearchInput";

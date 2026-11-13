@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { KOREAN_REGIONS, SIDO_LIST } from "../../../constants/koreanRegions";
 import {
   createOrganizationMutationOptions,
   updateOrganizationMutationOptions,
-} from "../../api/admin/organizations";
+} from "@work-report/admin-core/api/organizations";
+import { ORGANIZATION_TYPES, type Organization } from "@work-report/admin-core/types/organizations";
+
+import { KOREAN_REGIONS, SIDO_LIST } from "../../../constants/koreanRegions";
 import { useToast } from "../../context/useToast";
-import { ORGANIZATION_TYPES, type Organization } from "../../types/organizations";
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 
 import Button from "../../components/Button";

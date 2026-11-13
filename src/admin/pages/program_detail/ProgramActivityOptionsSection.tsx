@@ -7,7 +7,8 @@ import {
   programActivityOptionsQueryOptions,
   type ActivityOptionCategory,
   type ProgramActivityOption,
-} from "../../api/admin/programActivityOptions";
+} from "@work-report/admin-core/api/programActivityOptions";
+
 import { useToast } from "../../context/useToast";
 
 import Button from "../../components/Button";

@@ -6,29 +6,38 @@ import L from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 
-import { getLocalToday, isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
-import { useToast } from "../context/useToast";
-
 import {
   demandSiteLocationsByProgramQueryOptions,
   demandSitesQueryOptions,
-} from "../api/admin/demandSites";
+} from "@work-report/admin-core/api/demandSites";
 import {
   escapesQueryOptions,
   liveMapQueryOptions,
   markEscapeAlertedMutationOptions,
   resolveEscapeMutationOptions,
-} from "../api/admin/escapes";
-import { participantsQueryOptions } from "../api/admin/participants";
-import { programsQueryOptions } from "../api/admin/programs";
-import { markSosNotifiedMutationOptions, resolveSosMutationOptions } from "../api/admin/sos";
+} from "@work-report/admin-core/api/escapes";
+import { participantsQueryOptions } from "@work-report/admin-core/api/participants";
+import { programsQueryOptions } from "@work-report/admin-core/api/programs";
+import {
+  markSosNotifiedMutationOptions,
+  resolveSosMutationOptions,
+} from "@work-report/admin-core/api/sos";
+import type { DemandSiteLocation } from "@work-report/admin-core/types/demandSites";
+import type {
+  EscapeLog,
+  EscapeRow,
+  EscapeStatus,
+  LiveWorker,
+} from "@work-report/admin-core/types/escapes";
+import type { SosRow } from "@work-report/admin-core/types/sos";
+
+import { getLocalToday, isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
+import { useToast } from "../context/useToast";
+
 import FilterSelect from "../components/FilterSelect";
 import PromptModal from "../components/modal/PromptModal";
 import SearchInput from "../components/SearchInput";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
-import type { DemandSiteLocation } from "../types/demandSites";
-import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
-import type { SosRow } from "../types/sos";
 
 // 수요처별 관제구역 — 지도에 그릴 때 어느 수요처 것인지 알아야 필터가 걸린다.
 // location이 null이면 거점이 아니라 수요처 자체에 잡아둔 기본 원이다.

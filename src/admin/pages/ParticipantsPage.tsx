@@ -2,19 +2,20 @@ import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useToast } from "../context/useToast";
-import { usePagination } from "../hooks/usePagination";
-
 import {
   deleteParticipantMutationOptions,
   participantsQueryOptions,
-} from "../api/admin/participants";
-import { programsQueryOptions } from "../api/admin/programs";
+} from "@work-report/admin-core/api/participants";
+import { programsQueryOptions } from "@work-report/admin-core/api/programs";
+import type { ParticipantListItem } from "@work-report/admin-core/types/participants";
+
+import { useToast } from "../context/useToast";
+import { usePagination } from "../hooks/usePagination";
+
 import FilterSelect from "../components/FilterSelect";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../constants/programTypes";
-import type { ParticipantListItem } from "../types/participants";
 import { rowActionBtnClass } from "../uiClasses";
 
 const DEMAND_SITE = {

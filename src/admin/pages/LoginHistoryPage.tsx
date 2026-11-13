@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { loginHistoryQueryOptions } from "../api/admin/loginHistory";
+import { loginHistoryQueryOptions } from "@work-report/admin-core/api/loginHistory";
 
 // 서버는 SQLite CURRENT_TIMESTAMP(UTC, "YYYY-MM-DD HH:MM:SS" 형식)를 그대로 내려준다 —
 // 화면에 뿌리기 전에 한국 시간(KST, UTC+9)으로 바꿔서 보여준다.

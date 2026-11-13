@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-import type { LeaveType } from "../types/participants";
+import type { LeaveType } from "@work-report/admin-core/types/participants";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const DAYS_PER_WEEK = 7;

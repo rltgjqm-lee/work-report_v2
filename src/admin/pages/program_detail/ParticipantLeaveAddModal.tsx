@@ -4,9 +4,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   participantAnnualLeaveQueryOptions,
   registerParticipantLeaveMutationOptions,
-} from "../../api/admin/participants";
+} from "@work-report/admin-core/api/participants";
+import type { LeaveType } from "@work-report/admin-core/types/participants";
+
 import { useToast } from "../../context/useToast";
-import type { LeaveType } from "../../types/participants";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";

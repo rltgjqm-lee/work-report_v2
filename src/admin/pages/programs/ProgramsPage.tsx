@@ -2,18 +2,19 @@ import { useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { organizationOptionsQueryOptions } from "../../api/admin/organizations";
+import { organizationOptionsQueryOptions } from "@work-report/admin-core/api/organizations";
 import {
   programEditQueryOptions,
   programsByOrganizationQueryOptions,
   updateProgramMutationOptions,
-} from "../../api/admin/programs";
+} from "@work-report/admin-core/api/programs";
+import { ROLES } from "@work-report/admin-core/types/admins";
+import type { Program, ProgramListItem } from "@work-report/admin-core/types/programs";
+
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
-import { ROLES } from "../../types/admins";
-import type { Program, ProgramListItem } from "../../types/programs";
 
 import Button from "../../components/Button";
 import ProgramTypeChip from "../../components/chip/ProgramTypeChip";
@@ -53,7 +54,6 @@ const ProgramsPage = () => {
     role === ROLES.ORGANIZATION_ADMIN ||
     !!admin?.programIds.includes(program.id) ||
     admin?.id === program.secondaryContactAdminId;
-
 
   const selectedOrganizationId =
     role === ROLES.SUPER_ADMIN

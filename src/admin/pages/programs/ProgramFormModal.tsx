@@ -7,13 +7,14 @@ import {
   secondaryContactCandidatesQueryOptions,
   setProgramManagerMutationOptions,
   updateProgramMutationOptions,
-} from "../../api/admin/programs";
+} from "@work-report/admin-core/api/programs";
+import { ROLES, type Role } from "@work-report/admin-core/types/admins";
+import type { OrganizationOption } from "@work-report/admin-core/types/organizations";
+import type { Program } from "@work-report/admin-core/types/programs";
+
 import { PROGRAM_TYPE_SELECT_OPTIONS } from "../../constants/programTypes";
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
-import { ROLES, type Role } from "../../types/admins";
-import type { OrganizationOption } from "../../types/organizations";
-import type { Program } from "../../types/programs";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";

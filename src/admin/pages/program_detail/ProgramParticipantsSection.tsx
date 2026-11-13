@@ -1,19 +1,20 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { setGroupLeaderMutationOptions } from "../../api/admin/groups";
+import { setGroupLeaderMutationOptions } from "@work-report/admin-core/api/groups";
 import {
   bulkUpdateParticipantStatusMutationOptions,
   deleteParticipantMutationOptions,
   dropParticipantMutationOptions,
   endParticipantLeaveMutationOptions,
   reactivateParticipantMutationOptions,
-} from "../../api/admin/participants";
+} from "@work-report/admin-core/api/participants";
+import type { DemandSite } from "@work-report/admin-core/types/demandSites";
+import type { Group } from "@work-report/admin-core/types/groups";
+import type { Participant } from "@work-report/admin-core/types/participants";
+
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
-import type { DemandSite } from "../../types/demandSites";
-import type { Group } from "../../types/groups";
-import type { Participant } from "../../types/participants";
 
 import FilterSelect from "../../components/FilterSelect";
 import PromptModal from "../../components/modal/PromptModal";

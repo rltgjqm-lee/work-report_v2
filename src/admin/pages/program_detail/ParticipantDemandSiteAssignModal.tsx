@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { moveParticipantToDemandSiteMutationOptions } from "../../api/admin/participants";
+import { moveParticipantToDemandSiteMutationOptions } from "@work-report/admin-core/api/participants";
+import type { DemandSite } from "@work-report/admin-core/types/demandSites";
+import type { Participant } from "@work-report/admin-core/types/participants";
+
 import { useToast } from "../../context/useToast";
-import type { DemandSite } from "../../types/demandSites";
-import type { Participant } from "../../types/participants";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";

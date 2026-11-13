@@ -4,12 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   organizationsQueryOptions,
   updateOrganizationMutationOptions,
-} from "../../api/admin/organizations";
+} from "@work-report/admin-core/api/organizations";
+import { ROLES } from "@work-report/admin-core/types/admins";
+import type { Organization } from "@work-report/admin-core/types/organizations";
+
 import { useAuth } from "../../context/useAuth";
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
-import { ROLES } from "../../types/admins";
-import type { Organization } from "../../types/organizations";
 
 import Button from "../../components/Button";
 import Pagination from "../../components/Pagination";

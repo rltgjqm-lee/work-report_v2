@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   groupLeavesQueryOptions,
   previewGroupLeaves,
   updateGroupLeavesMutationOptions,
   type AnnualLeaveShortage,
   type GroupLeave,
-} from "../../api/admin/groupLeaves";
-import { updateGroupMutationOptions } from "../../api/admin/groups";
+} from "@work-report/admin-core/api/groupLeaves";
+import { updateGroupMutationOptions } from "@work-report/admin-core/api/groups";
 import {
   groupScheduleQueryOptions,
   updateGroupScheduleMutationOptions,
-} from "../../api/admin/monthlySchedule";
+} from "@work-report/admin-core/api/monthlySchedule";
+import type { Group } from "@work-report/admin-core/types/groups";
+import type { LeaveType } from "@work-report/admin-core/types/participants";
+
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { useToast } from "../../context/useToast";
-import type { Group } from "../../types/groups";
-import type { LeaveType } from "../../types/participants";
 import {
   clampYearMonth,
   findInvalidShiftDate,

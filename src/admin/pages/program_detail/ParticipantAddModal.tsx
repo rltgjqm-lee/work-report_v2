@@ -4,10 +4,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   addParticipantMutationOptions,
   bulkAddParticipantsMutationOptions,
-} from "../../api/admin/participants";
+} from "@work-report/admin-core/api/participants";
+import type { DemandSite } from "@work-report/admin-core/types/demandSites";
+import type { Group } from "@work-report/admin-core/types/groups";
+
 import { useToast } from "../../context/useToast";
-import type { DemandSite } from "../../types/demandSites";
-import type { Group } from "../../types/groups";
 import { downloadAddParticipantsTemplate } from "../../utils/excel/downloadAddParticipantsTemplate";
 import { parseParticipantsFile } from "../../utils/excel/parseParticipantsFile";
 

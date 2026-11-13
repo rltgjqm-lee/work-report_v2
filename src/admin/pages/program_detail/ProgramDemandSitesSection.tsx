@@ -1,10 +1,11 @@
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { updateDemandSiteMutationOptions } from "../../api/admin/demandSites";
+import { updateDemandSiteMutationOptions } from "@work-report/admin-core/api/demandSites";
+import type { DemandSite } from "@work-report/admin-core/types/demandSites";
+import type { Group } from "@work-report/admin-core/types/groups";
+
 import { useToast } from "../../context/useToast";
-import type { DemandSite } from "../../types/demandSites";
-import type { Group } from "../../types/groups";
 
 import Button from "../../components/Button";
 import StatusChip from "../../components/chip/StatusChip";

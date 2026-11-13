@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { bulkSetAnnualLeaveMutationOptions } from "../../api/admin/participants";
+import { bulkSetAnnualLeaveMutationOptions } from "@work-report/admin-core/api/participants";
+
 import { useToast } from "../../context/useToast";
 
 import Button from "../../components/Button";

@@ -1,4 +1,4 @@
-import type { GroupShiftOverride } from "../api/admin/monthlySchedule";
+import type { GroupShiftOverride } from "@work-report/admin-core/api/monthlySchedule";
 
 export interface Shift {
   shiftStart: string; // "HH:MM"

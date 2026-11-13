@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   activateAttendanceMutationOptions,
   correctAttendanceMutationOptions,
@@ -9,11 +8,13 @@ import {
   monthlyAttendanceQueryOptions,
   type AttendanceAbsence,
   type AttendanceRow,
-} from "../../api/admin/attendance";
-import { groupsQueryOptions } from "../../api/admin/groups";
+} from "@work-report/admin-core/api/attendance";
+import { groupsQueryOptions } from "@work-report/admin-core/api/groups";
+import type { AttendanceStats } from "@work-report/admin-core/types/attendance";
+
+import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
-import type { AttendanceStats } from "../../types/attendance";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";
 import Button from "../../components/Button";

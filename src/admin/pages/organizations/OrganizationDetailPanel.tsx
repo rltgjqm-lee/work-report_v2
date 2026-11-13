@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { organizationDetailQueryOptions } from "../../api/admin/organizations";
+import { organizationDetailQueryOptions } from "@work-report/admin-core/api/organizations";
+import { ROLES, type Role } from "@work-report/admin-core/types/admins";
+
 import { usePagination } from "../../hooks/usePagination";
-import { ROLES, type Role } from "../../types/admins";
 
 import Pagination from "../../components/Pagination";
 

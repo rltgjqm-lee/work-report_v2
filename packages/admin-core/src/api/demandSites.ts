@@ -1,14 +1,13 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
+import { request } from "../client";
 import type {
   DemandSite,
   DemandSiteLocation,
   DemandSiteLocationShape,
   DemandSiteSchedule,
   LatLngPoint,
-} from "../../types/demandSites";
-
-import { request } from "../client";
+} from "../types/demandSites";
 
 const demandSiteKeys = {
   all: ["demand-sites"] as const,

@@ -1,8 +1,7 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { ParticipantMonthlySchedule } from "../../types/participants";
-
 import { request } from "../client";
+import type { ParticipantMonthlySchedule } from "../types/participants";
 
 // 조 기본 근무시간(Group.shiftStart/shiftEnd)과 다른 날의 근무시간. 그 달 근무일 중
 // 시간이 다른 날만 들어있고, 없는 날은 조 기본값으로 근무한다는 뜻이다 — "이번주는

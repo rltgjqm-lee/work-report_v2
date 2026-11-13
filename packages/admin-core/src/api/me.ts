@@ -1,8 +1,7 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { AdminSession } from "../../types/admins";
-
 import { request } from "../client";
+import type { AdminSession } from "../types/admins";
 
 export const getMe = () => request<AdminSession>("/api/me");
 

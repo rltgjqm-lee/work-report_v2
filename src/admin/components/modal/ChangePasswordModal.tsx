@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { changeMyPassword } from "../../api/admin/me";
+import { changeMyPassword } from "@work-report/admin-core/api/me";
 
 import Button from "../Button";
 import FormField from "../FormField";

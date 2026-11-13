@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { createGroupMutationOptions } from "@work-report/admin-core/api/groups";
+import { updateGroupScheduleMutationOptions } from "@work-report/admin-core/api/monthlySchedule";
+
 import { getLocalYearMonth } from "../../../utils/timeFormat";
-import { createGroupMutationOptions } from "../../api/admin/groups";
-import { updateGroupScheduleMutationOptions } from "../../api/admin/monthlySchedule";
 import { useToast } from "../../context/useToast";
 import {
   clampYearMonth,

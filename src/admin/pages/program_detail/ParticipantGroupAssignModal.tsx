@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getLocalToday } from "../../../utils/timeFormat";
 import {
   deleteParticipantGroupOverrideMutationOptions,
   moveParticipantToGroupMutationOptions,
   participantGroupOverridesQueryOptions,
   setParticipantGroupOverrideMutationOptions,
-} from "../../api/admin/participants";
+} from "@work-report/admin-core/api/participants";
+import type { Group } from "@work-report/admin-core/types/groups";
+import type { Participant } from "@work-report/admin-core/types/participants";
+
+import { getLocalToday } from "../../../utils/timeFormat";
 import { useToast } from "../../context/useToast";
-import type { Group } from "../../types/groups";
-import type { Participant } from "../../types/participants";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";

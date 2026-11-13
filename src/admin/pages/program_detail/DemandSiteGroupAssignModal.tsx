@@ -5,10 +5,11 @@ import {
   createDemandSiteScheduleMutationOptions,
   deleteDemandSiteScheduleMutationOptions,
   demandSiteSchedulesQueryOptions,
-} from "../../api/admin/demandSites";
+} from "@work-report/admin-core/api/demandSites";
+import type { DemandSite } from "@work-report/admin-core/types/demandSites";
+import type { Group } from "@work-report/admin-core/types/groups";
+
 import { useToast } from "../../context/useToast";
-import type { DemandSite } from "../../types/demandSites";
-import type { Group } from "../../types/groups";
 
 import Button from "../../components/Button";
 import FilterSelect from "../../components/FilterSelect";

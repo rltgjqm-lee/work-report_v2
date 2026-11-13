@@ -7,6 +7,7 @@
 - React 19 + TypeScript + Vite + Tailwind 프론트엔드 (`src/`)
 - Cloudflare Workers + D1 백엔드 (`apps/worker/`, npm workspaces)
 - `src/admin/` : 관리자 콘솔
+- `packages/admin-core/` (`@work-report/admin-core`) : 관리자 웹·관리자 앱이 같이 쓰는 API 파일, 쿼리 옵션, 도메인 타입. 서버 주소는 앱이 `configureClient()`로 넣어준다
 - `src/pages/main_pages/` : 활동일지 등 메인 사용자 플로우 페이지
 
 ## 코딩 컨벤션
@@ -87,16 +88,16 @@ const handleModalClose = () => setModalOpen(false);
 
 새 파일을 어디에 둘지 애매하면 먼저 물어보고 진행합니다.
 
-### admin 콘솔의 데이터 조회: `src/admin/api/admin/*.ts`에 다 모은다
+### admin 콘솔의 데이터 조회: `packages/admin-core/src/api/*.ts`에 다 모은다
 
 admin 콘솔은 `useState`/`useEffect` + 수동 `refresh()` 대신 TanStack Query로 데이터를
-조회합니다. 도메인 하나당 파일 하나(`src/admin/api/admin/<도메인>.ts`)에 다음 네 가지를
+조회합니다. 도메인 하나당 파일 하나(`packages/admin-core/src/api/<도메인>.ts`)에 다음 네 가지를
 전부 같이 둡니다 — fetch 함수, (단일 소비자면) 그 응답 타입, 쿼리 키 팩토리, `queryOptions()`.
 별도로 `query/` 폴더나 타입 전용 파일을 만들지 않습니다 — 이 도메인을 다루려면 결국 이
 파일 하나만 열면 되게 하기 위함입니다.
 
 ```ts
-// src/admin/api/admin/safetyAlerts.ts
+// packages/admin-core/src/api/safetyAlerts.ts
 import { queryOptions } from "@tanstack/react-query";
 import { request } from "../client";
 
@@ -114,10 +115,14 @@ export const safetyAlertsQueryOptions = queryOptions({
 export const sendTestSafetyAlert = (data: { ... }) => request(...); // 뮤테이션 fetch 함수도 같이
 ```
 
-- **타입**: `src/admin/types.ts`에는 여러 API 파일·여러 페이지·여러 컴포넌트에서 같이 쓰는
+admin 콘솔 페이지에서는 `@work-report/admin-core/api/<도메인>`, `@work-report/admin-core/types/<도메인>`으로
+import합니다. 엑셀 출력(`src/admin/api/admin/excel.ts`)처럼 PC 콘솔에서만 쓰는 API는 패키지에
+넣지 않고 `src/admin/`에 둡니다.
+
+- **타입**: `packages/admin-core/src/types/`에는 여러 API 파일·여러 페이지·여러 컴포넌트에서 같이 쓰는
   진짜 공유 도메인 모델(`Participant`, `Program`, `DemandSite` 등)만 둡니다. 소비자가 API 함수
-  하나뿐인 타입(그 함수의 응답 타입 등)은 `types.ts`에 두지 않고 그 API 파일 안에서 직접
-  `export`합니다. 기존에 `types.ts`에 있던 타입들은 점진적으로 이 기준에 맞춰 정리합니다 —
+  하나뿐인 타입(그 함수의 응답 타입 등)은 `types/`에 두지 않고 그 API 파일 안에서 직접
+  `export`합니다. 기존에 `types/`에 있던 타입들은 점진적으로 이 기준에 맞춰 정리합니다 —
   한 번에 다 옮기지 않고, 그 타입/API를 만지는 김에 하나씩 옮깁니다.
 - **쿼리 키**: 여러 도메인 키를 한 중앙 파일에 다 모아두지 않습니다 — id처럼 파라미터가
   들어가는 순간 상수 배열로는 표현이 안 되고 함수가 필요해지는데, 그 함수를 다른 도메인
@@ -141,7 +146,7 @@ export const sendTestSafetyAlert = (data: { ... }) => request(...); // 뮤테이
     페이지 컴포넌트의 `mutate(variables, { onSuccess, onError })` 호출부에 둡니다.
 
 ```ts
-// src/admin/api/admin/participants.ts
+// packages/admin-core/src/api/participants.ts
 export const deleteParticipantMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ programId, participantId }: DeleteParticipantVariables) =>
@@ -173,7 +178,7 @@ deleteParticipantMutation.mutate(variables, {
 인터페이스로 export합니다(예: `DeleteParticipantVariables`).
 
 레퍼런스: `src/admin/pages/LoginHistoryPage.tsx`, `src/admin/pages/DisasterMessagesPage.tsx`,
-`src/admin/pages/ParticipantsPage.tsx` + `src/admin/api/admin/participants.ts`
+`src/admin/pages/ParticipantsPage.tsx` + `packages/admin-core/src/api/participants.ts`
 (critical/UI 분리 예시), `src/admin/AdminApp.tsx`의 `QueryClientProvider` 설정.
 
 같은 규칙이 참여자 앱(`src/pages/main_pages/`)의 데이터 조회에도 그대로 적용됩니다 —

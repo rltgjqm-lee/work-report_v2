@@ -1,9 +1,8 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../../types/escapes";
-import type { SosRow } from "../../types/sos";
-
 import { request } from "../client";
+import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
+import type { SosRow } from "../types/sos";
 
 const escapeKeys = {
   all: ["escapes"] as const,

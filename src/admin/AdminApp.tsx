@@ -2,6 +2,8 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { configureClient } from "@work-report/admin-core/client";
+
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
@@ -24,6 +26,9 @@ const ParticipantsPage = lazy(() => import("./pages/ParticipantsPage"));
 const ProgramDetailPage = lazy(() => import("./pages/program_detail/ProgramDetailPage"));
 const ProgramsPage = lazy(() => import("./pages/programs/ProgramsPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+
+// admin-core의 API 파일들이 요청을 보낼 서버 주소 — 앱마다 다르므로 여기서 넣어준다
+configureClient({ baseUrl: import.meta.env.VITE_API_BASE_URL });
 
 const queryClient = new QueryClient({
   defaultOptions: {

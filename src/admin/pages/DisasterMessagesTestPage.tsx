@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { programsQueryOptions } from "../api/admin/programs";
+import { programsQueryOptions } from "@work-report/admin-core/api/programs";
 import {
   safetyAlertsQueryOptions,
   sendTestSafetyAlertMutationOptions,
-} from "../api/admin/safetyAlerts";
+} from "@work-report/admin-core/api/safetyAlerts";
+
 import Button from "../components/Button";
 import FilterSelect from "../components/FilterSelect";
 import Input from "../components/Input";

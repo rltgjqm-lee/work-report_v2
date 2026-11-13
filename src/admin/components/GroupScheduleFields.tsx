@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import type { LeaveType } from "@work-report/admin-core/types/participants";
+
 import { useToast } from "../context/useToast";
 
-import type { LeaveType } from "../types/participants";
 import { generateWorkPatternInRange } from "../utils/generateWorkPattern";
 import {
   minutesByMonth,

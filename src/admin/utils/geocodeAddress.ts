@@ -1,4 +1,4 @@
-import { request } from "../api/client";
+import { request } from "@work-report/admin-core/client";
 
 /**
  * 주소 문자열을 위경도로 바꿉니다. 찾지 못하면 null을 돌려줍니다.

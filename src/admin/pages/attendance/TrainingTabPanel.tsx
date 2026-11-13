@@ -1,10 +1,9 @@
 import { useState, type ChangeEvent } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getLocalToday } from "../../../utils/timeFormat";
-import { groupsQueryOptions } from "../../api/admin/groups";
-import { groupMonthlyScheduleQueryOptions } from "../../api/admin/monthlySchedule";
-import { programParticipantsQueryOptions } from "../../api/admin/programs";
+import { groupsQueryOptions } from "@work-report/admin-core/api/groups";
+import { groupMonthlyScheduleQueryOptions } from "@work-report/admin-core/api/monthlySchedule";
+import { programParticipantsQueryOptions } from "@work-report/admin-core/api/programs";
 import {
   cancelTrainingLogMutationOptions,
   createTrainingLogMutationOptions,
@@ -16,7 +15,9 @@ import {
   type TrainingCategory,
   type TrainingLogRow,
   type TrainingPayMode,
-} from "../../api/admin/trainings";
+} from "@work-report/admin-core/api/trainings";
+
+import { getLocalToday } from "../../../utils/timeFormat";
 import { useToast } from "../../context/useToast";
 
 import SubTabBar from "../../components/bar/SubTabBar";

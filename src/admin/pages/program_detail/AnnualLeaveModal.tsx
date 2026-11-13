@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   participantAnnualLeaveQueryOptions,
   setAnnualLeaveMutationOptions,
-} from "../../api/admin/participants";
+} from "@work-report/admin-core/api/participants";
+
 import { useToast } from "../../context/useToast";
 
 import Button from "../../components/Button";

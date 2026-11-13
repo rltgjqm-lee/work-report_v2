@@ -1,0 +1,14 @@
+{
+  "name": "@work-report/admin-core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./api/*": "./src/api/*.ts",
+    "./types/*": "./src/types/*.ts"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.101.4"
+  }
+}

@@ -1,6 +1,7 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { ParticipantMonthlyAttendance } from "../../types/attendance";
+import { request } from "../client";
+import type { ParticipantMonthlyAttendance } from "../types/attendance";
 import type {
   AnnualLeave,
   LeaveType,
@@ -8,9 +9,7 @@ import type {
   ParticipantDetail,
   ParticipantLeave,
   ParticipantListItem,
-} from "../../types/participants";
-
-import { request } from "../client";
+} from "../types/participants";
 import { groupKeys } from "./groups";
 import { programKeys } from "./programs";
 

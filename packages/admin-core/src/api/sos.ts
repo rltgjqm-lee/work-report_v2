@@ -1,8 +1,7 @@
 import { mutationOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { SosEvent } from "../../types/sos";
-
 import { request } from "../client";
+import type { SosEvent } from "../types/sos";
 import { liveMapKeys } from "./escapes";
 
 export interface ResolveSosVariables {

@@ -1,8 +1,7 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { LeaveType } from "../../types/participants";
-
 import { request } from "../client";
+import type { LeaveType } from "../types/participants";
 import { attendanceKeys } from "./attendance";
 import { groupKeys } from "./groups";
 import { leavesKeys } from "./leaves";

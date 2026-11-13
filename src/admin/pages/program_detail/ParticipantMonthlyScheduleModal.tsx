@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
 import {
   deleteParticipantMonthlyScheduleMutationOptions,
   groupMonthlyScheduleQueryOptions,
   participantMonthlyScheduleQueryOptions,
   updateParticipantMonthlyScheduleMutationOptions,
-} from "../../api/admin/monthlySchedule";
-import { participantMonthLeavesQueryOptions } from "../../api/admin/participants";
+} from "@work-report/admin-core/api/monthlySchedule";
+import { participantMonthLeavesQueryOptions } from "@work-report/admin-core/api/participants";
+import type { Group } from "@work-report/admin-core/types/groups";
+import type { Participant } from "@work-report/admin-core/types/participants";
+
+import { getLocalYearMonth } from "../../../utils/timeFormat";
 import { useToast } from "../../context/useToast";
-import type { Group } from "../../types/groups";
-import type { Participant } from "../../types/participants";
 import { generateWorkPattern } from "../../utils/generateWorkPattern";
 
 import Button from "../../components/Button";

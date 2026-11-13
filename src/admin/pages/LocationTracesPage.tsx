@@ -5,13 +5,14 @@ import L from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 
-import { isoToKstTimeString } from "../../utils/timeFormat";
-
 import {
   locationTraceDaysQueryOptions,
   locationTraceQueryOptions,
   type LocationTraceJudgement,
-} from "../api/admin/locationTraces";
+} from "@work-report/admin-core/api/locationTraces";
+
+import { isoToKstTimeString } from "../../utils/timeFormat";
+
 import FilterSelect from "../components/FilterSelect";
 
 const JUDGEMENT_LABELS: Record<LocationTraceJudgement, string> = {

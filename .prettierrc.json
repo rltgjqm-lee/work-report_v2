@@ -9,6 +9,8 @@
     "",
     "<THIRD_PARTY_MODULES>",
     "",
+    "^@work-report/",
+    "",
     "^\\.\\.?/.*/(api|utils|hooks|context|types|constants)(/|$)",
     "^\\.\\.?/.*/use[A-Z]",
     "",

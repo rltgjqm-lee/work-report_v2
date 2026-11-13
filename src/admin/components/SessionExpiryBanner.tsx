@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { extendSessionMutationOptions } from "../api/admin/me";
+import { extendSessionMutationOptions } from "@work-report/admin-core/api/me";
 
 // 만료 5분 전부터 노출한다 — 그 전엔 배너 없이 topbar 카운트다운만 보인다.
 const WARNING_THRESHOLD_MS = 5 * 60 * 1000;

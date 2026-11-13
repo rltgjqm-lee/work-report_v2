@@ -13,9 +13,13 @@ import {
   demandSiteLocationsQueryOptions,
   promoteDemandSiteLocationMutationOptions,
   updateDemandSiteMutationOptions,
-} from "../../api/admin/demandSites";
+} from "@work-report/admin-core/api/demandSites";
+import type {
+  DemandSite,
+  DemandSiteLocationShape,
+} from "@work-report/admin-core/types/demandSites";
+
 import { useToast } from "../../context/useToast";
-import type { DemandSite, DemandSiteLocationShape } from "../../types/demandSites";
 import { geocodeAddress } from "../../utils/geocodeAddress";
 
 import Button from "../../components/Button";

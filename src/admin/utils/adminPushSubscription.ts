@@ -1,4 +1,4 @@
-import { subscribeToPush } from "../api/admin/pushSubscriptions";
+import { subscribeToPush } from "@work-report/admin-core/api/pushSubscriptions";
 
 const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);

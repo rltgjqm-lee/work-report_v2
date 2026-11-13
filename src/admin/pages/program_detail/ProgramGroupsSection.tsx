@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { updateGroupMutationOptions } from "../../api/admin/groups";
+import { updateGroupMutationOptions } from "@work-report/admin-core/api/groups";
+import type { Group } from "@work-report/admin-core/types/groups";
+
 import { useToast } from "../../context/useToast";
-import type { Group } from "../../types/groups";
 
 import Button from "../../components/Button";
 import ItemCard from "../../components/ItemCard";

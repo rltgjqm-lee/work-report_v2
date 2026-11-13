@@ -1,16 +1,15 @@
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import type { Admin } from "../../types/admins";
-import type { ProgramParticipant } from "../../types/participants";
+import { request } from "../client";
+import type { Admin } from "../types/admins";
+import type { ProgramParticipant } from "../types/participants";
 import type {
   Program,
   ProgramFilterOption,
   ProgramListItem,
   ProgramOption,
   ProgramWithParticipants,
-} from "../../types/programs";
-
-import { request } from "../client";
+} from "../types/programs";
 import { adminKeys } from "./admins";
 
 const listPrograms = (organizationId?: number) =>

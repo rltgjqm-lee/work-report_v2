@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { demandSitesQueryOptions } from "../../api/admin/demandSites";
-import { programsQueryOptions } from "../../api/admin/programs";
+import { demandSitesQueryOptions } from "@work-report/admin-core/api/demandSites";
+import { programsQueryOptions } from "@work-report/admin-core/api/programs";
+
 import { PROGRAM_TYPE_FILTER_OPTIONS } from "../../constants/programTypes";
 
 import TabBar from "../../components/bar/TabBar";

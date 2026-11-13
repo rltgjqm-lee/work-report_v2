@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { resetAdminPassword } from "../../api/admin/admins";
+import { resetAdminPassword } from "@work-report/admin-core/api/admins";
+
 import { useToast } from "../../context/useToast";
 
 import Button from "../../components/Button";

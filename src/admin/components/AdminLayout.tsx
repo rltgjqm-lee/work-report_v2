@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 
+import { organizationQueryOptions } from "@work-report/admin-core/api/organizations";
+import { ROLES } from "@work-report/admin-core/types/admins";
+
 import { useAuth } from "../context/useAuth";
 
-import { organizationQueryOptions } from "../api/admin/organizations";
 import { logout } from "../api/auth";
-import { ROLES } from "../types/admins";
 import { subscribeAdminToPush } from "../utils/adminPushSubscription";
 import ChangePasswordModal from "./modal/ChangePasswordModal";
 import SessionExpiryBanner from "./SessionExpiryBanner";
