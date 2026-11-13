@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import type { ActivityLogFormData } from "../../types/form";
-import { programTypeShortLabel } from "../../types/form";
-import { getLocalToday } from "../../utils/timeFormat";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
+import { programTypeShortLabel } from "@work-report/shared/types/form";
+import { getLocalToday } from "@work-report/shared/utils/timeFormat";
 
-import Button from "../../components/atoms/Button";
-import { bodyClass, pageClass } from "../../components/atoms/classes";
+import Button from "@work-report/shared/components/atoms/Button";
+import { bodyClass, pageClass } from "@work-report/shared/components/atoms/classes";
 
 import { IdentifyError, identifyParticipantQueryOptions } from "../api/attendanceApi";
 import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";

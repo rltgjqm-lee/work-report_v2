@@ -1,4 +1,4 @@
-import type { ActivityLogFormData } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
 
 export interface TodayStatus {
   isWorkDay: boolean;

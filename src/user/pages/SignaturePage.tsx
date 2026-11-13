@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import type { ActivityLogFormData } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
 
 import {
   bodyClass,
@@ -8,7 +8,7 @@ import {
   labelClass,
   labelSmallClass,
   pageClass,
-} from "../../components/atoms/classes";
+} from "@work-report/shared/components/atoms/classes";
 
 import BottomBar from "../components/atoms/BottomBar";
 import Card from "../components/atoms/Card";

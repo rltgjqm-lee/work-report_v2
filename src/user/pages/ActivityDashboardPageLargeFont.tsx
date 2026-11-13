@@ -2,8 +2,8 @@ import { useState, type ReactNode } from "react";
 
 import { Home } from "lucide-react";
 
-import type { ActivityLogFormData } from "../../types/form";
-import { programTypeShortLabel } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
+import { programTypeShortLabel } from "@work-report/shared/types/form";
 
 import { sendSos } from "../api/sosApi";
 import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";

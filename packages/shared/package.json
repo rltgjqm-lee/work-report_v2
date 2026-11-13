@@ -1,0 +1,17 @@
+{
+  "name": "@work-report/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./components/atoms/classes": "./src/components/atoms/classes.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./utils/*": "./src/utils/*.ts",
+    "./constants/*": "./src/constants/*.ts",
+    "./types/*": "./src/types/*.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  }
+}

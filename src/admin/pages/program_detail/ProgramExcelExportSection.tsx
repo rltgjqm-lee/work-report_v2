@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { updateProgramMutationOptions } from "@work-report/admin-core/api/programs";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
 import {
   downloadActivityLogExcel,
   downloadActivityPaymentLedgerExcel,
@@ -14,7 +14,7 @@ import {
 } from "../../api/admin/excel";
 import { DEFAULT_CAPACITY_ATTENDANCE_BANNER_TEXT } from "../../utils/pdf/downloadCapacityAttendancePdf";
 
-import ConfirmModal from "../../../components/molecule/ConfirmModal";
+import ConfirmModal from "@work-report/shared/components/molecule/ConfirmModal";
 import FormField from "../../components/FormField";
 import Input from "../../components/Input";
 

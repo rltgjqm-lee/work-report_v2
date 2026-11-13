@@ -12,7 +12,7 @@ import {
 import { groupsQueryOptions } from "@work-report/admin-core/api/groups";
 import type { AttendanceStats } from "@work-report/admin-core/types/attendance";
 
-import { getLocalToday, getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalToday, getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
 

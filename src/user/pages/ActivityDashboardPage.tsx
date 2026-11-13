@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import type { ActivityLogFormData } from "../../types/form";
-import { programTypeShortLabel } from "../../types/form";
-import { formatTimeField, isoToTimeParts } from "../../utils/timeFormat";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
+import { programTypeShortLabel } from "@work-report/shared/types/form";
+import { formatTimeField, isoToTimeParts } from "@work-report/shared/utils/timeFormat";
 
-import { bodyClass, pageClass } from "../../components/atoms/classes";
+import { bodyClass, pageClass } from "@work-report/shared/components/atoms/classes";
 
 import {
   ClockInError,

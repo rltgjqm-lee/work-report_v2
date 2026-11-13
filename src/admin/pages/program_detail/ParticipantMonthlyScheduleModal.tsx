@@ -11,7 +11,7 @@ import { participantMonthLeavesQueryOptions } from "@work-report/admin-core/api/
 import type { Group } from "@work-report/admin-core/types/groups";
 import type { Participant } from "@work-report/admin-core/types/participants";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../../context/useToast";
 import { generateWorkPattern } from "../../utils/generateWorkPattern";
 

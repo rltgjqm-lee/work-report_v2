@@ -8,6 +8,7 @@
 - Cloudflare Workers + D1 백엔드 (`apps/worker/`, npm workspaces)
 - `src/admin/` : 관리자 콘솔
 - `packages/admin-core/` (`@work-report/admin-core`) : 관리자 웹·관리자 앱이 같이 쓰는 API 파일, 쿼리 옵션, 도메인 타입. 서버 주소는 앱이 `configureClient()`로 넣어준다
+- `packages/shared/` (`@work-report/shared`) : 참여자 앱과 관리자 웹이 같이 쓰는 컴포넌트(`components/atoms`, `components/molecule`), `utils/timeFormat`, `constants/koreanRegions`, `types/form`
 - `src/pages/main_pages/` : 활동일지 등 메인 사용자 플로우 페이지
 
 ## 코딩 컨벤션
@@ -79,7 +80,7 @@ const handleModalClose = () => setModalOpen(false);
 
 ### 컴포넌트 폴더 구조 (atomic design)
 
-`src/components/`는 `atoms/`, `molecule/`, `organism/`만 사용합니다. 새로운 최상위 카테고리 폴더(예: `appshell/`)를 임의로 만들지 않습니다.
+`packages/shared/src/components/`(참여자 앱·관리자 웹 공용)와 `src/user/components/`(참여자 앱 전용)는 `atoms/`, `molecule/`, `organism/`만 사용합니다. 새로운 최상위 카테고리 폴더(예: `appshell/`)를 임의로 만들지 않습니다.
 
 - `atoms/`: 단일 요소 primitive (예: `Button.tsx`, `TextInput.tsx`, 스타일 상수)
 - `molecule/`: atom 여러 개를 조합한 작은 단위 (예: `LabeledInput.tsx`, `ConfirmModal.tsx`)

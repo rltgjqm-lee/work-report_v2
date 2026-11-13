@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { ChevronLeft } from "lucide-react";
 
-import type { ActivityLogFormData } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
 
 import { sendSos } from "../api/sosApi";
 import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";

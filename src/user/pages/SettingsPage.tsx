@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
 
-import { isoToKstMinuteString } from "../../utils/timeFormat";
+import { isoToKstMinuteString } from "@work-report/shared/utils/timeFormat";
 
-import { bodyClass, pageClass } from "../../components/atoms/classes";
+import { bodyClass, pageClass } from "@work-report/shared/components/atoms/classes";
 
 import AppBar from "../components/molecule/AppBar";
 import LocationConsentModal from "../components/molecule/LocationConsentModal";

@@ -1,8 +1,8 @@
-import type { ActivityLogFormData } from "../../types/form";
-import { formatTimeField, getLocalToday } from "../../utils/timeFormat";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
+import { formatTimeField, getLocalToday } from "@work-report/shared/utils/timeFormat";
 
-import Button from "../../components/atoms/Button";
-import { bodyClass, pageClass } from "../../components/atoms/classes";
+import Button from "@work-report/shared/components/atoms/Button";
+import { bodyClass, pageClass } from "@work-report/shared/components/atoms/classes";
 
 import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";
 import Card from "../components/atoms/Card";

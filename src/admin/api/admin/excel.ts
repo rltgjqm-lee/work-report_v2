@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 
 import { request } from "@work-report/admin-core/client";
 
-import type { ActivityLogItem } from "../../../types/form";
+import type { ActivityLogItem } from "@work-report/shared/types/form";
 import { addActivityLogSheet } from "../../utils/excel/downloadActivityLogExcel";
 import { buildActivityPaymentLedgerWorkbook } from "../../utils/excel/downloadActivityPaymentLedgerExcel";
 import {

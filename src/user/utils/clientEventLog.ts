@@ -2,7 +2,7 @@ import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { CapacitorUpdater } from "@capgo/capacitor-updater";
 
-import { getLocalToday } from "../../utils/timeFormat";
+import { getLocalToday } from "@work-report/shared/utils/timeFormat";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 const STORAGE_KEY = "clientEventQueue";

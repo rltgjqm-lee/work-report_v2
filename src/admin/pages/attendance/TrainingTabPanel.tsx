@@ -17,7 +17,7 @@ import {
   type TrainingPayMode,
 } from "@work-report/admin-core/api/trainings";
 
-import { getLocalToday } from "../../../utils/timeFormat";
+import { getLocalToday } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../../context/useToast";
 
 import SubTabBar from "../../components/bar/SubTabBar";

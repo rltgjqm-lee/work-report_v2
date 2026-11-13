@@ -11,7 +11,7 @@ import {
   type LocationTraceJudgement,
 } from "@work-report/admin-core/api/locationTraces";
 
-import { isoToKstTimeString } from "../../utils/timeFormat";
+import { isoToKstTimeString } from "@work-report/shared/utils/timeFormat";
 
 import FilterSelect from "../components/FilterSelect";
 

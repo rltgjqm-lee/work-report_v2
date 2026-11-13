@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { ChevronLeft } from "lucide-react";
 
-import { isoToKstMinuteString } from "../../utils/timeFormat";
+import { isoToKstMinuteString } from "@work-report/shared/utils/timeFormat";
 
 import { sendSos } from "../api/sosApi";
 import SosConfirmModalLargeFont from "../components/molecule/SosConfirmModalLargeFont";

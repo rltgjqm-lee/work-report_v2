@@ -3,15 +3,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 
-import ConfirmModal from "../components/molecule/ConfirmModal";
+import ConfirmModal from "@work-report/shared/components/molecule/ConfirmModal";
 import { INDEXED_DB_CONFIG, LOCAL_STORAGE_KEYS } from "../constants/storage";
-import type { ActivityLogFormData, ActivityLogItem } from "../types/form";
+import type { ActivityLogFormData, ActivityLogItem } from "@work-report/shared/types/form";
 import {
   formatTimeField,
   getLocalToday,
   hhmmToTimeParts,
   isoToTimeParts,
-} from "../utils/timeFormat";
+} from "@work-report/shared/utils/timeFormat";
 // import { findIncompleteActivityLogDate } from "./utils/activityLogSync"; // 💡 일단 주석 처리
 import { getTodayAttendance } from "./api/attendanceApi";
 // import IncompleteDayModal from "./components/molecule/IncompleteDayModal"; // 💡 일단 주석 처리

@@ -31,7 +31,7 @@ import type {
 } from "@work-report/admin-core/types/escapes";
 import type { SosRow } from "@work-report/admin-core/types/sos";
 
-import { getLocalToday, isoToKstMinuteString, isoToKstTimeString } from "../../utils/timeFormat";
+import { getLocalToday, isoToKstMinuteString, isoToKstTimeString } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../context/useToast";
 
 import FilterSelect from "../components/FilterSelect";

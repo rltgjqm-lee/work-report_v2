@@ -10,7 +10,7 @@ import {
 import type { Group } from "@work-report/admin-core/types/groups";
 import type { Participant } from "@work-report/admin-core/types/participants";
 
-import { getLocalToday } from "../../../utils/timeFormat";
+import { getLocalToday } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../../context/useToast";
 
 import Button from "../../components/Button";

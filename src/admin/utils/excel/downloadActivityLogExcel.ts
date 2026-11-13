@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 
-import type { ActivityLogItem } from "../../../types/form";
+import type { ActivityLogItem } from "@work-report/shared/types/form";
 
 import { columnWidthToPx, fitSignatureInCell, rowHeightToPx } from "./signatureImage";
 

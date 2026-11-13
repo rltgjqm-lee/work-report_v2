@@ -17,7 +17,7 @@ import type {
 } from "@work-report/admin-core/types/attendance";
 import type { AnnualLeave, ParticipantLeave } from "@work-report/admin-core/types/participants";
 
-import { getLocalToday, getLocalYearMonth, isoToKstMinuteString } from "../../../utils/timeFormat";
+import { getLocalToday, getLocalYearMonth, isoToKstMinuteString } from "@work-report/shared/utils/timeFormat";
 import { useAuth } from "../../context/useAuth";
 
 import AttendanceLocationCell from "../../components/AttendanceLocationCell";

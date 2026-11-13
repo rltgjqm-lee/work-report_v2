@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import type { ActivityLogFormData } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
 
 import {
   bodyClass,
@@ -11,7 +11,7 @@ import {
   labelSmallClass,
   pageClass,
   textareaClass,
-} from "../../components/atoms/classes";
+} from "@work-report/shared/components/atoms/classes";
 
 import { activityOptionsQueryOptions } from "../api/activityOptionsApi";
 import BottomBar, { BottomBarRow } from "../components/atoms/BottomBar";

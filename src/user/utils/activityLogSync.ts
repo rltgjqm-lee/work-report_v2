@@ -1,6 +1,6 @@
 import { INDEXED_DB_CONFIG } from "../../constants/storage";
-import type { ActivityLogItem } from "../../types/form";
-import { getLocalToday } from "../../utils/timeFormat";
+import type { ActivityLogItem } from "@work-report/shared/types/form";
+import { getLocalToday } from "@work-report/shared/utils/timeFormat";
 
 import { ActivityLogApiError, createActivityLog, updateActivityLog } from "../api/activityLogApi";
 import { recordClientEvent } from "./clientEventLog";

@@ -16,7 +16,7 @@ import {
 import type { Group } from "@work-report/admin-core/types/groups";
 import type { LeaveType } from "@work-report/admin-core/types/participants";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../../context/useToast";
 import {
   clampYearMonth,

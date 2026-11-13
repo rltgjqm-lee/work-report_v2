@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 import { ChevronLeft } from "lucide-react";
 
-import type { ActivityLogFormData } from "../../types/form";
-import { programTypeShortLabel } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
+import { programTypeShortLabel } from "@work-report/shared/types/form";
 import ExceptionCard from "../components/atoms/ExceptionCard";
 
 import type { ExceptionInfo } from "./RegistrationConfirmPage";

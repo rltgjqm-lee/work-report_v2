@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createGroupMutationOptions } from "@work-report/admin-core/api/groups";
 import { updateGroupScheduleMutationOptions } from "@work-report/admin-core/api/monthlySchedule";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
 import { useToast } from "../../context/useToast";
 import {
   clampYearMonth,

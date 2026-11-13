@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { leavesQueryOptions } from "@work-report/admin-core/api/leaves";
 
-import { getLocalYearMonth } from "../../../utils/timeFormat";
+import { getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
 
 import StatusChip, { type StatusChipVariant } from "../../components/chip/StatusChip";
 import MonthPicker from "../../components/MonthPicker";

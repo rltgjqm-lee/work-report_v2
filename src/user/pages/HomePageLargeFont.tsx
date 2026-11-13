@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { Building2, ChevronRight } from "lucide-react";
 
-import type { ActivityLogFormData } from "../../types/form";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
 
 import { computeTodayWorkCardStatus, type TodayStatus } from "../utils/todayWorkStatus";
 

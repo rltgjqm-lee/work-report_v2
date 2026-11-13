@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { KOREAN_REGIONS, SIDO_LIST } from "../../constants/koreanRegions";
-import type { ActivityLogFormData } from "../../types/form";
+import { KOREAN_REGIONS, SIDO_LIST } from "@work-report/shared/constants/koreanRegions";
+import type { ActivityLogFormData } from "@work-report/shared/types/form";
 
-import Button from "../../components/atoms/Button";
-import { bodyClass, pageClass } from "../../components/atoms/classes";
+import Button from "@work-report/shared/components/atoms/Button";
+import { bodyClass, pageClass } from "@work-report/shared/components/atoms/classes";
 
 import { affiliationsQueryOptions } from "../api/affiliationsApi";
 import type { Affiliations } from "../api/affiliationsApi";

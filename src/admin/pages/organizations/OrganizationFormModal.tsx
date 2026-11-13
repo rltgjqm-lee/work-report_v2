@@ -7,7 +7,7 @@ import {
 } from "@work-report/admin-core/api/organizations";
 import { ORGANIZATION_TYPES, type Organization } from "@work-report/admin-core/types/organizations";
 
-import { KOREAN_REGIONS, SIDO_LIST } from "../../../constants/koreanRegions";
+import { KOREAN_REGIONS, SIDO_LIST } from "@work-report/shared/constants/koreanRegions";
 import { useToast } from "../../context/useToast";
 import { loadDaumPostcodeScript } from "../../utils/loadDaumPostcode";
 
