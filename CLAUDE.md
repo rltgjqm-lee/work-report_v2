@@ -4,12 +4,13 @@
 
 ## 프로젝트 개요
 
-- React 19 + TypeScript + Vite + Tailwind 프론트엔드 (`src/`)
+- React 19 + TypeScript + Vite + Tailwind 프론트엔드, npm workspaces 모노레포 (`apps/*`, `packages/*`)
 - Cloudflare Workers + D1 백엔드 (`apps/worker/`, npm workspaces)
 - `apps/admin-web/` : 관리자 콘솔 (admin.worksafe.co.kr, 로컬 `npm run dev -w apps/admin-web` → 5174). 주소는 예전처럼 `/admin/...`을 쓴다
 - `packages/admin-core/` (`@work-report/admin-core`) : 관리자 웹·관리자 앱이 같이 쓰는 API 파일, 쿼리 옵션, 도메인 타입. 서버 주소는 앱이 `configureClient()`로 넣어준다
 - `packages/shared/` (`@work-report/shared`) : 참여자 앱과 관리자 웹이 같이 쓰는 컴포넌트(`components/atoms`, `components/molecule`), `utils/timeFormat`, `constants/koreanRegions`, `types/form`
-- `src/pages/main_pages/` : 활동일지 등 메인 사용자 플로우 페이지
+- `apps/participant/` : 참여자 앱 (웹 worksafe.co.kr + Capacitor Android/iOS, 로컬 `npm run dev -w apps/participant` → 5173). 활동일지 등 메인 플로우 페이지는 `src/user/pages/`
+- 앱별 명령은 `npm run <script> -w apps/<앱>` (예: `npm run ota:publish -w apps/participant`, `npm run cap:sync -w apps/participant`). 프론트 타입 체크는 루트에서 `npx tsc -b --force` 하나로 참여자 앱·관리자 웹을 같이 검사한다
 
 ## 코딩 컨벤션
 
@@ -85,7 +86,7 @@ const handleModalClose = () => setModalOpen(false);
 - `atoms/`: 단일 요소 primitive (예: `Button.tsx`, `TextInput.tsx`, 스타일 상수)
 - `molecule/`: atom 여러 개를 조합한 작은 단위 (예: `LabeledInput.tsx`, `ConfirmModal.tsx`)
 - `organism/`: 더 큰 구조적 조합 (예: `PdfTemplate.tsx`)
-- `src/pages/`: 라우트 단위 페이지 컴포넌트
+- `apps/participant/src/user/pages/`: 라우트 단위 페이지 컴포넌트
 
 새 파일을 어디에 둘지 애매하면 먼저 물어보고 진행합니다.
 
@@ -182,10 +183,10 @@ deleteParticipantMutation.mutate(variables, {
 `apps/admin-web/src/pages/ParticipantsPage.tsx` + `packages/admin-core/src/api/participants.ts`
 (critical/UI 분리 예시), `apps/admin-web/src/AdminApp.tsx`의 `QueryClientProvider` 설정.
 
-같은 규칙이 참여자 앱(`src/pages/main_pages/`)의 데이터 조회에도 그대로 적용됩니다 —
-그 앱의 API 파일 위치는 `src/utils/<도메인>Api.ts`(예: `affiliationsApi.ts`,
+같은 규칙이 참여자 앱(`apps/participant/src/user/pages/`)의 데이터 조회에도 그대로 적용됩니다 —
+그 앱의 API 파일 위치는 `apps/participant/src/user/api/<도메인>Api.ts`(예: `affiliationsApi.ts`,
 `attendanceApi.ts`)이고, 그 안에 fetch 함수 + 쿼리 키 + `queryOptions()`를 같이 둡니다.
-`QueryClientProvider`는 `src/MobileApp.tsx`에 있습니다.
+`QueryClientProvider`는 `apps/participant/src/MobileApp.tsx`에 있습니다.
 
 ### 파라미터가 있는 쿼리: `enabled`/`select`도 팩토리 안에 접어넣는다
 
@@ -208,7 +209,7 @@ deleteParticipantMutation.mutate(variables, {
   `export type`으로 만들어 페이지가 원본 응답 타입 대신 그 타입을 참조하게 합니다.
 
 ```ts
-// src/utils/attendanceApi.ts
+// apps/participant/src/user/api/attendanceApi.ts
 export type IdentifiedRegistration = {
   participantId: number;
   status: IdentifiedParticipant["status"];
@@ -262,5 +263,5 @@ const {
 한 화면에 쿼리가 여러 개면 이 접두사(`isIdentifyPending` 등)가 어떤 쿼리의 상태인지
 구분해줍니다.
 
-레퍼런스: `src/utils/attendanceApi.ts`(`identifyParticipantQueryOptions`의 `enabled`/`select`
-예시), `src/pages/main_pages/RegistrationConfirmPage.tsx`(구조분해 소비 예시).
+레퍼런스: `apps/participant/src/user/api/attendanceApi.ts`(`identifyParticipantQueryOptions`의 `enabled`/`select`
+예시), `apps/participant/src/user/pages/RegistrationConfirmPage.tsx`(구조분해 소비 예시).
