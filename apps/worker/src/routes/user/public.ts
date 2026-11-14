@@ -6,6 +6,7 @@ import type { Env } from "../../types";
 
 import {
   activityLogs,
+  adminDevices,
   adminPushSubscriptions,
   admins,
   attendanceAttemptFailures,
@@ -1800,6 +1801,48 @@ app.post("/sos", async (c) => {
           }
         } else {
           console.log(`SOS 관리자 웹푸시 성공: adminId=${subscription.adminId}`);
+        }
+      }
+
+      // 관리자 앱(Android)에도 PC와 별개로 한 번씩 보낸다 — 앱의 "sos" 채널로 보내 화면이
+      // 꺼져 있어도 소리·진동이 나게 한다. data는 알림을 눌렀을 때 그 SOS 화면을 여는 데 쓴다.
+      const adminDeviceRows = await db
+        .select()
+        .from(adminDevices)
+        .where(inArray(adminDevices.adminId, eligibleAdminIds));
+
+      if (adminDeviceRows.length > 0) {
+        try {
+          const fcmAuth = await getFcmAccessToken(c.env.FCM_SERVICE_ACCOUNT_KEY);
+          for (const adminDevice of adminDeviceRows) {
+            const pushResult = await sendFcmPush(
+              fcmAuth.projectId,
+              fcmAuth.accessToken,
+              adminDevice.fcmToken,
+              { title: adminPushPayload.title, body: adminPushPayload.body },
+              {
+                androidChannelId: "sos",
+                data: {
+                  type: "sos",
+                  sosEventId: String(result[0].id),
+                  programId: String(participant.programId),
+                  participantName: participant.name,
+                },
+              },
+            );
+            if (!pushResult.ok) {
+              console.error(
+                `SOS 관리자 앱 FCM 실패: adminId=${adminDevice.adminId} status=${pushResult.status} expired=${pushResult.expired}`,
+              );
+              if (pushResult.expired) {
+                await db.delete(adminDevices).where(eq(adminDevices.id, adminDevice.id));
+              }
+            } else {
+              console.log(`SOS 관리자 앱 FCM 성공: adminId=${adminDevice.adminId}`);
+            }
+          }
+        } catch (error) {
+          console.error("SOS 관리자 앱 FCM 발송 실패:", error);
         }
       }
     }

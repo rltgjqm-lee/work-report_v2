@@ -79,11 +79,21 @@ export const getFcmAccessToken = async (
   return { accessToken: data.access_token, projectId: serviceAccount.project_id };
 };
 
+// androidChannelId: 받는 앱이 만들어 둔 Android 알림 채널(관리자 앱은 "sos"). 채널의 소리·중요도는
+// 앱이 채널을 만들 때 정해지고, 여기선 어느 채널로 보낼지만 고른다. 지정하면 화면이 꺼져 있어도
+// 바로 깨우도록 높은 우선순위로 보낸다.
+// data: 알림을 눌렀을 때 앱이 어느 화면을 열지 정하는 값(FCM data는 문자열만 된다).
+export type FcmPushOptions = {
+  androidChannelId?: string;
+  data?: Record<string, string>;
+};
+
 export const sendFcmPush = async (
   projectId: string,
   accessToken: string,
   deviceToken: string,
   payload: { title: string; body: string },
+  options: FcmPushOptions = {},
 ): Promise<SendFcmResult> => {
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: "POST",
@@ -92,7 +102,17 @@ export const sendFcmPush = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      message: { token: deviceToken, notification: payload },
+      message: {
+        token: deviceToken,
+        notification: payload,
+        ...(options.data && { data: options.data }),
+        ...(options.androidChannelId && {
+          android: {
+            priority: "HIGH",
+            notification: { channel_id: options.androidChannelId },
+          },
+        }),
+      },
     }),
   });
 

@@ -4,13 +4,8 @@ import { Hono } from "hono";
 
 import { ROLES, type AdminRole, type Env } from "../../types";
 
-import {
-  adminLoginHistory,
-  admins,
-  adminSessions,
-  demandSites,
-  organizations,
-} from "../../db/schema";
+import { adminLoginHistory, admins, demandSites, organizations } from "../../db/schema";
+import { revokeAdminAccess } from "../../lib/adminAppTokens";
 import { getAuth, parseIdArray } from "../../lib/authz";
 import { hashPassword } from "../../lib/password";
 import { tryConsumePasswordResetBudget } from "../../lib/passwordResetRateLimit";
@@ -322,6 +317,11 @@ app.put("/:id", async (c) => {
     .where(eq(admins.id, id))
     .returning();
 
+  // 비활성화하면 PC 세션·앱 로그인을 끊고, 앱 알림(FCM)도 더는 안 가게 폰 등록을 지운다.
+  if (body.isActive === false && existing.isActive) {
+    await revokeAdminAccess(db, id, { removeDevices: true });
+  }
+
   return c.json(toAdminJson(result[0]));
 });
 
@@ -357,7 +357,7 @@ app.put("/:id/password", async (c) => {
 
   const passwordHash = await hashPassword(body.newPassword);
   await db.update(admins).set({ passwordHash }).where(eq(admins.id, id));
-  await db.delete(adminSessions).where(eq(adminSessions.adminId, id));
+  await revokeAdminAccess(db, id);
 
   return c.json({ ok: true });
 });

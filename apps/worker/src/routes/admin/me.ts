@@ -1,12 +1,13 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 
 import type { Env } from "../../types";
 
-import { adminPushSubscriptions, admins, adminSessions } from "../../db/schema";
-import { getAuth } from "../../lib/authz";
+import { adminDevices, adminPushSubscriptions, admins, adminSessions } from "../../db/schema";
+import { revokeAdminAccess } from "../../lib/adminAppTokens";
+import { getAuth, readSessionToken } from "../../lib/authz";
 import { hashPassword, verifyPassword } from "../../lib/password";
 import {
   clearPasswordChangeFailures,
@@ -89,10 +90,17 @@ app.put("/password", async (c) => {
   const passwordHash = await hashPassword(body.newPassword);
   await db.update(admins).set({ passwordHash }).where(eq(admins.id, auth.id));
 
+  // 비밀번호를 바꾸는 건 보통 누가 내 계정을 쓰는 것 같을 때라, 다른 PC 세션과 앱 로그인은
+  // 전부 끊는다. 지금 비밀번호를 바꾼 이 화면의 세션 하나만 남긴다.
+  const currentToken = readSessionToken(c);
+  await revokeAdminAccess(db, auth.id, {
+    keepSessionTokenHash: currentToken ? await hashSessionToken(currentToken) : undefined,
+  });
+
   return c.json({ ok: true });
 });
 
-// 관리자 콘솔(/admin 스코프로 좁힌 서비스워커)의 웹 푸시 구독 등록 — SOS 발생 시
+// 관리자 콘솔(admin.worksafe.co.kr 서비스워커)의 웹 푸시 구독 등록 — SOS 발생 시
 // /public/sos가 이 구독으로 알림을 보낸다. endpoint가 unique라 같은 브라우저가 다시
 // 구독해도 upsert로 처리된다.
 app.post("/push-subscriptions", async (c) => {
@@ -133,6 +141,44 @@ app.delete("/push-subscriptions", async (c) => {
   }
 
   await db.delete(adminPushSubscriptions).where(eq(adminPushSubscriptions.endpoint, body.endpoint));
+
+  return c.json({ ok: true });
+});
+
+// 관리자 앱(Android)의 FCM 토큰 등록 — SOS 발생 시 PC 웹 푸시와 별도로 이 폰에도 보낸다.
+// 같은 폰(같은 토큰)으로 다른 관리자가 로그인하면 그 관리자에게로 옮긴다.
+app.post("/devices", async (c) => {
+  const auth = getAuth(c);
+  const body = await c.req.json<{ fcmToken?: string }>();
+  if (!body.fcmToken) {
+    return c.json({ error: "FCM 토큰이 없습니다." }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+  const nowIso = new Date().toISOString();
+  await db
+    .insert(adminDevices)
+    .values({ adminId: auth.id, fcmToken: body.fcmToken, updatedAt: nowIso })
+    .onConflictDoUpdate({
+      target: adminDevices.fcmToken,
+      set: { adminId: auth.id, updatedAt: nowIso },
+    });
+
+  return c.json({ ok: true }, 201);
+});
+
+// 앱에서 알림을 끌 때 FCM 토큰을 지운다(로그아웃은 /auth/app/logout이 같이 지운다).
+app.delete("/devices", async (c) => {
+  const auth = getAuth(c);
+  const body = await c.req.json<{ fcmToken?: string }>();
+  if (!body.fcmToken) {
+    return c.json({ error: "FCM 토큰이 없습니다." }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+  await db
+    .delete(adminDevices)
+    .where(and(eq(adminDevices.fcmToken, body.fcmToken), eq(adminDevices.adminId, auth.id)));
 
   return c.json({ ok: true });
 });

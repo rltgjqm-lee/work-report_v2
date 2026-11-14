@@ -21,10 +21,21 @@ export const parseIdArray = (raw: string | null): number[] => {
   }
 };
 
-// /api/* 앞단에 걸어서 세션 쿠키를 검증하고, 연결된 관리자를 조회해 c.set("admin", ...)
-// 해둔다. 쿠키엔 원문 토큰만 있고 DB엔 해시만 있으므로 여기서 해시를 다시 계산해 대조한다.
+// PC 관리자 웹은 httpOnly 쿠키로, 관리자 앱은 Authorization: Bearer로 같은 세션 토큰
+// (admin_sessions)을 보낸다. 둘 다 있으면 Bearer를 쓴다.
+export const readSessionToken = (c: Context<Env>): string | undefined => {
+  const authorization = c.req.header("Authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    return authorization.slice("Bearer ".length).trim() || undefined;
+  }
+  return getCookie(c, SESSION_COOKIE_NAME);
+};
+
+// /api/* 앞단에 걸어서 세션 토큰(쿠키 또는 Bearer)을 검증하고, 연결된 관리자를 조회해
+// c.set("admin", ...) 해둔다. 클라이언트엔 원문 토큰만 있고 DB엔 해시만 있으므로 여기서
+// 해시를 다시 계산해 대조한다.
 export const requireAdmin = async (c: Context<Env>, next: Next) => {
-  const token = getCookie(c, SESSION_COOKIE_NAME);
+  const token = readSessionToken(c);
   if (!token) {
     return c.json({ error: "로그인이 필요합니다." }, 401);
   }
@@ -71,10 +82,10 @@ export const requireAdmin = async (c: Context<Env>, next: Next) => {
 
 export const getAuth = (c: Context<Env>): AdminSession => c.get("admin");
 
-// requireAdmin과 같은 쿠키 검증 로직이지만, /public/* 같은 미인증 라우트에서 "로그인한
+// requireAdmin과 같은 세션 검증 로직이지만, /public/* 같은 미인증 라우트에서 "로그인한
 // 관리자면 그 정보를, 아니면 조용히 null"을 알고 싶을 때 쓴다(401로 막지 않는다).
 export const tryGetAdmin = async (c: Context<Env>): Promise<AdminSession | null> => {
-  const token = getCookie(c, SESSION_COOKIE_NAME);
+  const token = readSessionToken(c);
   if (!token) return null;
 
   const db = drizzle(c.env.DB);

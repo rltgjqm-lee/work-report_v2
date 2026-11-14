@@ -612,6 +612,51 @@ export const adminPushSubscriptions = sqliteTable(
   (table) => [index("idx_admin_push_subscriptions_admin").on(table.adminId)],
 );
 
+// 관리자 앱의 갱신 토큰(30일). 앱은 1시간짜리 접속 토큰(admin_sessions)이 끝나면 이 토큰으로
+// 새 접속 토큰을 받는다. 쓸 때마다 새 토큰으로 바꾸고(같은 familyId로 이어짐), 쓴 토큰은
+// usedAt만 찍어 만료까지 남겨둔다 — 이미 쓴 토큰이 다시 들어오면 탈취로 보고 그 familyId
+// (= 그 폰의 앱 로그인)를 통째로 끊는다. DB엔 해시만 저장한다.
+export const adminRefreshTokens = sqliteTable(
+  "admin_refresh_tokens",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    adminId: integer("admin_id")
+      .notNull()
+      .references(() => admins.id),
+    familyId: text("family_id").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    usedAt: text("used_at"),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    index("idx_admin_refresh_tokens_admin").on(table.adminId),
+    index("idx_admin_refresh_tokens_family").on(table.familyId),
+  ],
+);
+
+// 관리자 앱(Android) FCM 토큰 — SOS가 나면 PC 웹 푸시(adminPushSubscriptions)와 별도로
+// 여기 등록된 폰에도 한 번씩 보낸다. 같은 폰이 다시 등록해도 fcmToken unique라 upsert된다.
+export const adminDevices = sqliteTable(
+  "admin_devices",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    adminId: integer("admin_id")
+      .notNull()
+      .references(() => admins.id),
+    fcmToken: text("fcm_token").notNull().unique(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [index("idx_admin_devices_admin").on(table.adminId)],
+);
+
 // 매칭은 됐지만 아직 실제 발송(외부 fetch) 전인 푸시 대기열.
 // Workers 무료 플랜의 "실행당 외부 요청 50개" 한도 때문에, 매칭 즉시 보내지 않고
 // 여기 쌓아뒀다가 실행마다 정해진 개수만큼만 꺼내서 보낸다 (checkDisasterAlerts.ts 참고).

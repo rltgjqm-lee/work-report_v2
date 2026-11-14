@@ -1,11 +1,18 @@
 import { and, eq, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 
 import type { Env } from "../../types";
 
-import { admins, adminSessions } from "../../db/schema";
+import { adminDevices, admins, adminSessions } from "../../db/schema";
+import {
+  consumeRefreshToken,
+  issueAdminAppTokens,
+  revokeAdminAccess,
+  revokeRefreshTokenFamily,
+} from "../../lib/adminAppTokens";
+import { readSessionToken } from "../../lib/authz";
 import { sendEmail } from "../../lib/email";
 import { recordLoginHistory } from "../../lib/loginHistory";
 import { clearLoginFailures, isLoginLocked, recordLoginFailure } from "../../lib/loginRateLimit";
@@ -25,24 +32,27 @@ const generateResetToken = generateSessionToken;
 const hashResetToken = hashSessionToken;
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30분
 
+type DB = ReturnType<typeof drizzle>;
+
 const app = new Hono<Env>();
 
-// 이메일+비밀번호 로그인. 실패 사유(계정 없음/비밀번호 오류/비활성 계정)를 구분해서
-// 응답하지 않는다 — 계정 존재 여부를 외부에 노출하지 않기 위함.
+// 이메일+비밀번호 확인. 실패 사유(계정 없음/비밀번호 오류/비활성 계정)를 구분해서
+// 응답하지 않는다 — 계정 존재 여부를 외부에 노출하지 않기 위함. PC 로그인(쿠키)과 앱
+// 로그인(토큰)이 같은 실패 횟수 제한·로그인 이력을 쓰도록 둘이 이 함수를 같이 부른다.
 const INVALID_CREDENTIALS_MESSAGE = "이메일 또는 비밀번호가 올바르지 않습니다.";
 
-app.post("/login", async (c) => {
+const verifyAdminCredentials = async (c: Context<Env>, db: DB) => {
   const body = await c.req.json<{ email?: string; password?: string }>();
   if (!body.email || !body.password) {
-    return c.json({ error: "이메일과 비밀번호를 입력해주세요." }, 400);
+    return { response: c.json({ error: "이메일과 비밀번호를 입력해주세요." }, 400) };
   }
   const email = body.email.trim().toLowerCase();
   const ipAddress = c.req.header("CF-Connecting-IP") ?? null;
 
-  const db = drizzle(c.env.DB);
-
   if (await isLoginLocked(db, email)) {
-    return c.json({ error: "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요." }, 429);
+    return {
+      response: c.json({ error: "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요." }, 429),
+    };
   }
 
   const rows = await db.select().from(admins).where(eq(admins.email, email));
@@ -56,7 +66,7 @@ app.post("/login", async (c) => {
       success: false,
       ipAddress,
     });
-    return c.json({ error: INVALID_CREDENTIALS_MESSAGE }, 401);
+    return { response: c.json({ error: INVALID_CREDENTIALS_MESSAGE }, 401) };
   }
 
   const valid = await verifyPassword(body.password, admin.passwordHash);
@@ -68,7 +78,7 @@ app.post("/login", async (c) => {
       success: false,
       ipAddress,
     });
-    return c.json({ error: INVALID_CREDENTIALS_MESSAGE }, 401);
+    return { response: c.json({ error: INVALID_CREDENTIALS_MESSAGE }, 401) };
   }
 
   await clearLoginFailures(db, email);
@@ -78,6 +88,15 @@ app.post("/login", async (c) => {
     success: true,
     ipAddress,
   });
+
+  return { admin };
+};
+
+app.post("/login", async (c) => {
+  const db = drizzle(c.env.DB);
+  const verified = await verifyAdminCredentials(c, db);
+  if (verified.response) return verified.response;
+  const { admin } = verified;
 
   const token = generateSessionToken();
   const tokenHash = await hashSessionToken(token);
@@ -95,6 +114,58 @@ app.post("/login", async (c) => {
     path: "/",
     expires: expiresAt,
   });
+
+  return c.json({ ok: true });
+});
+
+// 관리자 앱 로그인 — 쿠키 대신 접속 토큰(1시간)과 갱신 토큰(30일)을 응답 본문으로 준다.
+app.post("/app/login", async (c) => {
+  const db = drizzle(c.env.DB);
+  const verified = await verifyAdminCredentials(c, db);
+  if (verified.response) return verified.response;
+
+  return c.json(await issueAdminAppTokens(db, verified.admin.id));
+});
+
+// 관리자 앱이 접속 토큰이 끝났을 때 부른다. 쓴 갱신 토큰은 다시 못 쓰고 새 토큰 쌍을 받는다.
+app.post("/app/refresh", async (c) => {
+  const body = await c.req.json<{ refreshToken?: string }>();
+  if (!body.refreshToken) {
+    return c.json({ error: "갱신 토큰이 없습니다." }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+  const consumed = await consumeRefreshToken(db, body.refreshToken);
+  if (consumed.status !== "ok") {
+    return c.json({ error: "로그인이 만료되었습니다. 다시 로그인해주세요." }, 401);
+  }
+
+  const rows = await db.select().from(admins).where(eq(admins.id, consumed.adminId));
+  const admin = rows[0];
+  if (!admin || !admin.isActive) {
+    return c.json({ error: "로그인이 만료되었습니다. 다시 로그인해주세요." }, 401);
+  }
+
+  return c.json(await issueAdminAppTokens(db, admin.id, consumed.familyId));
+});
+
+// 관리자 앱 로그아웃 — 접속 토큰, 그 폰의 갱신 토큰 묶음, FCM 토큰을 지운다. 접속 토큰이
+// 이미 만료됐어도 로그아웃은 돼야 하므로 /api 밑(requireAdmin)이 아니라 여기 둔다.
+app.post("/app/logout", async (c) => {
+  const body = await c.req.json<{ refreshToken?: string; fcmToken?: string }>();
+  const db = drizzle(c.env.DB);
+
+  const accessToken = readSessionToken(c);
+  if (accessToken) {
+    const tokenHash = await hashSessionToken(accessToken);
+    await db.delete(adminSessions).where(eq(adminSessions.tokenHash, tokenHash));
+  }
+  if (body.refreshToken) {
+    await revokeRefreshTokenFamily(db, body.refreshToken);
+  }
+  if (body.fcmToken) {
+    await db.delete(adminDevices).where(eq(adminDevices.fcmToken, body.fcmToken));
+  }
 
   return c.json({ ok: true });
 });
@@ -187,8 +258,8 @@ app.post("/reset-password", async (c) => {
     .update(admins)
     .set({ passwordHash, resetTokenHash: null, resetTokenExpiresAt: null })
     .where(eq(admins.id, admin.id));
-  // 재설정하면 탈취된 기존 세션도 전부 끊는다(관리자가 남을 재설정할 때와 동일한 정책).
-  await db.delete(adminSessions).where(eq(adminSessions.adminId, admin.id));
+  // 재설정하면 탈취된 기존 세션과 앱 로그인도 전부 끊는다(관리자가 남을 재설정할 때와 동일한 정책).
+  await revokeAdminAccess(db, admin.id);
 
   return c.json({ ok: true });
 });
