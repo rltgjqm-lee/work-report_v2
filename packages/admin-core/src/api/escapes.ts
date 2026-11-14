@@ -3,6 +3,7 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 import { request } from "../client";
 import type { EscapeLog, EscapeRow, EscapeStatus, LiveWorker } from "../types/escapes";
 import type { SosRow } from "../types/sos";
+import { mobileKeys } from "./mobile";
 
 const escapeKeys = {
   all: ["escapes"] as const,
@@ -53,13 +54,15 @@ const resolveEscape = (id: number, memo?: string) =>
   });
 
 // critical: 이탈이 해결되면 그 사업단의 RESOLVED 이탈 목록(escapeKeys.all — 이 도메인
-// 전체를 한 번에 무효화)과, 안전 관제 지도의 OPEN 이탈(liveMapKeys)이 둘 다 바뀐다.
+// 전체를 한 번에 무효화)과, 안전 관제 지도의 OPEN 이탈(liveMapKeys), 관리자 앱의
+// 안전·홈·구역 화면(mobileKeys)이 전부 바뀐다.
 export const resolveEscapeMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: ({ escapeId, memo }: ResolveEscapeVariables) => resolveEscape(escapeId, memo),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: escapeKeys.all });
       queryClient.invalidateQueries({ queryKey: liveMapKeys.byProgram(variables.programId) });
+      queryClient.invalidateQueries({ queryKey: mobileKeys.all });
     },
   });
 

@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./apps/participant" },
-    { "path": "./apps/admin-web" }
+    { "path": "./apps/admin-web" },
+    { "path": "./apps/admin-mobile" }
   ]
 }

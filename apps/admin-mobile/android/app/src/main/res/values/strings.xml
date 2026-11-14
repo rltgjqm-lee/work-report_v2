@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">워크 세이프 관리자</string>
+    <string name="title_activity_main">워크 세이프 관리자</string>
+    <string name="package_name">com.workreport.admin</string>
+    <string name="custom_url_scheme">com.workreport.admin</string>
+</resources>

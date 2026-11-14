@@ -36,3 +36,10 @@ export const changeMyPassword = (currentPassword: string, newPassword: string) =
     method: "PUT",
     body: JSON.stringify({ currentPassword, newPassword }),
   });
+
+// 관리자 앱이 FCM 토큰을 등록한다(SOS 앱 알림). 같은 토큰이 다른 계정에 있었으면 이 계정으로 옮겨진다.
+export const registerMyDevice = (fcmToken: string) =>
+  request<{ ok: true }>("/api/me/devices", {
+    method: "POST",
+    body: JSON.stringify({ fcmToken }),
+  });

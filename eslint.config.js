@@ -10,7 +10,8 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(["**/dist"]),
+  // android/는 Capacitor 네이티브 프로젝트라 빌드 산출물(번들된 JS)까지 들어 있다
+  globalIgnores(["**/dist", "**/android"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [

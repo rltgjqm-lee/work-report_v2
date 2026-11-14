@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* 관리자 앱 디자인(관리자 앱.dc.html)의 색 — 남색 헤더, SOS 빨강, 이탈 주황.
+   글자색은 흰 배경에서 4.5:1 이상 나오는 값만 쓴다. */
+@theme {
+  --color-accent: #1e3a5f;
+  --color-page: #f2f4f6;
+  --color-ink: #1f2937;
+  --color-ink-sub: #4e5968;
+  --color-ink-muted: #6b7684;
+  --color-line: #eef0f3;
+  --color-soft: #f7f9fb;
+  --color-sos: #dc2626;
+  --color-sos-ink: #b91c1c;
+  --color-sos-soft: #fef2f2;
+  --color-escape: #ea580c;
+  --color-escape-ink: #b45309;
+  --color-escape-soft: #fff7ed;
+  --color-ok: #16a34a;
+  --color-ok-ink: #15803d;
+  --color-ok-soft: #eafaf0;
+  --color-sos-deep: #991b1b;
+  --color-ok-deep: #166534;
+  --color-ink-faint: #9ca3af;
+  --color-input-line: #e5e8eb;
+  --color-switch-off: #c4cad1;
+  --color-accent-pale: #eef2f7;
+  --color-on-accent-error: #fecaca;
+  --color-map: #e8edf2;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}

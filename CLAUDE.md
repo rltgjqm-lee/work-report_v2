@@ -9,6 +9,7 @@
 - `apps/admin-web/` : 관리자 콘솔 (admin.worksafe.co.kr, 로컬 `npm run dev -w apps/admin-web` → 5174). 주소에 /admin을 붙이지 않는다(예전 `/admin/...` 주소는 App.tsx에서 떼고 보낸다)
 - `packages/admin-core/` (`@work-report/admin-core`) : 관리자 웹·관리자 앱이 같이 쓰는 API 파일, 쿼리 옵션, 도메인 타입. 서버 주소는 앱이 `configureClient()`로 넣어준다
 - `packages/shared/` (`@work-report/shared`) : 참여자 앱과 관리자 웹이 같이 쓰는 컴포넌트(`components/atoms`, `components/molecule`), `utils/timeFormat`, `constants/koreanRegions`, `types/form`
+- `apps/admin-mobile/` : 관리자 앱 (Android 전용 Capacitor, appId `com.workreport.admin`, 로컬 `npm run dev -w apps/admin-mobile` → 5175). 쿠키 대신 접속 토큰(1시간)+갱신 토큰(30일, Keystore)으로 인증하고 앱 잠금(지문/PIN)을 풀어야 갱신 토큰을 쓴다. 담당 사업단 전체를 모아 보는 조회는 Worker `/api/mobile/*`(`packages/admin-core/src/api/mobile.ts`), 처리(resolve)는 PC와 같은 뮤테이션을 쓴다
 - `apps/participant/` : 참여자 앱 (웹 worksafe.co.kr + Capacitor Android/iOS, 로컬 `npm run dev -w apps/participant` → 5173). 활동일지 등 메인 플로우 페이지는 `src/user/pages/`
 - 앱별 명령은 `npm run <script> -w apps/<앱>` (예: `npm run ota:publish -w apps/participant`, `npm run cap:sync -w apps/participant`). 프론트 타입 체크는 루트에서 `npx tsc -b --force` 하나로 참여자 앱·관리자 웹을 같이 검사한다
 
@@ -81,7 +82,7 @@ const handleModalClose = () => setModalOpen(false);
 
 ### 컴포넌트 폴더 구조 (atomic design)
 
-`packages/shared/src/components/`(참여자 앱·관리자 웹 공용)와 `src/user/components/`(참여자 앱 전용)는 `atoms/`, `molecule/`, `organism/`만 사용합니다. 새로운 최상위 카테고리 폴더(예: `appshell/`)를 임의로 만들지 않습니다.
+`packages/shared/src/components/`(참여자 앱·관리자 웹 공용), `src/user/components/`(참여자 앱 전용), `apps/admin-mobile/src/components/`(관리자 앱)는 `atoms/`, `molecule/`, `organism/`만 사용합니다. 새로운 최상위 카테고리 폴더(예: `appshell/`)를 임의로 만들지 않습니다.
 
 - `atoms/`: 단일 요소 primitive (예: `Button.tsx`, `TextInput.tsx`, 스타일 상수)
 - `molecule/`: atom 여러 개를 조합한 작은 단위 (예: `LabeledInput.tsx`, `ConfirmModal.tsx`)
