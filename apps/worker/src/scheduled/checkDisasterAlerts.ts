@@ -363,6 +363,12 @@ export const checkDisasterAlerts = async (env: Env["Bindings"]): Promise<void> =
 
   const db = drizzle(env.DB);
 
-  await enqueueNewMatches(db, env);
+  // 행안부 API가 응답을 안 하거나(522·시간 초과) 실패해도 이번 실행을 오류로 끝내지 않는다 —
+  // 다음 실행(1분 뒤)에서 다시 조회하면 되고, 이미 대기열에 쌓인 알림 발송은 막지 않아야 한다.
+  try {
+    await enqueueNewMatches(db, env);
+  } catch (error) {
+    console.warn("재난문자 조회 실패, 다음 실행에서 다시 조회:", error);
+  }
   await drainPushQueue(db, env);
 };

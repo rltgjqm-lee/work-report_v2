@@ -18,6 +18,10 @@ export type DisasterMessagePage = {
 const DISASTER_API_BASE_URL = "https://www.safetydata.go.kr/V2/api/DSSP-IF-00247";
 export const MAX_ROWS_PER_PAGE = 1000;
 
+// 행안부 서버가 응답을 안 하면 Cloudflare가 약 20초 기다린 뒤 522를 준다(평일 하루 70건 안팎) —
+// 매분 다시 조회하므로 그렇게 오래 기다릴 이유가 없어 이 시간 안에 응답이 없으면 포기한다.
+const FETCH_TIMEOUT_MS = 8 * 1000;
+
 type RawDisasterMessage = {
   SN?: string | number;
   RCPTN_RGN_NM?: string;
@@ -41,7 +45,7 @@ export const fetchDisasterMessagesPage = async (
   url.searchParams.set("numOfRows", String(MAX_ROWS_PER_PAGE));
   url.searchParams.set("crtDt", crtDt);
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!res.ok) {
     throw new Error(`재난문자 API 호출 실패: ${res.status}`);
   }
