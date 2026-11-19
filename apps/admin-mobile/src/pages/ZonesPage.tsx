@@ -109,10 +109,8 @@ const ZonesPage = () => {
     <div className="flex min-h-full flex-col">
       <header className="flex flex-none flex-col gap-5 bg-accent px-5 pt-[22px] pb-6">
         <div>
-          <p className="text-[15px] font-extrabold text-white/85">관제 구역</p>
-          <h1 className="mt-1.5 text-[26px] font-extrabold text-white">
-            수요처 {allZones.length}곳
-          </h1>
+          <p className="text-[15px] font-extrabold text-white/85">수요처</p>
+          <h1 className="mt-1.5 text-[26px] font-extrabold text-white">전체 {allZones.length}곳</h1>
           <p className="mt-1.5 text-sm font-semibold text-white/85">
             구역을 벗어나면 담당자에게 이탈 알림이 가요
           </p>

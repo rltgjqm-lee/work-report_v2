@@ -8,11 +8,11 @@ import { mobileSafetyQueryOptions } from "@work-report/admin-core/api/mobile";
 const TABS = [
   { path: "/", label: "홈", Icon: House },
   { path: "/safety", label: "안전", Icon: ShieldAlert },
-  { path: "/zones", label: "구역", Icon: MapPinned },
+  { path: "/zones", label: "수요처", Icon: MapPinned },
   { path: "/me", label: "내 정보", Icon: UserRound },
 ];
 
-// 하단 탭 4개(홈/안전/구역/내 정보). 안전 탭엔 미처리 SOS + 진행 중 이탈 수를 붙인다.
+// 하단 탭 4개(홈/안전/수요처/내 정보). 안전 탭엔 미처리 SOS + 진행 중 이탈 수를 붙인다.
 const TabLayout = () => {
   const { data: safety } = useQuery(mobileSafetyQueryOptions);
   const openCount =
