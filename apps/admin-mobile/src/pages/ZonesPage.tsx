@@ -48,7 +48,7 @@ const ZoneCard = ({ zone }: { zone: MobileZone }) => {
       </div>
       <div className="flex gap-2">
         {[
-          { label: "배치 인원", value: `${zone.assignedCount}명` },
+          { label: "참여자", value: `${zone.assignedCount}명` },
           { label: "관제 범위", value: areaLabel(zone) },
           { label: "근무시간", value: zone.scheduleLabel ?? "미설정" },
         ].map((stat) => (

@@ -97,7 +97,7 @@ const ZoneDetailPage = () => {
         </div>
         <HeaderStats
           stats={[
-            { label: "배치 인원", value: `${zone.assignedCount}명` },
+            { label: "참여자", value: `${zone.assignedCount}명` },
             { label: "근무 중", value: `${zone.workingCount}명` },
             { label: "오늘 이탈", value: `${escapeTodayCount}건` },
           ]}
@@ -141,7 +141,7 @@ const ZoneDetailPage = () => {
           ]}
         />
 
-        <h2 className="mt-1 text-lg font-extrabold text-ink">배치 인원 {members.length}명</h2>
+        <h2 className="mt-1 text-lg font-extrabold text-ink">참여자 {members.length}명</h2>
         <Card className="flex flex-col px-[18px] py-1.5">
           {members.length === 0 ? (
             <p className="py-5 text-center text-sm font-bold text-ink-muted">
