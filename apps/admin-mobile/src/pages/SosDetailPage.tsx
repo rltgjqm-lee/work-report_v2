@@ -172,18 +172,24 @@ const SosDetailPage = () => {
               </span>
               {hasPosition && (
                 <span className="text-[13px] font-bold text-ink-muted">
-                  SOS를 누르기 전 마지막으로 보고된 위치예요
+                  SOS를 누르기 전 마지막으로 보고된
+                  <br />
+                  위치예요
                 </span>
               )}
             </span>
             {hasPosition && (
-              <a
-                href={`geo:${sos.lat},${sos.lng}?q=${sos.lat},${sos.lng}(${encodeURIComponent(sos.participantName)})`}
-                className="flex flex-none items-center gap-1 rounded-xl bg-accent/10 px-3 py-2 text-[13px] font-extrabold text-accent"
-              >
-                <Navigation size={14} aria-hidden="true" />
-                길찾기
-              </a>
+              // 공용 위치 주소(geo:)를 카카오맵은 좌표 대신 검색어로 읽어 "검색 결과 없음"이 뜬다
+              <span className="flex flex-none flex-col items-center gap-1">
+                <a
+                  href={`geo:${sos.lat},${sos.lng}?q=${sos.lat},${sos.lng}(${encodeURIComponent(`SOS ${sos.participantName}`)})`}
+                  className="flex items-center gap-1 rounded-xl bg-accent/10 px-3 py-2 text-[13px] font-extrabold text-accent"
+                >
+                  <Navigation size={14} aria-hidden="true" />
+                  길찾기
+                </a>
+                <span className="text-[11px] font-bold text-ink-muted">카카오맵 미지원</span>
+              </span>
             )}
           </div>
         </Card>
