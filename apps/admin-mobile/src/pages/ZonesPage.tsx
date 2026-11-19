@@ -11,19 +11,15 @@ import StatusChip from "../components/atoms/StatusChip";
 import HeaderStats from "../components/molecule/HeaderStats";
 import { areaLabel, hasArea } from "../lib/zones";
 
-type ZoneFilter = "all" | "escape" | "noSchedule" | "noArea";
+type ZoneFilter = "all" | "escape";
 
 const ZONE_FILTERS: { id: ZoneFilter; label: string }[] = [
   { id: "all", label: "전체" },
   { id: "escape", label: "이탈 발생" },
-  { id: "noSchedule", label: "시간 미설정" },
-  { id: "noArea", label: "구역 미설정" },
 ];
 
 const matchesFilter = (zone: MobileZone, filter: ZoneFilter) => {
   if (filter === "escape") return zone.escapeCount > 0;
-  if (filter === "noSchedule") return zone.scheduleLabel === null;
-  if (filter === "noArea") return !hasArea(zone);
   return true;
 };
 

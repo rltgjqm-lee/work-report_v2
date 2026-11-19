@@ -103,7 +103,7 @@ const HomePage = () => {
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-[15px] font-extrabold text-ink">
-                      SOS {sos.participantName} · {formatElapsedSince(sos.triggeredAt, now)} 전
+                      SOS {sos.participantName} · {formatClock(sos.triggeredAt, now)}
                     </span>
                     <span className="truncate text-[13px] font-bold text-sos-ink">
                       {sos.demandSiteName ?? sos.programName} · {zoneBadgeText(sos.outsideM)}

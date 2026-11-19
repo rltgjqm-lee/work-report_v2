@@ -18,6 +18,7 @@ import {
   formatClock,
   formatDuration,
   formatMeters,
+  formatTeamName,
   useNow,
 } from "../lib/format";
 
@@ -100,7 +101,7 @@ const EscapeDetailPage = () => {
               </span>
             </div>
             <p className="mt-1.5 text-sm leading-normal font-semibold text-white/85">
-              {[escape.programName, escape.groupName].filter(Boolean).join(" ")}
+              {formatTeamName(escape.programName, escape.groupName)}
               <br />
               {escape.demandSiteName ?? "배정 수요처 없음"}
             </p>

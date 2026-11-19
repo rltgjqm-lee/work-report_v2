@@ -17,6 +17,7 @@ import {
   formatClock,
   formatElapsedSince,
   formatMeters,
+  formatTeamName,
   useNow,
 } from "../lib/format";
 
@@ -89,7 +90,7 @@ const SosDetailPage = () => {
               </span>
             </div>
             <p className="mt-1.5 text-sm leading-normal font-semibold text-white/85">
-              {[sos.programName, sos.groupName].filter(Boolean).join(" ")}
+              {formatTeamName(sos.programName, sos.groupName)}
               <br />
               {sos.demandSiteName ?? "배정 수요처 없음"}
             </p>
@@ -97,7 +98,7 @@ const SosDetailPage = () => {
         </div>
         <HeaderStats
           stats={[
-            { label: "요청 시각", value: formatClock(sos.triggeredAt, now) },
+            { label: "요청 시각", value: formatClock(sos.triggeredAt, now), isWide: true },
             isOpen
               ? { label: "경과", value: formatElapsedSince(sos.triggeredAt, now) }
               : {

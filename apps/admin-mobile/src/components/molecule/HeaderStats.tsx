@@ -3,6 +3,8 @@ import { Fragment } from "react";
 type HeaderStat = {
   label: string;
   value: string;
+  // 날짜가 붙는 시각처럼 긴 값은 칸을 넓힌다
+  isWide?: boolean;
 };
 
 type HeaderStatsProps = {
@@ -15,7 +17,9 @@ const HeaderStats = ({ stats }: HeaderStatsProps) => (
     {stats.map((stat, index) => (
       <Fragment key={stat.label}>
         {index > 0 && <div className="my-0.5 w-px bg-white/25" aria-hidden="true" />}
-        <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+        <div
+          className={`flex min-w-0 flex-col items-center gap-1 ${stat.isWide ? "flex-[1.6]" : "flex-1"}`}
+        >
           <span className="text-xs font-bold text-white/80">{stat.label}</span>
           <span className="truncate px-1 text-[19px] font-extrabold text-white">{stat.value}</span>
         </div>

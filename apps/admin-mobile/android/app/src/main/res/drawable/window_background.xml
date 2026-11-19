@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 15부터 앱이 상태바 색을 정할 수 없어(edge-to-edge 강제) 상태바 밑으로 이 창 배경이 비친다.
+     위쪽만 헤더와 같은 남색으로 칠해 흰 상태바 글자가 보이게 하고, 나머지(내비게이션 바 쪽)는 흰색으로 둔다.
+     남색 띠는 상태바보다 넉넉히 높게 잡는다 — 넘친 부분은 웹 화면에 가려진다. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <color android:color="#FFFFFF" />
+    </item>
+    <item
+        android:gravity="top|fill_horizontal"
+        android:height="96dp">
+        <color android:color="#1E3A5F" />
+    </item>
+</layer-list>

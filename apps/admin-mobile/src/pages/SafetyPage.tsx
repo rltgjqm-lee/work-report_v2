@@ -12,6 +12,7 @@ import {
   formatDuration,
   formatElapsedSince,
   formatMeters,
+  formatTeamName,
   useNow,
   zoneBadgeText,
 } from "../lib/format";
@@ -24,7 +25,7 @@ const SEGMENT_BUTTON_BASE =
 const VIEW_BUTTON_BASE = "h-11 flex-1 rounded-[14px] text-[15px] font-extrabold";
 
 const teamText = (item: { programName: string; groupName: string | null }) =>
-  [item.programName, item.groupName].filter(Boolean).join(" ");
+  formatTeamName(item.programName, item.groupName);
 
 const SosCard = ({ sos, now }: { sos: MobileSos; now: Date }) => {
   const isOpen = sos.status === "OPEN";
@@ -54,9 +55,7 @@ const SosCard = ({ sos, now }: { sos: MobileSos; now: Date }) => {
           </span>
         </span>
         <span className="flex-none text-[13px] font-bold text-ink-muted">
-          {isOpen
-            ? `${formatElapsedSince(sos.triggeredAt, now)} 전`
-            : formatClock(sos.triggeredAt, now)}
+          {formatClock(sos.triggeredAt, now)}
         </span>
       </div>
       <div className="flex items-center gap-2 rounded-xl bg-soft px-3 py-2.5">

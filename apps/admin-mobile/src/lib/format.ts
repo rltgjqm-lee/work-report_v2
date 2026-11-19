@@ -35,6 +35,11 @@ export const formatDuration = (ms: number) => {
 export const formatElapsedSince = (iso: string, now = new Date()) =>
   formatDuration(now.getTime() - new Date(iso).getTime());
 
+// 사업단 이름 뒤에 조 이름을 붙인다 — 사업단 이름에 이미 조가 들어 있으면("대덕재난안전지킴이 4조"
+// + "4조") 한 번만 쓴다
+export const formatTeamName = (programName: string, groupName: string | null) =>
+  groupName && !programName.includes(groupName) ? `${programName} ${groupName}` : programName;
+
 export const formatMeters = (meters: number) => `${meters.toLocaleString("ko-KR")}m`;
 
 // 홈 상단 "2026년 11월 14일"
