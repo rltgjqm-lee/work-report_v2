@@ -122,7 +122,7 @@ const BulkAttendanceCorrectionModal = ({
               출퇴근 시간
             </label>
             <select
-              className={selectClass}
+              className={`${selectClass} w-full`}
               value={form.timeMode}
               onChange={(event) =>
                 setForm((form) => ({
@@ -168,7 +168,7 @@ const BulkAttendanceCorrectionModal = ({
               상태
             </label>
             <select
-              className={selectClass}
+              className={`${selectClass} w-full`}
               value={form.status}
               onChange={(event) =>
                 setForm((form) => ({ ...form, status: event.target.value as BulkForm["status"] }))
