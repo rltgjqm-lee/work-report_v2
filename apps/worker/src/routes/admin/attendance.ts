@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -7,6 +8,7 @@ import type { Env } from "../../types";
 import { attendanceLogs, participantGroupOverrides, participants, programs } from "../../db/schema";
 import { canAccessProgram, getAuth } from "../../lib/authz";
 import { getKstNow } from "../../lib/kst";
+import { resolveGroupShift, type GroupShift } from "../../lib/scheduling";
 
 const app = new Hono<Env>();
 
@@ -23,6 +25,11 @@ const loadAttendanceLogWithProgram = async (db: ReturnType<typeof drizzle>, logI
 };
 
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
+
+// 일괄 수정 한 번에 받는 최대 건수 — 하루치 사업단 전체(지금 가장 큰 곳이 24명)를 덮는다.
+// D1은 쿼리 하나에 바인딩 100개까지라, 참여자 id(최대 이 값) + 날짜(한 달 최대 31개)를
+// 같이 넣는 inArray 조회가 그 안에 들어가게 잡았다.
+const BULK_ATTENDANCE_MAX_TARGETS = 60;
 
 // 휴대폰 미소지 등으로 참여자가 직접 출퇴근을 못 찍은 날, 관리자가 대신 근무 기록을
 // 만든다. 위치 정보는 없으므로 전부 null로 남고, 강제수정(PUT)과 같은 방식으로 사유를
@@ -126,6 +133,194 @@ app.post("/", async (c) => {
     .returning();
 
   return c.json(result[0], 201);
+});
+
+type BulkAttendanceTarget = { participantId: number; workDate: string };
+
+type BulkAttendanceSkip = BulkAttendanceTarget & { reason: string };
+
+// 여러 참여자·날짜를 한 번에 같은 내용으로 고친다 — 단체 교육처럼 조 전체가 앱을 못 쓴 날을
+// 한 명씩 고치지 않게 하기 위함이다. 그날 기록이 있으면 강제수정(PUT)과 같이 고치고, 없으면
+// (미출근) 관리자등록(POST)과 같이 새로 만든다. timeMode가 SHIFT면 사람마다 그날 실제로
+// 근무한 조(조 임시배정 우선)의 근무시간을 쓴다 — 조마다 시간이 달라도 한 번에 정상 처리된다.
+// 비활성화된 기록·미래 날짜·조가 없는데 SHIFT인 경우는 건너뛰고 사유를 돌려준다.
+app.post("/bulk", async (c) => {
+  const auth = getAuth(c);
+  const db = drizzle(c.env.DB);
+
+  const body = await c.req.json<{
+    targets?: BulkAttendanceTarget[];
+    timeMode?: "SHIFT" | "CUSTOM";
+    clockIn?: string; // "HH:MM" — CUSTOM일 때만
+    clockOut?: string; // "HH:MM" — CUSTOM일 때만
+    status?: "NORMAL" | "LATE" | "EARLY_LEAVE";
+    reason?: string;
+  }>();
+
+  const targets = body.targets ?? [];
+  if (targets.length === 0) return c.json({ error: "수정할 근무를 선택해주세요." }, 400);
+  if (targets.length > BULK_ATTENDANCE_MAX_TARGETS) {
+    return c.json(
+      { error: `한 번에 ${BULK_ATTENDANCE_MAX_TARGETS}건까지만 수정할 수 있습니다.` },
+      400,
+    );
+  }
+  if (!body.reason?.trim()) return c.json({ error: "수정 사유(reason)는 필수입니다." }, 400);
+  const reason = body.reason.trim();
+  const timeMode = body.timeMode ?? "SHIFT";
+  if (timeMode === "CUSTOM") {
+    if (!body.clockIn || !TIME_PATTERN.test(body.clockIn)) {
+      return c.json({ error: "출근시간을 입력해주세요." }, 400);
+    }
+    if (body.clockOut && !TIME_PATTERN.test(body.clockOut)) {
+      return c.json({ error: "퇴근시간 형식이 올바르지 않습니다." }, 400);
+    }
+    if (body.clockOut && body.clockOut <= body.clockIn) {
+      return c.json({ error: "퇴근시간은 출근시간보다 늦어야 합니다." }, 400);
+    }
+  }
+
+  const participantIds = [...new Set(targets.map((target) => target.participantId))];
+  const workDates = [...new Set(targets.map((target) => target.workDate))];
+  const [participantRows, existingLogs, groupOverrideRows] = await Promise.all([
+    db.select().from(participants).where(inArray(participants.id, participantIds)),
+    db
+      .select()
+      .from(attendanceLogs)
+      .where(
+        and(
+          inArray(attendanceLogs.participantId, participantIds),
+          inArray(attendanceLogs.workDate, workDates),
+        ),
+      ),
+    db
+      .select()
+      .from(participantGroupOverrides)
+      .where(
+        and(
+          inArray(participantGroupOverrides.participantId, participantIds),
+          inArray(participantGroupOverrides.date, workDates),
+        ),
+      ),
+  ]);
+  const participantById = new Map(
+    participantRows.map((participant) => [participant.id, participant]),
+  );
+
+  const programIds = [...new Set(participantRows.map((participant) => participant.programId))];
+  const programRows = programIds.length
+    ? await db.select().from(programs).where(inArray(programs.id, programIds))
+    : [];
+  if (programRows.some((program) => !canAccessProgram(auth, program))) {
+    return c.json({ error: "권한이 없습니다." }, 403);
+  }
+
+  const today = getKstNow().date;
+  const now = new Date().toISOString();
+  const shiftCache = new Map<string, Promise<GroupShift | null>>();
+  const getShift = (groupId: number, workDate: string) => {
+    const key = `${groupId}|${workDate}`;
+    let cached = shiftCache.get(key);
+    if (!cached) {
+      cached = resolveGroupShift(db, groupId, workDate);
+      shiftCache.set(key, cached);
+    }
+    return cached;
+  };
+
+  const skipped: BulkAttendanceSkip[] = [];
+  const statements: BatchItem<"sqlite">[] = [];
+  let createdCount = 0;
+  let updatedCount = 0;
+
+  for (const target of targets) {
+    const participant = participantById.get(target.participantId);
+    if (!participant) {
+      skipped.push({ ...target, reason: "참여자를 찾을 수 없습니다." });
+      continue;
+    }
+    if (target.workDate > today) {
+      skipped.push({ ...target, reason: "오늘 이후 날짜입니다." });
+      continue;
+    }
+    const existing = existingLogs.find(
+      (log) => log.participantId === target.participantId && log.workDate === target.workDate,
+    );
+    if (existing?.status === "INVALID") {
+      skipped.push({ ...target, reason: "비활성화된 기록입니다. 먼저 활성화해주세요." });
+      continue;
+    }
+
+    const groupId =
+      groupOverrideRows.find(
+        (override) =>
+          override.participantId === target.participantId && override.date === target.workDate,
+      )?.groupId ??
+      existing?.groupId ??
+      participant.groupId;
+
+    let clockInTime = body.clockIn;
+    let clockOutTime = body.clockOut;
+    if (timeMode === "SHIFT") {
+      const shift = groupId ? await getShift(groupId, target.workDate) : null;
+      if (!shift || shift.shiftEnd <= shift.shiftStart) {
+        skipped.push({ ...target, reason: "조 근무시간이 없어 시간을 정할 수 없습니다." });
+        continue;
+      }
+      clockInTime = shift.shiftStart;
+      clockOutTime = shift.shiftEnd;
+    }
+
+    const toIso = (time: string) => `${target.workDate}T${time}:00.000Z`;
+    const clockIn = clockInTime ? toIso(clockInTime) : (existing?.clockIn ?? null);
+    const clockOut = clockOutTime ? toIso(clockOutTime) : (existing?.clockOut ?? null);
+    const totalMinutes =
+      clockIn && clockOut
+        ? Math.floor((new Date(clockOut).getTime() - new Date(clockIn).getTime()) / 60000)
+        : (existing?.totalMinutes ?? null);
+
+    if (existing) {
+      statements.push(
+        db
+          .update(attendanceLogs)
+          .set({
+            clockIn,
+            clockOut,
+            totalMinutes,
+            status: body.status ?? existing.status,
+            note: existing.note ? `${existing.note}\n[수동수정] ${reason}` : `[수동수정] ${reason}`,
+            correctedByAdminId: auth.id,
+            correctedAt: now,
+          })
+          .where(eq(attendanceLogs.id, existing.id)),
+      );
+      updatedCount += 1;
+    } else {
+      statements.push(
+        db.insert(attendanceLogs).values({
+          participantId: participant.id,
+          groupId,
+          programId: participant.programId,
+          workDate: target.workDate,
+          clockIn,
+          clockOut,
+          totalMinutes,
+          status: body.status ?? "NORMAL",
+          note: `[관리자등록] ${reason}`,
+          correctedByAdminId: auth.id,
+          correctedAt: now,
+        }),
+      );
+      createdCount += 1;
+    }
+  }
+
+  if (statements.length > 0) {
+    const [firstStatement, ...restStatements] = statements;
+    await db.batch([firstStatement, ...restStatements]);
+  }
+
+  return c.json({ createdCount, updatedCount, skipped });
 });
 
 // 사유는 프론트에도 보이는 note에 남기고, 누가/언제 고쳤는지는 correctedByAdminId/

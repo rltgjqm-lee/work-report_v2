@@ -11,8 +11,8 @@ import {
 } from "@work-report/admin-core/api/attendance";
 import { groupsQueryOptions } from "@work-report/admin-core/api/groups";
 import type { AttendanceStats } from "@work-report/admin-core/types/attendance";
-
 import { getLocalToday, getLocalYearMonth } from "@work-report/shared/utils/timeFormat";
+
 import { useToast } from "../../context/useToast";
 import { usePagination } from "../../hooks/usePagination";
 
@@ -27,6 +27,9 @@ import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";
 
 import { rowActionBtnClass, selectClass } from "../../uiClasses";
+import BulkAttendanceCorrectionModal, {
+  type BulkAttendanceCorrectionTarget,
+} from "./BulkAttendanceCorrectionModal";
 
 const STATUS_LABEL: Record<string, string> = {
   NORMAL: "정상",
@@ -93,6 +96,26 @@ const ROWS_PER_PAGE = 10;
 type AttendanceListItem =
   { kind: "absence"; absence: AttendanceAbsence } | { kind: "log"; row: AttendanceRow };
 
+// 일괄 수정 체크박스의 선택 키 — 미출근 행은 근무 기록 id가 없어서 참여자+날짜로 구분한다.
+const toSelectionKey = (participantId: number, workDate: string) => `${participantId}|${workDate}`;
+
+const toCorrectionTarget = (item: AttendanceListItem): BulkAttendanceCorrectionTarget =>
+  item.kind === "absence"
+    ? {
+        participantId: item.absence.participantId,
+        workDate: item.absence.workDate,
+        participantName: item.absence.participantName,
+      }
+    : {
+        participantId: item.row.log.participantId,
+        workDate: item.row.log.workDate,
+        participantName: item.row.participantName,
+      };
+
+// 비활성화된 기록은 먼저 활성화해야 고칠 수 있어서 일괄 선택에서 뺀다.
+const isSelectable = (item: AttendanceListItem) =>
+  item.kind === "absence" || item.row.log.status !== "INVALID";
+
 interface CorrectionForm {
   clockIn: string;
   clockOut: string;
@@ -137,6 +160,9 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
 
   const [correctionTarget, setCorrectionTarget] = useState<AttendanceRow | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<AttendanceRow | null>(null);
+  // 미출근 한 건 수정과 여러 건 일괄 수정이 같은 모달을 쓴다
+  const [bulkTargets, setBulkTargets] = useState<BulkAttendanceCorrectionTarget[] | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set());
   const [correctionForm, setCorrectionForm] = useState<CorrectionForm>({
     clockIn: "",
     clockOut: "",
@@ -196,7 +222,20 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
     setPage(1);
+    setSelectedKeys(new Set());
   }
+
+  const selectableItems = listItems.filter(isSelectable);
+  const selectedItems = selectableItems.filter((item) => {
+    const target = toCorrectionTarget(item);
+    return selectedKeys.has(toSelectionKey(target.participantId, target.workDate));
+  });
+  const pageSelectableKeys = pageItems.filter(isSelectable).map((item) => {
+    const target = toCorrectionTarget(item);
+    return toSelectionKey(target.participantId, target.workDate);
+  });
+  const isPageAllSelected =
+    pageSelectableKeys.length > 0 && pageSelectableKeys.every((key) => selectedKeys.has(key));
 
   // 서버가 준 stats는 (수요처로 걸렀다면 그 기준으로) 이미 정확하다 — 그 외 필터로 더
   // 좁혔을 때만 직접 다시 센다.
@@ -257,6 +296,36 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
         onError: (error) => alert(error instanceof Error ? error.message : "수정에 실패했습니다."),
       },
     );
+  };
+
+  const handleRowCheckboxChange = (key: string) => {
+    setSelectedKeys((selectedKeys) => {
+      const next = new Set(selectedKeys);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handlePageSelectAllCheckboxChange = () => {
+    setSelectedKeys((selectedKeys) => {
+      const next = new Set(selectedKeys);
+      pageSelectableKeys.forEach((key) => (isPageAllSelected ? next.delete(key) : next.add(key)));
+      return next;
+    });
+  };
+
+  const handleAbsenceCorrectButtonClick = (absence: AttendanceAbsence) => {
+    setBulkTargets([toCorrectionTarget({ kind: "absence", absence })]);
+  };
+
+  const handleBulkCorrectButtonClick = () => {
+    setBulkTargets(selectedItems.map(toCorrectionTarget));
+  };
+
+  const handleBulkCorrectionSaved = () => {
+    setBulkTargets(null);
+    setSelectedKeys(new Set());
   };
 
   const handleDeactivateButtonClick = (row: AttendanceRow) => {
@@ -352,15 +421,31 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
             <SearchInput value={search} onChange={setSearch} placeholder="참여자 이름 검색" />
           </div>
           <div className="flex items-center gap-2.5">
+            <Button
+              variant="ghost"
+              disabled={selectedItems.length === 0}
+              onClick={handleBulkCorrectButtonClick}
+            >
+              선택 {selectedItems.length}건 일괄 수정
+            </Button>
             <MonthPicker value={month} onChange={setMonth} />
             <FilterSelect value={dayFilter} onChange={setDayFilter} options={dayFilterOptions} />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1860px] table-fixed border-collapse">
+          <table className="w-full min-w-[1900px] table-fixed border-collapse">
             <thead>
               <tr>
+                <th className="w-[44px] bg-admin-surface-header pl-5 py-[11px] border-b border-admin-border-subtle">
+                  <input
+                    type="checkbox"
+                    aria-label="이 페이지 전체 선택"
+                    checked={isPageAllSelected}
+                    disabled={pageSelectableKeys.length === 0}
+                    onChange={handlePageSelectAllCheckboxChange}
+                  />
+                </th>
                 <th className="w-[110px] text-left text-[11px] font-bold uppercase tracking-wide text-text-subtle bg-admin-surface-header px-5 py-[11px] border-b border-admin-border-subtle">
                   근무일
                 </th>
@@ -404,11 +489,20 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
               {pageItems.map((item) => {
                 if (item.kind === "absence") {
                   const { absence } = item;
+                  const selectionKey = toSelectionKey(absence.participantId, absence.workDate);
                   return (
                     <tr
                       key={`absence-${absence.participantId}-${absence.workDate}`}
                       className="hover:bg-admin-row-hover"
                     >
+                      <td className="pl-5 py-[13px] border-b border-border-faint">
+                        <input
+                          type="checkbox"
+                          aria-label={`${absence.participantName} ${absence.workDate} 선택`}
+                          checked={selectedKeys.has(selectionKey)}
+                          onChange={() => handleRowCheckboxChange(selectionKey)}
+                        />
+                      </td>
                       <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                         {absence.workDate}
                       </td>
@@ -437,11 +531,19 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                       >
                         -
                       </td>
-                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint" />
+                      <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
+                        <button
+                          className={rowActionBtnClass}
+                          onClick={() => handleAbsenceCorrectButtonClick(absence)}
+                        >
+                          수정
+                        </button>
+                      </td>
                     </tr>
                   );
                 }
                 const { row } = item;
+                const selectionKey = toSelectionKey(row.log.participantId, row.log.workDate);
                 return (
                   <tr
                     key={row.log.id}
@@ -451,6 +553,15 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
                         : "hover:bg-admin-row-hover"
                     }
                   >
+                    <td className="pl-5 py-[13px] border-b border-border-faint">
+                      <input
+                        type="checkbox"
+                        aria-label={`${row.participantName} ${row.log.workDate} 선택`}
+                        checked={selectedKeys.has(selectionKey)}
+                        disabled={row.log.status === "INVALID"}
+                        onChange={() => handleRowCheckboxChange(selectionKey)}
+                      />
+                    </td>
                     <td className="px-5 py-[13px] text-[13px] border-b border-border-faint whitespace-nowrap">
                       {row.log.workDate}
                     </td>
@@ -573,7 +684,7 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
               {listItems.length === 0 && (
                 <tr>
                   <td
-                    colSpan={13}
+                    colSpan={14}
                     className="px-5 py-8 text-center text-[13px] text-admin-text-placeholder"
                   >
                     {isFiltered
@@ -669,6 +780,16 @@ const AttendanceTabPanel = ({ programId, demandSiteId }: AttendanceTabPanelProps
             </div>
           </div>
         </div>
+      )}
+
+      {bulkTargets && (
+        <BulkAttendanceCorrectionModal
+          programId={programId}
+          month={month}
+          targets={bulkTargets}
+          onClose={() => setBulkTargets(null)}
+          onSaved={handleBulkCorrectionSaved}
+        />
       )}
 
       {deactivateTarget && (

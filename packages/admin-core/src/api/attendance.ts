@@ -91,6 +91,46 @@ export const correctAttendanceMutationOptions = (queryClient: QueryClient) =>
     },
   });
 
+export type BulkAttendanceTarget = { participantId: number; workDate: string };
+
+export type BulkCorrectAttendanceResult = {
+  createdCount: number;
+  updatedCount: number;
+  skipped: (BulkAttendanceTarget & { reason: string })[];
+};
+
+export interface BulkCorrectAttendanceVariables {
+  // 서버로 보내는 값이 아니라, 성공 후 어느 월별 근무 목록을 무효화할지 찾기 위한 값이다.
+  programId: number;
+  month: string;
+  data: {
+    targets: BulkAttendanceTarget[];
+    // SHIFT: 사람마다 그날 조 근무시간으로, CUSTOM: 아래 시간으로 모두 같게
+    timeMode: "SHIFT" | "CUSTOM";
+    clockIn?: string; // "HH:MM"
+    clockOut?: string; // "HH:MM"
+    status: "NORMAL" | "LATE" | "EARLY_LEAVE";
+    reason: string;
+  };
+}
+
+// 그날 기록이 있으면 고치고, 없으면(미출근) 새로 만든다 — 미출근 한 건 수정도 이걸로 한다.
+const bulkCorrectAttendance = (data: BulkCorrectAttendanceVariables["data"]) =>
+  request<BulkCorrectAttendanceResult>("/api/attendance/bulk", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const bulkCorrectAttendanceMutationOptions = (queryClient: QueryClient) =>
+  mutationOptions({
+    mutationFn: ({ data }: BulkCorrectAttendanceVariables) => bulkCorrectAttendance(data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: attendanceKeys.monthly(variables.programId, variables.month),
+      });
+    },
+  });
+
 export interface DeactivateAttendanceVariables {
   logId: number;
   programId: number;
