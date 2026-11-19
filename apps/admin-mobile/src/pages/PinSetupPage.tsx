@@ -55,7 +55,7 @@ const PinSetupPage = ({ mode }: PinSetupPageProps) => {
         <br />
         5번 틀리면 로그아웃돼요.
       </p>
-      <div className="flex flex-1 flex-col justify-center py-10">
+      <div className="flex w-full flex-1 flex-col items-center justify-center py-10">
         <PinPad value={pin} disabled={isSaving} onChange={handlePinChange} />
       </div>
       <p className="min-h-6 text-center text-sm font-bold text-on-accent-error">{errorMessage}</p>
