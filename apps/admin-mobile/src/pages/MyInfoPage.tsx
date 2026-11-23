@@ -12,6 +12,11 @@ import Card from "../components/atoms/Card";
 import ToggleSwitch from "../components/atoms/ToggleSwitch";
 import { ROLE_LABELS } from "../lib/format";
 import { checkPushPermission, registerForPushNotifications } from "../lib/pushNotifications";
+import {
+  getSosAlarmSettings,
+  openSosFullScreenSettings,
+  setSosFullScreenEnabled,
+} from "../lib/sosAlarm";
 
 const SettingRow = ({
   title,
@@ -40,6 +45,8 @@ const MyInfoPage = () => {
   const { profile, isLockEnabled, disableLock, logout, pushPermission, refreshPushPermission } =
     useSession();
   const [appVersion, setAppVersion] = useState<string | null>(null);
+  const [isFullScreenEnabled, setIsFullScreenEnabled] = useState(false);
+  const [isFullScreenPermitted, setIsFullScreenPermitted] = useState(true);
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
@@ -47,13 +54,19 @@ const MyInfoPage = () => {
     CapacitorApp.getInfo().then((info) => setAppVersion(`${info.version} (${info.build})`));
   }, [isNative]);
 
-  // 휴대폰 설정에서 알림을 켜고 돌아왔을 수 있으니 앱으로 돌아올 때마다 다시 확인한다
+  // 휴대폰 설정에서 알림·풀스크린을 허용하고 돌아왔을 수 있으니 앱으로 돌아올 때마다 다시 확인한다
   useEffect(() => {
     if (!isNative) return;
-    checkPushPermission().then(refreshPushPermission);
-    const handlePromise = CapacitorApp.addListener("resume", () => {
+    const refreshNotificationState = () => {
       checkPushPermission().then(refreshPushPermission);
-    });
+      getSosAlarmSettings().then((settings) => {
+        if (!settings) return;
+        setIsFullScreenEnabled(settings.fullScreenEnabled);
+        setIsFullScreenPermitted(settings.fullScreenPermitted);
+      });
+    };
+    refreshNotificationState();
+    const handlePromise = CapacitorApp.addListener("resume", refreshNotificationState);
     return () => {
       handlePromise.then((handle) => handle.remove());
     };
@@ -72,6 +85,13 @@ const MyInfoPage = () => {
     refreshPushPermission(permission);
     // 한 번 거절하면 Android가 더 묻지 않으므로 설정 화면으로 보낸다
     if (permission === "denied") handleNotificationSettingsClick();
+  };
+
+  const handleFullScreenToggleChange = async (checked: boolean) => {
+    await setSosFullScreenEnabled(checked);
+    setIsFullScreenEnabled(checked);
+    // Android 14+에서 아직 허용 전이면 켜자마자 허용 화면으로 보낸다
+    if (checked && !isFullScreenPermitted) await openSosFullScreenSettings();
   };
 
   const handleLockToggleChange = async (checked: boolean) => {
@@ -137,6 +157,27 @@ const MyInfoPage = () => {
           </button>
         )}
         <Card className="px-[18px] py-0.5">
+          <div className="flex items-center gap-3 border-b-[1.5px] border-soft py-4">
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[15px] font-extrabold text-ink">SOS 풀스크린 알림</span>
+              <span className="text-[13px] font-bold text-ink-muted">
+                {isNative ? "화면이 꺼져 있어도 SOS 화면을 바로 띄워요" : "앱에서만 바꿀 수 있어요"}
+              </span>
+            </span>
+            <ToggleSwitch
+              checked={isFullScreenEnabled}
+              label="SOS 풀스크린 알림"
+              disabled={!isNative}
+              onChange={handleFullScreenToggleChange}
+            />
+          </div>
+          {isFullScreenEnabled && !isFullScreenPermitted && (
+            <SettingRow
+              title="풀스크린 알림 허용 필요"
+              description="휴대폰 설정에서 허용해야 화면이 떠요. 눌러서 허용해주세요"
+              onClick={openSosFullScreenSettings}
+            />
+          )}
           <SettingRow
             title="SOS 알림 소리·방해금지 설정"
             description={isNative ? "휴대폰 알림 설정으로 이동해요" : "앱에서만 열 수 있어요"}

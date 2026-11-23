@@ -1,8 +1,10 @@
 package com.workreport.admin;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -11,8 +13,13 @@ import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    // 앱이 화면에 떠 있는지 — 떠 있으면 SOS 알림을 직접 띄우지 않고 JS 배너에 맡긴다(SosMessagingService)
+    static volatile boolean isInForeground = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // 이 앱 모듈 안에 직접 만든 로컬 플러그인이라 cap sync로 자동 등록되지 않는다 — 여기서 등록한다
+        registerPlugin(SosAlarmPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Android 15부터는 화면이 시스템 바 밑까지 강제로 넓어져서 키보드가 올라와도 웹 화면이
@@ -30,5 +37,46 @@ public class MainActivity extends BridgeActivity {
             view.setLayoutParams(params);
             return WindowInsetsCompat.CONSUMED;
         });
+    }
+
+    // 앱을 처음 켤 때(BridgeActivity.load)와 이미 켜져 있을 때 둘 다 여기로 온다
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (!intent.hasExtra(SosAlarm.EXTRA_NOTIFICATION_ID)) return;
+        SosAlarm.cancel(this, intent.getIntExtra(SosAlarm.EXTRA_NOTIFICATION_ID, 0));
+        // 풀스크린으로 열렸으면 잠금 화면 위로 화면을 켜서 띄운다. 앱 자체 잠금(지문/PIN)은 그대로 거친다.
+        if (intent.getBooleanExtra(SosAlarm.EXTRA_FULL_SCREEN, false)) setShowOverLockScreen(true);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        isInForeground = true;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        isInForeground = false;
+    }
+
+    // 한 번 잠금 화면 위로 띄운 뒤 앱을 벗어나면 원래대로 — 다음부터는 폰 잠금을 먼저 풀어야 보인다
+    @Override
+    public void onStop() {
+        super.onStop();
+        setShowOverLockScreen(false);
+    }
+
+    private void setShowOverLockScreen(boolean show) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(show);
+            setTurnScreenOn(show);
+            return;
+        }
+        int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+            | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON;
+        if (show) getWindow().addFlags(flags);
+        else getWindow().clearFlags(flags);
     }
 }

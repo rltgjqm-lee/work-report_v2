@@ -83,9 +83,12 @@ export const getFcmAccessToken = async (
 // 앱이 채널을 만들 때 정해지고, 여기선 어느 채널로 보낼지만 고른다. 지정하면 화면이 꺼져 있어도
 // 바로 깨우도록 높은 우선순위로 보낸다.
 // data: 알림을 눌렀을 때 앱이 어느 화면을 열지 정하는 값(FCM data는 문자열만 된다).
+// dataOnly: 시스템이 알림을 대신 띄우지 않고 앱이 받아서 직접 띄운다(관리자 앱 SOS 풀스크린).
+//   제목·본문은 data의 title/body로 넣어 보낸다. 앱이 꺼져 있어도 높은 우선순위로 깨운다.
 export type FcmPushOptions = {
   androidChannelId?: string;
   data?: Record<string, string>;
+  dataOnly?: boolean;
 };
 
 export const sendFcmPush = async (
@@ -102,17 +105,23 @@ export const sendFcmPush = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      message: {
-        token: deviceToken,
-        notification: payload,
-        ...(options.data && { data: options.data }),
-        ...(options.androidChannelId && {
-          android: {
-            priority: "HIGH",
-            notification: { channel_id: options.androidChannelId },
+      message: options.dataOnly
+        ? {
+            token: deviceToken,
+            data: { ...options.data, title: payload.title, body: payload.body },
+            android: { priority: "HIGH" },
+          }
+        : {
+            token: deviceToken,
+            notification: payload,
+            ...(options.data && { data: options.data }),
+            ...(options.androidChannelId && {
+              android: {
+                priority: "HIGH",
+                notification: { channel_id: options.androidChannelId },
+              },
+            }),
           },
-        }),
-      },
     }),
   });
 

@@ -1804,8 +1804,8 @@ app.post("/sos", async (c) => {
         }
       }
 
-      // 관리자 앱(Android)에도 PC와 별개로 한 번씩 보낸다 — 앱의 "sos" 채널로 보내 화면이
-      // 꺼져 있어도 소리·진동이 나게 한다. data는 알림을 눌렀을 때 그 SOS 화면을 여는 데 쓴다.
+      // 관리자 앱(Android)에도 PC와 별개로 한 번씩 보낸다 — data만 보내고 앱이 "sos" 채널로
+      // 알림을 직접 띄운다(설정에 따라 풀스크린). data는 알림을 눌렀을 때 그 SOS 화면을 여는 데 쓴다.
       const adminDeviceRows = await db
         .select()
         .from(adminDevices)
@@ -1821,7 +1821,7 @@ app.post("/sos", async (c) => {
               adminDevice.fcmToken,
               { title: adminPushPayload.title, body: adminPushPayload.body },
               {
-                androidChannelId: "sos",
+                dataOnly: true,
                 data: {
                   type: "sos",
                   sosEventId: String(result[0].id),
