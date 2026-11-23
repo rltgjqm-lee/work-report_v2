@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 
@@ -41,6 +42,24 @@ const queryClient = new QueryClient({
 // 로그인·잠금 상태에 따라 화면을 통째로 바꾼다. 잠금을 풀어야만 아래 화면(Routes)에 들어간다.
 const SessionGate = () => {
   const { status } = useSession();
+  const navigate = useNavigate();
+
+  // 휴대폰 뒤로 가기 — 홈(또는 로그인·잠금 화면)에서는 앱을 나가고, 그 밖에서는 이전 화면으로.
+  // 알림을 눌러 바로 들어와 돌아갈 화면이 없으면 홈으로 보낸다.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const handlePromise = CapacitorApp.addListener("backButton", () => {
+      if (status !== "unlocked" || window.location.pathname === "/") {
+        CapacitorApp.exitApp();
+        return;
+      }
+      if (window.history.state?.idx > 0) navigate(-1);
+      else navigate("/", { replace: true });
+    });
+    return () => {
+      handlePromise.then((handle) => handle.remove());
+    };
+  }, [status, navigate]);
 
   if (status === "loading") return <div className="h-full bg-accent" />;
   if (status === "signedOut") return <LoginPage />;
