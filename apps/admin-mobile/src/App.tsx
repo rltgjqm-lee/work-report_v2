@@ -10,7 +10,8 @@ import { configureClient } from "@work-report/admin-core/client";
 
 import { useSession } from "./context/useSession";
 
-import SosAlertBanner from "./components/organism/SosAlertBanner";
+import SosAlarmSilenceBar from "./components/organism/SosAlarmSilenceBar";
+import SosAlertScreen from "./components/organism/SosAlertScreen";
 import TabLayout from "./components/organism/TabLayout";
 import { SessionProvider } from "./context/SessionContext";
 import { getAccessToken, refreshAccessToken } from "./lib/appAuth";
@@ -68,7 +69,7 @@ const SessionGate = () => {
 
   return (
     <>
-      <SosAlertBanner />
+      <SosAlertScreen />
       <Routes>
         <Route element={<TabLayout />}>
           <Route index element={<HomePage />} />
@@ -98,6 +99,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <SessionProvider>
+          <SosAlarmSilenceBar />
           <SessionGate />
         </SessionProvider>
       </BrowserRouter>

@@ -44,9 +44,14 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         if (!intent.hasExtra(SosAlarm.EXTRA_NOTIFICATION_ID)) return;
-        SosAlarm.cancel(this, intent.getIntExtra(SosAlarm.EXTRA_NOTIFICATION_ID, 0));
         // 풀스크린으로 열렸으면 잠금 화면 위로 화면을 켜서 띄운다. 앱 자체 잠금(지문/PIN)은 그대로 거친다.
-        if (intent.getBooleanExtra(SosAlarm.EXTRA_FULL_SCREEN, false)) setShowOverLockScreen(true);
+        // 알림은 지우지 않아서 소리는 앱 위쪽 "소리 끄기"를 누를 때까지 계속 울린다.
+        if (intent.getBooleanExtra(SosAlarm.EXTRA_FULL_SCREEN, false)) {
+            setShowOverLockScreen(true);
+            return;
+        }
+        // 관리자가 알림을 직접 눌러 들어왔다 — 확인했으니 알림을 지우고 소리도 멈춘다
+        SosAlarm.cancel(this, intent.getIntExtra(SosAlarm.EXTRA_NOTIFICATION_ID, 0));
     }
 
     @Override

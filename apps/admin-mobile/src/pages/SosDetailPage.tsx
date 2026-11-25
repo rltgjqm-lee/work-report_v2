@@ -20,6 +20,7 @@ import {
   formatTeamName,
   useNow,
 } from "../lib/format";
+import { silenceSosAlarm } from "../lib/sosAlarm";
 
 const SOS_MEMO_PRESETS = ["통화로 안전 확인", "현장 출동", "보호자 인계", "버튼 오작동"];
 
@@ -60,7 +61,11 @@ const SosDetailPage = () => {
     resolveSosMutation.mutate(
       { sosId: sos.id, programId: sos.programId, memo: memo.trim() || undefined },
       {
-        onSuccess: () => setMemo(""),
+        onSuccess: () => {
+          setMemo("");
+          // 처리했으니 아직 울리는 SOS 알람도 멈춘다
+          silenceSosAlarm();
+        },
         onError: (resolveError) =>
           setErrorMessage(
             resolveError instanceof Error ? resolveError.message : "처리하지 못했어요.",

@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
     adjustMarginsForEdgeToEdge: "auto",
   },
   plugins: {
-    // 앱이 앞에 떠 있을 때 온 알림은 시스템 알림 대신 화면 위 배너로 보여준다(SosAlertBanner)
+    // 앱이 앞에 떠 있을 때 온 알림은 시스템 알림 대신 앱 안에서 화면 전체로 보여준다(SosAlertScreen)
     PushNotifications: {
       presentationOptions: [],
     },

@@ -11,21 +11,50 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-// 설정 화면의 "SOS 풀스크린 알림" 토글이 쓰는 로컬 플러그인. 값은 앱이 꺼져 있을 때 알림을 띄우는
-// 네이티브 쪽(SosAlarm)이 읽어야 해서 웹 저장소가 아니라 SharedPreferences에 둔다.
+// 설정 화면의 "SOS 알림 방식"(소리/진동) 선택과 앱 위쪽 "알람 끄기" 막대가 쓰는 로컬
+// 플러그인. 설정값은 앱이 꺼져 있을 때 알림을 띄우는 네이티브 쪽(SosAlarm)이 읽어야 해서 웹 저장소가
+// 아니라 SharedPreferences에 둔다.
 @CapacitorPlugin(name = "SosAlarm")
 public class SosAlarmPlugin extends Plugin {
+    @Override
+    public void load() {
+        SosAlarm.ensureChannels(getContext());
+        SosAlarm.ringingListener = () -> {
+            JSObject event = new JSObject();
+            event.put("isRinging", SosAlarm.isRinging(getContext()));
+            notifyListeners("ringingChange", event);
+        };
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        SosAlarm.ringingListener = null;
+    }
+
     @PluginMethod
     public void getSettings(PluginCall call) {
         JSObject result = new JSObject();
-        result.put("fullScreenEnabled", SosAlarm.isFullScreenEnabled(getContext()));
+        result.put("alertMode", SosAlarm.getAlertMode(getContext()));
         result.put("fullScreenPermitted", SosAlarm.canUseFullScreen(getContext()));
         call.resolve(result);
     }
 
     @PluginMethod
-    public void setFullScreenEnabled(PluginCall call) {
-        SosAlarm.setFullScreenEnabled(getContext(), Boolean.TRUE.equals(call.getBoolean("enabled", false)));
+    public void setAlertMode(PluginCall call) {
+        SosAlarm.setAlertMode(getContext(), call.getString("mode", SosAlarm.MODE_SOUND));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void isRinging(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("isRinging", SosAlarm.isRinging(getContext()));
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void silence(PluginCall call) {
+        SosAlarm.silenceAll(getContext());
         call.resolve();
     }
 

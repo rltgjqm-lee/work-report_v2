@@ -160,6 +160,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       },
       onOpened: (data) => {
         queryClient.invalidateQueries({ queryKey: mobileKeys.all });
+        // 알림·풀스크린으로 들어왔으면 그 SOS 화면으로 바로 가니 앱 안 SOS 화면은 띄우지 않는다
+        setIncomingSos(null);
         const path = sosPathOf(data);
         if (!path) return;
         if (statusRef.current === "unlocked") navigate(path);
