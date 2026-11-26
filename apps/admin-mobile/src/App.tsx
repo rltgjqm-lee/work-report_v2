@@ -69,7 +69,6 @@ const SessionGate = () => {
 
   return (
     <>
-      <SosAlertScreen />
       <Routes>
         <Route element={<TabLayout />}>
           <Route index element={<HomePage />} />
@@ -99,6 +98,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <SessionProvider>
+          <SosAlertScreen />
           <SosAlarmSilenceBar />
           <SessionGate />
         </SessionProvider>

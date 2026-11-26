@@ -20,7 +20,7 @@ import {
   formatTeamName,
   useNow,
 } from "../lib/format";
-import { silenceSosAlarm } from "../lib/sosAlarm";
+import { dismissSosAlarm } from "../lib/sosAlarm";
 
 const SOS_MEMO_PRESETS = ["통화로 안전 확인", "현장 출동", "보호자 인계", "버튼 오작동"];
 
@@ -63,8 +63,8 @@ const SosDetailPage = () => {
       {
         onSuccess: () => {
           setMemo("");
-          // 처리했으니 아직 울리는 SOS 알람도 멈춘다
-          silenceSosAlarm();
+          // 처리했으니 아직 울리는 알람을 멈추고 알림창의 그 SOS 알림도 지운다
+          dismissSosAlarm(sos.id);
         },
         onError: (resolveError) =>
           setErrorMessage(

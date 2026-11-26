@@ -21,7 +21,7 @@ public class SosAlarmPlugin extends Plugin {
         SosAlarm.ensureChannels(getContext());
         SosAlarm.ringingListener = () -> {
             JSObject event = new JSObject();
-            event.put("isRinging", SosAlarm.isRinging(getContext()));
+            event.put("isRinging", SosAlarm.isRinging());
             notifyListeners("ringingChange", event);
         };
     }
@@ -48,8 +48,14 @@ public class SosAlarmPlugin extends Plugin {
     @PluginMethod
     public void isRinging(PluginCall call) {
         JSObject result = new JSObject();
-        result.put("isRinging", SosAlarm.isRinging(getContext()));
+        result.put("isRinging", SosAlarm.isRinging());
         call.resolve(result);
+    }
+
+    @PluginMethod
+    public void dismiss(PluginCall call) {
+        SosAlarm.cancel(getContext(), call.getInt("sosEventId", 0));
+        call.resolve();
     }
 
     @PluginMethod

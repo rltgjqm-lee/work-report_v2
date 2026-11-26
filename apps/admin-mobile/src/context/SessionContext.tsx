@@ -160,7 +160,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       },
       onOpened: (data) => {
         queryClient.invalidateQueries({ queryKey: mobileKeys.all });
-        // 알림·풀스크린으로 들어왔으면 그 SOS 화면으로 바로 가니 앱 안 SOS 화면은 띄우지 않는다
+        // 풀스크린으로 열렸으면 잠금 화면이나 앱 화면보다 SOS 화면을 먼저 띄운다(SosAlertScreen).
+        // 관리자가 알림을 직접 눌렀으면 그 SOS 상세로 바로 간다.
+        if (data.sosFullScreen === true && data.type === "sos") {
+          setIncomingSos(data);
+          return;
+        }
         setIncomingSos(null);
         const path = sosPathOf(data);
         if (!path) return;
@@ -250,6 +255,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     disableLock,
     refreshPushPermission: setPushPermission,
     dismissIncomingSos: () => setIncomingSos(null),
+    openIncomingSos: () => {
+      const path = (incomingSos && sosPathOf(incomingSos)) ?? "/safety";
+      setIncomingSos(null);
+      if (status === "unlocked") navigate(path);
+      else pendingPathRef.current = path;
+    },
   };
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

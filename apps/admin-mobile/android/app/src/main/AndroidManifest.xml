@@ -41,7 +41,16 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-        <!-- SOS 알림의 "소리 끄기" 버튼 -->
+        <!-- SOS 알람이 울리는 동안만 도는 서비스 — 앱이 백그라운드여도 끄기 전까지 울린다 -->
+        <service
+            android:name=".SosAlarmService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="SOS 알람: 참여자 SOS를 관리자가 끌 때까지 알람으로 울린다" />
+        </service>
+        <!-- SOS 알림의 "알람 끄기" 버튼 -->
         <receiver
             android:name=".SosAlarmSilenceReceiver"
             android:exported="false" />
@@ -52,6 +61,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 화면이 꺼져 있거나 잠겨 있을 때 SOS 화면을 바로 띄운다(설정에서 끌 수 있다) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <!-- 앱을 보고 있을 때 SOS가 오면 앱이 직접 진동을 낸다 -->
+    <!-- SOS 알람 진동은 앱이 직접 낸다(무음 모드에서도 울리게) -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 </manifest>

@@ -11,7 +11,7 @@ import { isSosAlarmRinging, listenToSosAlarmRinging, silenceSosAlarm } from "../
 // SOS 알람이 울리는 동안 화면 맨 위에 띄우는 "알람 끄기" 막대. 풀스크린으로 앱이 떠도 잠금
 // 화면(지문/PIN)부터 나오므로 잠금을 풀기 전에도 바로 끌 수 있게 로그인·잠금 화면 위에도 띄운다.
 const SosAlarmSilenceBar = () => {
-  const { status, incomingSos } = useSession();
+  const { incomingSos } = useSession();
   const [isRinging, setIsRinging] = useState(false);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ const SosAlarmSilenceBar = () => {
   }, []);
 
   // 앱 안 SOS 화면(SosAlertScreen)이 떠 있으면 그 화면의 버튼으로 끈다
-  if (!isRinging || (status === "unlocked" && incomingSos)) return null;
+  if (!isRinging || incomingSos) return null;
 
   const handleSilenceButtonClick = async () => {
     await silenceSosAlarm();

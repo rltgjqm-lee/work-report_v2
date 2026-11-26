@@ -11,6 +11,8 @@ export type SosPushData = {
   sosEventId?: string;
   programId?: string;
   participantName?: string;
+  // 앱이 붙이는 값 — 풀스크린 알림으로 앱이 열렸다(SosAlarm.java, Intent extra라 문자열이 아니다)
+  sosFullScreen?: boolean;
 };
 
 export type PushPermission = "granted" | "denied" | "unsupported";

@@ -1,22 +1,20 @@
-import { useNavigate } from "react-router-dom";
-
 import { CircleAlert } from "lucide-react";
 
 import { useSession } from "../../context/useSession";
 
-import { silenceSosAlarm } from "../../lib/sosAlarm";
+import { dismissSosAlarm, silenceSosAlarm } from "../../lib/sosAlarm";
 
-// 앱을 보고 있을 때 SOS가 오면 화면 전체로 띄운다 — 소리·진동은 네이티브(SosAlarm.startInApp)가
-// 같이 내고, 두 버튼 모두 그 알람을 멈춘다.
+// SOS 화면 — 앱을 보고 있을 때 SOS가 오거나 풀스크린 알림으로 앱이 열리면 화면 전체로 띄운다.
+// 잠금 화면(지문/PIN)보다 먼저 뜨고, 두 버튼 모두 울리는 알람을 멈춘다.
 const SosAlertScreen = () => {
-  const navigate = useNavigate();
-  const { incomingSos, dismissIncomingSos } = useSession();
+  const { incomingSos, dismissIncomingSos, openIncomingSos } = useSession();
   if (!incomingSos) return null;
 
+  // 확인하러 가니 알림창의 그 SOS 알림도 지운다. "알람 끄고 닫기"는 나중에 볼 수 있게 남겨둔다.
   const handleConfirmButtonClick = () => {
-    silenceSosAlarm();
-    dismissIncomingSos();
-    navigate(incomingSos.sosEventId ? `/sos?id=${incomingSos.sosEventId}` : "/safety");
+    if (incomingSos.sosEventId) dismissSosAlarm(Number(incomingSos.sosEventId));
+    else silenceSosAlarm();
+    openIncomingSos();
   };
 
   const handleCloseButtonClick = () => {

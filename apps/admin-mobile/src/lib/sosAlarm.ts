@@ -15,6 +15,7 @@ type SosAlarmPlugin = {
   setAlertMode: (options: { mode: SosAlertMode }) => Promise<void>;
   isRinging: () => Promise<{ isRinging: boolean }>;
   silence: () => Promise<void>;
+  dismiss: (options: { sosEventId: number }) => Promise<void>;
   openFullScreenSettings: () => Promise<void>;
   addListener: (
     eventName: "ringingChange",
@@ -43,6 +44,12 @@ export const isSosAlarmRinging = async () => {
 export const silenceSosAlarm = async () => {
   if (!Capacitor.isNativePlatform()) return;
   await SosAlarm.silence();
+};
+
+// 그 SOS를 확인했다 — 알람을 멈추고 알림창의 그 SOS 알림도 지운다
+export const dismissSosAlarm = async (sosEventId: number) => {
+  if (!Capacitor.isNativePlatform()) return;
+  await SosAlarm.dismiss({ sosEventId });
 };
 
 export const listenToSosAlarmRinging = (listener: (isRinging: boolean) => void) => {

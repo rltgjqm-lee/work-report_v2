@@ -12,6 +12,7 @@ const LockPage = () => {
     profile,
     isLockEnabled,
     unlockError,
+    incomingSos,
     unlockWithPin,
     unlockWithBiometry,
     retryUnlock,
@@ -30,16 +31,17 @@ const LockPage = () => {
     else setIsPinMode(true);
   }, [unlockWithBiometry]);
 
-  // 잠금 화면이 뜨자마자 지문 창을 띄운다(지문이 없는 폰이면 바로 PIN)
+  // 잠금 화면이 뜨자마자 지문 창을 띄운다(지문이 없는 폰이면 바로 PIN).
+  // SOS 화면이 떠 있으면 지문 창이 그걸 가리지 않게 SOS 화면을 닫은 뒤에 띄운다.
   useEffect(() => {
-    if (!isLockEnabled || hasPromptedRef.current) return;
+    if (!isLockEnabled || hasPromptedRef.current || incomingSos) return;
     hasPromptedRef.current = true;
     isBiometryAvailable().then((available) => {
       setCanUseBiometry(available);
       if (available) handleBiometryButtonClick();
       else setIsPinMode(true);
     });
-  }, [isLockEnabled, handleBiometryButtonClick]);
+  }, [isLockEnabled, incomingSos, handleBiometryButtonClick]);
 
   const handlePinChange = async (nextPin: string) => {
     setPin(nextPin);

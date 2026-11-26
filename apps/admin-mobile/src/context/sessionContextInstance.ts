@@ -24,6 +24,8 @@ export type SessionContextValue = {
   disableLock: () => Promise<void>;
   refreshPushPermission: (permission: PushPermission) => void;
   dismissIncomingSos: () => void;
+  // SOS 화면의 "SOS 확인하기" — 잠겨 있으면 잠금을 푼 뒤 그 SOS 상세로 간다
+  openIncomingSos: () => void;
 };
 
 export const SessionContext = createContext<SessionContextValue | null>(null);

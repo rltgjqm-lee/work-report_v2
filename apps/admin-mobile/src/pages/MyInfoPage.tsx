@@ -161,7 +161,7 @@ const MyInfoPage = () => {
               <span className="text-[15px] font-extrabold text-ink">SOS 알람 방식</span>
               <span className="text-[13px] font-bold text-ink-muted">
                 {isNative
-                  ? "화면 전체로 SOS를 띄우고, 끄기를 누를 때까지 반복해요"
+                  ? "화면 전체로 SOS를 띄우고, 끄기를 누를 때까지 반복해요. 무음 모드여도 울려요"
                   : "앱에서만 바꿀 수 있어요"}
               </span>
             </span>

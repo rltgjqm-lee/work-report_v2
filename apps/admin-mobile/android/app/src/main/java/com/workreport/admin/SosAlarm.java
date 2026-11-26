@@ -8,45 +8,52 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioAttributes;
-import android.media.Ringtone;
+import android.media.MediaPlayer;
 import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
+import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.service.notification.StatusBarNotification;
 
 import androidx.core.app.NotificationCompat;
 
+import java.util.HashMap;
 import java.util.Map;
 
-// SOS 알림을 앱이 직접 띄운다. FCM이 알아서 띄우는 알림(notification 메시지)으로는 풀스크린을
-// 쓸 수 없어서, Worker가 관리자 앱에는 data만 보내고 여기서 알림을 만든다.
-// SOS는 항상 풀스크린으로 띄운다 — 화면이 꺼져 있거나 잠겨 있으면 앱이 바로 SOS 화면으로 뜨고
-// (폰을 쓰고 있을 때는 Android가 화면 위쪽 알림으로 대신 보여준다).
-// 관리자가 고른 방식(소리 / 진동)으로 "끄기"(알림 버튼 / 앱 위쪽 막대)를 누르거나 알림을 누를 때까지 반복한다.
+// SOS 알람. FCM이 알아서 띄우는 알림(notification 메시지)으로는 풀스크린을 쓸 수 없어서, Worker가
+// 관리자 앱에는 data만 보내고 여기서 알림을 만든다.
+// - 화면: 항상 풀스크린 — 화면이 꺼져 있거나 잠겨 있으면 앱이 바로 SOS 화면으로 뜬다
+//   (폰을 쓰고 있을 때는 Android가 화면 위쪽 알림으로 대신 보여준다).
+// - 소리·진동: 알림 채널에 맡기면 무음 모드에서 Android가 막아서, 알람 시계처럼 앱이 "알람"으로 직접
+//   낸다(무음이어도 울린다). 관리자가 고른 방식(소리 / 진동)으로 끄기를 누를 때까지 반복한다.
 public final class SosAlarm {
-    // 알림 채널의 소리·진동은 만든 뒤에 앱이 바꿀 수 없어서 방식마다 채널을 따로 둔다
-    static final String SOUND_CHANNEL_ID = "sos_sound";
-    static final String VIBRATE_CHANNEL_ID = "sos_vibrate";
+    // 소리·진동은 앱이 직접 내므로 채널은 조용한 것 하나만 둔다(중요도는 풀스크린을 위해 높게)
+    static final String CHANNEL_ID = "sos_alarm";
     // 예전 빌드가 만든 채널 — 이제 안 쓰니 지운다
-    private static final String[] LEGACY_CHANNEL_IDS = { "sos", "sos_silent" };
+    private static final String[] LEGACY_CHANNEL_IDS = { "sos", "sos_silent", "sos_sound", "sos_vibrate" };
 
     static final String MODE_SOUND = "sound";
     static final String MODE_VIBRATE = "vibrate";
+
     // 풀스크린으로 열렸다는 표시 — MainActivity가 보고 잠금 화면 위로 뜬다
     static final String EXTRA_FULL_SCREEN = "sosFullScreen";
     static final String EXTRA_NOTIFICATION_ID = "sosNotificationId";
 
     private static final String PREFS = "sos_alarm";
     private static final String KEY_ALERT_MODE = "alertMode";
-
-    // 계속 울리는 중인지가 바뀌면 화면(SosAlarmPlugin → JS 막대)에 알린다
-    static volatile Runnable ringingListener = null;
-
-    // 앱을 보고 있을 때 SOS가 오면 알림 대신 앱이 직접 내는 소리·진동(JS가 화면 전체로 SOS를 띄운다)
     private static final long[] VIBRATION_PATTERN = { 0, 800, 600 };
-    private static Ringtone inAppRingtone = null;
-    private static Vibrator inAppVibrator = null;
+
+    // 울리는 중인지가 바뀌면 화면(SosAlarmPlugin → JS 막대)에 알린다
+    static volatile Runnable ringingListener = null;
+    // 서비스가 떠 있는 동안 그 SOS 알림은 서비스에 묶여 있어 지우거나 고쳐도 Android가 무시한다 —
+    // 그때는 서비스가 내려가면서(SosAlarmService.onDestroy) 알림을 정리한다
+    static volatile boolean isServiceRunning = false;
+
+    private static MediaPlayer player = null;
+    private static Vibrator vibrator = null;
+    // 지금 울리고 있는 SOS 알림들 — 끄면 "끄기" 버튼 없는 조용한 알림으로 바꿔 남겨둔다
+    private static final Map<Integer, Map<String, String>> ringingNotifications = new HashMap<>();
 
     private SosAlarm() {}
 
@@ -65,21 +72,148 @@ public final class SosAlarm {
         return context.getSystemService(NotificationManager.class).canUseFullScreenIntent();
     }
 
-    static void show(Context context, Map<String, String> data) {
-        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-        ensureChannels(context);
+    // SOS data 메시지를 받았다(SosMessagingService). 앱을 보고 있으면 알림 없이 소리·진동만 내고 JS가
+    // 화면 전체로 SOS를 띄운다. 아니면 울리는 동안 꺼지지 않게 서비스(SosAlarmService)로 띄운다.
+    static void onSosReceived(Context context, Map<String, String> data) {
+        if (MainActivity.isInForeground) {
+            startPlayback(context);
+            return;
+        }
+        Intent intent = new Intent(context, SosAlarmService.class)
+            .putExtra(SosAlarmService.EXTRA_DATA, new HashMap<>(data));
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent);
+            else context.startService(intent);
+        } catch (RuntimeException error) {
+            // 백그라운드 서비스 시작이 막힌 경우 — 알림을 그냥 띄우고 소리·진동은 프로세스가 살아 있는 동안 낸다
+            int notificationId = notificationIdOf(data);
+            context.getSystemService(NotificationManager.class)
+                .notify(notificationId, buildAlarmNotification(context, data, notificationId));
+            startPlayback(context);
+        }
+    }
 
-        String sosEventId = data.get("sosEventId");
-        int notificationId = parseIdOrZero(sosEventId);
+    static int notificationIdOf(Map<String, String> data) {
+        try {
+            String sosEventId = data.get("sosEventId");
+            return sosEventId == null ? 0 : Integer.parseInt(sosEventId);
+        } catch (NumberFormatException error) {
+            return 0;
+        }
+    }
+
+    static synchronized Notification buildAlarmNotification(Context context, Map<String, String> data, int notificationId) {
+        ensureChannels(context);
+        ringingNotifications.put(notificationId, data);
+        return baseBuilder(context, data, notificationId)
+            .setFullScreenIntent(openSosIntent(context, data, notificationId, true), true)
+            .addAction(0, "알람 끄기", silenceIntent(context))
+            .setOngoing(true)
+            .build();
+    }
+
+    // 알람 소리·진동을 시작한다. 이미 울리고 있으면 그대로 둔다(SOS가 여러 건 와도 한 번만 울린다).
+    static synchronized void startPlayback(Context context) {
+        if (player != null || vibrator != null) return;
+        if (MODE_VIBRATE.equals(getAlertMode(context))) {
+            vibrator = context.getSystemService(Vibrator.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                vibrator.vibrate(
+                    VibrationEffect.createWaveform(VIBRATION_PATTERN, 0),
+                    VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM)
+                );
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(VIBRATION_PATTERN, 0), alarmAudioAttributes());
+            } else {
+                vibrator.vibrate(VIBRATION_PATTERN, 0, alarmAudioAttributes());
+            }
+        } else {
+            try {
+                MediaPlayer mediaPlayer = new MediaPlayer();
+                mediaPlayer.setAudioAttributes(alarmAudioAttributes());
+                mediaPlayer.setDataSource(context, alarmSoundUri());
+                mediaPlayer.setLooping(true);
+                mediaPlayer.prepare();
+                mediaPlayer.start();
+                player = mediaPlayer;
+            } catch (Exception error) {
+                player = null;
+            }
+        }
+        notifyRingingChanged();
+    }
+
+    static synchronized boolean isRinging() {
+        return player != null || vibrator != null;
+    }
+
+    // 소리·진동을 멈추고 서비스를 내린다. 알림은 지우지 않고 조용한 알림으로 바꿔 남겨둔다
+    // (나중에 눌러서 SOS 화면을 열 수 있게).
+    static void silenceAll(Context context) {
+        stopPlayback();
+        if (isServiceRunning) context.stopService(new Intent(context, SosAlarmService.class));
+        else repostQuietly(context);
+        notifyRingingChanged();
+    }
+
+    // 울리던 SOS 알림을 "끄기" 버튼 없는 조용한 알림으로 바꿔 올린다(소리·진동·위쪽 알림 없이)
+    static synchronized void repostQuietly(Context context) {
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        for (Map.Entry<Integer, Map<String, String>> entry : ringingNotifications.entrySet()) {
+            notificationManager.notify(
+                entry.getKey(),
+                baseBuilder(context, entry.getValue(), entry.getKey()).setSilent(true).build()
+            );
+        }
+        ringingNotifications.clear();
+    }
+
+    // 관리자가 그 SOS를 확인했다(알림을 직접 누름 / SOS 화면의 "SOS 확인하기" / 처리 완료) —
+    // 알람을 멈추고 그 SOS 알림을 지운다. 다른 SOS 알림은 조용한 알림으로 남긴다.
+    static void cancel(Context context, int notificationId) {
+        synchronized (SosAlarm.class) {
+            ringingNotifications.remove(notificationId);
+        }
+        // 서비스에 묶인 알림이면 여기서 지워도 무시되고, 서비스가 내려가면서 지운다
+        context.getSystemService(NotificationManager.class).cancel(notificationId);
+        silenceAll(context);
+    }
+
+    static synchronized void stopPlayback() {
+        if (player != null) {
+            player.stop();
+            player.release();
+        }
+        if (vibrator != null) vibrator.cancel();
+        player = null;
+        vibrator = null;
+    }
+
+    // 설정 화면에서 바로 보이도록 플러그인이 뜰 때도 부른다(SosAlarmPlugin.load)
+    static void ensureChannels(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        for (String legacyChannelId : LEGACY_CHANNEL_IDS) {
+            notificationManager.deleteNotificationChannel(legacyChannelId);
+        }
+        if (notificationManager.getNotificationChannel(CHANNEL_ID) != null) return;
+        NotificationChannel channel = new NotificationChannel(
+            CHANNEL_ID,
+            "SOS 알람",
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("참여자가 SOS를 누르면 화면 전체로 알려드려요. 소리·진동은 앱 설정에서 골라요");
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        channel.setSound(null, null);
+        channel.enableVibration(false);
+        channel.enableLights(true);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+    private static NotificationCompat.Builder baseBuilder(Context context, Map<String, String> data, int notificationId) {
         String title = data.containsKey("title") ? data.get("title") : "SOS 요청";
         String body = data.containsKey("body") ? data.get("body") : "참여자가 SOS를 눌렀어요";
-
-        boolean isVibrate = MODE_VIBRATE.equals(getAlertMode(context));
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(
-            context,
-            isVibrate ? VIBRATE_CHANNEL_ID : SOUND_CHANNEL_ID
-        )
+        return new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_sos)
             .setColor(0xFFDC2626)
             .setContentTitle(title)
@@ -88,93 +222,27 @@ public final class SosAlarm {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            // Android 8 미만은 채널이 없어서 알림마다 소리·진동을 정한다
-            .setDefaults((isVibrate ? Notification.DEFAULT_VIBRATE : Notification.DEFAULT_SOUND) | Notification.DEFAULT_LIGHTS)
+            // Android 8 미만은 채널이 없어서 알림마다 소리·진동을 끈다(앱이 직접 낸다)
+            .setDefaults(0)
+            .setSound(null)
+            .setVibrate(null)
             .setAutoCancel(true)
-            .setContentIntent(openSosIntent(context, data, notificationId, false))
-            // Android 14+에서 풀스크린 허용 전이면 Android가 알아서 위쪽 알림으로 대신 보여준다
-            .setFullScreenIntent(openSosIntent(context, data, notificationId, true), true)
-            .addAction(0, isVibrate ? "진동 끄기" : "소리 끄기", silenceIntent(context));
-
-        Notification notification = builder.build();
-        notification.flags |= Notification.FLAG_INSISTENT;
-        notificationManager.notify(notificationId, notification);
-        notifyRingingChanged();
+            .setContentIntent(openSosIntent(context, data, notificationId, false));
     }
 
-    static void cancel(Context context, int notificationId) {
-        context.getSystemService(NotificationManager.class).cancel(notificationId);
-        notifyRingingChanged();
+    private static AudioAttributes alarmAudioAttributes() {
+        return new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build();
     }
 
-    // 알림처럼 끄기를 누를 때까지 반복한다. 폰이 무음·방해금지면 알림과 똑같이 소리가 나지 않는다.
-    static synchronized void startInApp(Context context) {
-        stopInApp();
-        if (MODE_VIBRATE.equals(getAlertMode(context))) {
-            inAppVibrator = context.getSystemService(Vibrator.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                inAppVibrator.vibrate(VibrationEffect.createWaveform(VIBRATION_PATTERN, 0));
-            } else {
-                inAppVibrator.vibrate(VIBRATION_PATTERN, 0);
-            }
-        } else {
-            inAppRingtone = RingtoneManager.getRingtone(
-                context,
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            );
-            if (inAppRingtone != null) {
-                inAppRingtone.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build());
-                // Android 9 미만은 반복이 안 돼서 한 번만 울린다
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) inAppRingtone.setLooping(true);
-                inAppRingtone.play();
-            }
-        }
-        notifyRingingChanged();
-    }
-
-    private static synchronized boolean isInAppRinging() {
-        return inAppVibrator != null || (inAppRingtone != null && inAppRingtone.isPlaying());
-    }
-
-    private static synchronized void stopInApp() {
-        if (inAppRingtone != null) inAppRingtone.stop();
-        if (inAppVibrator != null) inAppVibrator.cancel();
-        inAppRingtone = null;
-        inAppVibrator = null;
-    }
-
-    static boolean isRinging(Context context) {
-        if (isInAppRinging()) return true;
-        for (StatusBarNotification active : context.getSystemService(NotificationManager.class).getActiveNotifications()) {
-            if ((active.getNotification().flags & Notification.FLAG_INSISTENT) != 0) return true;
-        }
-        return false;
-    }
-
-    // 울리는 알림의 소리·진동만 멈추고 알림은 남겨둔다(나중에 눌러서 SOS 화면을 열 수 있게).
-    // 알림을 그대로 고쳐 올리면 이미 울리는 소리가 안 멈추는 기기가 있어서, 지웠다가 조용히 다시 올린다.
-    static void silenceAll(Context context) {
-        stopInApp();
-        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-        for (StatusBarNotification active : notificationManager.getActiveNotifications()) {
-            Notification ringing = active.getNotification();
-            if ((ringing.flags & Notification.FLAG_INSISTENT) == 0) continue;
-            notificationManager.cancel(active.getId());
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) continue;
-            Notification quiet = Notification.Builder.recoverBuilder(context, ringing)
-                .setActions()
-                .setFullScreenIntent(null, false)
-                // 혼자 든 그룹의 하위 알림으로 올려서 소리·진동 없이 조용히 올라가게 한다
-                .setGroup("sos-silenced-" + active.getId())
-                .setGroupAlertBehavior(Notification.GROUP_ALERT_SUMMARY)
-                .build();
-            quiet.flags &= ~Notification.FLAG_INSISTENT;
-            notificationManager.notify(active.getId(), quiet);
-        }
-        notifyRingingChanged();
+    // 폰의 기본 알람음 — 없는 폰이면 벨소리, 그것도 없으면 알림음
+    private static Uri alarmSoundUri() {
+        Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        if (uri == null) uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        if (uri == null) uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        return uri;
     }
 
     private static void notifyRingingChanged() {
@@ -215,48 +283,6 @@ public final class SosAlarm {
             new Intent(context, SosAlarmSilenceReceiver.class),
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
-    }
-
-    // 설정 화면에서 바로 보이도록 플러그인이 뜰 때도 부른다(SosAlarmPlugin.load)
-    static void ensureChannels(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
-        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-        for (String legacyChannelId : LEGACY_CHANNEL_IDS) {
-            notificationManager.deleteNotificationChannel(legacyChannelId);
-        }
-        if (notificationManager.getNotificationChannel(SOUND_CHANNEL_ID) == null) {
-            NotificationChannel channel = new NotificationChannel(
-                SOUND_CHANNEL_ID,
-                "SOS 알림 (소리)",
-                NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription("참여자가 SOS를 누르면 소리로 알려드려요");
-            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-            channel.enableVibration(false);
-            channel.enableLights(true);
-            notificationManager.createNotificationChannel(channel);
-        }
-        if (notificationManager.getNotificationChannel(VIBRATE_CHANNEL_ID) == null) {
-            NotificationChannel channel = new NotificationChannel(
-                VIBRATE_CHANNEL_ID,
-                "SOS 알림 (진동)",
-                NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription("참여자가 SOS를 누르면 진동으로 알려드려요");
-            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-            channel.setSound(null, null);
-            channel.enableVibration(true);
-            channel.enableLights(true);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    private static int parseIdOrZero(String value) {
-        try {
-            return value == null ? 0 : Integer.parseInt(value);
-        } catch (NumberFormatException error) {
-            return 0;
-        }
     }
 
     private static SharedPreferences prefs(Context context) {
