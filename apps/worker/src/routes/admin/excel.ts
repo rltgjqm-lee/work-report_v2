@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, gte, like, ne, or } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, isNotNull, like, ne, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 
@@ -66,8 +66,76 @@ const loadAccessibleProgram = async (db: ReturnType<typeof drizzle>, programId: 
   return rows[0] ?? null;
 };
 
+// 활동일지·활동비 지급대장에 들어갈 근무일 — 참여자가 낸 활동일지가 아니라 근무관리(attendance_logs)를
+// 기준으로 한다. 일지는 낸 시점의 시각을 저장해 두기만 해서, 관리자가 나중에 근무 기록을 고쳐도
+// 반영되지 않았고(2026-11 윤동우 11/6이 08:30으로 고쳤는데 10:35로 나옴), 폰을 못 써 일지를 안 낸 날은
+// 근무관리에서 수동 등록해도 통째로 빠졌다(윤동우 10일 중 6일만 나옴). 그래서 날짜·시각은 근무관리의
+// 출퇴근 시각을 그대로 쓰고(조 근무시간으로 맞추지 않는다 — 근무관리 화면에 보이는 시각과 같게),
+// 활동내용·장소·사고·서명만 그날 일지에서 붙인다. 일지가 없는 날은 그 칸들이 비어서 나간다.
+// 비활성화(INVALID)된 기록과 아직 퇴근 전인 기록은 뺀다. 근무 기록은 참여자+날짜 유니크가 아니라
+// 같은 날이 여러 건이면 id가 가장 큰 한 건만 쓴다.
+const loadActivityLogDays = async (
+  db: ReturnType<typeof drizzle>,
+  programId: number,
+  month: string,
+) => {
+  const rows = await db
+    .select({
+      attendanceId: attendanceLogs.id,
+      participantId: attendanceLogs.participantId,
+      workDate: attendanceLogs.workDate,
+      clockIn: attendanceLogs.clockIn,
+      clockOut: attendanceLogs.clockOut,
+      participantName: participants.name,
+      demandName: participants.demandName,
+      demandSiteName: demandSites.name,
+      log: activityLogs,
+    })
+    .from(attendanceLogs)
+    .innerJoin(participants, eq(attendanceLogs.participantId, participants.id))
+    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
+    .leftJoin(
+      activityLogs,
+      and(
+        eq(activityLogs.participantId, attendanceLogs.participantId),
+        eq(activityLogs.actDate, attendanceLogs.workDate),
+      ),
+    )
+    .where(
+      and(
+        eq(participants.programId, programId),
+        like(attendanceLogs.workDate, `${month}%`),
+        ne(attendanceLogs.status, "INVALID"),
+        isNotNull(attendanceLogs.clockIn),
+        isNotNull(attendanceLogs.clockOut),
+      ),
+    )
+    .orderBy(attendanceLogs.workDate);
+
+  const latestByParticipantDate = new Map<string, (typeof rows)[number]>();
+  for (const row of rows) {
+    const key = `${row.participantId}:${row.workDate}`;
+    const existing = latestByParticipantDate.get(key);
+    if (!existing || row.attendanceId > existing.attendanceId) {
+      latestByParticipantDate.set(key, row);
+    }
+  }
+
+  // clock_in/clock_out은 KST 벽시계 시각에 Z만 붙인 값이라 시:분을 그대로 잘라 쓴다
+  return [...latestByParticipantDate.values()].map((row) => ({
+    participantId: row.participantId,
+    participantName: row.participantName,
+    demandName: row.demandName ?? row.demandSiteName ?? null,
+    actDate: row.workDate,
+    startTime: (row.clockIn as string).slice(11, 16),
+    endTime: (row.clockOut as string).slice(11, 16),
+    log: row.log,
+  }));
+};
+
 // 활동일지 (공익활동) — 참여자별 시트로 조립할 원본 데이터. 실제 xlsx(서식+서명 이미지)는
 // 관리자 콘솔이 exceljs로 클라이언트에서 조립한다 (다운로드 참여자 개인용 흐름과 서식 통일).
+// 날짜·시각은 근무관리 기준이다 (loadActivityLogDays).
 app.get("/:id/export/activity-log", async (c) => {
   const auth = getAuth(c);
   const db = drizzle(c.env.DB);
@@ -85,91 +153,58 @@ app.get("/:id/export/activity-log", async (c) => {
     .where(eq(organizations.id, program.organizationId));
   const organizationName = organizationRows[0]?.name ?? "";
 
-  // demandName(자유 텍스트)이 비어있어도 demandSiteId로 실제 수요처가 배정된
-  // 참여자는 있을 수 있어서, 그 경우 수요처명을 채워서 내려준다.
-  const rows = await db
-    .select({
-      log: activityLogs,
-      participantName: participants.name,
-      demandName: participants.demandName,
-      demandSiteName: demandSites.name,
-    })
-    .from(activityLogs)
-    .innerJoin(participants, eq(activityLogs.participantId, participants.id))
-    .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
-    .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)))
-    .orderBy(activityLogs.actDate);
-
-  // 참여자가 같은 날짜에 활동일지를 중복 제출하면(오프라인 재동기화 등) 참여자+날짜당
-  // 가장 최근(id가 큰) 한 건만 남긴다 — 아니면 지급대장/근무일지에 같은 날이 중복 표기된다.
-  const dedupedRows = [
-    ...rows
-      .reduce((byParticipantDate, row) => {
-        const key = `${row.log.participantId}:${row.log.actDate}`;
-        const existing = byParticipantDate.get(key);
-        if (!existing || row.log.id > existing.log.id) {
-          byParticipantDate.set(key, row);
-        }
-
-        return byParticipantDate;
-      }, new Map<string, (typeof rows)[number]>())
-      .values(),
-  ];
+  const activityDays = await loadActivityLogDays(db, programId, month);
 
   // 서명은 레거시 base64 data URL이거나 R2 객체 키다 — 어느 쪽이든 data URL로
   // 맞춰서(resolveSignatureDataUrl) 클라이언트로 내려준다.
-  const resolvedRows = await Promise.all(
-    dedupedRows.map(async (row) => ({
-      ...row,
-      log: {
-        ...row.log,
-        userSignature: await resolveSignatureDataUrl(
-          c.env.SIGNATURES_BUCKET,
-          row.log.userSignature,
-        ),
-        demandSignature: await resolveSignatureDataUrl(
-          c.env.SIGNATURES_BUCKET,
-          row.log.demandSignature,
-        ),
-      },
+  const resolvedDays = await Promise.all(
+    activityDays.map(async (day) => ({
+      ...day,
+      userSignature: await resolveSignatureDataUrl(
+        c.env.SIGNATURES_BUCKET,
+        day.log?.userSignature ?? null,
+      ),
+      demandSignature: await resolveSignatureDataUrl(
+        c.env.SIGNATURES_BUCKET,
+        day.log?.demandSignature ?? null,
+      ),
     })),
   );
 
-  const participantsByName = new Map<
-    string,
-    { demandName: string | null; logs: (typeof resolvedRows)[number]["log"][] }
+  // 동명이인이 한 시트로 합쳐지지 않게 참여자 id로 묶는다 (시트명 중복은 클라이언트가 (2)로 구분).
+  const daysByParticipant = new Map<
+    number,
+    { participantName: string; demandName: string | null; days: typeof resolvedDays }
   >();
-  for (const row of resolvedRows) {
-    if (!participantsByName.has(row.participantName)) {
-      participantsByName.set(row.participantName, {
-        demandName: row.demandName ?? row.demandSiteName ?? null,
-        logs: [],
-      });
-    }
-    participantsByName.get(row.participantName)!.logs.push(row.log);
+  for (const day of resolvedDays) {
+    const participantDays = daysByParticipant.get(day.participantId) ?? {
+      participantName: day.participantName,
+      demandName: day.demandName,
+      days: [],
+    };
+    participantDays.days.push(day);
+    daysByParticipant.set(day.participantId, participantDays);
   }
 
   return c.json({
     programName: program.name,
     organizationName,
-    participants: Array.from(participantsByName.entries()).map(
-      ([participantName, participantData]) => ({
-        participantName,
-        demandName: participantData.demandName,
-        logs: participantData.logs.map((log) => ({
-          actDate: log.actDate,
-          startTime: log.startTime,
-          endTime: log.endTime,
-          content: log.content,
-          place: log.place,
-          hasAccident: log.hasAccident,
-          accidentDetail: log.accidentDetail,
-          accidentAction: log.accidentAction,
-          userSignature: log.userSignature,
-          demandSignature: log.demandSignature,
-        })),
-      }),
-    ),
+    participants: [...daysByParticipant.values()].map((participantDays) => ({
+      participantName: participantDays.participantName,
+      demandName: participantDays.demandName,
+      logs: participantDays.days.map((day) => ({
+        actDate: day.actDate,
+        startTime: day.startTime,
+        endTime: day.endTime,
+        content: day.log?.content ?? null,
+        place: day.log?.place ?? null,
+        hasAccident: day.log?.hasAccident ?? false,
+        accidentDetail: day.log?.accidentDetail ?? null,
+        accidentAction: day.log?.accidentAction ?? null,
+        userSignature: day.userSignature,
+        demandSignature: day.demandSignature,
+      })),
+    })),
   });
 });
 
@@ -204,36 +239,16 @@ app.get("/:id/export/activity-payment", async (c) => {
     .leftJoin(demandSites, eq(participants.demandSiteId, demandSites.id))
     .where(and(eq(participants.programId, programId), isListedInMonthlyExport));
 
-  const logRows = await db
-    .select({ log: activityLogs })
-    .from(activityLogs)
-    .innerJoin(participants, eq(activityLogs.participantId, participants.id))
-    .where(and(eq(participants.programId, programId), like(activityLogs.actDate, `${month}%`)));
-
-  // 참여자가 같은 날짜에 활동일지를 중복 제출하면(오프라인 재동기화 등) 참여자+날짜당
-  // 가장 최근(id가 큰) 한 건만 남긴다 — 아니면 지급액이 중복 합산된다.
-  const dedupedLogRows = [
-    ...logRows
-      .reduce((byParticipantDate, row) => {
-        const key = `${row.log.participantId}:${row.log.actDate}`;
-        const existing = byParticipantDate.get(key);
-        if (!existing || row.log.id > existing.log.id) {
-          byParticipantDate.set(key, row);
-        }
-
-        return byParticipantDate;
-      }, new Map<string, (typeof logRows)[number]>())
-      .values(),
-  ];
-
+  // 지급 시간도 활동일지와 같은 근무일·시각으로 센다 (loadActivityLogDays).
+  const activityDays = await loadActivityLogDays(db, programId, month);
   const minutesByParticipant = new Map<number, number>();
-  for (const { log } of dedupedLogRows) {
-    const [startHour, startMinute] = log.startTime.split(":").map(Number);
-    const [endHour, endMinute] = log.endTime.split(":").map(Number);
-    const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+  for (const day of activityDays) {
+    const [startHour, startMinute] = day.startTime.split(":").map(Number);
+    const [endHour, endMinute] = day.endTime.split(":").map(Number);
+    const minutes = Math.max(0, endHour * 60 + endMinute - (startHour * 60 + startMinute));
     minutesByParticipant.set(
-      log.participantId,
-      (minutesByParticipant.get(log.participantId) ?? 0) + minutes,
+      day.participantId,
+      (minutesByParticipant.get(day.participantId) ?? 0) + minutes,
     );
   }
 
